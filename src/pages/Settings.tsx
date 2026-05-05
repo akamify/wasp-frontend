@@ -7,7 +7,6 @@ import { Alert } from "../components/ui/Alert";
 import { useAuth } from "../context/AuthContext";
 import { BRAND_NAME } from "../config/brand";
 import { LogOut, Save } from "lucide-react";
-import { cn } from "../utils/cn";
 
 declare global {
   interface Window {
