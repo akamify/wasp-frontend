@@ -1,12 +1,10 @@
-import { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
+import { useEffect, useMemo, useState } from "react";
 import { API } from "../api/api";
-import { Card } from "../components/ui/Card";
-import { Spinner } from "../components/ui/Spinner";
 import { Alert } from "../components/ui/Alert";
-import { Input } from "../components/ui/Input";
-import { Button } from "../components/ui/Button";
 import { Badge } from "../components/ui/Badge";
+import { Input } from "../components/ui/Input";
+import { Spinner } from "../components/ui/Spinner";
+import { InboxComposer } from "./conversations/InboxComposer";
 
 type Conversation = {
   _id?: string;
@@ -14,162 +12,147 @@ type Conversation = {
   lastMessageAt?: string;
   lastMessagePreview?: string;
   unreadCount?: number;
-  contact?: {
-    _id?: string;
-    name?: string;
-    company?: string;
-    tags?: string[];
-  } | null;
+  contact?: { name?: string; company?: string } | null;
 };
+type ChatMessage = { _id: string; direction: "outbound" | "inbound"; status: string; createdAt: string; text?: string; payload?: { template?: { name?: string } } };
 
-function formatDate(value?: string) {
-  return value ? new Date(value).toLocaleString() : "-";
-}
+const formatDate = (value?: string) => (value ? new Date(value).toLocaleString() : "-");
 
 export default function ConversationsPage() {
   const [items, setItems] = useState<Conversation[]>([]);
-  const [busy, setBusy] = useState(true);
+  const [messages, setMessages] = useState<ChatMessage[]>([]);
+  const [activePhone, setActivePhone] = useState("");
   const [search, setSearch] = useState("");
+  const [loadingList, setLoadingList] = useState(true);
+  const [loadingChat, setLoadingChat] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [ok, setOk] = useState<string | null>(null);
 
-  async function load(activeSearch = search) {
-    setBusy(true);
+  const activeConversation = useMemo(() => items.find((item) => item.phone === activePhone) || null, [items, activePhone]);
+
+  async function loadList(activeSearch = search) {
+    setLoadingList(true);
     try {
-      const d = await API.conversations.list({ limit: 120, search: activeSearch || undefined });
-      setItems(d.conversations || []);
+      const data = await API.conversations.list({ limit: 120, search: activeSearch || undefined });
+      const list = data.conversations || [];
+      setItems(list);
+      if (!activePhone && list[0]?.phone) setActivePhone(list[0].phone);
       setError(null);
     } catch (e: any) {
-      setError(e?.response?.data?.message || "Failed to load conversations");
+      setError(e?.response?.data?.message || "Failed to load inbox");
     } finally {
-      setBusy(false);
+      setLoadingList(false);
     }
   }
 
-  useEffect(() => {
-    load("");
-  }, []);
-
-  useEffect(() => {
-    const id = window.setInterval(() => {
-      load(search);
-    }, 15000);
-
-    return () => window.clearInterval(id);
-  }, [search]);
-
-  async function onSearch(e: React.FormEvent) {
-    e.preventDefault();
-    await load(search);
+  async function loadChat(phone: string) {
+    if (!phone) return;
+    setLoadingChat(true);
+    try {
+      const messagesRes = await API.messages.byPhone(phone);
+      setMessages(messagesRes.messages || []);
+      await API.conversations.read(phone);
+      setError(null);
+    } catch (e: any) {
+      setError(e?.response?.data?.message || "Failed to load chat");
+    } finally {
+      setLoadingChat(false);
+    }
   }
 
+  useEffect(() => { loadList(""); }, []);
+  useEffect(() => { if (activePhone) loadChat(activePhone); }, [activePhone]);
+  useEffect(() => {
+    const id = window.setInterval(() => {
+      loadList(search);
+      if (activePhone) loadChat(activePhone);
+    }, 12000);
+    return () => window.clearInterval(id);
+  }, [search, activePhone]);
+  useEffect(() => {
+    if (!error && !ok) return;
+    const timer = setTimeout(() => { setError(null); setOk(null); }, 3000);
+    return () => clearTimeout(timer);
+  }, [error, ok]);
+
   return (
-    <div className="grid gap-5">
-      <section className="rounded-[30px] border border-ink-900/10 bg-[linear-gradient(145deg,rgba(255,255,255,0.95),rgba(236,255,248,0.92))] p-6 text-ink-900 shadow-[0_24px_90px_rgba(0,0,0,0.18)] sm:p-7">
-        <div className="grid gap-6 xl:grid-cols-[minmax(0,1.2fr)_340px]">
-          <div>
-            <div className="text-xs font-semibold uppercase tracking-[0.28em] text-ink-800/55">
-              Inbox
-            </div>
-            <h1 className="mt-3 text-4xl font-black tracking-tight sm:text-5xl">
-              View incoming and outgoing WhatsApp conversations like a working chat desk.
-            </h1>
-            <p className="mt-4 max-w-3xl text-sm leading-7 text-ink-800/72">
-              Incoming webhook messages and sent campaign messages now share the same normalized phone
-              thread, so the inbox behaves more like WhatsApp Business instead of split message logs.
-            </p>
-          </div>
-
-          <div className="rounded-[26px] border border-emerald-200 bg-white/78 p-5">
-            <div className="text-xs font-semibold uppercase tracking-[0.22em] text-ink-800/55">
-              Live threads
-            </div>
-            <div className="mt-3 text-4xl font-black text-ink-900">{items.length}</div>
-            <div className="mt-2 text-sm leading-6 text-ink-800/72">
-              Search by phone, contact name, company, or message preview.
-            </div>
-          </div>
+    <div className="grid h-[calc(100dvh-7rem)] gap-3 overflow-hidden rounded-[5px] border border-ink-900/10 bg-white">
+      <div className="flex items-center justify-between border-b border-ink-900/10 px-4 py-3">
+        <div>
+          <div className="text-xs uppercase tracking-[0.18em] text-ink-800/55">Inbox</div>
+          <div className="text-lg font-bold text-ink-900">WhatsApp Chatroom</div>
         </div>
-      </section>
+        <div className="w-full max-w-xs">
+          <Input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search phone or name..." />
+        </div>
+      </div>
 
-      {error ? <Alert>{error}</Alert> : null}
+      {error ? <div className="px-3"><Alert tone="error">{error}</Alert></div> : null}
+      {ok ? <div className="px-3"><Alert tone="success">{ok}</Alert></div> : null}
 
-      <Card className="p-6">
-        <div className="flex flex-wrap items-end justify-between gap-3">
-          <form className="flex min-w-0 flex-1 flex-wrap gap-3" onSubmit={onSearch}>
-            <div className="min-w-0 w-full flex-1 sm:min-w-[240px]">
-              <Input
-                label="Search inbox"
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                placeholder="Phone, name, company, preview"
-              />
-            </div>
-            <div className="flex w-full items-end gap-2 sm:w-auto">
-              <Button type="submit">Search</Button>
-              <Button type="button" variant="ghost" onClick={() => load(search)}>
-                Refresh
-              </Button>
-            </div>
-          </form>
-
-          <Link to="/app/contacts">
-            <Button variant="ghost">Open contacts</Button>
-          </Link>
+      <div className="grid min-h-0 flex-1 gap-0 lg:grid-cols-[320px_1fr]">
+        <div className="min-h-0 overflow-y-auto border-r border-ink-900/10 bg-[#f7f8fa]">
+          {loadingList ? <div className="p-4"><Spinner label="Loading chats..." /></div> : null}
+          {!loadingList && items.length === 0 ? <div className="p-4 text-sm text-ink-800/60">No chats found.</div> : null}
+          {items.map((item) => (
+            <button key={item._id || item.phone} onClick={() => setActivePhone(item.phone)} className={`flex w-full cursor-pointer items-start justify-between gap-3 border-b border-ink-900/5 px-4 py-3 text-left transition ${activePhone === item.phone ? "bg-[#e9f5ff]" : "bg-transparent hover:bg-white"}`}>
+              <div className="min-w-0">
+                <div className="truncate text-sm font-semibold text-ink-900">{item.contact?.name || item.phone}</div>
+                <div className="truncate text-xs text-ink-800/60">{item.lastMessagePreview || "-"}</div>
+              </div>
+              <div className="text-right">
+                <div className="text-[10px] text-ink-800/55">{formatDate(item.lastMessageAt)}</div>
+                {item.unreadCount ? <Badge tone="good" className="mt-1">{item.unreadCount}</Badge> : null}
+              </div>
+            </button>
+          ))}
         </div>
 
-        <div className="mt-5 grid gap-3">
-          {busy ? (
-            <Spinner label="Loading inbox..." />
-          ) : items.length ? (
-            items.map((conversation) => (
-              <Link
-                key={conversation._id || conversation.phone}
-                to={`/app/conversations/${encodeURIComponent(conversation.phone)}`}
-                className="rounded-[26px] border border-ink-900/8 bg-slate-50/80 p-5 transition hover:border-brand-300/40 hover:bg-white"
-              >
-                <div className="flex flex-wrap items-start justify-between gap-4">
-                  <div className="min-w-0">
-                    <div className="truncate text-lg font-black tracking-tight text-ink-900">
-                      {conversation.contact?.name || conversation.phone}
-                    </div>
-                    <div className="mt-2 text-xs uppercase tracking-[0.18em] text-ink-800/50">
-                      {conversation.phone}
-                      {conversation.contact?.company ? ` | ${conversation.contact.company}` : ""}
-                    </div>
-                    <div className="mt-3 truncate text-sm text-ink-800/74">
-                      {conversation.lastMessagePreview || "-"}
-                    </div>
-                    {conversation.contact?.tags?.length ? (
-                      <div className="mt-3 flex flex-wrap gap-2">
-                        {conversation.contact.tags.slice(0, 3).map((tag) => (
-                          <Badge key={tag} tone="neutral">
-                            {tag}
-                          </Badge>
-                        ))}
-                      </div>
-                    ) : null}
-                  </div>
+        <div className="flex min-h-0 flex-col bg-white">
+          <div className="flex items-center justify-between border-b border-ink-900/10 bg-white px-4 py-3">
+            <div>
+              <div className="text-sm font-semibold text-ink-900">{activeConversation?.contact?.name || activePhone || "Select chat"}</div>
+              <div className="text-xs text-ink-800/60">{activeConversation?.phone || ""}</div>
+            </div>
+            {activeConversation?.contact?.company ? <Badge tone="neutral">{activeConversation.contact.company}</Badge> : null}
+          </div>
 
-                  <div className="text-right">
-                    {conversation.unreadCount ? (
-                      <Badge tone="good">{conversation.unreadCount} new</Badge>
-                    ) : (
-                      <Badge tone="neutral">open</Badge>
-                    )}
-                    <div className="mt-3 text-xs text-ink-800/55">
-                      {formatDate(conversation.lastMessageAt)}
-                    </div>
-                  </div>
+          <div
+            className="min-h-0 flex-1 space-y-2 overflow-y-auto p-4"
+            style={{
+              backgroundImage: `url('${import.meta.env.BASE_URL}message-bg.png')`,
+              backgroundSize: "auto auto",
+              backgroundRepeat: "repeat",
+              // backgroundColor: "#ffffff",
+              filter: "grayscale(0.22) sepia(0.1) hue-rotate(8deg) saturate(0.72)",
+              opacity: 0.80,
+            }}
+          >
+            {loadingChat ? <Spinner label="Loading messages..." /> : null}
+            {!loadingChat && messages.length === 0 ? <div className="text-sm text-ink-800/70">No messages in this chat yet.</div> : null}
+            {messages.map((message) => (
+              <div key={message._id} className={`max-w-[82%] rounded-[5px] px-3 py-2 ${message.direction === "outbound" ? "ml-auto bg-[#dcf8c6]" : "mr-auto bg-white"} `}>
+                <div className="whitespace-pre-wrap text-sm text-ink-900">
+                  {message.text || (message.payload?.template?.name ? `Template: ${message.payload.template.name}` : "[message]")}
                 </div>
-              </Link>
-            ))
-          ) : (
-            <div className="rounded-[24px] border border-dashed border-ink-900/12 bg-slate-50/80 p-6 text-sm text-ink-800/70">
-              No conversations yet.
-            </div>
-          )}
+                <div className="mt-1 text-right text-[10px] text-ink-800/55">{formatDate(message.createdAt)}</div>
+              </div>
+            ))}
+          </div>
+
+          <InboxComposer
+            to={activePhone}
+            disabled={!activePhone}
+            sendTextMessage={API.messages.sendText}
+            onSent={async (message) => {
+              setOk(message);
+              await loadChat(activePhone);
+              await loadList(search);
+            }}
+            onError={setError}
+          />
         </div>
-      </Card>
+      </div>
     </div>
   );
 }

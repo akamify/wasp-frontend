@@ -16,7 +16,7 @@ export function Input({ className, label, hint, id, ...props }: Props) {
       <input
         id={inputId}
         className={cn(
-          "w-full rounded-2xl bg-white px-3 py-2.5 text-sm text-ink-900 shadow-sm ring-1 ring-ink-900/12 " +
+          "w-full rounded-[5px] bg-white px-3 py-2.5 text-sm text-ink-900 ring-1 ring-ink-900/12 " +
             "placeholder:text-ink-900/35 focus:outline-none focus:ring-2 focus:ring-brand-300",
           className
         )}

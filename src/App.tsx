@@ -1,7 +1,9 @@
 import { Route, Routes } from "react-router-dom";
 import { AuthProvider } from "./context/AuthContext";
-import { RequireAuth } from "./components/auth/RequireAuth";
+import { RequireAdmin } from "./components/auth/RequireAdmin";
+import { RequireUser } from "./components/auth/RequireUser";
 import { AppShell } from "./components/layout/AppShell";
+import { AdminShell } from "./components/layout/AdminShell";
 
 import LandingPage from "./pages/Landing";
 import LoginPage from "./pages/Login";
@@ -16,7 +18,11 @@ import ConversationDetailPage from "./pages/ConversationDetail";
 import LinksPage from "./pages/Links";
 import AutomationPage from "./pages/Automation";
 import SettingsPage from "./pages/Settings";
+import WalletPage from "./pages/Wallet";
+import FlowsPage from "./pages/Flows";
 import NotFoundPage from "./pages/NotFound";
+import AdminPage from "./pages/Admin";
+import AdminLoginPage from "./pages/AdminLogin";
 
 export default function App() {
   return (
@@ -25,8 +31,9 @@ export default function App() {
         <Route path="/" element={<LandingPage />} />
         <Route path="/login" element={<LoginPage />} />
         <Route path="/register" element={<RegisterPage />} />
+        <Route path="/admin/login" element={<AdminLoginPage />} />
 
-        <Route element={<RequireAuth />}>
+        <Route element={<RequireUser />}>
           <Route
             path="/app"
             element={
@@ -105,6 +112,33 @@ export default function App() {
               <AppShell>
                 <SettingsPage />
               </AppShell>
+            }
+          />
+          <Route
+            path="/app/wallet"
+            element={
+              <AppShell>
+                <WalletPage />
+              </AppShell>
+            }
+          />
+          <Route
+            path="/app/flows"
+            element={
+              <AppShell>
+                <FlowsPage />
+              </AppShell>
+            }
+          />
+        </Route>
+
+        <Route element={<RequireAdmin />}>
+          <Route
+            path="/admin"
+            element={
+              <AdminShell>
+                <AdminPage />
+              </AdminShell>
             }
           />
         </Route>

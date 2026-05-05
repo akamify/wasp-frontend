@@ -14,8 +14,14 @@ export const API: {
     login(payload: any): Promise<any>;
     me(): Promise<any>;
     rotateApiKey(): Promise<any>;
-    metaConnectUrl(): Promise<any>;
-    metaSave(payload: any): Promise<any>;
+    updateProfile(payload: any): Promise<any>;
+  };
+  admin: {
+    overview(): Promise<any>;
+    users(): Promise<any>;
+    templates(): Promise<any>;
+    credentials(): Promise<any>;
+    wallets(): Promise<any>;
   };
   workspaces: {
     list(): Promise<any>;
@@ -35,12 +41,17 @@ export const API: {
     submit(id: string): Promise<any>;
     status(id: string): Promise<any>;
     syncMeta(payload?: any): Promise<any>;
+    uploadMedia(file: any, onProgress?: (pct: number) => void): Promise<any>;
+    downloadMediaByHandle(handle: string): Promise<any>;
   };
   messages: {
     send(payload: any): Promise<any>;
+    sendText(payload: any): Promise<any>;
     bulk(payload: any): Promise<any>;
     logs(params?: any): Promise<any>;
+    status(waId: string): Promise<any>;
     byPhone(phone: string, params?: any): Promise<any>;
+    uploadMedia(file: any, onProgress?: (pct: number) => void): Promise<any>;
   };
   analytics: {
     overview(): Promise<any>;
@@ -48,7 +59,12 @@ export const API: {
   };
   meta: {
     status(): Promise<any>;
+    subscriptionHealth(): Promise<any>;
     save(payload: any): Promise<any>;
+    updateProfile(payload: any): Promise<any>;
+    uploadProfilePicture(file: any): Promise<any>;
+    listFlows(params?: any): Promise<any>;
+    createFlow(payload: any): Promise<any>;
   };
   links: {
     create(payload: any): Promise<any>;
@@ -56,6 +72,7 @@ export const API: {
   wallet: {
     get(): Promise<any>;
     createRechargeOrder(payload: any): Promise<any>;
+    history(params?: any): Promise<any>;
   };
   campaigns: {
     list(params?: any): Promise<any>;

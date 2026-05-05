@@ -1,6 +1,8 @@
 ﻿import { useRef } from "react";
 import { motion, useInView } from "framer-motion";
 
+import { BRAND_SLUG } from "../../config/brand";
+
 const stats = [
   { label: "Messages Delivered", value: "2.4B+", delta: "+18% this month" },
   { label: "Active Campaigns", value: "12,840", delta: "Across 50+ countries" },
@@ -66,7 +68,7 @@ export function DashboardPreview() {
                 <div className="w-3 h-3 rounded-full bg-yellow-500/70" />
                 <div className="w-3 h-3 rounded-full bg-green-500/70" />
               </div>
-              <span className="text-xs text-ink-900/45 font-mono">app.waspakamify.com/dashboard</span>
+              <span className="text-xs text-ink-900/45 font-mono">{`app.${BRAND_SLUG || "brand"}.com/dashboard`}</span>
             </div>
             <div className="flex items-center gap-2">
               <div className="w-2 h-2 rounded-full bg-[#25D366] animate-pulse" />

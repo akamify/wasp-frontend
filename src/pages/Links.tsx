@@ -45,7 +45,7 @@ export default function LinksPage() {
 
   return (
     <div className="grid gap-6">
-      <div className="rounded-2xl bg-white/60 p-6 ring-1 ring-ink-900/10 backdrop-blur">
+      <div className="rounded-[5px] bg-white/60 p-6 ring-1 ring-ink-900/10 backdrop-blur">
         <div className="text-xs font-semibold text-ink-800/60">Analytics</div>
         <h1 className="mt-1 text-3xl font-black tracking-tight">Tracked links</h1>
         <p className="mt-2 text-sm text-ink-800/70">
@@ -89,9 +89,9 @@ export default function LinksPage() {
         </form>
 
         {trackedUrl ? (
-          <div className="mt-5 rounded-2xl bg-brand-50 p-4 ring-1 ring-brand-200">
+          <div className="mt-5 rounded-[5px] bg-brand-50 p-4 ring-1 ring-brand-200">
             <div className="text-xs font-black">Tracked URL</div>
-            <div className="mt-2 break-all rounded-xl bg-white/70 px-3 py-2 text-sm font-semibold ring-1 ring-ink-900/10">
+            <div className="mt-2 break-all rounded-[5px] bg-white/70 px-3 py-2 text-sm font-semibold ring-1 ring-ink-900/10">
               {trackedUrl}
             </div>
             <div className="mt-3 flex gap-2">
@@ -99,7 +99,7 @@ export default function LinksPage() {
                 Copy
               </Button>
               <a
-                className="inline-flex items-center justify-center rounded-xl bg-white/70 px-4 py-2 text-sm font-semibold ring-1 ring-ink-900/10 hover:bg-white"
+                className="inline-flex items-center justify-center rounded-[5px] bg-white/70 px-4 py-2 text-sm font-semibold ring-1 ring-ink-900/10 hover:bg-white"
                 href={trackedUrl}
                 target="_blank"
                 rel="noreferrer"

@@ -1,6 +1,8 @@
 import { useRef } from "react";
 import { motion, useInView } from "framer-motion";
 
+import { BRAND_NAME } from "../../config/brand";
+
 const plans = [
   {
     name: "Starter",
@@ -151,7 +153,7 @@ export function CTASection() {
               Ready to grow your business<br />with WhatsApp?
             </h3>
             <p className="text-white/80 max-w-md">
-              Join 50,000+ businesses using Waspakamify to send smarter messages and convert more customers.
+              Join modern businesses using {BRAND_NAME} to send smarter messages and convert more customers.
             </p>
             <div className="flex flex-wrap justify-center gap-4">
               <a href="/register"

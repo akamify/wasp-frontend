@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Link, useLocation, useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { Card } from "../components/ui/Card";
 import { Input } from "../components/ui/Input";
@@ -7,16 +7,13 @@ import { Button } from "../components/ui/Button";
 import { Alert } from "../components/ui/Alert";
 import { BRAND_NAME } from "../config/brand";
 
-export default function LoginPage() {
+export default function AdminLoginPage() {
   const { login } = useAuth();
   const navigate = useNavigate();
-  const location = useLocation();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
-
-  const from = (location.state as any)?.from || null;
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -24,10 +21,13 @@ export default function LoginPage() {
     setBusy(true);
     try {
       const res = await login(email, password);
-      const target = from || (res?.user?.role === "admin" ? "/admin" : "/app");
-      navigate(target, { replace: true });
+      if (res?.user?.role !== "admin") {
+        setError("This account is not an admin.");
+        return;
+      }
+      navigate("/admin", { replace: true });
     } catch (err: any) {
-      setError(err?.response?.data?.message || "Login failed");
+      setError(err?.response?.data?.message || "Admin login failed");
     } finally {
       setBusy(false);
     }
@@ -36,17 +36,17 @@ export default function LoginPage() {
   return (
     <div className="flex min-h-dvh items-center justify-center px-4 py-10">
       <Card className="w-full max-w-md p-6">
-        <div className="text-xs font-semibold text-ink-800/60">Welcome back</div>
-        <h1 className="mt-1 text-2xl font-black tracking-tight">Sign in</h1>
+        <div className="text-xs font-semibold text-ink-800/60">Admin access</div>
+        <h1 className="mt-1 text-2xl font-black tracking-tight">Admin sign in</h1>
         <p className="mt-2 text-sm text-ink-800/70">
-          Use your {BRAND_NAME} account to manage templates, sends, analytics, or admin operations.
+          Sign in to manage {BRAND_NAME} users, credentials, templates, and wallets.
         </p>
 
         <form className="mt-6 grid gap-3" onSubmit={onSubmit}>
           {error ? <Alert>{error}</Alert> : null}
 
           <Input
-            label="Email"
+            label="Admin Email"
             type="email"
             autoComplete="email"
             value={email}
@@ -65,14 +65,6 @@ export default function LoginPage() {
             {busy ? "Signing in..." : "Sign in"}
           </Button>
         </form>
-
-        <div className="mt-4 text-sm text-ink-800/70">
-          No account?{" "}
-          <Link className="font-semibold text-ink-900 underline" to="/register">
-            Create one
-          </Link>
-          .
-        </div>
       </Card>
     </div>
   );

@@ -15,7 +15,7 @@ export function Select({ className, label, id, children, ...props }: Props) {
       <select
         id={selectId}
         className={cn(
-          "w-full rounded-2xl bg-white px-3 py-2.5 text-sm text-ink-900 shadow-sm ring-1 ring-ink-900/12 " +
+          "w-full rounded-[5px] bg-white px-3 py-2.5 text-sm text-ink-900 ring-1 ring-ink-900/12 " +
             "focus:outline-none focus:ring-2 focus:ring-brand-300",
           className
         )}

@@ -146,7 +146,7 @@ export default function AutomationPage() {
 
   return (
     <div className="grid gap-6">
-      <div className="rounded-2xl bg-white/60 p-6 ring-1 ring-ink-900/10 backdrop-blur">
+      <div className="rounded-[5px] bg-white/60 p-6 ring-1 ring-ink-900/10 backdrop-blur">
         <div className="text-xs font-semibold text-ink-800/60">Automation</div>
         <h1 className="mt-1 text-3xl font-black tracking-tight">Trigger event</h1>
         <p className="mt-2 text-sm text-ink-800/70">
@@ -161,7 +161,7 @@ export default function AutomationPage() {
         <form className="mt-5 grid gap-3" onSubmit={onTrigger}>
           {error ? <Alert>{error}</Alert> : null}
           {ok ? (
-            <div className="rounded-2xl bg-brand-50 px-4 py-3 text-sm text-ink-900 ring-1 ring-brand-200">
+            <div className="rounded-[5px] bg-brand-50 px-4 py-3 text-sm text-ink-900 ring-1 ring-brand-200">
               {ok}
             </div>
           ) : null}

@@ -7,6 +7,8 @@ export type TemplateComponent = {
     text?: string;
     url?: string;
     phone_number?: string;
+    flow_id?: string;
+    ttl_minutes?: number;
     otp_type?: string;
   }>;
 };
@@ -53,16 +55,27 @@ export function inspectTemplate(template?: TemplateRecord) {
     bodyVariableCount: 0,
     otpButtons: 0,
     dynamicUrlButtons: [] as Array<{ index: number; label: string }>,
+    voiceCallButtons: [] as Array<{ index: number; label: string }>,
+    flowButtons: [] as Array<{ index: number; label: string }>,
+    copyCodeButtons: [] as Array<{ index: number; label: string }>,
+    headerFormat: "NONE" as "NONE" | "TEXT" | "IMAGE" | "VIDEO" | "DOCUMENT",
   };
 
   for (const component of template?.components || []) {
     const type = String(component.type || "").toUpperCase();
+    const format = String(component.format || "").toUpperCase();
 
-    if (type === "HEADER" && String(component.format || "").toUpperCase() === "TEXT") {
+    if (type === "HEADER") {
+      if (format === "TEXT") {
+        summary.headerFormat = "TEXT";
       summary.headerVariableCount = Math.max(
         summary.headerVariableCount,
         maxPlaceholderIndex(component.text)
       );
+      } else if (format === "IMAGE" || format === "VIDEO" || format === "DOCUMENT") {
+        summary.headerFormat = format as any;
+        summary.headerVariableCount = Math.max(summary.headerVariableCount, 1);
+      }
     }
 
     if (type === "BODY") {
@@ -80,6 +93,24 @@ export function inspectTemplate(template?: TemplateRecord) {
         }
         if (buttonType === "URL" && hasDynamicUrl(button.url)) {
           summary.dynamicUrlButtons.push({
+            index,
+            label: button.text || `Button ${index + 1}`,
+          });
+        }
+        if (buttonType === "VOICE_CALL") {
+          summary.voiceCallButtons.push({
+            index,
+            label: button.text || `Button ${index + 1}`,
+          });
+        }
+        if (buttonType === "FLOW") {
+          summary.flowButtons.push({
+            index,
+            label: button.text || `Button ${index + 1}`,
+          });
+        }
+        if (buttonType === "COPY_CODE") {
+          summary.copyCodeButtons.push({
             index,
             label: button.text || `Button ${index + 1}`,
           });

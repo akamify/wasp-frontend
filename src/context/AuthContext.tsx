@@ -10,14 +10,21 @@ type User = {
   createdAt?: string;
 };
 
+type Workspace = {
+  id: string;
+  name?: string;
+  plan?: string;
+};
+
 type AuthState = {
   token: string;
   user: User | null;
+  workspace: Workspace | null;
   loading: boolean;
 };
 
 type AuthContextValue = AuthState & {
-  login: (email: string, password: string) => Promise<void>;
+  login: (email: string, password: string) => Promise<any>;
   register: (email: string, password: string, name?: string) => Promise<{ apiKey?: string }>;
   logout: () => void;
   refreshMe: () => Promise<void>;
@@ -29,13 +36,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [state, setState] = useState<AuthState>(() => ({
     token: getToken(),
     user: null,
+    workspace: null,
     loading: true,
   }));
 
   const refreshMe = useCallback(async () => {
     const token = getToken();
     if (!token) {
-      setState((s) => ({ ...s, token: "", user: null, loading: false }));
+      setState((s) => ({ ...s, token: "", user: null, workspace: null, loading: false }));
       return;
     }
 
@@ -43,10 +51,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     try {
       const res = await API.auth.me();
       if (res?.workspace?.id) setWorkspaceId(res.workspace.id);
-      setState((s) => ({ ...s, token, user: res.user, loading: false }));
+      setState((s) => ({ ...s, token, user: res.user, workspace: res.workspace || null, loading: false }));
     } catch {
       setToken("");
-      setState((s) => ({ ...s, token: "", user: null, loading: false }));
+      setState((s) => ({ ...s, token: "", user: null, workspace: null, loading: false }));
     }
   }, []);
 
@@ -58,20 +66,21 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const res = await API.auth.login({ email, password });
     setToken(res.token);
     if (res?.workspace?.id) setWorkspaceId(res.workspace.id);
-    setState({ token: res.token, user: res.user, loading: false });
+    setState({ token: res.token, user: res.user, workspace: res.workspace || null, loading: false });
+    return res;
   }, []);
 
   const register = useCallback(async (email: string, password: string, name?: string) => {
     const res = await API.auth.register({ email, password, name });
     setToken(res.token);
     if (res?.workspace?.id) setWorkspaceId(res.workspace.id);
-    setState({ token: res.token, user: res.user, loading: false });
+    setState({ token: res.token, user: res.user, workspace: res.workspace || null, loading: false });
     return { apiKey: res.apiKey };
   }, []);
 
   const logout = useCallback(() => {
     setToken("");
-    setState({ token: "", user: null, loading: false });
+    setState({ token: "", user: null, workspace: null, loading: false });
   }, []);
 
   const value = useMemo<AuthContextValue>(

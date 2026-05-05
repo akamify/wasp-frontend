@@ -159,7 +159,7 @@ export default function ContactsPage() {
 
   return (
     <div className="grid gap-5">
-      <section className="rounded-[30px] border border-ink-900/10 bg-[linear-gradient(145deg,rgba(255,255,255,0.94),rgba(236,255,248,0.92))] p-6 text-ink-900 shadow-[0_24px_90px_rgba(0,0,0,0.18)] sm:p-7">
+      <section className="rounded-[5px] border border-ink-900/10 bg-[linear-gradient(145deg,rgba(255,255,255,0.94),rgba(236,255,248,0.92))] p-6 text-ink-900 shadow-[0_24px_90px_rgba(0,0,0,0.18)] sm:p-7">
         <div className="grid gap-6 xl:grid-cols-[minmax(0,1.2fr)_360px]">
           <div>
             <div className="text-xs font-semibold uppercase tracking-[0.28em] text-ink-800/55">
@@ -172,7 +172,7 @@ export default function ContactsPage() {
             </p>
           </div>
 
-          <div className="rounded-[26px] border border-emerald-200 bg-white/75 p-5">
+          <div className="rounded-[5px] border border-emerald-200 bg-white/75 p-5">
             <div className="text-xs font-semibold uppercase tracking-[0.22em] text-ink-800/55">
               Audience health
             </div>
@@ -187,7 +187,7 @@ export default function ContactsPage() {
 
       {error ? <Alert>{error}</Alert> : null}
       {ok ? (
-        <div className="rounded-[24px] bg-brand-50 px-4 py-3 text-sm text-ink-900 ring-1 ring-brand-200">
+        <div className="rounded-[5px] bg-brand-50 px-4 py-3 text-sm text-ink-900 ring-1 ring-brand-200">
           {ok}
         </div>
       ) : null}
@@ -232,7 +232,7 @@ export default function ContactsPage() {
               contacts.map((contact) => (
                 <div
                   key={contact._id}
-                  className={`rounded-[24px] border p-4 transition ${
+                  className={`rounded-[5px] border p-4 transition ${
                     selectedId === contact._id
                       ? "border-brand-300/45 bg-brand-50"
                       : "border-ink-900/8 bg-slate-50/80 hover:bg-white"
@@ -276,7 +276,7 @@ export default function ContactsPage() {
                 </div>
               ))
             ) : (
-              <div className="rounded-[24px] border border-dashed border-ink-900/12 bg-slate-50/80 p-6 text-sm text-ink-800/70">
+              <div className="rounded-[5px] border border-dashed border-ink-900/12 bg-slate-50/80 p-6 text-sm text-ink-800/70">
                 No contacts found yet.
               </div>
             )}

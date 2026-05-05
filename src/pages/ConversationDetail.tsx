@@ -162,7 +162,7 @@ export default function ConversationDetailPage() {
 
   return (
     <div className="grid gap-5">
-      <section className="rounded-[30px] border border-ink-900/10 bg-[linear-gradient(145deg,rgba(255,255,255,0.95),rgba(236,255,248,0.92))] p-6 text-ink-900 shadow-[0_24px_90px_rgba(0,0,0,0.18)] sm:p-7">
+      <section className="rounded-[5px] border border-ink-900/10 bg-[linear-gradient(145deg,rgba(255,255,255,0.95),rgba(236,255,248,0.92))] p-6 text-ink-900 shadow-[0_24px_90px_rgba(0,0,0,0.18)] sm:p-7">
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div>
             <div className="text-xs font-semibold uppercase tracking-[0.28em] text-ink-800/55">
@@ -195,7 +195,7 @@ export default function ConversationDetailPage() {
 
       {error ? <Alert>{error}</Alert> : null}
       {ok ? (
-        <div className="rounded-[24px] bg-brand-50 px-4 py-3 text-sm text-ink-900 ring-1 ring-brand-200">
+        <div className="rounded-[5px] bg-brand-50 px-4 py-3 text-sm text-ink-900 ring-1 ring-brand-200">
           {ok}
         </div>
       ) : null}
@@ -249,7 +249,7 @@ export default function ConversationDetailPage() {
                 </div>
               ))
             ) : (
-              <div className="rounded-[24px] border border-dashed border-ink-900/12 bg-white/74 p-6 text-sm text-ink-800/70">
+              <div className="rounded-[5px] border border-dashed border-ink-900/12 bg-white/74 p-6 text-sm text-ink-800/70">
                 No messages for this thread yet.
               </div>
             )}
@@ -266,23 +266,23 @@ export default function ConversationDetailPage() {
             </div>
 
             <div className="mt-5 grid gap-3 text-sm text-ink-800/74">
-              <div className="rounded-[20px] bg-slate-50 px-4 py-3 ring-1 ring-ink-900/8">
+              <div className="rounded-[5px] bg-slate-50 px-4 py-3 ring-1 ring-ink-900/8">
                 <div className="text-xs uppercase tracking-[0.18em] text-ink-800/55">Phone</div>
                 <div className="mt-2 font-semibold text-ink-900">{conversation?.phone || phone}</div>
               </div>
               {contact?.email ? (
-                <div className="rounded-[20px] bg-slate-50 px-4 py-3 ring-1 ring-ink-900/8">
+                <div className="rounded-[5px] bg-slate-50 px-4 py-3 ring-1 ring-ink-900/8">
                   <div className="text-xs uppercase tracking-[0.18em] text-ink-800/55">Email</div>
                   <div className="mt-2 font-semibold text-ink-900">{contact.email}</div>
                 </div>
               ) : null}
               {contact?.notes ? (
-                <div className="rounded-[20px] bg-slate-50 px-4 py-3 ring-1 ring-ink-900/8">
+                <div className="rounded-[5px] bg-slate-50 px-4 py-3 ring-1 ring-ink-900/8">
                   <div className="text-xs uppercase tracking-[0.18em] text-ink-800/55">Notes</div>
                   <div className="mt-2 text-ink-900">{contact.notes}</div>
                 </div>
               ) : null}
-              <div className="rounded-[20px] bg-slate-50 px-4 py-3 ring-1 ring-ink-900/8">
+              <div className="rounded-[5px] bg-slate-50 px-4 py-3 ring-1 ring-ink-900/8">
                 <div className="text-xs uppercase tracking-[0.18em] text-ink-800/55">Unread</div>
                 <div className="mt-2 font-semibold text-ink-900">{conversation?.unreadCount || 0}</div>
               </div>
@@ -316,7 +316,7 @@ export default function ConversationDetailPage() {
               </Select>
 
               {selectedTemplate ? (
-                <div className="rounded-[22px] border border-ink-900/8 bg-slate-50/80 p-4 text-sm text-ink-800/74">
+                <div className="rounded-[5px] border border-ink-900/8 bg-slate-50/80 p-4 text-sm text-ink-800/74">
                   <div className="font-semibold text-ink-900">{selectedTemplate.name}</div>
                   <div className="mt-2">
                     {selectedTemplate.category} | {selectedTemplate.language} | {selectedTemplate.source || "local"}
