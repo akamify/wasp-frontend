@@ -6,12 +6,26 @@ import { Input } from "../components/ui/Input";
 import { Alert } from "../components/ui/Alert";
 import { useAuth } from "../context/AuthContext";
 import { BRAND_NAME } from "../config/brand";
+import { LogOut, Save } from "lucide-react";
+import { cn } from "../utils/cn";
 
 declare global {
   interface Window {
     Razorpay?: any;
   }
 }
+
+const formatCurrency = (v: number, c = "INR") => {
+  const n = Number.isFinite(v) ? v : 0;
+  // Avoid floating point artifacts like 0.40000000000000036 in display.
+  const rounded = Math.round((n + Number.EPSILON) * 100) / 100;
+  return new Intl.NumberFormat("en-IN", {
+    style: "currency",
+    currency: c,
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  }).format(rounded);
+};
 
 export default function SettingsPage() {
   const { user, refreshMe } = useAuth();
@@ -27,6 +41,7 @@ export default function SettingsPage() {
   const [profileOk, setProfileOk] = useState<string | null>(null);
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
+  const { logout } = useAuth();
   const webhookUrl = `${API.baseUrl}/webhooks/whatsapp`;
 
   useEffect(() => {
@@ -43,7 +58,7 @@ export default function SettingsPage() {
     try {
       const res = await API.wallet.get();
       setWallet(res.wallet);
-    } catch {}
+    } catch { }
   }
 
   useEffect(() => {
@@ -142,7 +157,7 @@ export default function SettingsPage() {
         <div className="text-lg font-black tracking-tight">User Profile</div>
         <div className="mt-2 text-sm text-ink-800/70">This is your platform account (not WhatsApp manager).</div>
 
-        <div className="mt-5 grid gap-4 sm:grid-cols-2">
+        <div className="mt-5 grid gap-4 sm:grid-cols-3">
           <Input
             label="Name"
             value={name}
@@ -156,11 +171,14 @@ export default function SettingsPage() {
             placeholder="Phone number"
           />
           <Input label="Email" value={user?.email || ""} disabled placeholder="Email" />
-          <div className="flex items-end">
-            <Button onClick={saveProfile} disabled={profileBusy}>
-              {profileBusy ? "Saving..." : "Save profile"}
-            </Button>
-          </div>
+        </div>
+        <div className="flex grid-cols-2 items-center justify-center gap-3 pt-5">
+          <Button onClick={saveProfile} disabled={profileBusy}>
+            <Save size={18} /> {profileBusy ? "Saving..." : "Save profile"}
+          </Button>
+          <Button variant="danger" onClick={() => logout()}>
+            <LogOut size={18} /> {"Logout"}
+          </Button>
         </div>
 
         {profileError ? (
@@ -190,7 +208,10 @@ export default function SettingsPage() {
         <div className="mt-2 text-sm text-ink-800/70">
           Current balance:{" "}
           <span className="font-semibold">
-            {wallet?.currency || "INR"} {wallet?.balance ?? 0}
+           {formatCurrency(
+                      Number(wallet?.balance ?? 0),
+                      String(wallet?.currency || "INR")
+                    )}
           </span>
         </div>
         <div className="mt-2 text-sm text-ink-800/70">

@@ -169,130 +169,132 @@ export default function DashboardPage() {
 
         {error ? <Alert>{error}</Alert> : null}
 
-        {/* LEFT CONTENT AREA */}
-        <div className="flex-1 space-y-8">
+        {/* LEFT CONTENT AREA (wrapped to allow horizontal scrolling without breaking sticky sidebar) */}
+        <div className="flex-1">
+          <div className="space-y-8 overflow-x-auto pr-4">
 
-          {/* Welcome & Stepper Card (AiSensy Style) */}
-          <section className="relative overflow-hidden rounded-[5px] border border-brand-200/50 bg-gradient-to-br from-white to-brand-50/30 p-8 shadow-sm">
-            <div className="relative z-10">
+            {/* Welcome & Stepper Card (AiSensy Style) */}
+            <section className="relative overflow-hidden rounded-[5px] border border-brand-200/50 bg-gradient-to-br from-white to-brand-50/30 p-8 shadow-sm">
+              <div className="relative z-10">
 
-              <div className="">
-                <div className="flex items-center justify-between mb-6">
-                  <div className="flex items-center gap-2">
-                    <h3 className="text-sm font-bold uppercase tracking-widest text-ink-900/40">Setup Progress</h3>
+                <div className="">
+                  <div className="flex items-center justify-between mb-6">
+                    <div className="flex items-center gap-2">
+                      <h3 className="text-sm font-bold uppercase tracking-widest text-ink-900/40">Setup Progress</h3>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm font-bold text-brand-600">{steps.filter(s => s.done).length} / {steps.length} Completed</span>
+                      {allStepsDone ? (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => setStepsExpanded((v) => !v)}
+                          className="h-7 px-2"
+                          title={stepsExpanded ? "Collapse" : "Expand"}
+                        >
+                          {stepsExpanded ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+                        </Button>
+                      ) : null}
+                    </div>
                   </div>
-                  <div className="flex items-center gap-2">
-                    <span className="text-sm font-bold text-brand-600">{steps.filter(s => s.done).length} / {steps.length} Completed</span>
-                    {allStepsDone ? (
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => setStepsExpanded((v) => !v)}
-                        className="h-7 px-2"
-                        title={stepsExpanded ? "Collapse" : "Expand"}
-                      >
-                        {stepsExpanded ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
-                      </Button>
-                    ) : null}
+
+                  <div
+                    className={cn(
+                      "overflow-hidden transition-[max-height,opacity] duration-300 ease-out",
+                      stepsExpanded ? "max-h-[720px] opacity-100" : "max-h-0 opacity-0"
+                    )}
+                  >
+                    <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                      {steps.map((step) => (
+                        <Link key={step.id} to={step.href} className={cn(
+                          "group relative flex flex-col p-5 rounded-[5px] border transition-all",
+                          step.done ? "bg-white border-brand-200" : "bg-white/50 border-ink-900/5 hover:border-brand-300"
+                        )}>
+                          <div className="flex items-center justify-between mb-3">
+                            {step.done ? <CheckCircle2 className="text-brand-600" size={22} /> : <Circle className="text-ink-900/10" size={22} />}
+                            <span className="text-[10px] font-bold text-ink-900/20">0{step.id}</span>
+                          </div>
+                          <div className="text-sm font-bold text-ink-900 group-hover:text-brand-600 transition-colors">{step.label}</div>
+                          <ArrowRight size={16} className="mt-3 opacity-0 -translate-x-2 group-hover:opacity-100 group-hover:translate-x-0 transition-all text-brand-600" />
+                        </Link>
+                      ))}
+                    </div>
                   </div>
+
+                  {allStepsDone && !stepsExpanded ? (
+                    <div className="mt-3 text-xs font-medium text-ink-900/40">
+                      All setup steps completed. Expand to review.
+                    </div>
+                  ) : null}
                 </div>
-
-                <div
-                  className={cn(
-                    "overflow-hidden transition-[max-height,opacity] duration-300 ease-out",
-                    stepsExpanded ? "max-h-[720px] opacity-100" : "max-h-0 opacity-0"
-                  )}
-                >
-                  <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                    {steps.map((step) => (
-                      <Link key={step.id} to={step.href} className={cn(
-                        "group relative flex flex-col p-5 rounded-[5px] border transition-all",
-                        step.done ? "bg-white border-brand-200" : "bg-white/50 border-ink-900/5 hover:border-brand-300"
-                      )}>
-                        <div className="flex items-center justify-between mb-3">
-                          {step.done ? <CheckCircle2 className="text-brand-600" size={22} /> : <Circle className="text-ink-900/10" size={22} />}
-                          <span className="text-[10px] font-bold text-ink-900/20">0{step.id}</span>
-                        </div>
-                        <div className="text-sm font-bold text-ink-900 group-hover:text-brand-600 transition-colors">{step.label}</div>
-                        <ArrowRight size={16} className="mt-3 opacity-0 -translate-x-2 group-hover:opacity-100 group-hover:translate-x-0 transition-all text-brand-600" />
-                      </Link>
-                    ))}
-                  </div>
-                </div>
-
-                {allStepsDone && !stepsExpanded ? (
-                  <div className="mt-3 text-xs font-medium text-ink-900/40">
-                    All setup steps completed. Expand to review.
-                  </div>
-                ) : null}
               </div>
+            </section>
+
+            {/* Quick Metrics */}
+            <div className="grid gap-4 grid-cols-2 md:grid-cols-4">
+              {[
+                { label: 'Total Sent', val: snapshot?.overview?.sent, color: 'text-blue-600' },
+                { label: 'Delivered', val: snapshot?.overview?.delivered, color: 'text-emerald-600' },
+                { label: 'Read Rate', val: `${Math.round((snapshot?.overview?.read / snapshot?.overview?.sent) * 100 || 0)}%`, color: 'text-purple-600' },
+                { label: 'Wallet', val: formatCurrency(snapshot?.wallet?.balance), color: 'text-amber-600' },
+              ].map((m) => (
+                <Card key={m.label} className="p-5 border-none bg-white shadow-sm hover:shadow-md transition-shadow">
+                  <div className="text-[10px] font-bold uppercase tracking-wider text-ink-800/40">{m.label}</div>
+                  <div className={cn("mt-2 text-2xl font-black", m.color)}>{m.val}</div>
+                </Card>
+              ))}
             </div>
-          </section>
 
-          {/* Quick Metrics */}
-          <div className="grid gap-4 grid-cols-2 md:grid-cols-4">
-            {[
-              { label: 'Total Sent', val: snapshot?.overview?.sent, color: 'text-blue-600' },
-              { label: 'Delivered', val: snapshot?.overview?.delivered, color: 'text-emerald-600' },
-              { label: 'Read Rate', val: `${Math.round((snapshot?.overview?.read / snapshot?.overview?.sent) * 100 || 0)}%`, color: 'text-purple-600' },
-              { label: 'Wallet', val: formatCurrency(snapshot?.wallet?.balance), color: 'text-amber-600' },
-            ].map((m) => (
-              <Card key={m.label} className="p-5 border-none bg-white shadow-sm hover:shadow-md transition-shadow">
-                <div className="text-[10px] font-bold uppercase tracking-wider text-ink-800/40">{m.label}</div>
-                <div className={cn("mt-2 text-2xl font-black", m.color)}>{m.val}</div>
+            {/* Main Dashboard Modules (Inbox & Campaigns) */}
+            <div className="grid gap-6 xl:grid-cols-2">
+              {/* Recent Conversations */}
+              <Card className="p-6 overflow-hidden">
+                <div className="flex items-center justify-between mb-6">
+                  <h3 className="font-bold text-lg text-ink-900">Recent Chats</h3>
+                  <Button variant="ghost" size="sm" onClick={() => navigate('/app/conversations')}>View All</Button>
+                </div>
+                <div className="space-y-3">
+                  {snapshot?.conversations?.slice(0, 5).map((chat: any) => (
+                    <div key={chat.phone} className="flex items-center gap-3 p-3 rounded-2xl hover:bg-slate-50 transition cursor-pointer border border-transparent hover:border-ink-900/5">
+                      <div className="h-10 w-10 rounded-full bg-brand-100 flex items-center justify-center text-brand-700 font-bold">
+                        {chat.contact?.name?.[0] || chat.phone?.[0]}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="text-sm font-bold text-ink-900 truncate">{chat.contact?.name || chat.phone}</div>
+                        <div className="text-xs text-ink-800/50 truncate">{chat.lastMessagePreview}</div>
+                      </div>
+                      <div className="text-[10px] text-ink-900/30 font-medium">2m ago</div>
+                    </div>
+                  ))}
+                </div>
               </Card>
-            ))}
-          </div>
 
-          {/* Main Dashboard Modules (Inbox & Campaigns) */}
-          <div className="grid gap-6 xl:grid-cols-2">
-            {/* Recent Conversations */}
-            <Card className="p-6 overflow-hidden">
-              <div className="flex items-center justify-between mb-6">
-                <h3 className="font-bold text-lg text-ink-900">Recent Chats</h3>
-                <Button variant="ghost" size="sm" onClick={() => navigate('/app/conversations')}>View All</Button>
-              </div>
-              <div className="space-y-3">
-                {snapshot?.conversations?.slice(0, 5).map((chat: any) => (
-                  <div key={chat.phone} className="flex items-center gap-3 p-3 rounded-2xl hover:bg-slate-50 transition cursor-pointer border border-transparent hover:border-ink-900/5">
-                    <div className="h-10 w-10 rounded-full bg-brand-100 flex items-center justify-center text-brand-700 font-bold">
-                      {chat.contact?.name?.[0] || chat.phone?.[0]}
+              {/* Campaign Health */}
+              <Card className="p-6">
+                <div className="flex items-center justify-between mb-6">
+                  <h3 className="font-bold text-lg text-ink-900">Campaign Health</h3>
+                  <Button variant="ghost" size="sm" onClick={() => navigate('/app/send')}>Analytics</Button>
+                </div>
+                {/* Simple Progress Bar UI */}
+                <div className="space-y-6">
+                  {snapshot?.campaigns?.slice(0, 3).map((camp: any) => (
+                    <div key={camp._id} className="space-y-2">
+                      <div className="flex justify-between text-xs font-bold">
+                        <span>{camp.name}</span>
+                        <span className="text-brand-600">{Math.round((camp.totals?.sent / camp.totals?.total) * 100 || 0)}%</span>
+                      </div>
+                      <div className="h-2 w-full bg-slate-100 rounded-full overflow-hidden">
+                        <motion.div
+                          initial={{ width: 0 }}
+                          animate={{ width: `${(camp.totals?.sent / camp.totals?.total) * 100 || 0}%` }}
+                          className="h-full bg-brand-500"
+                        />
+                      </div>
                     </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="text-sm font-bold text-ink-900 truncate">{chat.contact?.name || chat.phone}</div>
-                      <div className="text-xs text-ink-800/50 truncate">{chat.lastMessagePreview}</div>
-                    </div>
-                    <div className="text-[10px] text-ink-900/30 font-medium">2m ago</div>
-                  </div>
-                ))}
-              </div>
-            </Card>
-
-            {/* Campaign Health */}
-            <Card className="p-6">
-              <div className="flex items-center justify-between mb-6">
-                <h3 className="font-bold text-lg text-ink-900">Campaign Health</h3>
-                <Button variant="ghost" size="sm" onClick={() => navigate('/app/send')}>Analytics</Button>
-              </div>
-              {/* Simple Progress Bar UI */}
-              <div className="space-y-6">
-                {snapshot?.campaigns?.slice(0, 3).map((camp: any) => (
-                  <div key={camp._id} className="space-y-2">
-                    <div className="flex justify-between text-xs font-bold">
-                      <span>{camp.name}</span>
-                      <span className="text-brand-600">{Math.round((camp.totals?.sent / camp.totals?.total) * 100 || 0)}%</span>
-                    </div>
-                    <div className="h-2 w-full bg-slate-100 rounded-full overflow-hidden">
-                      <motion.div
-                        initial={{ width: 0 }}
-                        animate={{ width: `${(camp.totals?.sent / camp.totals?.total) * 100 || 0}%` }}
-                        className="h-full bg-brand-500"
-                      />
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </Card>
+                  ))}
+                </div>
+              </Card>
+            </div>
           </div>
         </div>
 

@@ -1,13 +1,13 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import { NavLink, useLocation, useNavigate } from "react-router-dom";
 import { Button } from "../ui/Button";
 import { cn } from "../../utils/cn";
 import { useAuth } from "../../context/AuthContext";
 import { BRAND_NAME } from "../../config/brand";
 import { motion, AnimatePresence } from "framer-motion"; // Added for smooth animations
-import { 
-  LayoutDashboard, Key, FileText, Send, Users, 
-  MessageSquare, Link2, Zap, PanelLeftClose, 
+import {
+  LayoutDashboard, Key, FileText, Send, Users,
+  MessageSquare, Link2, Zap, PanelLeftClose,
   PanelLeftOpen, Settings, LogOut, Menu, X, Wallet, Workflow
 } from "lucide-react";
 
@@ -28,6 +28,7 @@ function SideLink({ to, label, kicker, icon: Icon, isCollapsed }: any) {
   return (
     <NavLink
       to={to}
+      end={to === "/app"}
       title={isCollapsed ? label : undefined}
       className={({ isActive }) =>
         cn(
@@ -45,9 +46,9 @@ function SideLink({ to, label, kicker, icon: Icon, isCollapsed }: any) {
             <Icon className={cn("flex-shrink-0 transition-colors", isActive ? "text-brand-600" : "text-ink-900/40 group-hover:text-ink-900")} size={20} />
             <AnimatePresence mode="wait">
               {!isCollapsed && (
-                <motion.div 
-                  initial={{ opacity: 0, x: -10 }} 
-                  animate={{ opacity: 1, x: 0 }} 
+                <motion.div
+                  initial={{ opacity: 0, x: -10 }}
+                  animate={{ opacity: 1, x: 0 }}
                   exit={{ opacity: 0, x: -10 }}
                   className="min-w-0"
                 >
@@ -86,8 +87,47 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     try {
       localStorage.setItem("waspakamify_sidebar_collapsed", isCollapsed ? "1" : "0");
-    } catch {}
+    } catch { }
   }, [isCollapsed]);
+
+  // Keep horizontal overflow visible on routes that need sticky/right-side panels
+  // (including the main dashboard). Templates preview also needs visible overflow.
+  const keepOverflowVisible = location.pathname.startsWith("/app/templates") || location.pathname === "/app";
+
+  const desktopNavRef = useRef<HTMLDivElement | null>(null);
+  const mobileNavRef = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    const scrollActiveIntoView = (container?: HTMLElement | null) => {
+      if (!container) return;
+      const activeLink = container.querySelector('a[aria-current="page"]') as HTMLElement | null;
+      if (!activeLink) return;
+      const containerRect = container.getBoundingClientRect();
+      const linkRect = activeLink.getBoundingClientRect();
+      if (linkRect.top < containerRect.top || linkRect.bottom > containerRect.bottom) {
+        try {
+          activeLink.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+        } catch {
+          activeLink.scrollIntoView(false as any);
+        }
+      }
+    };
+
+    const timer = setTimeout(() => {
+      const desktopNav = desktopNavRef.current;
+      const mobileNav = mobileNavRef.current;
+      if (desktopNav && desktopNav.offsetParent !== null && desktopNav.offsetHeight > 0) {
+        scrollActiveIntoView(desktopNav);
+      } else if (mobileNav && mobileNav.offsetParent !== null && mobileNav.offsetHeight > 0) {
+        scrollActiveIntoView(mobileNav);
+      } else if (desktopNav) {
+        // fallback
+        scrollActiveIntoView(desktopNav);
+      }
+    }, 80);
+
+    return () => clearTimeout(timer);
+  }, [location.pathname, mobileNavOpen, isCollapsed]);
 
   return (
     <div className="min-h-dvh bg-paper text-ink-900 font-sans antialiased relative">
@@ -98,7 +138,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       </div>
 
       <div className="relative z-10 mx-auto max-w-[1600px] sm:p-4 lg:p-5">
-        
+
         {/* STICKY MOBILE NAVBAR */}
         <header className="sticky top-0 z-40 mb-4 flex items-center justify-between rounded-[5px] border-b border-ink-900/10 bg-white/80 px-4 py-3 backdrop-blur-md lg:hidden">
           <button onClick={() => setMobileNavOpen(true)} className="cursor-pointer rounded-[5px] border border-ink-900/5 bg-white p-2 transition-all duration-200 ease-out hover:-translate-y-0.5 active:scale-95">
@@ -117,12 +157,12 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         <AnimatePresence>
           {mobileNavOpen && (
             <>
-              <motion.div 
+              <motion.div
                 initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
                 onClick={() => setMobileNavOpen(false)}
                 className="fixed inset-0 z-[60] bg-ink-900/30 backdrop-blur-sm lg:hidden"
               />
-              <motion.div 
+              <motion.div
                 initial={{ x: "-100%" }} animate={{ x: 0 }} exit={{ x: "-100%" }}
                 transition={{ type: "spring", damping: 25, stiffness: 200 }}
                 className="fixed inset-y-0 left-0 z-[70] w-[280px] lg:hidden"
@@ -132,12 +172,12 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                     <span className="font-black text-xl tracking-tighter">{BRAND_NAME}</span>
                     <button onClick={() => setMobileNavOpen(false)} className="cursor-pointer rounded-[5px] p-1 transition-colors duration-200 hover:bg-ink-900/5"><X size={24} /></button>
                   </div>
-                  <nav className="flex-1 overflow-y-auto p-4 space-y-2">
+                  <nav ref={mobileNavRef} className="flex-1 overflow-y-auto p-4 space-y-2">
                     {NAV_ITEMS.map((item) => <SideLink key={item.to} {...item} isCollapsed={false} />)}
                   </nav>
                   <div className="p-4 border-t border-ink-900/5 space-y-2">
-                    <Button variant="ghost" className="w-full justify-start gap-3" onClick={() => navigate("/app/settings")}><Settings size={18}/> Settings</Button>
-                    <Button variant="danger" className="w-full justify-start gap-3" onClick={() => logout()}><LogOut size={18}/> Logout</Button>
+                    <Button variant="ghost" className="w-full justify-start gap-3" onClick={() => navigate("/app/settings")}><Settings size={18} /> Settings</Button>
+                    <Button variant="danger" className="w-full justify-start gap-3" onClick={() => logout()}><LogOut size={18} /> Logout</Button>
                   </div>
                 </div>
               </motion.div>
@@ -146,9 +186,9 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         </AnimatePresence>
 
         <div className="flex min-h-[calc(100dvh-2.5rem)] gap-5">
-          
+
           {/* DESKTOP SIDEBAR WITH WIDTH ANIMATION */}
-          <motion.aside 
+          <motion.aside
             animate={{ width: isCollapsed ? 88 : 280 }}
             transition={{ type: "spring", damping: 20, stiffness: 100 }}
             className="hidden lg:flex flex-col sticky top-5 h-[calc(100dvh-2.5rem)] rounded-[5px] border border-ink-900/10 bg-white/70 backdrop-blur-xl z-20 overflow-hidden"
@@ -160,7 +200,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
               </button>
             </div>
 
-            <div className="flex-1 overflow-y-auto p-3 space-y-1 custom-scrollbar">
+            <div ref={desktopNavRef} className="flex-1 overflow-y-auto p-3 space-y-1 custom-scrollbar">
               {NAV_ITEMS.map((item) => (
                 <SideLink key={item.to} {...item} isCollapsed={isCollapsed} />
               ))}
@@ -169,9 +209,6 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             <div className="p-4 border-t border-ink-900/5 bg-white/40 space-y-2">
               <Button variant="ghost" className={cn("justify-start transition-all", isCollapsed ? "px-0 w-full justify-center" : "w-full gap-3")} onClick={() => navigate("/app/settings")}>
                 <Settings size={18} /> {!isCollapsed && "Settings"}
-              </Button>
-              <Button variant="danger" className={cn("justify-start transition-all", isCollapsed ? "px-0 w-full justify-center" : "w-full gap-3")} onClick={() => logout()}>
-                <LogOut size={18} /> {!isCollapsed && "Logout"}
               </Button>
             </div>
           </motion.aside>
@@ -185,7 +222,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           <main
             className={cn(
               "flex-1 min-w-0 rounded-[5px] overflow-y-visible",
-              location.pathname.startsWith("/app/templates") ? "overflow-x-visible" : "overflow-x-auto"
+              keepOverflowVisible ? "overflow-x-visible" : "overflow-x-auto"
             )}
           >
             <AnimatePresence mode="wait">
