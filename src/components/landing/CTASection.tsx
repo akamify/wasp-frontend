@@ -2,12 +2,13 @@ import { useRef } from "react";
 import { motion, useInView } from "framer-motion";
 
 import { BRAND_NAME } from "../../config/brand";
+import { getPlanDisplayPrice, PLAN_PER } from "../../config/pricing";
 
 const plans = [
   {
     name: "Starter",
-    price: "$29",
-    per: "/mo",
+    price: getPlanDisplayPrice("Starter"),
+    per: PLAN_PER,
     desc: "Perfect for small businesses getting started with WhatsApp marketing.",
     features: ["5,000 messages/month", "2 WhatsApp numbers", "Basic automation", "Email support"],
     cta: "Start Free Trial",
@@ -15,8 +16,8 @@ const plans = [
   },
   {
     name: "Growth",
-    price: "$99",
-    per: "/mo",
+    price: getPlanDisplayPrice("Growth"),
+    per: PLAN_PER,
     desc: "For growing teams who want to scale campaigns and automate more.",
     features: ["50,000 messages/month", "10 WhatsApp numbers", "Advanced automation", "Smart link tracking", "Priority support", "Team inbox"],
     cta: "Get Started",
@@ -24,7 +25,7 @@ const plans = [
   },
   {
     name: "Enterprise",
-    price: "Custom",
+    price: getPlanDisplayPrice("Enterprise"),
     per: "",
     desc: "Unlimited scale, dedicated support, and custom integrations for large teams.",
     features: ["Unlimited messages", "Unlimited numbers", "Custom bot flows", "API access", "Dedicated account manager", "SLA guarantee"],
@@ -79,11 +80,10 @@ export function CTASection() {
               animate={inView ? { opacity: 1, y: 0 } : {}}
               transition={{ delay: i * 0.15, duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
               whileHover={{ y: -4 }}
-              className={`relative rounded-3xl border p-8 flex flex-col gap-6 transition-all duration-300 ${
-                plan.featured
+              className={`relative rounded-3xl border p-8 flex flex-col gap-6 transition-all duration-300 ${plan.featured
                   ? "border-[#25D366]/30 bg-gradient-to-b from-[#25D366]/10 to-white shadow-2xl shadow-[#25D366]/12"
                   : "border-ink-900/10 bg-white hover:border-ink-900/16"
-              }`}
+                }`}
             >
               {plan.featured && (
                 <div className="absolute -top-4 left-1/2 -translate-x-1/2 bg-gradient-to-r from-[#25D366] to-[#06b77e] text-white text-xs font-bold px-5 py-1.5 rounded-full">
@@ -110,11 +110,10 @@ export function CTASection() {
               </ul>
               <a
                 href="/register"
-                className={`mt-auto text-center font-bold py-3.5 rounded-xl text-sm transition-all duration-200 ${
-                  plan.featured
+                className={`mt-auto text-center font-bold py-3.5 rounded-xl text-sm transition-all duration-200 ${plan.featured
                     ? "bg-gradient-to-r from-[#25D366] to-[#06b77e] text-white hover:shadow-lg hover:shadow-[#25D366]/30 hover:scale-105"
                     : "border border-ink-900/12 text-ink-900 hover:bg-brand-50/60"
-                }`}
+                  }`}
               >
                 {plan.cta}
               </a>

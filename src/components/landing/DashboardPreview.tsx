@@ -1,13 +1,42 @@
-﻿import { useRef } from "react";
+import { useRef } from "react";
 import { motion, useInView } from "framer-motion";
 
 import { BRAND_SLUG } from "../../config/brand";
+import { formatCurrencySafe } from "../../config/currency";
 
 const stats = [
-  { label: "Messages Delivered", value: "2.4B+", delta: "+18% this month" },
-  { label: "Active Campaigns", value: "12,840", delta: "Across 50+ countries" },
-  { label: "Avg. Open Rate", value: "94.7%", delta: "vs 21% for email" },
-  { label: "Revenue Attributed", value: "$48M+", delta: "Last 30 days" },
+  {
+    label: "Messages Delivered",
+    value: import.meta.env.VITE_STAT_MESSAGES_DELIVERED || "2.4B+",
+    delta: import.meta.env.VITE_STAT_MESSAGES_DELIVERED_DELTA || "All time",
+    color: "text-emerald-600"
+  },
+  {
+    label: "Active Campaigns",
+    value: import.meta.env.VITE_STAT_ACTIVE_CAMPAIGNS || "12,840",
+    delta: import.meta.env.VITE_STAT_ACTIVE_CAMPAIGNS_DELTA || "Currently running",
+    color: "text-blue-600"
+  },
+  {
+    label: "Avg. Open Rate",
+    value: import.meta.env.VITE_STAT_AVG_OPEN_RATE || "94.7%",
+    delta: import.meta.env.VITE_STAT_AVG_OPEN_RATE_DELTA || "Last 30 days",
+    color: "text-purple-600"
+  },
+  {
+    label: "Revenue Attributed",
+    value: (() => {
+      const n = import.meta.env.VITE_STAT_REVENUE;
+      const disp = import.meta.env.VITE_STAT_REVENUE_DISPLAY;
+      if (n !== undefined && n !== null && String(n).trim() !== "") {
+        const num = Number(n);
+        if (!Number.isNaN(num)) return formatCurrencySafe(num);
+      }
+      return disp || "₹48M+";
+    })(),
+    delta: import.meta.env.VITE_STAT_REVENUE_DELTA || "Last 30 days",
+    color: "text-brand-600"
+  },
 ];
 
 const activities = [
@@ -17,6 +46,56 @@ const activities = [
   { type: "link", text: "Smart link 'product-launch' hit 1,200 clicks", time: "28m ago", color: "#f59e0b" },
   { type: "sent", text: "Drip sequence step 3 sent to 8,920 users", time: "1h ago", color: "#25D366" },
 ];
+
+function renderQuotedActivityText(text: string) {
+  const raw = String(text || "");
+  const parts: Array<{ value: string; highlight: boolean }> = [];
+  let last = 0;
+  const re = /"([^"]+)"|'([^']+)'/g;
+  for (let match = re.exec(raw); match; match = re.exec(raw)) {
+    const start = match.index;
+    const end = start + match[0].length;
+    if (start > last) parts.push({ value: raw.slice(last, start), highlight: false });
+    parts.push({ value: match[0], highlight: true });
+    last = end;
+  }
+  if (last < raw.length) parts.push({ value: raw.slice(last), highlight: false });
+
+  return (
+    <>
+      {parts.map((p, idx) =>
+        p.highlight ? (
+          <span key={idx} className="text-ink-800/80">
+            {p.value}
+          </span>
+        ) : (
+          <span key={idx}>{p.value}</span>
+        )
+      )}
+    </>
+  );
+}
+
+// Parse per-day message volume from env (comma-separated numbers). Fallback to defaults.
+const volumeValues: number[] = (() => {
+  const raw = String(import.meta.env.VITE_STAT_VOLUME_DAYS || "60,80,45,95,70,88,100");
+  const parsed = raw
+    .split(",")
+    .map((s) => Number(s.trim()))
+    .filter((n) => !Number.isNaN(n));
+  return parsed.length ? parsed : [60, 80, 45, 95, 70, 88, 100];
+})();
+
+// Optional labels for each day (comma-separated). Pads or truncates to match `volumeValues` length.
+const volumeLabels: string[] = (() => {
+  const raw = String(import.meta.env.VITE_STAT_VOLUME_LABELS || "Mon,Tue,Wed,Thu,Fri,Sat,Sun");
+  const parts = raw.split(",").map((s) => s.trim());
+  if (parts.length >= volumeValues.length) return parts.slice(0, volumeValues.length);
+  return [
+    ...parts,
+    ...Array.from({ length: Math.max(0, volumeValues.length - parts.length) }, (_, i) => `Day ${parts.length + i + 1}`),
+  ];
+})();
 
 export function DashboardPreview() {
   const ref = useRef<HTMLDivElement>(null);
@@ -87,71 +166,124 @@ export function DashboardPreview() {
                     initial={{ opacity: 0, scale: 0.9 }}
                     animate={inView ? { opacity: 1, scale: 1 } : {}}
                     transition={{ delay: 0.3 + i * 0.08, duration: 0.5 }}
-                    className="rounded-2xl bg-slate-50 border border-ink-900/10 p-4 hover:border-brand-300/40 transition-colors group"
+                    className="p-6 border border-ink-900/5 bg-[#fbfcfc] shadow-none rounded-[12px] hover:border-brand-300/30 transition-colors group"
                   >
-                    <p className="text-xs text-ink-900/55 mb-1">{stat.label}</p>
-                    <p className="text-2xl font-extrabold text-ink-900">{stat.value}</p>
-                    <p className="text-xs text-[#25D366] mt-1">{stat.delta}</p>
+                    <div className="text-[11px] font-bold uppercase tracking-wider text-ink-800/50">{stat.label}</div>
+                    <div className="mt-2 text-3xl font-black text-ink-900 tracking-tight">{stat.value}</div>
+                    <div className={`text-[11px] font-medium ${stat.color} mt-2`}>{stat.delta}</div>
                   </motion.div>
                 ))}
               </div>
 
-              {/* Bar chart mockup */}
-              <div className="rounded-2xl bg-slate-50 border border-ink-900/10 p-5">
-                <div className="flex items-center justify-between mb-4">
-                  <p className="text-sm font-semibold text-ink-900">Message Volume</p>
-                  <span className="text-xs text-ink-900/55">Last 7 days</span>
+              {/* Line Chart mockup */}
+              <div className="p-6 border border-ink-900/5 bg-[#fbfcfc] shadow-none rounded-[12px] flex flex-col min-h-[340px] w-full">
+                <div className="flex items-center justify-between mb-8">
+                  <h3 className="font-bold text-[15px] text-ink-900 tracking-tight">Message Volume</h3>
+                  <div className="flex bg-white ring-1 ring-ink-900/10 rounded-[5px] p-0.5">
+                    {["Weekly", "Monthly", "Yearly"].map(f => (
+                      <div 
+                        key={f}
+                        className={`px-3 py-1 text-[11px] font-bold rounded-[3px] transition-colors ${f === "Weekly" ? "bg-ink-900 text-white shadow-sm" : "text-ink-800/60"}`}
+                      >
+                        {f}
+                      </div>
+                    ))}
+                  </div>
                 </div>
-                <div className="flex items-end gap-2 h-24">
-                  {[60, 80, 45, 95, 70, 88, 100].map((h, i) => (
-                    <motion.div
-                      key={i}
-                      initial={{ scaleY: 0 }}
-                      animate={inView ? { scaleY: 1 } : {}}
-                      transition={{ delay: 0.5 + i * 0.05, duration: 0.5, ease: "easeOut" }}
-                      style={{ originY: 1 }}
-                      className="flex-1 rounded-t-lg"
-                      title={`Day ${i + 1}`}
-                    >
-                      <div
-                        className="w-full rounded-t-lg"
-                        style={{
-                          height: `${h}%`,
-                          background: i === 6 ? "linear-gradient(to top, #25D366, #11d593)" : "rgba(37,211,102,0.25)"
-                        }}
-                      />
-                    </motion.div>
-                  ))}
-                </div>
-                <div className="flex justify-between mt-2">
-                  {["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"].map((d) => (
-                    <span key={d} className="text-[10px] text-ink-900/45 flex-1 text-center">
-                      {d}
-                    </span>
-                  ))}
+
+                {/* CSS Line Chart with Multi-lines */}
+                <div className="flex-1 flex flex-col justify-end relative mt-2 pb-6">
+                  {/* Legend */}
+                  <div className="absolute top-0 right-0 flex gap-4 text-[10px] font-bold uppercase tracking-wider">
+                    <div className="flex items-center gap-1.5 text-[#0ea5e9]"><span className="w-2 h-2 rounded-full bg-[#0ea5e9]" /> Sent</div>
+                    <div className="flex items-center gap-1.5 text-[#22c55e]"><span className="w-2 h-2 rounded-full bg-[#22c55e]" /> Delivered</div>
+                    <div className="flex items-center gap-1.5 text-[#8b5cf6]"><span className="w-2 h-2 rounded-full bg-[#8b5cf6]" /> Read</div>
+                  </div>
+
+                  <div className="relative w-full h-[200px] mt-8 mb-6">
+                    <svg className="w-full h-full overflow-visible" preserveAspectRatio="none" viewBox="0 0 100 100">
+                      {/* Grid lines */}
+                      <line x1="0" y1="0" x2="100" y2="0" stroke="#e2e8f0" strokeWidth="0.5" strokeDasharray="2 2" />
+                      <line x1="0" y1="50" x2="100" y2="50" stroke="#e2e8f0" strokeWidth="0.5" strokeDasharray="2 2" />
+                      <line x1="0" y1="100" x2="100" y2="100" stroke="#e2e8f0" strokeWidth="0.5" strokeDasharray="2 2" />
+
+                      {(() => {
+                        const sentData = volumeValues;
+                        const delData = volumeValues.map(v => v * 0.92);
+                        const readData = volumeValues.map(v => v * 0.85);
+                        
+                        const maxVal = Math.max(...sentData, 1);
+                        
+                        const getPath = (dataArr: number[]) => {
+                          return dataArr.map((v, i) => {
+                            const x = (i / (volumeValues.length - 1)) * 100;
+                            const y = 100 - (v / maxVal) * 100;
+                            return `${x},${y}`;
+                          }).join(" ");
+                        };
+
+                        return (
+                          <>
+                            <motion.polyline 
+                              initial={{ pathLength: 0 }} animate={inView ? { pathLength: 1 } : {}} transition={{ duration: 1.5, ease: "easeOut" }} 
+                              fill="none" stroke="#0ea5e9" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" points={getPath(sentData)} vectorEffect="non-scaling-stroke" 
+                            />
+                            <motion.polyline 
+                              initial={{ pathLength: 0 }} animate={inView ? { pathLength: 1 } : {}} transition={{ duration: 1.5, ease: "easeOut", delay: 0.2 }} 
+                              fill="none" stroke="#22c55e" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" points={getPath(delData)} vectorEffect="non-scaling-stroke" 
+                            />
+                            <motion.polyline 
+                              initial={{ pathLength: 0 }} animate={inView ? { pathLength: 1 } : {}} transition={{ duration: 1.5, ease: "easeOut", delay: 0.4 }} 
+                              fill="none" stroke="#8b5cf6" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" points={getPath(readData)} vectorEffect="non-scaling-stroke" 
+                            />
+                          </>
+                        );
+                      })()}
+                    </svg>
+                    
+                    {/* Overlay labels */}
+                    <div className="absolute -bottom-8 left-0 right-0 h-4">
+                      {volumeLabels.map((lbl, i) => {
+                        const leftPos = (i / (volumeLabels.length - 1)) * 100;
+                        let translate = "-translate-x-1/2";
+                        if (i === 0) translate = "translate-x-0";
+                        if (i === volumeLabels.length - 1) translate = "-translate-x-full";
+                        
+                        return (
+                          <div 
+                            key={lbl} 
+                            className={`absolute text-[10px] font-bold text-ink-800/40 uppercase tracking-wider ${translate}`}
+                            style={{ left: `${leftPos}%` }}
+                          >
+                            {lbl}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
 
             {/* Right: Activity feed */}
-            <div className="rounded-2xl bg-slate-50 border border-ink-900/10 p-5 flex flex-col gap-4">
+            <div className="rounded-[12px] bg-[#fbfcfc] border border-ink-900/5 p-6 flex flex-col gap-6">
               <div className="flex items-center justify-between">
-                <p className="text-sm font-semibold text-ink-900">Live Activity</p>
+                <h3 className="font-bold text-[15px] text-ink-900 tracking-tight">Live Activity</h3>
                 <div className="w-2 h-2 rounded-full bg-[#25D366] animate-ping" />
               </div>
-              <div className="flex flex-col gap-3">
+              <div className="flex flex-col gap-6">
                 {activities.map((a, i) => (
                   <motion.div
                     key={i}
                     initial={{ opacity: 0, x: 20 }}
                     animate={inView ? { opacity: 1, x: 0 } : {}}
                     transition={{ delay: 0.6 + i * 0.08, duration: 0.4 }}
-                    className="flex gap-3 items-start"
+                    className="flex gap-4 items-start"
                   >
-                    <div className="mt-1 w-2 h-2 rounded-full shrink-0" style={{ background: a.color }} />
+                    <div className="mt-1.5 w-[6px] h-[6px] rounded-full shrink-0" style={{ background: a.color }} />
                     <div>
-                      <p className="text-xs text-ink-900/72 leading-snug">{a.text}</p>
-                      <p className="text-[10px] text-ink-900/45 mt-0.5">{a.time}</p>
+                      <p className="text-[13px] font-medium text-ink-900 leading-snug">{renderQuotedActivityText(a.text)}</p>
+                      <p className="text-[11px] text-ink-800/40 mt-1">{a.time}</p>
                     </div>
                   </motion.div>
                 ))}
@@ -163,4 +295,3 @@ export function DashboardPreview() {
     </section>
   );
 }
-

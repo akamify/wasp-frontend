@@ -1,38 +1,25 @@
 import { useEffect, useMemo, useState } from "react";
-import { X, Upload } from "lucide-react";
+import { X, Upload, Save, AlertCircle, CheckCircle2 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { API } from "../../api/api";
 import { Button } from "../../components/ui/Button";
 import { Input } from "../../components/ui/Input";
 import { Textarea } from "../../components/ui/Textarea";
 import { Select } from "../../components/ui/Select";
-import { Alert } from "../../components/ui/Alert";
+import { useToast } from "../../context/ToastContext";
+import { cn } from "../../utils/cn";
 
 const VERTICAL_OPTIONS = [
-  "AUTO",
-  "BEAUTY",
-  "CLOTHING",
-  "EDU",
-  "ENTERTAIN",
-  "EVENT_PLAN",
-  "FINANCE",
-  "GROCERY",
-  "HEALTH",
-  "HOTEL",
-  "NONPROFIT",
-  "PROF_SERVICES",
-  "RETAIL",
-  "TRAVEL",
-  "OTHER",
+  "AUTO", "BEAUTY", "CLOTHING", "EDU", "ENTERTAIN", "EVENT_PLAN",
+  "FINANCE", "GROCERY", "HEALTH", "HOTEL", "NONPROFIT",
+  "PROF_SERVICES", "RETAIL", "TRAVEL", "OTHER"
 ];
 
 function isValidHttpUrl(value: string) {
   try {
     const url = new URL(value);
     return url.protocol === "http:" || url.protocol === "https:";
-  } catch {
-    return false;
-  }
+  } catch { return false; }
 }
 
 export function WhatsAppManagerProfileModal({
@@ -47,8 +34,7 @@ export function WhatsAppManagerProfileModal({
   onSaved?: () => void;
 }) {
   const [busy, setBusy] = useState(false);
-  const [err, setErr] = useState<string | null>(null);
-  const [ok, setOk] = useState<string | null>(null);
+  const { toast } = useToast();
 
   const [about, setAbout] = useState("");
   const [description, setDescription] = useState("");
@@ -63,8 +49,6 @@ export function WhatsAppManagerProfileModal({
 
   useEffect(() => {
     if (!open) return;
-    setErr(null);
-    setOk(null);
     setAbout(businessProfile?.about || "");
     setDescription(businessProfile?.description || "");
     setAddress(businessProfile?.address || "");
@@ -89,53 +73,37 @@ export function WhatsAppManagerProfileModal({
     return null;
   }, [normalizedWebsites]);
 
-  const verticalOptions = useMemo(() => {
-    const current = String(vertical || "").trim();
-    const all = new Set(VERTICAL_OPTIONS);
-    if (current && !all.has(current)) {
-      return [current, ...VERTICAL_OPTIONS];
-    }
-    return VERTICAL_OPTIONS;
-  }, [vertical]);
-
   async function onPickImage(file: File) {
-    setErr(null);
-    setOk(null);
     setUploadBusy(true);
     try {
       const res = await API.meta.uploadProfilePicture(file);
       setProfilePictureHandle(res.handle);
-      setOk("Profile picture uploaded. Click Save to apply it.");
+      toast("Profile picture uploaded. Click Save to apply it.", "success");
     } catch (e: any) {
-      setErr(e?.response?.data?.message || e?.message || "Upload failed");
+      toast(e?.response?.data?.message || e?.message || "Upload failed", "error");
     } finally {
       setUploadBusy(false);
     }
   }
 
   async function save() {
-    setErr(null);
-    setOk(null);
     if (websitesError) {
-      setErr(websitesError);
+      toast(websitesError, "warning");
       return;
     }
     setBusy(true);
     try {
-      await API.meta.updateProfile({
-        about,
-        description,
-        address,
-        email,
+      const res = await API.meta.updateProfile({
+        about, description, address, email,
         websites: normalizedWebsites,
         vertical,
         profilePictureHandle: profilePictureHandle || undefined,
       });
-      setOk("WhatsApp manager profile updated.");
+      toast(String(res?.message || "Profile updated successfully!"), "success");
+      onClose();
       onSaved?.();
-      setTimeout(() => setOk(null), 2500);
     } catch (e: any) {
-      setErr(e?.response?.data?.message || e?.message || "Save failed");
+      toast(e?.response?.data?.message || e?.message || "Save failed", "error");
     } finally {
       setBusy(false);
     }
@@ -145,7 +113,7 @@ export function WhatsAppManagerProfileModal({
     <AnimatePresence>
       {open ? (
         <motion.div
-          className="fixed inset-0 z-50 overflow-y-auto bg-black/40 p-4"
+          className="fixed inset-0 z-[100] overflow-y-auto bg-slate-900/40 backdrop-blur-sm p-4"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
@@ -154,111 +122,89 @@ export function WhatsAppManagerProfileModal({
           }}
         >
           <motion.div
-            className="mx-auto my-6 flex w-full max-w-2xl flex-col overflow-hidden rounded-[5px] bg-white shadow-none ring-1 ring-ink-900/10"
-            initial={{ y: 12, opacity: 0, scale: 0.98 }}
+            className="mx-auto my-20 w-full max-w-2xl bg-white rounded-[5px] shadow-2xl border border-slate-100 overflow-hidden"
+            initial={{ y: 20, opacity: 0, scale: 0.95 }}
             animate={{ y: 0, opacity: 1, scale: 1 }}
-            exit={{ y: 12, opacity: 0, scale: 0.98 }}
+            exit={{ y: 20, opacity: 0, scale: 0.95 }}
           >
-            <div className="flex items-center justify-between border-b border-ink-900/10 px-5 py-4">
+            {/* Header */}
+            <div className="flex items-center justify-between px-6 py-5 border-b border-slate-100">
               <div>
-                <div className="text-lg font-black tracking-tight">Edit Business Profile</div>
+                <h3 className="text-xl font-black tracking-tight text-slate-900">Edit Profile</h3>
+                <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mt-0.5">Manage Business Details</p>
               </div>
               <button
                 onClick={onClose}
-                className="rounded-[5px] p-2 text-ink-900/60 hover:bg-ink-900/5 hover:text-ink-900"
+                className="p-2 hover:bg-slate-100 rounded-[5px] transition-colors text-slate-400 hover:text-slate-900"
               >
-                <X size={18} />
+                <X size={20} />
               </button>
             </div>
 
-            <div className="max-h-[70vh] overflow-y-auto px-5 py-5">
-              <div className="grid gap-5 sm:grid-cols-2">
-                <div className="sm:col-span-2">
-                  <div className="flex items-center justify-between">
-                    <div className="text-xs font-semibold text-ink-800/80">Profile picture</div>
-                    <label className="inline-flex cursor-pointer items-center gap-2 rounded-[5px] bg-white px-3 py-2 text-xs font-bold text-ink-900 ring-1 ring-ink-900/12 hover:bg-ink-900/5">
-                      <Upload size={14} />
-                      {uploadBusy ? "Uploading..." : "Upload"}
-                      <input
-                        type="file"
-                        accept="image/*"
-                        className="hidden"
-                        onChange={(e) => {
-                          const f = e.target.files?.[0];
-                          if (f) onPickImage(f);
-                        }}
-                        disabled={uploadBusy}
-                      />
-                    </label>
-                  </div>
+            <div className="max-h-[60vh] overflow-y-auto custom-scrollbar p-6 space-y-8">
+              {/* Profile Image Section */}
+              <div className="bg-slate-50 rounded-[5px] p-6 border border-slate-100">
+                <div className="flex items-center justify-between mb-6">
+                  <h4 className="text-sm font-bold text-slate-900">Profile Image</h4>
+                  <label className={cn(
+                    "inline-flex items-center gap-2 px-4 py-2 rounded-[5px] text-xs font-black transition-all cursor-pointer",
+                    uploadBusy ? "bg-slate-200 text-slate-400" : "bg-white text-brand-600 shadow-sm border border-brand-100 hover:shadow-md"
+                  )}>
+                    <Upload size={14} />
+                    {uploadBusy ? "Uploading..." : "Upload New"}
+                    <input
+                      type="file" accept="image/*" className="hidden"
+                      onChange={(e) => {
+                        const f = e.target.files?.[0];
+                        if (f) onPickImage(f);
+                      }}
+                      disabled={uploadBusy}
+                    />
+                  </label>
+                </div>
 
-                  <div className="mt-3 flex items-center gap-4">
-                    <div className="h-16 w-16 overflow-hidden rounded-[5px] bg-ink-900/5 ring-1 ring-ink-900/10">
-                      {profilePictureUrl ? (
-                        <img
-                          src={profilePictureUrl}
-                          alt="profile"
-                          className="h-full w-full object-cover"
-                          onError={() => setProfilePictureUrl("")}
-                        />
-                      ) : (
-                        <div className="flex h-full w-full items-center justify-center text-[10px] font-bold text-ink-900/40">
-                          N/A
-                        </div>
-                      )}
-                    </div>
-                    <div className="text-xs text-ink-800/70">
+                <div className="flex items-center gap-6">
+                  <div className="h-20 w-20 rounded-[5px] overflow-hidden bg-white ring-4 ring-white shadow-lg shadow-slate-200 shrink-0">
+                    {profilePictureUrl ? (
+                      <img src={profilePictureUrl} alt="profile" className="h-full w-full object-cover" />
+                    ) : (
+                      <div className="flex h-full w-full items-center justify-center text-xs font-bold text-slate-300">N/A</div>
+                    )}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-xs font-semibold text-slate-500 leading-relaxed">
                       {profilePictureHandle ? (
-                        <div>
-                          Uploaded handle: <span className="font-mono">{profilePictureHandle}</span>
-                        </div>
-                      ) : (
-                        <div>Upload an image to get a handle, then Save to apply.</div>
-                      )}
-                    </div>
+                         <span className="flex items-center gap-2 text-emerald-600 font-bold">
+                            <CheckCircle2 size={14} /> Ready to save
+                         </span>
+                      ) : "Recommended: Square image (512x512px)."}
+                    </p>
                   </div>
                 </div>
-                <Textarea
-                  label="About"
-                  value={about}
-                  onChange={(e) => setAbout(e.target.value)}
-                  placeholder="Short about line"
-                  className="min-h-[84px]"
-                />
-                <Textarea
-                  label="Description"
-                  value={description}
-                  onChange={(e) => setDescription(e.target.value)}
-                  placeholder="Describe your business"
-                  className="min-h-[84px]"
-                />
+              </div>
 
-                <Textarea
-                  label="Address"
-                  value={address}
-                  onChange={(e) => setAddress(e.target.value)}
-                  placeholder="Business address"
-                  className="min-h-[84px]"
-                />
-                <div className="grid gap-4">
-                  <Input
-                    label="Email"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    placeholder="support@example.com"
-                  />
-                  <Select label="Vertical" value={vertical} onChange={(e) => setVertical(e.target.value)}>
-                    {verticalOptions.map((v) => (
-                      <option key={v} value={v}>
-                        {v}
-                      </option>
-                    ))}
+              {/* Form Grid */}
+              <div className="grid gap-6 sm:grid-cols-2">
+                <Textarea label="About" value={about} onChange={(e) => setAbout(e.target.value)} placeholder="A short catchphrase..." className="min-h-[100px]" />
+                <Textarea label="Description" value={description} onChange={(e) => setDescription(e.target.value)} placeholder="Tell customers about your business..." className="min-h-[100px]" />
+                
+                <div className="sm:col-span-2 grid gap-6 sm:grid-cols-2">
+                  <Input label="Business Email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="hello@company.com" />
+                  <Select label="Business Category" value={vertical} onChange={(e) => setVertical(e.target.value)}>
+                    {VERTICAL_OPTIONS.map((v) => <option key={v} value={v}>{v}</option>)}
                   </Select>
                 </div>
 
                 <div className="sm:col-span-2">
-                  <div className="mb-1 text-xs font-semibold text-ink-800/80">Websites (max 2)</div>
-                  <div className="grid gap-2 sm:grid-cols-2">
+                   <Input label="Business Address" value={address} onChange={(e) => setAddress(e.target.value)} placeholder="123 Business Way, City, Country" />
+                </div>
+
+                <div className="sm:col-span-2 space-y-4">
+                  <div className="flex items-center justify-between">
+                    <h4 className="text-sm font-bold text-slate-900">Websites</h4>
+                    <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Max 2</span>
+                  </div>
+                  <div className="grid gap-4 sm:grid-cols-2">
                     {[0, 1].map((idx) => (
                       <Input
                         key={idx}
@@ -268,35 +214,23 @@ export function WhatsAppManagerProfileModal({
                           next[idx] = e.target.value;
                           setWebsites(next);
                         }}
-                        placeholder={idx === 0 ? "https://example.com" : "https://example.org"}
+                        placeholder={`https://website-${idx+1}.com`}
                       />
                     ))}
                   </div>
-                  {websitesError ? <div className="mt-2 text-xs font-semibold text-red-700">{websitesError}</div> : null}
+                  {websitesError && <div className="flex items-center gap-2 text-xs font-bold text-rose-600"><AlertCircle size={14} /> {websitesError}</div>}
                 </div>
               </div>
             </div>
 
-            <div className="border-t border-ink-900/10 px-5 py-4">
-              {err ? (
-                <div className="mb-3">
-                  <Alert tone="error">{err}</Alert>
-                </div>
-              ) : null}
-              {ok ? (
-                <div className="mb-3">
-                  <Alert tone="success">{ok}</Alert>
-                </div>
-              ) : null}
-
-              <div className="flex items-center justify-end gap-2">
-                <Button variant="ghost" onClick={onClose} disabled={busy}>
-                  Close
-                </Button>
-                <Button onClick={save} disabled={busy || !!websitesError}>
-                  {busy ? "Saving..." : "Save changes"}
-                </Button>
-              </div>
+            {/* Footer */}
+            <div className="px-6 py-5 border-t border-slate-100 bg-slate-50 flex flex-col sm:flex-row items-center justify-end gap-4">
+               <div className="flex items-center gap-3 w-full sm:w-auto">
+                  <Button variant="outline" onClick={onClose} disabled={busy}>Cancel</Button>
+                  <Button onClick={save} disabled={busy || !!websitesError} className="min-w-[120px]">
+                    {busy ? "Saving..." : <span className="flex items-center gap-2"><Save size={16} /> Save Changes</span>}
+                  </Button>
+               </div>
             </div>
           </motion.div>
         </motion.div>

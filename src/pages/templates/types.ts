@@ -13,6 +13,8 @@ export type CtaButton = {
   type: CtaType;
   text: string;
   url: string;
+  urlExample?: string;
+  urlMode?: "static" | "dynamic";
   phoneNumber: string;
   ttlMinutes: string;
   flowId: string;

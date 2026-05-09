@@ -30,7 +30,7 @@ import { Alert } from "../../components/ui/Alert";
 import { Input } from "../../components/ui/Input";
 import { Select } from "../../components/ui/Select";
 import { Textarea } from "../../components/ui/Textarea";
-import { CATEGORY_OPTIONS, COPY_CODE_BUTTON_TEXT, buildTemplateComponents, ctaOptionsForCategory, extractVariableIndexes, newAuthSupportedApp, newCtaButton, parseComponentsForPreview } from "./helpers";
+import { CATEGORY_OPTIONS, COPY_CODE_BUTTON_TEXT, TEMPLATE_NAME_MAX_CHARS, TEMPLATE_NAME_MIN_CHARS, buildTemplateComponents, ctaOptionsForCategory, extractVariableIndexes, isValidHttpsSampleUrl, newAuthSupportedApp, newCtaButton, parseComponentsForPreview } from "./helpers";
 import { TemplatePreview } from "./TemplatePreview";
 import type { AuthSupportedApp, CtaButton, HeaderType, TemplateCategory } from "./types";
 
@@ -109,6 +109,10 @@ export function TemplateForm({ open, creating, languageOptions, mode = "create",
 
   const canCreate = useMemo(() => {
     if (!name.trim()) return false;
+    if (mode !== "edit") {
+      const len = name.trim().length;
+      if (len < TEMPLATE_NAME_MIN_CHARS || len > TEMPLATE_NAME_MAX_CHARS) return false;
+    }
     if (category !== "authentication" && !bodyText.trim()) return false;
     if (category !== "authentication" && headerType === "TEXT" && !headerText.trim()) return false;
     if (category !== "authentication" && (headerType === "IMAGE" || headerType === "VIDEO" || headerType === "DOCUMENT") && !mediaHandle.trim()) return false;
@@ -122,9 +126,40 @@ export function TemplateForm({ open, creating, languageOptions, mode = "create",
       if (!Number.isFinite(minutes) || minutes < 1 || minutes > 90) return false;
     }
     if (category === "authentication" && !authAppsValid) return false;
+
+    // Meta policy: template variables must have sample values (examples) to avoid rejection.
+    // Header supports at most 1 variable sample here (as per our UX constraint).
+    if (category !== "authentication" && headerType === "TEXT") {
+      if (headerVariableIndexes.length > 1) return false;
+      if (headerVariableIndexes.length === 1) {
+        const idx = headerVariableIndexes[0];
+        if (!String(headerVariableValues[idx] || "").trim()) return false;
+      }
+    }
+
+    if (category !== "authentication") {
+      for (const idx of variableIndexes) {
+        if (!String(variableValues[idx] || "").trim()) return false;
+      }
+    }
+
     return !ctaButtons.some((button) => {
       if (!button.text.trim()) return true;
-      if (button.type === "URL") return !button.url.trim();
+      if (button.type === "URL") {
+        if (!button.url.trim()) return true;
+        const urlMode = button.urlMode ?? (extractVariableIndexes(button.url).length > 0 ? "dynamic" : "static");
+        const placeholderCount = extractVariableIndexes(button.url).length;
+        const urlOk = isValidHttpsSampleUrl(button.url);
+        if (!urlOk) return true;
+        if (urlMode === "static") {
+          // Static URL cannot contain placeholders.
+          return placeholderCount > 0;
+        }
+        // Dynamic URL must contain placeholders and must include a valid sample URL.
+        if (placeholderCount < 1) return true;
+        const ex = String(button.urlExample || "").trim();
+        return !ex || !isValidHttpsSampleUrl(ex);
+      }
       if (button.type === "PHONE_NUMBER") return !button.phoneNumber.trim();
       if (button.type === "FLOW") return !button.flowId.trim();
       if (button.type === "VOICE_CALL") {
@@ -133,7 +168,24 @@ export function TemplateForm({ open, creating, languageOptions, mode = "create",
       }
       return false;
     });
-  }, [name, category, bodyText, headerType, headerText, mediaHandle, locationLatitude, locationLongitude, ctaButtons, authAddExpiration, authExpiresMinutes, authAppsValid]);
+  }, [
+    name,
+    category,
+    bodyText,
+    headerType,
+    headerText,
+    mediaHandle,
+    locationLatitude,
+    locationLongitude,
+    ctaButtons,
+    authAddExpiration,
+    authExpiresMinutes,
+    authAppsValid,
+    variableIndexes,
+    variableValues,
+    headerVariableIndexes,
+    headerVariableValues,
+  ]);
 
   const buttonTypeCounts = useMemo(() => {
     const counts = new Map<string, number>();
@@ -426,6 +478,8 @@ export function TemplateForm({ open, creating, languageOptions, mode = "create",
             }
           : null,
         footerText,
+        headerVariableValues,
+        variableValues,
         category === "authentication"
           ? {
               otpType: authOtpType,
@@ -444,10 +498,10 @@ export function TemplateForm({ open, creating, languageOptions, mode = "create",
   if (!open) return null;
 
   return (
-    <Card className="p-6 shadow-none rounded-[5px]">
-      <div className="mb-6 flex items-center justify-between border-b border-ink-900/10 pb-4">
+    <Card className="p-6 md:p-10 bg-white shadow-2xl border-none">
+      <div className="mb-10 flex items-center justify-between border-b border-slate-50 pb-8">
         <div className="flex items-center gap-3">
-          <div className="flex h-10 w-10 items-center justify-center rounded-[5px] bg-brand-50 text-brand-600">
+          <div className="flex h-10 w-10 items-center justify-center text-brand-600">
             <LayoutTemplate size={20} />
           </div>
           <div>
@@ -474,10 +528,21 @@ export function TemplateForm({ open, creating, languageOptions, mode = "create",
               }} 
               placeholder="e.g. order_confirmation_v1" 
               className="rounded-[5px] shadow-none"
+              minLength={TEMPLATE_NAME_MIN_CHARS}
+              maxLength={TEMPLATE_NAME_MAX_CHARS}
               required 
-              hint={mode === "edit" ? "Template name cannot be edited." : "Only lowercase letters, numbers, and underscore are allowed."}
+              hint={
+                mode === "edit"
+                  ? "Template name cannot be edited."
+                  : `Only lowercase letters, numbers, and underscore are allowed. ${name.trim().length}/${TEMPLATE_NAME_MAX_CHARS} chars (min ${TEMPLATE_NAME_MIN_CHARS}).`
+              }
               disabled={mode === "edit"}
             />
+            {mode !== "edit" && name.trim() && name.trim().length < TEMPLATE_NAME_MIN_CHARS ? (
+              <div className="text-xs font-semibold text-rose-700">
+                Template name must be at least {TEMPLATE_NAME_MIN_CHARS} characters.
+              </div>
+            ) : null}
             <div className="grid gap-4 sm:grid-cols-2">
               <Select
                 label="Select Template Language" 
@@ -734,6 +799,7 @@ export function TemplateForm({ open, creating, languageOptions, mode = "create",
                       size="sm"
                       variant="ghost"
                       className="flex items-center gap-1.5 rounded-[5px] shadow-none text-brand-600 bg-brand-50 hover:bg-brand-100"
+                      disabled={headerVariableIndexes.length >= 1}
                       onClick={() => {
                         const el = headerTextRef.current;
                         const value = `{{${nextHeaderVariableIndex}}}`;
@@ -748,6 +814,12 @@ export function TemplateForm({ open, creating, languageOptions, mode = "create",
                       <Plus size={14} /> Add {`{{${nextHeaderVariableIndex}}}`}
                     </Button>
                   </div>
+
+                  {headerVariableIndexes.length > 1 ? (
+                    <div className="rounded-[5px] border border-rose-200 bg-rose-50 px-3 py-2 text-xs font-semibold text-rose-800">
+                      Header text can contain maximum 1 variable. Remove extra placeholders to continue.
+                    </div>
+                  ) : null}
 
                   {headerVariableIndexes.length > 0 ? (
                     <div className="rounded-[5px] border border-ink-900/10 bg-white p-4 shadow-none">
@@ -1007,16 +1079,18 @@ export function TemplateForm({ open, creating, languageOptions, mode = "create",
                           setCtaButtons((prev) =>
                             prev.map((item) =>
                               item.id === button.id
-                                ? {
-                                    ...item,
-                                    type: nextType,
-                                    text: nextType === "COPY_CODE" ? COPY_CODE_BUTTON_TEXT : "",
-                                    url: "",
-                                    phoneNumber: "",
-                                    flowId: "",
-                                    ttlMinutes: "43200",
-                                    flowIcon: "DEFAULT",
-                                    flowType: "",
+                                  ? {
+                                      ...item,
+                                      type: nextType,
+                                      text: nextType === "COPY_CODE" ? COPY_CODE_BUTTON_TEXT : "",
+                                      url: "",
+                                      urlExample: "",
+                                      urlMode: "static",
+                                      phoneNumber: "",
+                                      flowId: "",
+                                      ttlMinutes: "43200",
+                                      flowIcon: "DEFAULT",
+                                      flowType: "",
                                     offerCode: "",
                                   }
                                 : item
@@ -1054,7 +1128,158 @@ export function TemplateForm({ open, creating, languageOptions, mode = "create",
                       <div className="flex items-center gap-3">
                         <Link size={16} className="text-ink-800/40 shrink-0 mt-6" />
                         <div className="flex-1">
-                           <Input label="URL" value={button.url} className="rounded-[5px] shadow-none" onChange={(e) => setCtaButtons((prev) => prev.map((item) => item.id === button.id ? { ...item, url: e.target.value } : item))} placeholder="https://example.com" required />
+                          {(() => {
+                            const urlMode = button.urlMode ?? (extractVariableIndexes(button.url).length > 0 ? "dynamic" : "static");
+                            const placeholderCount = extractVariableIndexes(button.url).length;
+                            const urlValid = button.url.trim() ? isValidHttpsSampleUrl(button.url) : true;
+                            const sampleValid = button.urlExample ? isValidHttpsSampleUrl(button.urlExample) : true;
+
+                            const deriveDynamicUrlPattern = (sample: string) => {
+                              const raw = String(sample || "").trim();
+                              if (!raw) return "";
+                              if (!isValidHttpsSampleUrl(raw)) return "";
+
+                              // We intentionally avoid `new URL(...).toString()` because it percent-encodes `{` and `}`
+                              // which makes "{{1}}" show up as "%7B%7B1%7D%7D" in the input.
+                              const hashIndex = raw.indexOf("#");
+                              const hashPart = hashIndex >= 0 ? raw.slice(hashIndex) : "";
+                              const withoutHash = hashIndex >= 0 ? raw.slice(0, hashIndex) : raw;
+                              const queryIndex = withoutHash.indexOf("?");
+                              const queryPart = queryIndex >= 0 ? withoutHash.slice(queryIndex) : "";
+                              const baseAndPath = queryIndex >= 0 ? withoutHash.slice(0, queryIndex) : withoutHash;
+
+                              const firstSlash = baseAndPath.indexOf("/", 8); // after "https://"
+                              const base = firstSlash >= 0 ? baseAndPath.slice(0, firstSlash) : baseAndPath;
+                              const path = firstSlash >= 0 ? baseAndPath.slice(firstSlash) : "";
+
+                              const parts = path.split("/").filter(Boolean);
+                              const nextPath = parts.length === 0 ? "/{{1}}" : `/${[...parts.slice(0, -1), "{{1}}"].join("/")}`;
+                              return `${base}${nextPath}${queryPart}${hashPart}`;
+                            };
+
+                            return (
+                              <>
+                                <div className="mb-3 flex items-center justify-between gap-3">
+                                  <div className="text-xs font-semibold text-ink-800/80">URL mode</div>
+                                  <div className="flex rounded-[5px] bg-slate-100 p-1">
+                                    <button
+                                      type="button"
+                                      className={[
+                                        "px-3 py-1.5 text-xs font-semibold rounded-[5px]",
+                                        urlMode === "static" ? "bg-white shadow-sm text-ink-900" : "text-ink-800/70 hover:text-ink-900",
+                                      ].join(" ")}
+                                      onClick={() =>
+                                        setCtaButtons((prev) =>
+                                          prev.map((item) =>
+                                            item.id === button.id
+                                              ? {
+                                                  ...item,
+                                                  urlMode: "static",
+                                                  url: (() => {
+                                                    const sample = String(item.urlExample || "").trim();
+                                                    if (sample && isValidHttpsSampleUrl(sample)) return sample;
+                                                    const raw = String(item.url || "");
+                                                    return raw.replace(/%7B%7B1%7D%7D/gi, "{{1}}");
+                                                  })(),
+                                                  urlExample: "",
+                                                }
+                                              : item
+                                          )
+                                        )
+                                      }
+                                    >
+                                      Static
+                                    </button>
+                                    <button
+                                      type="button"
+                                      className={[
+                                        "px-3 py-1.5 text-xs font-semibold rounded-[5px]",
+                                        urlMode === "dynamic" ? "bg-white shadow-sm text-ink-900" : "text-ink-800/70 hover:text-ink-900",
+                                      ].join(" ")}
+                                      onClick={() =>
+                                        setCtaButtons((prev) =>
+                                          prev.map((item) =>
+                                            item.id === button.id ? { ...item, urlMode: "dynamic", url: "", urlExample: "" } : item
+                                          )
+                                        )
+                                      }
+                                    >
+                                      Dynamic
+                                    </button>
+                                  </div>
+                                </div>
+
+                                {urlMode === "static" ? (
+                                  <>
+                                    <Input
+                                      label="URL"
+                                      value={button.url}
+                                      className="rounded-[5px] shadow-none"
+                                      onChange={(e) =>
+                                        setCtaButtons((prev) =>
+                                          prev.map((item) =>
+                                            item.id === button.id ? { ...item, url: e.target.value } : item
+                                          )
+                                        )
+                                      }
+                                      placeholder="https://example.co.in/offer"
+                                      hint="Static URL must not contain variables. Use a full https:// URL."
+                                      required
+                                    />
+                                    {!urlValid ? (
+                                      <div className="mt-1 text-xs text-rose-700">
+                                        Enter a valid https:// URL with a real domain extension.
+                                      </div>
+                                    ) : null}
+                                    {placeholderCount > 0 ? (
+                                      <div className="mt-1 text-xs text-rose-700">
+                                        Static URL cannot contain template variables. Switch to Dynamic or remove placeholders.
+                                      </div>
+                                    ) : null}
+                                  </>
+                                ) : (
+                                  <div className="mt-1">
+                                    <Input
+                                      label="Sample URL (required)"
+                                      value={button.urlExample || ""}
+                                      className="rounded-[5px] shadow-none"
+                                      onChange={(e) => {
+                                        const nextSample = e.target.value;
+                                        const derived = deriveDynamicUrlPattern(nextSample);
+                                        setCtaButtons((prev) =>
+                                          prev.map((item) =>
+                                            item.id === button.id
+                                              ? {
+                                                  ...item,
+                                                  urlExample: nextSample,
+                                                  url: derived || item.url,
+                                                }
+                                              : item
+                                          )
+                                        );
+                                      }}
+                                      placeholder="https://example.co.in/offer/OD-18421"
+                                      hint="URL must be a full https:// URL with a valid domain extension (.co, .in, .co.in, etc)."
+                                      required
+                                    />
+                                    {!button.urlExample?.trim() ? (
+                                      <div className="mt-1 text-xs text-rose-700">
+                                        Dynamic URL requires at least one variable like {"{{1}}"} in the URL.
+                                      </div>
+                                    ) : !sampleValid ? (
+                                      <div className="mt-1 text-xs text-rose-700">
+                                        Enter a valid https:// sample URL for Meta review.
+                                      </div>
+                                    ) : !button.url.trim() ? (
+                                      <div className="mt-1 text-xs text-rose-700">
+                                        Unable to generate dynamic URL pattern. Please re-check the sample URL format.
+                                      </div>
+                                    ) : null}
+                                  </div>
+                                )}
+                              </>
+                            );
+                          })()}
                         </div>
                       </div>
                     ) : null}
@@ -1062,7 +1287,7 @@ export function TemplateForm({ open, creating, languageOptions, mode = "create",
                       <div className="flex items-center gap-3">
                         <Phone size={16} className="text-ink-800/40 shrink-0 mt-6" />
                         <div className="flex-1">
-                           <Input label="Phone Number" value={button.phoneNumber} className="rounded-[5px] shadow-none" onChange={(e) => setCtaButtons((prev) => prev.map((item) => item.id === button.id ? { ...item, phoneNumber: e.target.value } : item))} placeholder="917000000000" required />
+                           <Input label="Phone Number" type="number" value={button.phoneNumber} className="rounded-[5px] shadow-none" onChange={(e) => setCtaButtons((prev) => prev.map((item) => item.id === button.id ? { ...item, phoneNumber: e.target.value } : item))} placeholder="9000000000" required />
                         </div>
                       </div>
                     ) : null}

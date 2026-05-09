@@ -82,9 +82,21 @@ export const API = {
   auth: {
     register: (payload) => api.post("/auth/register", payload).then(unwrap),
     login: (payload) => api.post("/auth/login", payload).then(unwrap),
+    verifyLoginOtp: (payload) => api.post("/auth/login/verify-otp", payload).then(unwrap),
+    resendLoginOtp: (payload) => api.post("/auth/login/resend-otp", payload).then(unwrap),
+    verifyRegisterOtp: (payload) => api.post("/auth/register/verify-otp", payload).then(unwrap),
+    resendRegisterOtp: (payload) => api.post("/auth/register/resend-otp", payload).then(unwrap),
+    forgotPassword: (payload) => api.post("/auth/forgot-password", payload).then(unwrap),
+    resetPassword: (payload) => api.post("/auth/reset-password", payload).then(unwrap),
     me: () => api.get("/auth/me").then(unwrap),
-    rotateApiKey: () => api.post("/auth/api-key/rotate").then(unwrap),
+    apiKeyStatus: () => api.get("/auth/api-key").then(unwrap),
+    requestApiKeyOtp: (payload) => api.post("/auth/api-key/request-otp", payload).then(unwrap),
+    verifyApiKeyOtp: (payload) => api.post("/auth/api-key/verify-otp", payload).then(unwrap),
     updateProfile: (payload) => api.put("/auth/profile", payload).then(unwrap),
+    changePassword: (payload) => api.post("/auth/change-password", payload).then(unwrap),
+    requestEnable2fa: () => api.post("/auth/2fa/request-enable").then(unwrap),
+    verifyEnable2fa: (payload) => api.post("/auth/2fa/verify-enable", payload).then(unwrap),
+    disable2fa: () => api.post("/auth/2fa/disable").then(unwrap),
   },
 
   admin: {
@@ -138,10 +150,12 @@ export const API = {
   messages: {
     send: (payload) => api.post("/messages/send", payload).then(unwrap),
     sendText: (payload) => api.post("/messages/send-text", payload).then(unwrap),
+    sendMedia: (payload) => api.post("/messages/send-media", payload).then(unwrap),
     bulk: (payload) => api.post("/messages/bulk", payload).then(unwrap),
     logs: (params) => api.get("/messages/logs", { params }).then(unwrap),
     status: (waId) => api.get(`/messages/status/${encodeURIComponent(waId)}`).then(unwrap),
     byPhone: (phone, params) => api.get(`/messages/${phone}`, { params }).then(unwrap),
+    downloadMedia: (id) => api.get(`/messages/media/${encodeURIComponent(id)}`, { responseType: "blob" }).then((r) => r.data),
     uploadMedia: (file, onProgress) => {
       const data = new FormData();
       data.append("file", file);
@@ -190,13 +204,31 @@ export const API = {
 
   campaigns: {
     list: (params) => api.get("/campaigns", { params }).then(unwrap),
+    get: (id) => api.get(`/campaigns/${id}`).then(unwrap),
+    estimate: (payload) => api.post("/campaigns/estimate", payload).then(unwrap),
+    metrics: (id) => api.get(`/campaigns/${id}/metrics`).then(unwrap),
+    messages: (id, params) => api.get(`/campaigns/${id}/messages`, { params }).then(unwrap),
+    replies: (id, params) => api.get(`/campaigns/${id}/replies`, { params }).then(unwrap),
+    creditUsage: (id) => api.get(`/campaigns/${id}/credit-usage`).then(unwrap),
+    failedRecipients: (id) => api.get(`/campaigns/${id}/failed-recipients`).then(unwrap),
+    retryFailed: (id) => api.post(`/campaigns/${id}/retry-failed`).then(unwrap),
+    remove: (id, params) => api.delete(`/campaigns/${id}`, { params }).then(unwrap),
+    action: (id, action) => api.post(`/campaigns/${id}/action`, { action }).then(unwrap),
     create: (payload) => api.post("/campaigns", payload).then(unwrap),
+  },
+
+  reports: {
+    apiCampaigns: (params) => api.get("/reports/api-campaigns", { params }).then(unwrap),
+    apiCampaign: (id) => api.get(`/reports/api-campaigns/${encodeURIComponent(id)}`).then(unwrap),
+    apiMessages: (params) => api.get("/reports/api-messages", { params }).then(unwrap),
+    apiMessage: (id) => api.get(`/reports/api-messages/${encodeURIComponent(id)}`).then(unwrap),
   },
 
   conversations: {
     list: (params) => api.get("/conversations", { params }).then(unwrap),
     get: (phone) => api.get(`/conversations/${phone}`).then(unwrap),
     read: (phone) => api.post(`/conversations/${phone}/read`).then(unwrap),
+    clear: (phone) => api.delete(`/conversations/${phone}`).then(unwrap),
   },
 
   contacts: {

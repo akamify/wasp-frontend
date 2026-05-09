@@ -1,14 +1,15 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useState, useRef, useMemo } from "react";
 import { API } from "../api/api";
 import { Card } from "../components/ui/Card";
 import { Button } from "../components/ui/Button";
 import { Alert } from "../components/ui/Alert";
 import { Badge } from "../components/ui/Badge";
 import { RechargeModal } from "../components/wallet/RechargeModal";
-
-function formatINR(value: number) {
-  return new Intl.NumberFormat("en-IN", { style: "currency", currency: "INR" }).format(value || 0);
-}
+import { WalletSkeleton } from "../components/ui/Skeletons";
+import { formatCurrencySafe } from "../config/currency";
+import { RefreshCw, History, Info } from "lucide-react";
+import { cn } from "../utils/cn";
+import { useToast } from "../context/ToastContext";
 
 function toneForType(type: string) {
   const t = String(type || "").toLowerCase();
@@ -22,134 +23,238 @@ export default function WalletPage() {
   const [tx, setTx] = useState<any[]>([]);
   const [cursor, setCursor] = useState<string | null>(null);
   const [busy, setBusy] = useState(true);
+  const [syncing, setSyncing] = useState(false);
   const [err, setErr] = useState<string | null>(null);
   const [rechargeOpen, setRechargeOpen] = useState(false);
+  const isInitialLoad = useRef(true);
+  const { toast } = useToast();
 
   const load = useCallback(async () => {
-    setBusy(true);
+    const isFirst = isInitialLoad.current;
+    if (isFirst) setBusy(true);
+    setSyncing(true);
     setErr(null);
     try {
-      const [w, h] = await Promise.all([API.wallet.get(), API.wallet.history({ limit: 50 })]);
+      const [w, h] = await Promise.all([API.wallet.get(), API.wallet.history({ limit: 10 })]);
       setWallet(w.wallet);
       setTx(h.transactions || []);
       setCursor(h.nextCursor || null);
+      if (!isFirst) toast("Wallet balance updated", "success");
     } catch (e: any) {
       setErr(e?.response?.data?.message || e?.message || "Failed to load wallet");
     } finally {
       setBusy(false);
+      setSyncing(false);
+      isInitialLoad.current = false;
     }
-  }, []);
+  }, [toast]);
 
   useEffect(() => {
     load();
   }, [load]);
 
   const balanceLabel = useMemo(() => {
-    const cur = wallet?.currency || "INR";
-    if (cur !== "INR") return `${cur} ${wallet?.balance ?? 0}`;
-    return formatINR(wallet?.balance ?? 0);
+    return formatCurrencySafe(Number(wallet?.balance ?? 0), wallet?.currency || undefined);
   }, [wallet?.balance, wallet?.currency]);
 
   async function loadMore() {
     if (!cursor) return;
     try {
-      const h = await API.wallet.history({ limit: 50, cursor });
+      const h = await API.wallet.history({ limit: 10, cursor });
       const items = h.transactions || [];
       setTx((prev) => [...prev, ...items]);
       setCursor(h.nextCursor || null);
-    } catch {}
+    } catch { }
   }
 
+  if (busy && isInitialLoad.current) return (
+    <div className="p-4 md:p-8">
+      <WalletSkeleton />
+    </div>
+  );
+
   return (
-    <div className="grid gap-6">
-      <div className="rounded-[5px] bg-white/60 p-6 ring-1 ring-ink-900/10 backdrop-blur">
-        <div className="text-xs font-semibold text-ink-800/60">Billing</div>
-        <h1 className="mt-1 text-3xl font-black tracking-tight">Wallet</h1>
-        <p className="mt-2 text-sm text-ink-800/70">
-          Buy credits and track your usage with a complete transaction history.
-        </p>
+    <div className="space-y-6 p-4 md:p-8">
+      {err ? <Alert tone="error">{err}</Alert> : null}
+      
+      <div className="flex flex-wrap items-center justify-between gap-4">
+        <div>
+          <h1 className="text-4xl font-black tracking-tight text-ink-900">Wallet</h1>
+          <p className="mt-2 text-sm font-semibold text-ink-800/60 uppercase tracking-widest">Manage your credits and billing</p>
+        </div>
+        <Button 
+          variant="ghost" 
+          onClick={load} 
+          disabled={busy || syncing}
+          className="h-10 border border-ink-900/10 bg-white gap-2 shadow-sm"
+        >
+          <RefreshCw size={16} className={cn(syncing && "animate-spin")} />
+          {syncing ? "Syncing..." : "Refresh"}
+        </Button>
       </div>
 
-      {err ? <Alert tone="error">{err}</Alert> : null}
-
-      <div className="">
-        <Card className="p-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <div className="text-xs font-semibold uppercase tracking-widest text-ink-900/40">Balance</div>
-              <div className="mt-1 text-3xl font-black tracking-tight">{balanceLabel}</div>
-            </div>
-            <div className="flex gap-2">
-              <Button variant="ghost" onClick={load} disabled={busy}>
-                {busy ? "Refreshing..." : "Refresh"}
+      <div className="grid gap-6 lg:grid-cols-[1fr_350px] items-start">
+        <div className="contents lg:order-1 lg:block lg:space-y-6">
+          <Card className="order-1 relative overflow-hidden p-8 border-brand-200 bg-brand-50/30">
+            <div className="absolute right-0 top-0 h-32 w-32 translate-x-12 -translate-y-12 rounded-full bg-brand-500/5 blur-3xl" />
+            <div className="relative flex flex-col md:flex-row md:items-center justify-between gap-6">
+              <div>
+                <div className="text-[10px] font-black uppercase tracking-[0.2em] text-brand-600/60 mb-1">Available Credits</div>
+                <div className="text-5xl font-black tracking-tighter text-ink-900">{balanceLabel}</div>
+                <div className="mt-2 flex items-center gap-2 text-xs font-bold text-brand-600/80">
+                  <div className="h-1.5 w-1.5 rounded-full bg-brand-500 animate-pulse" />
+                  Ready to send
+                </div>
+              </div>
+              <Button 
+                onClick={() => setRechargeOpen(true)}
+                className="h-14 px-10 text-lg font-black shadow-xl shadow-brand-500/20"
+              >
+                Top up balance
               </Button>
-              <Button onClick={() => setRechargeOpen(true)}>Buy credits</Button>
             </div>
-          </div>
+          </Card>
 
-          <div className="mt-6">
-            <div className="text-sm font-black tracking-tight">Transaction history</div>
-            <div className="mt-3 overflow-y-auto rounded-[5px] ring-1 ring-ink-900/10">
-              <table className="min-w-[720px] w-full text-left text-sm">
-                <thead className="bg-ink-900/5 text-xs font-black uppercase tracking-widest text-ink-900/50">
+          <Card className="order-3 p-0 border-ink-900/5 shadow-xl shadow-ink-900/5 overflow-hidden lg:order-none">
+            <div className="px-6 py-5 border-b border-ink-900/5 bg-slate-50/50 flex items-center justify-between">
+              <h2 className="text-sm font-black uppercase tracking-widest text-ink-800/60">Transaction history</h2>
+              <Badge tone="neutral" className="rounded-[3px] text-[10px]">{tx.length} total</Badge>
+            </div>
+            
+            <div className="hidden md:block overflow-x-auto">
+              <table className="w-full text-left text-sm border-collapse">
+                <thead className="bg-slate-50 text-[10px] font-bold uppercase tracking-widest text-ink-800/40 border-b border-ink-900/5">
                   <tr>
-                    <th className="px-4 py-3">Type</th>
-                    <th className="px-4 py-3">Amount</th>
-                    <th className="px-4 py-3">Reason</th>
-                    <th className="px-4 py-3">Provider</th>
-                    <th className="px-4 py-3">Time</th>
+                    <th className="px-6 py-4">Status</th>
+                    <th className="px-6 py-4">Transaction Details</th>
+                    <th className="px-6 py-4">Date</th>
+                    <th className="px-6 py-4 text-right">Amount</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-ink-900/5 bg-white">
-                  {tx.map((t) => (
-                    <tr key={t.id} className="hover:bg-ink-900/[0.02]">
-                      <td className="px-4 py-3">
-                        <Badge tone={toneForType(t.type)}>{t.type}</Badge>
-                      </td>
-                      <td className="px-4 py-3 font-black">
-                        {t.currency === "INR" ? formatINR(t.amount) : `${t.currency} ${t.amount}`}
-                      </td>
-                      <td className="px-4 py-3 font-semibold text-ink-900/80">{t.reason}</td>
-                      <td className="px-4 py-3 font-semibold text-ink-900/70">
-                        {t.provider}
-                        {t.providerRef ? <span className="block text-xs text-ink-900/40">{t.providerRef}</span> : null}
-                      </td>
-                      <td className="px-4 py-3 text-xs font-semibold text-ink-900/60">
-                        {t.createdAt ? new Date(t.createdAt).toLocaleString() : "—"}
-                      </td>
-                    </tr>
-                  ))}
-                  {!tx.length ? (
+                <tbody className="divide-y divide-ink-900/5">
+                  {tx.length === 0 ? (
                     <tr>
-                      <td colSpan={5} className="px-4 py-10 text-center text-sm font-semibold text-ink-900/50">
-                        No transactions yet.
+                      <td colSpan={4} className="px-6 py-12 text-center text-ink-800/40 font-semibold italic">
+                        No transactions found yet
                       </td>
                     </tr>
-                  ) : null}
+                  ) : (
+                    tx.map((t) => (
+                      <tr key={t.id} className="hover:bg-slate-50/50 transition-colors">
+                        <td className="px-6 py-4">
+                          <Badge tone={toneForType(t.type)} className="rounded-[3px] py-1 px-2 uppercase font-black tracking-tighter">
+                            {t.type}
+                          </Badge>
+                        </td>
+                        <td className="px-6 py-4">
+                          <div className="font-bold text-ink-900 leading-tight">
+                            {t.reason || (t.type === "credit" ? "Account Recharge" : "Campaign Debit")}
+                          </div>
+                          <div className="text-[10px] font-bold text-ink-800/40 uppercase tracking-widest mt-0.5">
+                            ID: {t.id?.slice(-8)}
+                          </div>
+                        </td>
+                        <td className="px-6 py-4 text-xs font-semibold text-ink-800/60">
+                          {t.createdAt ? new Date(t.createdAt).toLocaleDateString(undefined, {
+                            month: "short",
+                            day: "numeric",
+                            year: "numeric",
+                            hour: "2-digit",
+                            minute: "2-digit"
+                          }) : "—"}
+                        </td>
+                        <td className={`px-6 py-4 text-right font-black tabular-nums ${t.type === 'credit' ? 'text-emerald-600' : 'text-ink-900'}`}>
+                          {t.type === 'credit' ? '+' : '-'}{formatCurrencySafe(t.amount, t.currency)}
+                        </td>
+                      </tr>
+                    ))
+                  )}
                 </tbody>
               </table>
             </div>
 
-            {cursor ? (
-              <div className="mt-4">
-                <Button variant="ghost" onClick={loadMore}>
-                  Load more
+            <div className="md:hidden divide-y divide-ink-900/5">
+              {tx.length === 0 ? (
+                <div className="px-6 py-12 text-center text-ink-800/40 font-semibold italic">
+                  No transactions found yet
+                </div>
+              ) : (
+                tx.map((t) => (
+                  <div key={t.id} className="p-4">
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="min-w-0">
+                        <div className="font-bold text-ink-900 leading-tight">
+                          {t.reason || (t.type === "credit" ? "Account Recharge" : "Campaign Debit")}
+                        </div>
+                        <div className="mt-1 text-[10px] font-bold text-ink-800/40 uppercase tracking-widest">
+                          ID: {t.id?.slice(-8)}
+                        </div>
+                      </div>
+                      <Badge tone={toneForType(t.type)} className="shrink-0 rounded-[3px] py-1 px-2 uppercase font-black tracking-tighter">
+                        {t.type}
+                      </Badge>
+                    </div>
+                    <div className="mt-3 flex items-center justify-between gap-3">
+                      <div className="text-xs font-semibold text-ink-800/60">
+                        {t.createdAt ? new Date(t.createdAt).toLocaleDateString(undefined, {
+                          month: "short",
+                          day: "numeric",
+                          hour: "2-digit",
+                          minute: "2-digit"
+                        }) : "-"}
+                      </div>
+                      <div className={`font-black tabular-nums ${t.type === 'credit' ? 'text-emerald-600' : 'text-ink-900'}`}>
+                        {t.type === 'credit' ? '+' : '-'}{formatCurrencySafe(t.amount, t.currency)}
+                      </div>
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+
+            {cursor && (
+              <div className="p-4 border-t border-ink-900/5 bg-slate-50/50 text-center">
+                <Button variant="ghost" size="sm" onClick={loadMore} className="text-[11px] font-black uppercase tracking-widest">
+                  Load more History
                 </Button>
               </div>
-            ) : null}
-          </div>
-        </Card>
+            )}
+          </Card>
+        </div>
+
+        <div className="order-2 space-y-6 lg:sticky lg:top-4 lg:order-2">
+          <Card className="p-6 border-ink-900/5 bg-slate-50 shadow-sm">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="h-10 w-10 rounded-[5px] bg-white flex items-center justify-center text-ink-900 shadow-sm">
+                <Info size={20} />
+              </div>
+              <h3 className="font-black tracking-tight text-ink-900">Billing Info</h3>
+            </div>
+            <p className="text-xs font-semibold text-ink-800/60 leading-relaxed">
+              Credits are consumed per message sent via the WhatsApp Business API. Charges vary based on destination country and message category.
+            </p>
+          </Card>
+
+          <Card className="p-6 border-ink-900/5 bg-ink-900 text-white shadow-xl">
+             <div className="flex items-center gap-3 mb-4">
+                <History size={20} className="text-brand-400" />
+                <h3 className="font-black text-black tracking-tight">Auto-Recharge</h3>
+             </div>
+             <p className="text-[11px] font-medium text-black/60 leading-relaxed mb-4">
+                Keep your campaigns running smoothly. Low balance alerts will be sent to your registered email.
+             </p>
+             <Badge tone="neutral" className="bg-white/10 text-black border-none uppercase font-black tracking-widest text-[9px]">Feature coming soon</Badge>
+          </Card>
+        </div>
       </div>
 
       <RechargeModal
         open={rechargeOpen}
         onClose={() => setRechargeOpen(false)}
         onPaid={() => {
-          // refresh after a short delay (webhook capture may take a moment)
           setTimeout(() => load(), 3500);
         }}
       />
     </div>
   );
 }
-

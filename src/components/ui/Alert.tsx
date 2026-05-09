@@ -17,7 +17,7 @@ export function Alert({
   tone?: AlertTone;
 }) {
   return (
-    <div className={`rounded-[24px] px-4 py-3 text-sm ring-1 ${TONE_STYLES[tone]}`}>
+    <div className={`rounded-[5px] px-4 py-3 text-sm ring-1 ${TONE_STYLES[tone]}`}>
       {children}
     </div>
   );

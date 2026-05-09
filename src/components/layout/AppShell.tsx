@@ -1,65 +1,69 @@
 import React, { useEffect, useState, useRef } from "react";
 import { NavLink, useLocation, useNavigate } from "react-router-dom";
-import { Button } from "../ui/Button";
 import { cn } from "../../utils/cn";
 import { useAuth } from "../../context/AuthContext";
 import { BRAND_NAME } from "../../config/brand";
-import { motion, AnimatePresence } from "framer-motion"; // Added for smooth animations
+import { API } from "../../api/api";
+import { motion, AnimatePresence } from "framer-motion";
 import {
   LayoutDashboard, Key, FileText, Send, Users,
   MessageSquare, Link2, Zap, PanelLeftClose,
-  PanelLeftOpen, Settings, LogOut, Menu, X, Wallet, Workflow
+  PanelLeftOpen, Menu, Wallet, Workflow,
+  Bell, Sparkles, Globe, History, Terminal, CheckCircle2, AlertCircle, MessageCircle,
+  X, MoreHorizontal, ChevronRight, FileSearch
 } from "lucide-react";
+import { WorkspaceStatusBar } from "./WorkspaceStatusBar";
 
 const NAV_ITEMS = [
   { to: "/app", label: "Dashboard", kicker: "overview", icon: LayoutDashboard },
-  { to: "/app/meta", label: "WhatsApp Setup", kicker: "manual credentials", icon: Key },
-  { to: "/app/templates", label: "Templates", kicker: "approve library", icon: FileText },
-  { to: "/app/send", label: "Broadcasts", kicker: "campaign launch", icon: Send },
+  { to: "/app/meta", label: "WhatsApp Setup", kicker: "credentials", icon: Key },
+  { to: "/app/templates", label: "Templates", kicker: "library", icon: FileText },
+  { to: "/app/send", label: "Campaigns", kicker: "broadcast", icon: Send },
   { to: "/app/contacts", label: "Contacts", kicker: "audience", icon: Users },
   { to: "/app/conversations", label: "Inbox", kicker: "chatroom", icon: MessageSquare },
   { to: "/app/flows", label: "Flows", kicker: "forms", icon: Workflow },
-  { to: "/app/wallet", label: "Wallet", kicker: "buy credits", icon: Wallet },
+  { to: "/app/wallet", label: "Wallet", kicker: "credits", icon: Wallet },
   { to: "/app/links", label: "Tracked links", kicker: "analytics", icon: Link2 },
   { to: "/app/automation", label: "Automation", kicker: "events", icon: Zap },
+  { to: "/app/activity", label: "Activity", kicker: "audit logs", icon: History },
+  { to: "/app/api-keys", label: "API Keys", kicker: "developer", icon: Terminal },
+  { to: "/app/api-reports", label: "API Report", kicker: "api logs", icon: FileSearch },
 ];
 
 function SideLink({ to, label, kicker, icon: Icon, isCollapsed }: any) {
+  const location = useLocation();
+  const isActive = location.pathname === to || (to !== "/app" && location.pathname.startsWith(to));
+
   return (
     <NavLink
       to={to}
       end={to === "/app"}
       title={isCollapsed ? label : undefined}
-      className={({ isActive }) =>
+      className={({ isActive: linkActive }) =>
         cn(
-          "group flex cursor-pointer items-center rounded-[5px] border transition-all duration-300 ease-out",
-          isCollapsed ? "justify-center p-3" : "justify-between px-4 py-3 gap-4",
-          isActive
-            ? "border-brand-400/40 bg-brand-50 text-ink-900"
-            : "border-transparent bg-transparent text-ink-900/60 hover:bg-white/50 hover:text-ink-900"
+          "group relative flex cursor-pointer items-center rounded-[5px] transition-all duration-200 ease-in-out",
+          isCollapsed ? "justify-center p-3" : "px-4 py-2.5 gap-3",
+          linkActive
+            ? "bg-brand-600 text-white shadow-lg shadow-brand-500/20"
+            : "text-ink-900/60 hover:bg-ink-900/5 hover:text-ink-900"
         )
       }
     >
-      {({ isActive }) => (
-        <>
-          <div className="flex items-center gap-3 overflow-hidden">
-            <Icon className={cn("flex-shrink-0 transition-colors", isActive ? "text-brand-600" : "text-ink-900/40 group-hover:text-ink-900")} size={20} />
-            <AnimatePresence mode="wait">
-              {!isCollapsed && (
-                <motion.div
-                  initial={{ opacity: 0, x: -10 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  exit={{ opacity: 0, x: -10 }}
-                  className="min-w-0"
-                >
-                  <div className="text-[10px] uppercase tracking-[0.22em] opacity-50 truncate">{kicker}</div>
-                  <div className="mt-0.5 text-sm font-semibold truncate">{label}</div>
-                </motion.div>
-              )}
-            </AnimatePresence>
+      <Icon className={cn("flex-shrink-0 transition-transform group-hover:scale-110", isCollapsed ? "size-6" : "size-5")} />
+      {!isCollapsed && (
+        <div className="flex-1 min-w-0">
+          <div className="text-sm font-semibold truncate">{label}</div>
+          <div className={cn("text-[10px] uppercase tracking-wider opacity-60 truncate font-medium", isCollapsed ? "hidden" : "block")}>
+            {kicker}
           </div>
-          {/* {!isCollapsed && <div className={cn("text-lg transition-all", isActive ? "opacity-100 translate-x-0" : "opacity-0 -translate-x-2 group-hover:opacity-100 group-hover:translate-x-0")}>&gt;</div>} */}
-        </>
+        </div>
+      )}
+      {/* Active Indicator Dot */}
+      {isActive && (
+        <motion.div
+          layoutId="active-nav"
+          className="absolute -left-1 w-1.5 h-6 bg-white rounded-r-[5px]"
+        />
       )}
     </NavLink>
   );
@@ -70,179 +74,710 @@ function getShellTitle(pathname: string, items: typeof NAV_ITEMS) {
   return active?.label || "Workspace";
 }
 
+function routeTransitionKey(pathname: string) {
+  // Avoid full page remount when switching chats; only the chat content should update.
+  if (pathname.startsWith("/app/conversations")) return "/app/conversations";
+  return pathname;
+}
+
+/* ─── Mobile Bottom Tabs ─────────────────────────────────────────── */
+const MOBILE_TABS = [
+  { to: "/app", label: "Home", icon: LayoutDashboard, end: true },
+  { to: "/app/send", label: "Campaigns", icon: Send, end: false },
+  { to: "/app/conversations", label: "Inbox", icon: MessageSquare, end: false },
+  { to: "/app/contacts", label: "Contacts", icon: Users, end: false },
+];
+
+
+
+function MobileBottomTabs() {
+  const location = useLocation();
+  return (
+    <nav className="lg:hidden fixed bottom-0 left-0 right-0 z-[200] bg-white/95 backdrop-blur-xl border-t border-slate-200 safe-area-bottom">
+      <div className="flex items-stretch justify-around h-[60px]">
+        {MOBILE_TABS.map((tab) => {
+          const isActive = tab.end
+            ? location.pathname === tab.to
+            : location.pathname.startsWith(tab.to);
+          return (
+            <NavLink
+              key={tab.to}
+              to={tab.to}
+              end={tab.end}
+              className="flex flex-col items-center justify-center flex-1 gap-0.5 relative transition-colors"
+            >
+              {isActive && (
+                <motion.div
+                  layoutId="mobile-tab-indicator"
+                  className="absolute top-0 left-1/2 -translate-x-1/2 w-8 h-[3px] bg-brand-600 rounded-b-full"
+                  transition={{ type: "spring", stiffness: 400, damping: 30 }}
+                />
+              )}
+              <tab.icon
+                size={20}
+                className={cn(
+                  "transition-colors",
+                  isActive ? "text-brand-600" : "text-slate-400"
+                )}
+                strokeWidth={isActive ? 2.5 : 1.8}
+              />
+              <span
+                className={cn(
+                  "text-[10px] font-semibold leading-none tracking-tight",
+                  isActive ? "text-brand-600 font-bold" : "text-slate-400"
+                )}
+              >
+                {tab.label}
+              </span>
+            </NavLink>
+          );
+        })}
+        {/* More tab — triggers drawer via custom event */}
+        <button
+          onClick={() => window.dispatchEvent(new CustomEvent("open-mobile-drawer"))}
+          className="flex flex-col items-center justify-center flex-1 gap-0.5 text-slate-400 hover:text-slate-600 transition-colors"
+        >
+          <MoreHorizontal size={20} strokeWidth={1.8} />
+          <span className="text-[10px] font-semibold leading-none tracking-tight">More</span>
+        </button>
+      </div>
+    </nav>
+  );
+}
+
+/* ─── Mobile Top Bar ─────────────────────────────────────────────── */
+function MobileTopBar({
+  onMenuOpen,
+  workspaceName,
+  notifications,
+  lastReadAt,
+  markAllRead,
+  navigate,
+}: {
+  onMenuOpen: () => void;
+  workspaceName?: string;
+  notifications: any[];
+  lastReadAt: number;
+  markAllRead: () => void;
+  navigate: (to: string) => void;
+}) {
+  const [notifOpen, setNotifOpen] = useState(false);
+  const notifRef = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (notifRef.current && !notifRef.current.contains(event.target as Node)) {
+        setNotifOpen(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  return (
+    <header className="lg:hidden fixed top-0 left-0 right-0 z-[200] h-14 bg-white/90 backdrop-blur-xl border-b border-slate-200/80 flex items-center justify-between px-3">
+      <button onClick={onMenuOpen} className="p-2 hover:bg-slate-100 rounded-[5px] active:scale-95 transition-all">
+        <Menu size={22} className="text-slate-700" />
+      </button>
+      <div className="flex flex-col items-center">
+        <span className="text-[10px] font-black text-brand-600 uppercase tracking-tighter leading-none">{BRAND_NAME}</span>
+        <span className="text-xs font-bold truncate max-w-[140px] text-slate-800">{workspaceName || "Workspace"}</span>
+      </div>
+      <div className="flex items-center gap-1">
+        {/* <button
+          onClick={() => { navigate("/app/settings"); }}
+          className="p-2 border-t border-slate-100 shrink-0 hover:bg-slate-50 active:bg-slate-100 transition-colors text-left"
+        >
+          <div className="flex items-center gap-2">
+            <div className="w-10 h-10 rounded-[5px] bg-brand-100 flex items-center justify-center text-brand-700 font-bold text-xs shrink-0 uppercase shadow-sm">
+              {user?.name?.[0] || user?.email?.[0] || "?"}
+            </div>
+          </div>
+        </button> */}
+        {/* Notification Bell */}
+        <div className="relative" ref={notifRef}>
+          <button
+            onClick={() => setNotifOpen(!notifOpen)}
+            className={cn(
+              "p-2 rounded-[5px] relative transition-all active:scale-95",
+              notifOpen ? "bg-brand-50 text-brand-600" : "text-slate-500 hover:bg-slate-100"
+            )}
+          >
+            <Bell size={20} />
+            {notifications.some((n: any) => !lastReadAt || Number(n?._eventTime || 0) > lastReadAt) ? (
+              <span className="absolute top-2 right-2 w-2 h-2 bg-rose-500 rounded-full border-2 border-white" />
+            ) : null}
+          </button>
+          <AnimatePresence>
+            {notifOpen && (
+              <motion.div
+                initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                animate={{ opacity: 1, y: 0, scale: 1 }}
+                exit={{ opacity: 0, y: 10, scale: 0.95 }}
+                className="absolute right-1 mt-2 w-86 bg-white rounded-[5px] shadow-2xl border border-slate-100 overflow-hidden z-50"
+              >
+                <div className="px-4 py-3 border-b border-slate-50 bg-slate-50/50 flex items-center justify-between">
+                  <h3 className="text-xs font-black text-slate-900 uppercase tracking-widest">Notifications</h3>
+                  <button onClick={markAllRead} className="text-[10px] font-black text-brand-600 uppercase tracking-widest hover:underline">Read all</button>
+                </div>
+                <div className="max-h-[350px] overflow-y-auto custom-scrollbar">
+                  {notifications.map((n) => (
+                    <button
+                      key={n.id}
+                      onClick={() => { navigate(n.link); setNotifOpen(false); }}
+                      className="w-full px-5 py-4 text-left hover:bg-slate-50 transition-colors border-b border-slate-50 last:border-0 group"
+                    >
+                      <div className="flex gap-4">
+                        <div className={cn("mt-1 w-8 h-8 rounded-[5px] flex items-center justify-center shrink-0", n.bg, n.color)}>
+                          {n.icon}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center justify-between mb-0.5">
+                            <span className="text-sm font-black text-slate-900">{n.title}</span>
+                            <span className="text-[10px] font-bold text-slate-400">{n.time}</span>
+                          </div>
+                          <p className="text-xs text-slate-500 font-medium line-clamp-2 leading-relaxed">{n.desc}</p>
+                        </div>
+                      </div>
+                    </button>
+                  ))}
+                  {notifications.length === 0 ? (
+                    <div className="px-5 py-6 text-center text-xs font-semibold text-slate-400">
+                      No recent activity
+                    </div>
+                  ) : null}
+                </div>
+                <button
+                  onClick={() => { navigate("/app/activity"); setNotifOpen(false); }}
+                  className="w-full py-3 text-center bg-slate-50 text-[10px] font-black text-slate-400 uppercase tracking-widest hover:text-brand-600 transition-colors"
+                >
+                  View All Activity
+                </button>
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </div>
+      </div>
+    </header>
+  );
+}
+
+/* ─── Mobile Drawer ──────────────────────────────────────────────── */
+function MobileDrawer({
+  open,
+  onClose,
+  user,
+  workspace,
+  navigate,
+}: {
+  open: boolean;
+  onClose: () => void;
+  user: any;
+  workspace: any;
+  navigate: (to: string) => void;
+}) {
+  const location = useLocation();
+
+  return (
+    <AnimatePresence>
+      {open && (
+        <>
+          {/* Backdrop */}
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onClick={onClose}
+            className="lg:hidden fixed inset-0 z-[300] bg-black/40 backdrop-blur-sm"
+          />
+          {/* Drawer Panel */}
+          <motion.div
+            initial={{ x: "-100%" }}
+            animate={{ x: 0 }}
+            exit={{ x: "-100%" }}
+            transition={{ type: "spring", damping: 28, stiffness: 300 }}
+            className="lg:hidden fixed top-0 left-0 bottom-0 z-[301] w-[280px] bg-white flex flex-col shadow-2xl"
+          >
+            {/* Drawer Header */}
+            <div className="h-14 flex items-center justify-between px-4 border-b border-slate-100 shrink-0">
+              <div className="flex items-center gap-2">
+                <div className="w-7 h-7 bg-brand-600 rounded-[5px] flex items-center justify-center text-white font-black text-[10px] shadow-lg shadow-brand-500/20">W</div>
+                <span className="font-black text-base tracking-tighter text-slate-900">{BRAND_NAME}</span>
+              </div>
+              <button onClick={onClose} className="p-1.5 hover:bg-slate-100 rounded-[5px] text-slate-400 active:scale-95 transition-all">
+                <X size={20} />
+              </button>
+            </div>
+
+            {/* Drawer Nav Items */}
+            <div className="flex-1 overflow-y-auto custom-scrollbar py-3 px-3">
+              {NAV_ITEMS.map((item) => {
+                const isActive = item.to === "/app"
+                  ? location.pathname === item.to
+                  : location.pathname.startsWith(item.to);
+                return (
+                  <NavLink
+                    key={item.to}
+                    to={item.to}
+                    end={item.to === "/app"}
+                    onClick={onClose}
+                    className={cn(
+                      "flex items-center gap-3 px-3 py-2.5 rounded-[5px] transition-all mb-0.5",
+                      isActive
+                        ? "bg-brand-600 text-white shadow-lg shadow-brand-500/20"
+                        : "text-slate-600 hover:bg-slate-50 active:bg-slate-100"
+                    )}
+                  >
+                    <item.icon size={18} className="shrink-0" strokeWidth={isActive ? 2.5 : 1.8} />
+                    <div className="flex-1 min-w-0">
+                      <div className="text-sm font-semibold truncate">{item.label}</div>
+                      <div className={cn("text-[9px] uppercase tracking-wider font-medium", isActive ? "text-white/60" : "text-slate-400")}>
+                        {item.kicker}
+                      </div>
+                    </div>
+                    {isActive && <ChevronRight size={14} className="text-white/60" />}
+                  </NavLink>
+                );
+              })}
+            </div>
+
+            {/* Drawer Footer */}
+            <button
+              onClick={() => { navigate("/app/settings"); onClose(); }}
+              className="p-4 border-t border-slate-100 shrink-0 hover:bg-slate-50 active:bg-slate-100 transition-colors text-left"
+            >
+              <div className="flex items-center gap-3 px-1">
+                <div className="w-9 h-9 rounded-[5px] bg-brand-100 flex items-center justify-center text-brand-700 font-bold text-xs shrink-0 uppercase shadow-sm">
+                  {user?.name?.[0] || user?.email?.[0] || "?"}
+                </div>
+                <div className="min-w-0 flex-1">
+                  <p className="text-sm font-bold truncate text-slate-900">{user?.name || "User"}</p>
+                  <p className="text-[10px] font-semibold text-slate-400 truncate uppercase tracking-tighter">{workspace?.plan || "Free"} Plan</p>
+                </div>
+              </div>
+            </button>
+          </motion.div>
+        </>
+      )}
+    </AnimatePresence>
+  );
+}
+
 export function AppShell({ children }: { children: React.ReactNode }) {
-  const { logout } = useAuth();
+  const { user, workspace } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
-  const [mobileNavOpen, setMobileNavOpen] = useState(false);
+  const [notifOpen, setNotifOpen] = useState(false);
+  const [mobileDrawerOpen, setMobileDrawerOpen] = useState(false);
+  const hideMobileBarsOnChatDetail =
+    location.pathname.startsWith("/app/conversations/") &&
+    location.pathname !== "/app/conversations" &&
+    location.pathname !== "/app/conversations/";
+
+  // Listen for "More" tab event from the bottom bar
+  useEffect(() => {
+    const handler = () => setMobileDrawerOpen(true);
+    window.addEventListener("open-mobile-drawer", handler);
+    return () => window.removeEventListener("open-mobile-drawer", handler);
+  }, []);
+
+  // Close drawer on route change
+  useEffect(() => {
+    setMobileDrawerOpen(false);
+  }, [location.pathname]);
   const [isCollapsed, setIsCollapsed] = useState(() => {
     try {
-      return localStorage.getItem("waspakamify_sidebar_collapsed") === "1";
+      return localStorage.getItem("waspakamify_sidebar_collapsed_touched") === "1"
+        ? localStorage.getItem("waspakamify_sidebar_collapsed") === "1"
+        : false;
     } catch {
       return false;
     }
   });
 
-  useEffect(() => { setMobileNavOpen(false); }, [location.pathname]);
+
   useEffect(() => {
     try {
       localStorage.setItem("waspakamify_sidebar_collapsed", isCollapsed ? "1" : "0");
     } catch { }
   }, [isCollapsed]);
 
-  // Keep horizontal overflow visible on routes that need sticky/right-side panels
-  // (including the main dashboard). Templates preview also needs visible overflow.
-  const keepOverflowVisible = location.pathname.startsWith("/app/templates") || location.pathname === "/app";
+  function toggleSidebarCollapsed() {
+    setIsCollapsed((current) => {
+      const next = !current;
+      try {
+        localStorage.setItem("waspakamify_sidebar_collapsed_touched", "1");
+        localStorage.setItem("waspakamify_sidebar_collapsed", next ? "1" : "0");
+      } catch { }
+      return next;
+    });
+  }
 
   const desktopNavRef = useRef<HTMLDivElement | null>(null);
-  const mobileNavRef = useRef<HTMLDivElement | null>(null);
+  const notifRef = useRef<HTMLDivElement | null>(null);
+  const [notifications, setNotifications] = useState<Array<{
+    id: number;
+    title: string;
+    desc: string;
+    time: string;
+    icon: React.ReactNode;
+    color: string;
+    bg: string;
+    link: string;
+  }>>([]);
+  const [lastReadAt, setLastReadAt] = useState<number>(0);
+
+
+
+  const markAllRead = () => {
+    setLastReadAt(Date.now());
+  };
+  const relativeTime = (value?: string | null) => {
+    if (!value) return "just now";
+    const t = new Date(value).getTime();
+    if (!Number.isFinite(t)) return "just now";
+    const diff = Date.now() - t;
+    if (diff < 60000) return "just now";
+    if (diff < 3600000) return `${Math.max(1, Math.floor(diff / 60000))} min ago`;
+    if (diff < 86400000) return `${Math.max(1, Math.floor(diff / 3600000))} hr ago`;
+    return `${Math.max(1, Math.floor(diff / 86400000))} day ago`;
+  };
 
   useEffect(() => {
-    const scrollActiveIntoView = (container?: HTMLElement | null) => {
-      if (!container) return;
-      const activeLink = container.querySelector('a[aria-current="page"]') as HTMLElement | null;
-      if (!activeLink) return;
-      const containerRect = container.getBoundingClientRect();
-      const linkRect = activeLink.getBoundingClientRect();
-      if (linkRect.top < containerRect.top || linkRect.bottom > containerRect.bottom) {
-        try {
-          activeLink.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
-        } catch {
-          activeLink.scrollIntoView(false as any);
+    let alive = true;
+    const loadNotifications = async () => {
+      try {
+        const [conversationsRes, logsRes, walletRes] = await Promise.allSettled([
+          API.conversations.list({ limit: 25 }),
+          API.messages.logs({ page: 1, limit: 25 }),
+          API.wallet.get(),
+        ]);
+        if (!alive) return;
+
+        const conversations =
+          conversationsRes.status === "fulfilled" && Array.isArray(conversationsRes.value?.conversations)
+            ? conversationsRes.value.conversations
+            : [];
+        const logs =
+          logsRes.status === "fulfilled" && Array.isArray(logsRes.value?.items)
+            ? logsRes.value.items
+            : [];
+        const wallet = walletRes.status === "fulfilled" ? walletRes.value?.wallet : null;
+
+        const unreadCount = conversations.reduce(
+          (total: number, item: any) => total + Number(item?.unreadCount || 0),
+          0
+        );
+        const latestConversation = conversations[0] || null;
+        const latestLog = logs[0] || null;
+        const latestFailed = logs.find((item: any) => String(item?.status || "").toLowerCase() === "failed") || null;
+
+        const nextNotifications: any[] = [];
+        if (unreadCount > 0) {
+          const phone = latestConversation?.phone ? String(latestConversation.phone) : "";
+          const eventTime = latestConversation?.lastMessageAt ? new Date(latestConversation.lastMessageAt).getTime() : Date.now();
+          nextNotifications.push({
+            id: 1,
+            title: "Inbox Activity",
+            desc: `${unreadCount} unread message${unreadCount > 1 ? "s" : ""} in conversations.`,
+            time: latestConversation?.lastMessageAt ? relativeTime(latestConversation.lastMessageAt) : "just now",
+            icon: <MessageCircle size={16} />,
+            color: "text-brand-600",
+            bg: "bg-brand-50",
+            link: phone ? `/app/conversations/${phone}` : "/app/conversations",
+            _eventTime: eventTime,
+          });
         }
+
+        if (latestConversation) {
+          const contactName = latestConversation?.contact?.name || latestConversation?.phone || "contact";
+          const phone = latestConversation?.phone ? String(latestConversation.phone) : "";
+          const eventTime = latestConversation?.lastMessageAt ? new Date(latestConversation.lastMessageAt).getTime() : Date.now();
+          nextNotifications.push({
+            id: 2,
+            title: "Latest Conversation",
+            desc: `Recent chat update from ${contactName}.`,
+            time: latestConversation?.lastMessageAt ? relativeTime(latestConversation.lastMessageAt) : "just now",
+            icon: <CheckCircle2 size={16} />,
+            color: "text-emerald-500",
+            bg: "bg-emerald-50",
+            link: phone ? `/app/conversations/${phone}` : "/app/conversations",
+            _eventTime: eventTime,
+          });
+        }
+
+        if (latestLog) {
+          const status = String(latestLog?.status || "sent").toLowerCase();
+          const phone = latestLog?.phone || latestLog?.to || "recipient";
+          const eventTime = latestLog?.createdAt ? new Date(latestLog.createdAt).getTime() : Date.now();
+          nextNotifications.push({
+            id: 5,
+            title: status === "failed" ? "Latest Delivery Failed" : "Latest Message Update",
+            desc: `Message to ${phone} is ${status}.`,
+            time: latestLog?.createdAt ? relativeTime(latestLog.createdAt) : "just now",
+            icon: status === "failed" ? <AlertCircle size={16} /> : <CheckCircle2 size={16} />,
+            color: status === "failed" ? "text-rose-500" : "text-blue-500",
+            bg: status === "failed" ? "bg-rose-50" : "bg-blue-50",
+            link: `/app/activity?status=${encodeURIComponent(status)}&search=${encodeURIComponent(phone)}`,
+            _eventTime: eventTime,
+          });
+        }
+
+        if (latestFailed) {
+          const eventTime = latestFailed?.createdAt ? new Date(latestFailed.createdAt).getTime() : Date.now();
+          nextNotifications.push({
+            id: 3,
+            title: "Delivery Issue",
+            desc: `A message to ${latestFailed?.phone || latestFailed?.to || "recipient"} failed.`,
+            time: latestFailed?.createdAt ? relativeTime(latestFailed.createdAt) : "just now",
+            icon: <AlertCircle size={16} />,
+            color: "text-rose-500",
+            bg: "bg-rose-50",
+            link: `/app/activity?status=failed&search=${encodeURIComponent(latestFailed?.phone || latestFailed?.to || "")}`,
+            _eventTime: eventTime,
+          });
+        }
+
+        if ((wallet?.balance ?? 0) < 100) {
+          nextNotifications.push({
+            id: 4,
+            title: "Wallet Low",
+            desc: "Your balance is below Rs.100. Recharge now to avoid interruption.",
+            time: "now",
+            icon: <AlertCircle size={16} />,
+            color: "text-amber-500",
+            bg: "bg-amber-50",
+            link: "/app/wallet",
+            _eventTime: Date.now(),
+          });
+        }
+
+        setNotifications(nextNotifications.slice(0, 4));
+      } catch {
+        if (alive) setNotifications([]);
       }
     };
 
-    const timer = setTimeout(() => {
-      const desktopNav = desktopNavRef.current;
-      const mobileNav = mobileNavRef.current;
-      if (desktopNav && desktopNav.offsetParent !== null && desktopNav.offsetHeight > 0) {
-        scrollActiveIntoView(desktopNav);
-      } else if (mobileNav && mobileNav.offsetParent !== null && mobileNav.offsetHeight > 0) {
-        scrollActiveIntoView(mobileNav);
-      } else if (desktopNav) {
-        // fallback
-        scrollActiveIntoView(desktopNav);
+    void loadNotifications();
+    const timer = window.setInterval(() => void loadNotifications(), 15000);
+    return () => {
+      alive = false;
+      window.clearInterval(timer);
+    };
+  }, []);
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (notifRef.current && !notifRef.current.contains(event.target as Node)) {
+        setNotifOpen(false);
       }
-    }, 80);
-
-    return () => clearTimeout(timer);
-  }, [location.pathname, mobileNavOpen, isCollapsed]);
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
 
   return (
-    <div className="min-h-dvh bg-paper text-ink-900 font-sans antialiased relative">
-      {/* Background Gradients */}
+    <div className="min-h-dvh bg-[#F8FAFC] text-slate-900 font-sans antialiased flex overflow-hidden">
+      {/* Background Ornaments */}
       <div className="fixed inset-0 pointer-events-none z-0">
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_12%_0%,rgba(6,183,126,0.12),transparent_40%)]" />
-        {/* <div className="absolute inset-0 bg-squares opacity-20" /> */}
-        <div className="absolute inset-0 bg-grid-dots opacity-30" />
-        <div className="absolute inset-0 bg-grid opacity-20" />
+        <div className="absolute top-0 right-0 w-1/3 h-1/3 bg-brand-500/5 blur-[120px] rounded-[5px]" />
+        <div className="absolute bottom-0 left-0 w-1/4 h-1/4 bg-brand-600/5 blur-[100px] rounded-[5px]" />
       </div>
 
-      <div className="relative z-10 mx-auto max-w-[1600px] sm:p-4 lg:p-5">
+      {/* Mobile Top Navbar */}
+      {!hideMobileBarsOnChatDetail ? (
+        <MobileTopBar
+          onMenuOpen={() => setMobileDrawerOpen(true)}
+          workspaceName={workspace?.name}
+          notifications={notifications}
+          lastReadAt={lastReadAt}
+          markAllRead={markAllRead}
+          navigate={navigate}
+        />
+      ) : null}
 
-        {/* STICKY MOBILE NAVBAR */}
-        <header className="sticky top-0 z-40 mb-4 flex items-center justify-between rounded-[5px] border-b border-ink-900/10 bg-white/80 px-4 py-3 backdrop-blur-md lg:hidden">
-          <button onClick={() => setMobileNavOpen(true)} className="cursor-pointer rounded-[5px] border border-ink-900/5 bg-white p-2 transition-all duration-200 ease-out hover:-translate-y-0.5 active:scale-95">
-            <Menu size={20} />
+      {/* Mobile Bottom Tab Bar */}
+      {!hideMobileBarsOnChatDetail ? <MobileBottomTabs /> : null}
+
+      {/* Mobile Drawer */}
+      <MobileDrawer
+        open={mobileDrawerOpen}
+        onClose={() => setMobileDrawerOpen(false)}
+        user={user}
+        workspace={workspace}
+        navigate={navigate}
+      />
+
+      {/* Desktop Sidebar */}
+      <motion.aside
+        animate={{ width: isCollapsed ? 80 : 260 }}
+        transition={{ type: "spring", damping: 25, stiffness: 200 }}
+        className="hidden lg:flex flex-col bg-white border-r border-slate-200 z-[140] relative h-dvh"
+      >
+        <div className="h-16 flex items-center justify-between px-6 border-b border-slate-100 shrink-0">
+          {!isCollapsed && (
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex items-center gap-2">
+              <div className="w-8 h-8 bg-brand-600 rounded-[5px] flex items-center justify-center text-white font-black text-xs shadow-lg shadow-brand-500/20">W</div>
+              <span className="font-black text-xl tracking-tighter text-slate-900">{BRAND_NAME}</span>
+            </motion.div>
+          )}
+          <button
+            onClick={toggleSidebarCollapsed}
+            className={cn("p-1.5 hover:bg-slate-100 rounded-[5px] text-slate-400 transition-all", isCollapsed && "mx-auto")}
+          >
+            {isCollapsed ? <PanelLeftOpen size={20} /> : <PanelLeftClose size={20} />}
           </button>
-          <div className="text-center">
-            <div className="text-[10px] font-bold uppercase tracking-widest text-brand-600">{BRAND_NAME}</div>
-            <div className="text-sm font-black">{getShellTitle(location.pathname, NAV_ITEMS as any)}</div>
+        </div>
+
+        <div ref={desktopNavRef} className="flex-1 overflow-y-auto p-4 space-y-1 custom-scrollbar">
+          {NAV_ITEMS.map((item) => (
+            <SideLink key={item.to} {...item} isCollapsed={isCollapsed} />
+          ))}
+        </div>
+
+        <button
+          onClick={() => navigate("/app/settings")}
+          className="p-4 border-t border-slate-100 shrink-0 hover:bg-slate-50 transition-colors text-left"
+        >
+          <div className={cn("flex items-center gap-3", isCollapsed ? "justify-center" : "px-2")}>
+            <div className="w-9 h-9 rounded-[5px] bg-brand-100 flex items-center justify-center text-brand-700 font-bold text-xs shrink-0 uppercase shadow-sm">
+              {user?.name?.[0] || user?.email?.[0] || "?"}
+            </div>
+            {!isCollapsed && (
+              <div className="min-w-0 flex-1">
+                <p className="text-sm font-bold truncate text-slate-900">{user?.name || "User"}</p>
+                <p className="text-[10px] font-semibold text-slate-400 truncate uppercase tracking-tighter">{workspace?.plan || "Free"} Plan</p>
+              </div>
+            )}
           </div>
-          <button onClick={() => navigate("/app/settings")} className="cursor-pointer rounded-[5px] border border-ink-900/5 bg-white p-2 transition-all duration-200 ease-out hover:-translate-y-0.5">
-            <Settings size={20} />
-          </button>
+        </button>
+      </motion.aside>
+
+      {/* Main Content Area */}
+      <div className="flex-1 flex flex-col min-w-0 h-dvh overflow-hidden relative">
+        {/* Global Top Navbar */}
+        <header className="hidden lg:flex h-16 items-center justify-between px-8 bg-white/80 backdrop-blur-xl border-b border-slate-200 z-[130] shrink-0">
+          <div className="flex items-center gap-4">
+            <h1 className="text-lg font-black text-slate-900 tracking-tight">
+              {getShellTitle(location.pathname, NAV_ITEMS as any)}
+            </h1>
+            <div className="h-4 w-px bg-slate-200 mx-2" />
+            <div className="flex items-center gap-2 px-3 py-1 bg-slate-50 rounded-[5px] border border-slate-200/50 shadow-sm">
+              <Globe size={14} className="text-slate-400" />
+              <span className="text-[10px] font-black text-slate-600 uppercase tracking-widest">{workspace?.name || "Personal"}</span>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-4">
+            <WorkspaceStatusBar className="!border-none !bg-transparent !p-0 !backdrop-blur-none" />
+
+            <div className="h-6 w-px bg-slate-200" />
+
+            {/* Notification Bell */}
+            <div className="relative" ref={notifRef}>
+              <button
+                onClick={() => setNotifOpen(!notifOpen)}
+                className={cn(
+                  "p-2.5 rounded-[5px] relative transition-all group",
+                  notifOpen ? "bg-brand-50 text-brand-600" : "text-slate-400 hover:text-slate-900 hover:bg-slate-100"
+                )}
+              >
+                <Bell size={20} />
+                {notifications.some((n: any) => !lastReadAt || Number(n?._eventTime || 0) > lastReadAt) ? (
+                  <span className="absolute top-2.5 right-2.5 w-2 h-2 bg-rose-500 rounded-full border-2 border-white" />
+                ) : null}
+              </button>
+
+              <AnimatePresence>
+                {notifOpen && (
+                  <motion.div
+                    initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                    exit={{ opacity: 0, y: 10, scale: 0.95 }}
+                    className="absolute right-0 mt-3 w-80 bg-white rounded-[5px] shadow-2xl border border-slate-100 overflow-hidden z-50"
+                  >
+                    <div className="px-5 py-4 border-b border-slate-50 bg-slate-50/50 flex items-center justify-between">
+                      <h3 className="text-sm font-black text-slate-900 uppercase tracking-widest">Notifications</h3>
+                      <button onClick={markAllRead} className="text-[10px] font-black text-brand-600 uppercase tracking-widest hover:underline">Mark all read</button>
+                    </div>
+                    <div className="max-h-[350px] overflow-y-auto custom-scrollbar">
+                      {notifications.map((n) => (
+                        <button
+                          key={n.id}
+                          onClick={() => { navigate(n.link); setNotifOpen(false); }}
+                          className="w-full px-5 py-4 text-left hover:bg-slate-50 transition-colors border-b border-slate-50 last:border-0 group"
+                        >
+                          <div className="flex gap-4">
+                            <div className={cn("mt-1 w-8 h-8 rounded-[5px] flex items-center justify-center shrink-0", n.bg, n.color)}>
+                              {n.icon}
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center justify-between mb-0.5">
+                                <span className="text-sm font-black text-slate-900">{n.title}</span>
+                                <span className="text-[10px] font-bold text-slate-400">{n.time}</span>
+                              </div>
+                              <p className="text-xs text-slate-500 font-medium line-clamp-2 leading-relaxed">{n.desc}</p>
+                            </div>
+                          </div>
+                        </button>
+                      ))}
+                      {notifications.length === 0 ? (
+                        <div className="px-5 py-6 text-center text-xs font-semibold text-slate-400">
+                          No recent activity
+                        </div>
+                      ) : null}
+                    </div>
+                    <button
+                      onClick={() => { navigate("/app/activity"); setNotifOpen(false); }}
+                      className="w-full py-3 text-center bg-slate-50 text-[10px] font-black text-slate-400 uppercase tracking-widest hover:text-brand-600 transition-colors"
+                    >
+                      View All Activity
+                    </button>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
+
+            {/* Plan / Pricing Button */}
+            <button
+              onClick={() => navigate("/app/pricing")}
+              className="flex items-center gap-3 p-1.5 pl-3 pr-2 bg-slate-50 border border-slate-200 rounded-[5px] hover:bg-white transition-all group shadow-sm"
+            >
+              <div className="flex flex-col items-end leading-none">
+                <span className="text-[9px] font-black text-slate-400 uppercase tracking-tighter">Current Plan</span>
+                <span className="text-[11px] font-black text-brand-600">{workspace?.plan || "Starter"}</span>
+              </div>
+              <div className="w-8 h-8 rounded-[5px] bg-white border border-slate-200 flex items-center justify-center text-slate-600 group-hover:bg-brand-50 group-hover:text-brand-600 transition-colors shadow-sm">
+                <Sparkles size={16} />
+              </div>
+            </button>
+          </div>
         </header>
 
-        {/* MOBILE DRAWER WITH ANIMATION */}
-        <AnimatePresence>
-          {mobileNavOpen && (
-            <>
-              <motion.div
-                initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-                onClick={() => setMobileNavOpen(false)}
-                className="fixed inset-0 z-[60] bg-ink-900/30 backdrop-blur-sm lg:hidden"
-              />
-              <motion.div
-                initial={{ x: "-100%" }} animate={{ x: 0 }} exit={{ x: "-100%" }}
-                transition={{ type: "spring", damping: 25, stiffness: 200 }}
-                className="fixed inset-y-0 left-0 z-[70] w-[280px] lg:hidden"
-              >
-                <div className="flex h-full flex-col overflow-hidden rounded-[5px] border bg-white">
-                  <div className="p-6 flex justify-between items-center border-b border-ink-900/5">
-                    <span className="font-black text-xl tracking-tighter">{BRAND_NAME}</span>
-                    <button onClick={() => setMobileNavOpen(false)} className="cursor-pointer rounded-[5px] p-1 transition-colors duration-200 hover:bg-ink-900/5"><X size={24} /></button>
-                  </div>
-                  <nav ref={mobileNavRef} className="flex-1 overflow-y-auto p-4 space-y-2">
-                    {NAV_ITEMS.map((item) => <SideLink key={item.to} {...item} isCollapsed={false} />)}
-                  </nav>
-                  <div className="p-4 border-t border-ink-900/5 space-y-2">
-                    <Button variant="ghost" className="w-full justify-start gap-3" onClick={() => navigate("/app/settings")}><Settings size={18} /> Settings</Button>
-                    <Button variant="danger" className="w-full justify-start gap-3" onClick={() => logout()}><LogOut size={18} /> Logout</Button>
-                  </div>
-                </div>
-              </motion.div>
-            </>
+        {/* Scrollable Content Container */}
+        <main
+          className={cn(
+            "flex-1 min-h-0 custom-scrollbar relative z-10 lg:pt-0 lg:pb-0",
+            hideMobileBarsOnChatDetail ? "overflow-hidden" : "overflow-y-auto",
+            hideMobileBarsOnChatDetail ? "pt-0 pb-0" : "pt-14 pb-[68px]"
           )}
-        </AnimatePresence>
-
-        <div className="flex min-h-[calc(100dvh-2.5rem)] gap-5">
-
-          {/* DESKTOP SIDEBAR WITH WIDTH ANIMATION */}
-          <motion.aside
-            animate={{ width: isCollapsed ? 88 : 280 }}
-            transition={{ type: "spring", damping: 20, stiffness: 100 }}
-            className="hidden lg:flex flex-col sticky top-5 h-[calc(100dvh-2.5rem)] rounded-[5px] border border-ink-900/10 bg-white/70 backdrop-blur-xl z-20 overflow-hidden"
-          >
-            <div className="p-6 flex items-center justify-between border-b border-ink-900/5">
-              {!isCollapsed && <motion.span initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="font-black text-xl tracking-tighter">{BRAND_NAME}</motion.span>}
-              <button onClick={() => setIsCollapsed(!isCollapsed)} className="mx-auto cursor-pointer rounded-[5px] p-2 transition-all duration-200 ease-out hover:-translate-y-0.5 hover:bg-ink-900/5">
-                {isCollapsed ? <PanelLeftOpen size={20} /> : <PanelLeftClose size={20} />}
-              </button>
-            </div>
-
-            <div ref={desktopNavRef} className="flex-1 overflow-y-auto p-3 space-y-1 custom-scrollbar">
-              {NAV_ITEMS.map((item) => (
-                <SideLink key={item.to} {...item} isCollapsed={isCollapsed} />
-              ))}
-            </div>
-
-            <div className="p-4 border-t border-ink-900/5 bg-white/40 space-y-2">
-              <Button variant="ghost" className={cn("justify-start transition-all", isCollapsed ? "px-0 w-full justify-center" : "w-full gap-3")} onClick={() => navigate("/app/settings")}>
-                <Settings size={18} /> {!isCollapsed && "Settings"}
-              </Button>
-            </div>
-          </motion.aside>
-
-          {/* MAIN CONTENT AREA WITH PAGE TRANSITION */}
-          {/*
-            Horizontal scrolling fixes "right side hides when sidebar opens" on wide pages.
-            But `overflow` on an ancestor breaks `position: sticky` (Template builder preview).
-            So we enable overflow-x auto for most pages and keep it visible on templates route.
-          */}
-          <main
-            className={cn(
-              "flex-1 min-w-0 rounded-[5px] overflow-y-visible",
-              keepOverflowVisible ? "overflow-x-visible" : "overflow-x-auto"
-            )}
-          >
-            <AnimatePresence mode="wait">
-              <motion.div
-                key={location.pathname} // This triggers animation on route change
-                // Avoid transforms here: a transformed ancestor turns `position: fixed` descendants
-                // into "fixed within the container", which breaks right-side panels across pages.
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                transition={{ duration: 0.2 }}
-                className="h-full rounded-[5px] p-0"
-              >
-                {children}
-              </motion.div>
-            </AnimatePresence>
-          </main>
-        </div>
+        >
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={routeTransitionKey(location.pathname)}
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -10 }}
+              transition={{ duration: 0.2 }}
+              className={cn(
+                "max-w-[1400px] mx-auto",
+                location.pathname.startsWith("/app/conversations") ? "h-full min-h-0" : "min-h-full",
+                "p-0"
+              )}
+            >
+              {children}
+            </motion.div>
+          </AnimatePresence>
+        </main>
       </div>
     </div>
   );

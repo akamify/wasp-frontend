@@ -4,8 +4,8 @@
 /* Root tokens */
 :root {
   color-scheme: light;
-  --paper: #f7f6f2;
-  --ink: #0b1020;
+  --paper: #f8fafc;
+  --ink: #0f172a;
   --brand: #06b77e;
 }
 
@@ -39,28 +39,22 @@ body {
   overflow-x: hidden;
 }
 
-/* Landing (default to light) */
-.landing-root {
-  background: var(--paper);
-  color: var(--ink);
+/* Custom Scrollbar Utility */
+.custom-scrollbar::-webkit-scrollbar {
+  width: 5px;
 }
 
-/* Scrollbar */
-::-webkit-scrollbar {
-  width: 6px;
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
 }
 
-::-webkit-scrollbar-track {
-  background: rgba(11, 16, 32, 0.06);
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: rgba(0, 0, 0, 0.05);
+  border-radius: 5px;
 }
 
-::-webkit-scrollbar-thumb {
-  background: rgba(6, 183, 126, 0.28);
-  border-radius: 99px;
-}
-
-::-webkit-scrollbar-thumb:hover {
-  background: rgba(6, 183, 126, 0.45);
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: rgba(0, 0, 0, 0.1);
 }
 
 /* Selection */
@@ -77,25 +71,11 @@ body {
   mask-image: radial-gradient(circle at 35% 10%, black 0%, transparent 70%);
 }
 
-/* Utility: bg-squares - subtle checkerboard of soft squares */
-.bg-squares {
-  background-image:
-    linear-gradient(45deg, rgba(4, 6, 12, 0.033) 25%, transparent 25%),
-    linear-gradient(-45deg, rgba(4, 6, 12, 0.03) 25%, transparent 25%),
-    linear-gradient(45deg, transparent 75%, rgba(11, 16, 32, 0.03) 75%),
-    linear-gradient(-45deg, transparent 75%, rgba(11, 16, 32, 0.03) 75%);
-  background-size: 40px 40px;
-  background-position: 0 0, 0 0, 20px 20px, 20px 20px;
-}
-
-/* Utility: bg-grid-dots - grid lines with intersection markers */
-.bg-grid-dots {
-  background-image:
-    linear-gradient(rgba(11, 16, 32, 0.06) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(11, 16, 32, 0.06) 1px, transparent 1px),
-    radial-gradient(circle at 0 0, rgba(11, 16, 32, 0.09) 2px, transparent 2.5px);
-  background-size: 40px 40px, 40px 40px, 40px 40px;
-  background-position: 0 0, 0 0, 0 0;
+.glass {
+  background: rgba(255, 255, 255, 0.7);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.3);
 }
 
 /* Gradient text helper */
@@ -106,51 +86,67 @@ body {
   background-clip: text;
 }
 
-/* Glow pulse animation */
-@keyframes glow-pulse {
-
-  0%,
-  100% {
-    box-shadow: 0 0 20px rgba(6, 183, 126, 0.18);
-  }
-
-  50% {
-    box-shadow: 0 0 42px rgba(6, 183, 126, 0.32);
-  }
-}
-
-.glow-pulse {
-  animation: glow-pulse 3s ease-in-out infinite;
-}
-
 /* Float animation */
 @keyframes float {
-
-  0%,
-  100% {
-    transform: translateY(0px);
-  }
-
-  50% {
-    transform: translateY(-12px);
-  }
+  0%, 100% { transform: translateY(0px); }
+  50% { transform: translateY(-12px); }
 }
 
 .float {
   animation: float 4s ease-in-out infinite;
 }
 
+/* Chat Bubble Tails (Peaks) */
+.bubble-inbound::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: -12px;
+  width: 20px;
+  height: 20px;
+  background-color: #e1ffc7;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+  clip-path: polygon(100% 0, 0 0, 100% 100%);
+  z-index: 20;
+  pointer-events: none;
+}
+
+.bubble-outbound::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  right: -12px;
+  width: 20px;
+  height: 20px;
+  background-color: #fff;
+  clip-path: polygon(0 0, 100% 0, 0 100%);
+  z-index: 20;
+  pointer-events: none;
+}
+
+/* Skeleton shimmer primitive */
+.skeleton-bar {
+  border-radius: 5px;
+  background: linear-gradient(
+    90deg,
+    rgba(15, 23, 42, 0.06) 0%,
+    rgba(15, 23, 42, 0.12) 35%,
+    rgba(15, 23, 42, 0.06) 70%
+  );
+  background-size: 240% 100%;
+  animation: skeleton-shimmer 1.2s ease-in-out infinite;
+}
+
+@keyframes skeleton-shimmer {
+  0% {
+    background-position: 120% 0;
+  }
+  100% {
+    background-position: -120% 0;
+  }
+}
+
 canvas {
   display: block;
   touch-action: none;
-}
-
-:focus-visible {
-  outline: 2px solid var(--brand);
-  outline-offset: 2px;
-}
-
-a {
-  transition: color 0.2s ease, opacity 0.2s ease;
-  text-decoration: none;
 }

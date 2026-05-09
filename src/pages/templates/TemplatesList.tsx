@@ -1,18 +1,20 @@
-import { useEffect, useMemo, useState } from "react";
-import { Plus, Eye, RefreshCw, Trash2, MessageSquare, Folder, AlertCircle, ShieldCheck, Megaphone, Package } from "lucide-react";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { Plus, Eye, RefreshCw, Trash2, MessageSquare, Folder, ShieldCheck, Megaphone, Package, Search, Filter, ChevronLeft, ChevronRight, } from "lucide-react";
 import { Badge } from "../../components/ui/Badge";
 import { Button } from "../../components/ui/Button";
-import { Card } from "../../components/ui/Card";
-import { Input } from "../../components/ui/Input";
 import { Select } from "../../components/ui/Select";
-import { Spinner } from "../../components/ui/Spinner";
-import { statusTone } from "./helpers";
+import { TemplatesTableSkeleton } from "../../components/ui/Skeletons";
+import { statusTone, truncateTemplateName } from "./helpers";
 import type { TemplateItem } from "./types";
+import { cn } from "../../utils/cn";
+import { useToast } from "../../context/ToastContext";
+import { API } from "../../api/api";
 
 type Props = {
   templates: TemplateItem[];
   loading: boolean;
-  approvedCount: number;
+  syncing: boolean;
+  onRefresh: () => void;
   busyId: string | null;
   selectedId: string | null;
   onOpenAdd: () => void;
@@ -26,33 +28,48 @@ export function TemplatesList(props: Props) {
   const {
     templates,
     loading,
-    approvedCount,
+    onRefresh,
     busyId,
     selectedId,
     onOpenAdd,
     onSelectTemplate,
     onSyncStatus,
-    onDelete
+    onDelete,
   } = props;
 
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
-  const [sortBy, setSortBy] = useState("newest");
-  const [pageSize, setPageSize] = useState(10);
+  const [sortBy] = useState("newest");
+  const [pageSize] = useState(10);
   const [page, setPage] = useState(1);
+  const [syncing, setSyncing] = useState(false);
+  const { toast } = useToast();
 
   const categoryMeta = (category: string) => {
     const c = String(category || "").toLowerCase();
-    if (c === "authentication") return { Icon: ShieldCheck, label: "authentication" };
-    if (c === "marketing") return { Icon: Megaphone, label: "marketing" };
-    return { Icon: Package, label: c || "utility" };
+    if (c === "authentication") return { Icon: ShieldCheck, label: "Authentication", color: "text-blue-600", bg: "bg-blue-50" };
+    if (c === "marketing") return { Icon: Megaphone, label: "Marketing", color: "text-brand-600", bg: "bg-brand-50" };
+    return { Icon: Package, label: c || "Utility", color: "text-indigo-600", bg: "bg-indigo-50" };
   };
+
+  const handleSyncMeta = useCallback(async () => {
+    setSyncing(true);
+    try {
+      await API.templates.syncMeta();
+      toast("WhatsApp templates synced successfully.", "success");
+      onRefresh();
+    } catch (e: any) {
+      toast(e?.response?.data?.message || "Failed to sync WhatsApp templates", "error");
+    } finally {
+      setSyncing(false);
+    }
+  }, [templates]);
 
   const filteredTemplates = useMemo(() => {
     const term = search.trim().toLowerCase();
     let list = templates.filter((template) => {
       const matchesSearch = !term || template.name.toLowerCase().includes(term) || template.category.toLowerCase().includes(term);
-      const matchesStatus = statusFilter === "all" || template.status === statusFilter;
+      const matchesStatus = statusFilter === "all" || template.status.toLowerCase() === statusFilter.toLowerCase();
       return matchesSearch && matchesStatus;
     });
     if (sortBy === "name_asc") list = [...list].sort((a, b) => a.name.localeCompare(b.name));
@@ -66,275 +83,246 @@ export function TemplatesList(props: Props) {
   const safePage = Math.min(Math.max(page, 1), totalPages);
   const pageStart = (safePage - 1) * pageSize;
   const pageEnd = Math.min(pageStart + pageSize, total);
+
   const pagedTemplates = useMemo(
     () => filteredTemplates.slice(pageStart, pageEnd),
     [filteredTemplates, pageStart, pageEnd]
   );
 
-  // Reset to first page when filters change.
-  // (Avoids empty pages after narrowing search/status.)
   useEffect(() => {
     setPage(1);
   }, [search, statusFilter, sortBy, pageSize]);
 
   return (
-    <Card className="p-3 md:p-6 shadow-none rounded-[5px]">
-      {/* Header */}
-      <div className="mb-6 flex items-center justify-between border-b border-ink-900/10 pb-4">
-        <div className="flex items-center gap-3">
-          <div className="flex h-10 w-10 items-center justify-center rounded-[5px] bg-brand-50 text-brand-600">
-            <Folder size={20} />
-          </div>
-          <div>
-            <div className="text-xs font-semibold uppercase tracking-[0.2em] text-ink-800/55">
-              Template Library
-            </div>
-            <div className="mt-1 text-xl font-black text-ink-900 flex items-center gap-2">
-              {templates.length} total
-              <span className="text-ink-800/30 font-normal">|</span>
-              <span className="text-brand-600 text-lg">{approvedCount} approved</span>
-            </div>
-          </div>
-        </div>
-        <Button onClick={onOpenAdd} className="!hidden items-center gap-2 rounded-[5px] shadow-none md:!inline-flex">
-          <Plus size={16} /> Add
-        </Button>
-      </div>
-      <Button onClick={onOpenAdd} className="!inline-flex items-center justify-flex-end mb-7 gap-2 rounded-[5px] shadow-none md:!hidden">
-        <Plus size={16} /> Add
-      </Button>
-
-      {/* Filters */}
-      <div className="mb-6 grid grid-cols-1 gap-2 md:grid-cols-3 md:gap-4">
-        <Input
-          label="Search"
-          value={search}
-          onChange={(event) => setSearch(event.target.value)}
-          placeholder="Search by template name/type"
-          className="rounded-[5px] shadow-none"
-        />
-        <Select
-          label="Filter Status"
-          value={statusFilter}
-          onChange={(event) => setStatusFilter(event.target.value)}
-          className="rounded-[5px] shadow-none"
-        >
-          <option value="all">All Status</option>
-          <option value="approved">Approved</option>
-          <option value="pending">Pending</option>
-          <option value="rejected">Rejected</option>
-          <option value="paused">Paused</option>
-          <option value="disabled">Disabled</option>
-        </Select>
-        <Select
-          label="Sort"
-          value={sortBy}
-          onChange={(event) => setSortBy(event.target.value)}
-          className="rounded-[5px] shadow-none"
-        >
-          <option value="newest">Newest</option>
-          <option value="oldest">Oldest</option>
-          <option value="name_asc">Name (A-Z)</option>
-          <option value="name_desc">Name (Z-A)</option>
-        </Select>
-      </div>
-
-      {/* Pagination controls */}
-      <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
-        <div className="text-xs font-semibold text-ink-900/55">
-          {total ? (
-            <span>
-              Showing <span className="font-black text-ink-900">{pageStart + 1}</span>-
-              <span className="font-black text-ink-900">{pageEnd}</span> of{" "}
-              <span className="font-black text-ink-900">{total}</span>
-            </span>
-          ) : (
-            <span>Showing 0 results</span>
-          )}
-        </div>
-        <div className="flex items-end gap-2">
-          <Select
-            label="Per page"
-            value={String(pageSize)}
-            onChange={(e) => setPageSize(Number(e.target.value) || 10)}
-            className="rounded-[5px] shadow-none"
-          >
-            <option value="10">10</option>
-            <option value="25">25</option>
-            <option value="50">50</option>
-            <option value="100">100</option>
-          </Select>
-          <Button
-            variant="ghost"
-            size="sm"
-            className="rounded-[5px]"
-            disabled={safePage <= 1}
-            onClick={() => setPage((p) => Math.max(p - 1, 1))}
-          >
-            Prev
-          </Button>
-          <div className="px-2 pb-2 text-xs font-bold text-ink-900/60">
-            {safePage}/{totalPages}
-          </div>
-          <Button
-            variant="ghost"
-            size="sm"
-            className="rounded-[5px]"
-            disabled={safePage >= totalPages}
-            onClick={() => setPage((p) => Math.min(p + 1, totalPages))}
-          >
-            Next
-          </Button>
-        </div>
-      </div>
-
-      {/* Mobile Cards */}
-      <div className="grid gap-3 md:hidden">
-        {loading ? (
-          <div className="rounded-[5px] border border-ink-900/10 bg-white px-4 py-10">
-            <Spinner label="Loading templates..." />
-          </div>
-        ) : filteredTemplates.length === 0 ? (
-          <div className="rounded-[5px] border border-ink-900/10 bg-white px-4 py-8 text-center text-sm text-ink-800/70">
-            No matching templates found.
-          </div>
-        ) : (
-          pagedTemplates.map((template) => (
-            <div
-              key={template._id}
-              className={`rounded-[5px] border p-3 ${selectedId === template._id ? "border-brand-400 bg-brand-50/30" : "border-ink-900/10 bg-white"}`}
-            >
-              <button
-                type="button"
-                className="mb-2 flex w-full items-center gap-2 text-left font-bold text-ink-900"
-                onClick={() => onSelectTemplate(template)}
-              >
-                <MessageSquare size={15} className="text-ink-800/50" />
-                <span className="truncate">{template.name}</span>
-              </button>
-              <div className="mb-3 flex flex-wrap gap-2">
-                {(() => {
-                  const { Icon, label } = categoryMeta(template.category);
-                  return (
-                    <Badge tone="neutral" className="rounded-[5px] inline-flex items-center gap-1.5">
-                      <Icon size={14} className="text-ink-900/45" />
-                      {label}
-                    </Badge>
-                  );
-                })()}
-                <Badge tone={statusTone(template.status)} className="rounded-[5px]">{template.status}</Badge>
-              </div>
-              <div className="grid grid-cols-3 gap-2">
-                <Button size="sm" variant="ghost" onClick={() => onSelectTemplate(template)} className="rounded-[5px]">View</Button>
-                <Button size="sm" variant="ghost" onClick={() => onSyncStatus(template._id)} disabled={busyId === template._id} className="rounded-[5px]">
-                  <RefreshCw size={13} className={busyId === template._id ? "animate-spin" : ""} />
-                  Sync
-                </Button>
-                <Button size="sm" variant="danger" onClick={() => onDelete(template)} disabled={busyId === template._id} className="rounded-[5px] bg-red-500 text-red-700 hover:bg-red-400 border-none">
-                  Delete
-                </Button>
+    <div className="bg-white rounded-[5px] border border-slate-200 shadow-sm overflow-hidden">
+      {/* Main List Container */}
+      <div className="p-6 md:p-8">
+        {/* Filters Header */}
+        <div className="border-b border-slate-100 pb-2">
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+            <div className="flex items-center justify-around gap-3">
+              <div className="flex items-center gap-4">
+                <div className="relative group flex-1 md:flex-none md:w-64">
+                  <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-brand-600 transition-colors" size={16} />
+                  <input
+                    value={search}
+                    onChange={(e) => setSearch(e.target.value)}
+                    placeholder="Search templates..."
+                    className="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-100 rounded-[5px] text-sm font-bold focus:outline-none focus:ring-2 focus:ring-brand-600/10 focus:border-brand-500 transition-all"
+                  />
+                </div>
+                <div className="flex items-center gap-2 flex-1 md:flex-none">
+                  <button className="h-[44px] w-[44px] bg-slate-50 border border-slate-100 rounded-[5px] flex items-center justify-center text-slate-500 hover:bg-slate-100 transition-all">
+                    <Filter size={18} />
+                  </button>
+                  <Select
+                    value={statusFilter}
+                    onChange={(e) => setStatusFilter(e.target.value)}
+                    className="h-[44px] rounded-[5px] border-slate-100 bg-slate-50 font-bold text-xs uppercase tracking-widest flex-1 md:w-40"
+                  >
+                    <option value="all">All Status</option>
+                    <option value="approved">Approved</option>
+                    <option value="pending">Pending</option>
+                    <option value="rejected">Rejected</option>
+                  </Select>
+                </div>
               </div>
             </div>
-          ))
-        )}
-      </div>
-
-      {/* Desktop Table */}
-      <div className="hidden max-w-full overflow-x-auto rounded-[5px] border border-ink-900/10 md:block">
-        <table className="w-full min-w-[860px] text-left text-sm text-ink-900">
-          <thead className="bg-slate-50 text-xs uppercase tracking-wider text-ink-800/60 border-b border-ink-900/10">
-            <tr>
-              <th className="px-5 py-4 font-semibold">Template Name</th>
-              <th className="px-5 py-4 font-semibold">Category</th>
-              <th className="px-5 py-4 font-semibold">Status</th>
-              <th className="px-5 py-4 text-right font-semibold">Actions</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-ink-900/10 bg-white">
-            {loading ? (
-              <tr>
-                <td colSpan={4} className="px-5 py-12 text-center align-middle">
-                  <Spinner label="Loading templates..." />
-                </td>
-              </tr>
-            ) : filteredTemplates.length === 0 ? (
-              <tr>
-                <td colSpan={4} className="px-5 py-12 text-center align-middle">
-                  <div className="flex flex-col items-center justify-center gap-2 text-ink-800/70">
-                    <AlertCircle size={24} className="text-ink-800/40" />
-                    <p>No matching templates found.</p>
-                  </div>
-                </td>
-              </tr>
-            ) : (
-              pagedTemplates.map((template) => (
-                <tr
-                  key={template._id}
-                  className={`transition-colors hover:bg-slate-50/50 ${selectedId === template._id ? "bg-brand-50/40" : ""
-                    }`}
+              <div className="flex items-center gap-3">
+                <Button
+                  variant="ghost"
+                  onClick={handleSyncMeta}
+                  disabled={syncing}
+                  className="h-11 px-5 rounded-[5px] bg-slate-900 text-white font-bold text-xs uppercase tracking-widest hover:bg-black transition-all shadow-sm"
                 >
-                  <td className="px-5 py-4 align-middle">
-                    <button
-                      type="button"
-                      className="flex items-center gap-2 text-left font-bold text-ink-900 hover:text-brand-700"
-                      onClick={() => onSelectTemplate(template)}
-                    >
-                      <MessageSquare size={16} className="text-ink-800/50" />
-                      {template.name}
-                    </button>
-                  </td>
-                  <td className="px-5 py-4 align-middle">
-                    {(() => {
-                      const { Icon, label } = categoryMeta(template.category);
-                      return (
-                        <Badge tone="neutral" className="rounded-[5px] inline-flex items-center gap-1.5">
-                          <Icon size={14} className="text-ink-900/45" />
-                          {label}
-                        </Badge>
-                      );
-                    })()}
-                  </td>
-                  <td className="px-5 py-4 align-middle">
-                    <Badge tone={statusTone(template.status)} className="rounded-[5px]">
-                      {template.status}
-                    </Badge>
-                  </td>
-                  <td className="px-5 py-4 align-middle text-right">
-                    <div className="flex items-center justify-end gap-2">
+                  <RefreshCw size={16} className={cn("mr-2", syncing && "animate-spin")} />
+                  Sync Meta
+                </Button>
+                <Button
+                  onClick={() => onOpenAdd()}
+                  className="h-11 px-5 rounded-[5px] bg-brand-600 text-white font-bold text-xs uppercase tracking-widest hover:bg-brand-700 transition-all shadow-sm"
+                >
+                  <Plus size={16} className="mr-2" /> New Template
+                </Button>
+              </div>
+          </div>
+
+          <div className="flex items-center justify-between py-4">
+            <p className="text-xs font-black text-slate-400 uppercase tracking-widest">
+              Showing <span className="text-slate-900">{total > 0 ? pageStart + 1 : 0} - {pageEnd}</span> of {total}
+            </p>
+            <div className="flex items-center gap-3">
+              <button
+                disabled={safePage <= 1}
+                onClick={() => setPage(p => Math.max(p - 1, 1))}
+                className="p-2 bg-slate-50 border border-slate-100 rounded-[5px] text-slate-400 hover:text-slate-900 disabled:opacity-30 disabled:cursor-not-allowed transition-all"
+              >
+                <ChevronLeft size={18} />
+              </button>
+              <span className="text-xs font-black text-slate-900">{safePage} / {totalPages}</span>
+              <button
+                disabled={safePage >= totalPages}
+                onClick={() => setPage(p => Math.min(p + 1, totalPages))}
+                className="p-2 bg-slate-50 border border-slate-100 rounded-[5px] text-slate-400 hover:text-slate-900 disabled:opacity-30 disabled:cursor-not-allowed transition-all"
+              >
+                <ChevronRight size={18} />
+              </button>
+            </div>
+          </div>
+        </div>
+
+        {/* Content Area */}
+        <div className="relative">
+          {loading ? (
+            <div className="py-8">
+              <table className="w-full">
+                <TemplatesTableSkeleton rows={8} />
+              </table>
+            </div>
+          ) : filteredTemplates.length === 0 ? (
+            <div className="p-20 flex flex-col items-center text-center">
+              <div className="p-6 bg-slate-50 rounded-[5px] text-slate-300 mb-6">
+                <Folder size={48} />
+              </div>
+              <h3 className="text-xl font-black text-slate-900 uppercase tracking-tighter">No Templates Found</h3>
+              <p className="mt-2 text-slate-500 font-medium max-w-xs">Adjust your search or filters to find what you're looking for.</p>
+            </div>
+          ) : false ? (
+            <div className="p-6 md:p-8 cursor-pointer grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+              {pagedTemplates.map((template) => {
+                const { Icon, label, color, bg } = categoryMeta(template.category);
+                return (
+                  <div
+                    key={template._id}
+                    className={cn(
+                      "group p-6 rounded-[5px] cursor-pointer border transition-all duration-300 relative",
+                      selectedId === template._id ? "border-brand-600 bg-brand-50/20 cursor-pointer" : "border-slate-100 bg-white cursor-pointer hover:border-slate-300 hover:shadow-xl hover:shadow-slate-200/40"
+                    )}
+                  >
+                    <div className="flex items-start justify-between cursor-pointer mb-6">
+                      <div className={cn("p-3 rounded-[5px]", bg, color)}>
+                        <Icon size={20} />
+                      </div>
+                      <Badge tone={statusTone(template.status)} className="rounded-[5px] px-3 py-1 text-[10px] uppercase font-black tracking-widest">{template.status}</Badge>
+                    </div>
+                    <h5 className="font-black text-slate-900 truncate mb-1 group-hover:text-brand-600 transition-colors" title={template.name}>
+                      {truncateTemplateName(template.name)}
+                    </h5>
+                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-6">{label}</p>
+
+                    <div className="flex items-center gap-2 pt-4 border-t border-slate-50">
                       <Button
-                        size="sm"
                         variant="ghost"
                         onClick={() => onSelectTemplate(template)}
-                        className="flex items-center gap-1.5 rounded-[5px] shadow-none"
+                        className="flex-1 h-10 rounded-[5px] bg-slate-50 text-slate-600 font-black text-[10px] uppercase tracking-widest hover:bg-slate-900 hover:text-white transition-all"
                       >
-                        <Eye size={14} /> View
+                        <Eye size={14} className="mr-2" /> View
                       </Button>
                       <Button
-                        size="sm"
                         variant="ghost"
                         onClick={() => onSyncStatus(template._id)}
                         disabled={busyId === template._id}
-                        className="flex items-center gap-1.5 rounded-[5px] shadow-none"
+                        className="h-10 w-10 rounded-[5px] bg-slate-50 text-slate-400 hover:text-brand-600 transition-all shrink-0"
                       >
-                        <RefreshCw size={14} className={busyId === template._id ? "animate-spin" : ""} /> Sync
+                        <RefreshCw size={14} className={busyId === template._id ? "animate-spin" : ""} />
                       </Button>
                       <Button
-                        size="sm"
-                        variant="danger"
+                        variant="ghost"
                         onClick={() => onDelete(template)}
                         disabled={busyId === template._id}
-                        className="flex items-center gap-1.5 rounded-[5px] shadow-none bg-red-500 text-red-700 hover:bg-red-400 border-none"
+                        className="h-10 w-10 rounded-[5px] bg-rose-50 text-rose-400 hover:bg-rose-500 hover:text-white transition-all shrink-0"
                       >
-                        <Trash2 size={14} /> Delete
+                        <Trash2 size={14} />
                       </Button>
                     </div>
-                  </td>
-                </tr>
-              ))
-            )}
-          </tbody>
-        </table>
+                  </div>
+                );
+              })}
+            </div>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full text-left border-collapse min-w-[800px]">
+                <thead className="bg-slate-50/50">
+                  <tr>
+                    <th className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest">Template Details</th>
+                    <th className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest">Category</th>
+                    <th className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest">Status</th>
+                    <th className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest text-right">Actions</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-50">
+                  {pagedTemplates.map((template) => {
+                    const { Icon, label, color, bg } = categoryMeta(template.category);
+                    return (
+                      <tr
+                        key={template._id}
+                        className={cn("group transition-colors", selectedId === template._id ? "bg-brand-50/20" : "hover:bg-slate-50/40")}
+                      >
+                        <td className="px-8 py-5 cursor-pointer" onClick={() => onSelectTemplate(template)}>
+                          <button
+                            onClick={() => onSelectTemplate(template)}
+                            className="flex items-center gap-4 text-left group"
+                          >
+                            <div className="p-2.5 rounded-[5px] bg-slate-100 text-slate-400 group-hover:bg-brand-600 group-hover:text-white transition-all shadow-sm">
+                              <MessageSquare size={16} />
+                            </div>
+                            <div className="font-black text-slate-900 text-sm group-hover:text-brand-600 transition-colors truncate max-w-[250px]" title={template.name}>
+                              {truncateTemplateName(template.name)}
+                            </div>
+                          </button>
+                        </td>
+                        <td className="px-8 py-5">
+                          <div className="flex items-center gap-2">
+                            <div className={cn("p-1.5 rounded-[5px]", bg, color)}>
+                              <Icon size={14} />
+                            </div>
+                            <span className="text-xs font-bold text-slate-600">{label}</span>
+                          </div>
+                        </td>
+                        <td className="px-8 py-5">
+                          <Badge tone={statusTone(template.status)} className="rounded-[5px] px-3 py-1 text-[10px] uppercase font-black tracking-widest">
+                            {template.status}
+                          </Badge>
+                        </td>
+                        <td className="px-8 py-5 text-right">
+                          <div className="flex items-center justify-end gap-2">
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => onSelectTemplate(template)}
+                              className="h-10 px-4 rounded-[5px] bg-slate-50 text-slate-600 font-black text-[10px] uppercase tracking-widest hover:bg-slate-900 hover:text-white transition-all shadow-sm"
+                            >
+                              <Eye size={12} />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => onSyncStatus(template._id)}
+                              disabled={busyId === template._id}
+                              className="h-10 px-4 rounded-[5px] bg-slate-50 text-slate-600 font-black text-[10px] uppercase tracking-widest hover:bg-slate-900 hover:text-white transition-all shadow-sm"
+                            >
+                              <RefreshCw size={14} className={busyId === template._id ? "animate-spin" : ""} />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => onDelete(template)}
+                              disabled={busyId === template._id}
+                              className="h-10 px-4 rounded-[5px] bg-slate-50 text-slate-600 font-black text-[10px] uppercase tracking-widest hover:bg-slate-900 hover:text-white transition-all shadow-sm"
+                            >
+                              <Trash2 size={14} />
+                            </Button>
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
       </div>
-    </Card>
+    </div>
   );
 }

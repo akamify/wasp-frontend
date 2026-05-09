@@ -7,6 +7,7 @@ type User = {
   name?: string;
   phone?: string;
   role?: "user" | "admin";
+  twoFactorEnabled?: boolean;
   createdAt?: string;
 };
 
@@ -25,7 +26,7 @@ type AuthState = {
 
 type AuthContextValue = AuthState & {
   login: (email: string, password: string) => Promise<any>;
-  register: (email: string, password: string, name?: string) => Promise<{ apiKey?: string }>;
+  register: (email: string, password: string, name?: string) => Promise<any>;
   logout: () => void;
   refreshMe: () => Promise<void>;
 };
@@ -64,6 +65,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const login = useCallback(async (email: string, password: string) => {
     const res = await API.auth.login({ email, password });
+    if (res?.requires2fa) return res;
     setToken(res.token);
     if (res?.workspace?.id) setWorkspaceId(res.workspace.id);
     setState({ token: res.token, user: res.user, workspace: res.workspace || null, loading: false });
@@ -72,10 +74,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const register = useCallback(async (email: string, password: string, name?: string) => {
     const res = await API.auth.register({ email, password, name });
-    setToken(res.token);
-    if (res?.workspace?.id) setWorkspaceId(res.workspace.id);
-    setState({ token: res.token, user: res.user, workspace: res.workspace || null, loading: false });
-    return { apiKey: res.apiKey };
+    if (res?.token) {
+      setToken(res.token);
+      if (res?.workspace?.id) setWorkspaceId(res.workspace.id);
+      setState({ token: res.token, user: res.user, workspace: res.workspace || null, loading: false });
+    }
+    return res;
   }, []);
 
   const logout = useCallback(() => {

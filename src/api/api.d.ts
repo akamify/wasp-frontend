@@ -12,9 +12,21 @@ export const API: {
   auth: {
     register(payload: any): Promise<any>;
     login(payload: any): Promise<any>;
+    verifyLoginOtp(payload: any): Promise<any>;
+    resendLoginOtp(payload: any): Promise<any>;
+    verifyRegisterOtp(payload: any): Promise<any>;
+    resendRegisterOtp(payload: any): Promise<any>;
+    forgotPassword(payload: any): Promise<any>;
+    resetPassword(payload: any): Promise<any>;
     me(): Promise<any>;
-    rotateApiKey(): Promise<any>;
+    apiKeyStatus(): Promise<any>;
+    requestApiKeyOtp(payload: any): Promise<any>;
+    verifyApiKeyOtp(payload: any): Promise<any>;
     updateProfile(payload: any): Promise<any>;
+    changePassword(payload: any): Promise<any>;
+    requestEnable2fa(): Promise<any>;
+    verifyEnable2fa(payload: any): Promise<any>;
+    disable2fa(): Promise<any>;
   };
   admin: {
     overview(): Promise<any>;
@@ -47,10 +59,12 @@ export const API: {
   messages: {
     send(payload: any): Promise<any>;
     sendText(payload: any): Promise<any>;
+    sendMedia(payload: any): Promise<any>;
     bulk(payload: any): Promise<any>;
     logs(params?: any): Promise<any>;
     status(waId: string): Promise<any>;
     byPhone(phone: string, params?: any): Promise<any>;
+    downloadMedia(id: string): Promise<any>;
     uploadMedia(file: any, onProgress?: (pct: number) => void): Promise<any>;
   };
   analytics: {
@@ -76,9 +90,26 @@ export const API: {
   };
   campaigns: {
     list(params?: any): Promise<any>;
+    get(id: string): Promise<any>;
+    estimate(payload: any): Promise<any>;
+    metrics(id: string): Promise<any>;
+    messages(id: string, params?: any): Promise<any>;
+    replies(id: string, params?: any): Promise<any>;
+    creditUsage(id: string): Promise<any>;
+    failedRecipients(id: string): Promise<any>;
+    retryFailed(id: string): Promise<any>;
+    remove(id: string, params?: { force?: boolean }): Promise<any>;
+    action(id: string, action: "pause" | "resume" | "stop" | "complete"): Promise<any>;
     create(payload: any): Promise<any>;
   };
+  reports: {
+    apiCampaigns(params?: any): Promise<any>;
+    apiCampaign(id: string): Promise<any>;
+    apiMessages(params?: any): Promise<any>;
+    apiMessage(id: string): Promise<any>;
+  };
   conversations: {
+    clear(phone: string): Promise<any>;
     list(params?: any): Promise<any>;
     get(phone: string): Promise<any>;
     read(phone: string): Promise<any>;

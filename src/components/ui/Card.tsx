@@ -5,7 +5,7 @@ export function Card({ className, ...props }: React.HTMLAttributes<HTMLDivElemen
   return (
     <div
       className={cn(
-        "rounded-[5px] border border-ink-900/10 bg-white ring-1 ring-ink-900/5",
+        "rounded-[5px] border border-slate-200 bg-white shadow-sm transition-all duration-200 hover:shadow-md",
         className
       )}
       {...props}

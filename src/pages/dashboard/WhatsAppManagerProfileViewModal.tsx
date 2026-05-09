@@ -1,21 +1,6 @@
 import { AnimatePresence, motion } from "framer-motion";
-import { X, ExternalLink, ShieldCheck } from "lucide-react";
-import { Button } from "../../components/ui/Button";
-
-function safeArray(value: any): string[] {
-  if (!Array.isArray(value)) return [];
-  return value.map((v) => String(v || "").trim()).filter(Boolean);
-}
-
-function labelValue(label: string, value?: string | null) {
-  if (!value) return null;
-  return (
-    <div className="flex items-start justify-between gap-4">
-      <div className="text-xs font-semibold text-ink-900/50">{label}</div>
-      <div className="text-sm font-semibold text-ink-900">{value}</div>
-    </div>
-  );
-}
+import { createPortal } from "react-dom";
+import { X, Mail, Globe, Info, Edit2, Edit, LocationEdit } from "lucide-react";
 
 export function WhatsAppManagerProfileViewModal({
   open,
@@ -28,14 +13,14 @@ export function WhatsAppManagerProfileViewModal({
   phone: any;
   businessProfile: any;
 }) {
-  const websites = safeArray(businessProfile?.websites);
+  const websites = Array.isArray(businessProfile?.websites) ? businessProfile.websites : [];
   const avatarUrl = businessProfile?.profile_picture_url || "";
 
-  return (
+  return createPortal(
     <AnimatePresence>
       {open ? (
         <motion.div
-          className="fixed inset-0 z-50 overflow-y-auto bg-black/40 p-4"
+          className="fixed inset-0 z-[999] overflow-y-auto bg-slate-900/40 backdrop-blur-sm p-4 flex items-center justify-center"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
@@ -44,99 +29,130 @@ export function WhatsAppManagerProfileViewModal({
           }}
         >
           <motion.div
-            className="mx-auto my-6 w-full max-w-md overflow-hidden rounded-[5px] bg-white shadow-none ring-1 ring-ink-900/10"
-            initial={{ y: 14, opacity: 0, scale: 0.98 }}
+            className="w-full max-w-md overflow-hidden rounded-[5px] bg-white shadow-2xl border border-slate-100 relative"
+            initial={{ y: 20, opacity: 0, scale: 0.95 }}
             animate={{ y: 0, opacity: 1, scale: 1 }}
-            exit={{ y: 14, opacity: 0, scale: 0.98 }}
+            exit={{ y: 20, opacity: 0, scale: 0.95 }}
           >
-            {/* WhatsApp-ish header */}
-            <div className="flex items-center justify-between bg-emerald-700 px-4 py-3 text-white">
-              <div className="text-sm font-bold">Business profile</div>
+            {/* Header matching Edit modal spacing */}
+            <div className="flex items-center justify-between px-5 py-4 border-b border-slate-100">
+              <h3 className="text-lg font-black tracking-tight text-slate-900">Business Profile</h3>
               <button
                 onClick={onClose}
-                className="rounded-[5px] p-2 hover:bg-white/10"
-                aria-label="Close"
+                className="p-2 hover:bg-slate-100 rounded-[5px] transition-colors text-slate-400 hover:text-slate-900"
               >
-                <X size={18} />
+                <X size={20} />
               </button>
             </div>
 
-            {/* Profile hero */}
-            <div className="px-5 pb-5 pt-5">
+            <div className="px-6 py-8 max-h-[75vh] overflow-y-auto custom-scrollbar">
+              {/* WhatsApp Profile Layout */}
               <div className="flex flex-col items-center text-center">
-                <div className="h-24 w-24 overflow-hidden rounded-full bg-ink-900/5 ring-1 ring-ink-900/10">
-                  {avatarUrl ? (
-                    <img src={avatarUrl} alt="logo" className="h-full w-full object-cover" />
-                  ) : (
-                    <div className="flex h-full w-full items-center justify-center text-2xl font-black text-ink-900/30">
-                      {phone?.verified_name?.[0] || "W"}
-                    </div>
-                  )}
+                <div className="relative">
+                  <div className="h-32 w-32 overflow-hidden rounded-full bg-slate-100 border border-slate-100">
+                    {avatarUrl ? (
+                      <img src={avatarUrl} alt="logo" className="h-full w-full object-cover" />
+                    ) : (
+                      <div className="flex h-full w-full items-center justify-center text-4xl font-black text-brand-600">
+                        {phone?.verified_name?.[0] || "W"}
+                      </div>
+                    )}
+                  </div>
                 </div>
 
-                <div className="mt-4 text-xl font-black tracking-tight text-ink-900">
-                  {phone?.verified_name || "WhatsApp Business"}
-                </div>
-                <div className="mt-1 text-sm font-semibold text-ink-900/60">
-                  {phone?.display_phone_number || "—"}
+                <div className="mt-6">
+                  <div className="flex items-center justify-center gap-1.5">
+                    <h2 className="text-2xl font-black tracking-tight text-slate-900">
+                      {phone?.verified_name || "WhatsApp Business"}
+                    </h2>
+                    {phone?.verified_name && (
+                      <img src="/verified-badge.png" alt="verified" className="size-5" />
+                    )}
+                  </div>
+                  <p className="mt-1 text-base font-bold text-slate-500">
+                    {phone?.display_phone_number || "—"}
+                  </p>
+                  <p className="mt-1 text-xs font-bold text-slate-400 uppercase tracking-tighter">
+                    {businessProfile?.vertical || "Business Account"}
+                  </p>
                 </div>
               </div>
 
-              {/* WhatsApp-like sections */}
-              <div className="mt-6 space-y-5">
-                {businessProfile?.about ? (
-                  <div className="rounded-[5px] bg-ink-900/5 p-4">
-                    <div className="text-[11px] font-bold uppercase tracking-widest text-ink-900/40">
-                      About
-                    </div>
-                    <div className="mt-2 text-sm font-semibold text-ink-900">{businessProfile.about}</div>
-                  </div>
-                ) : null}
-
-                <div className="rounded-[5px] bg-white p-4 ring-1 ring-ink-900/10">
-                  <div className="flex items-center gap-2 text-[11px] font-bold uppercase tracking-widest text-ink-900/40">
-                    <ShieldCheck size={14} className="text-ink-900/35" />
-                    Details
-                  </div>
-                  <div className="mt-4 space-y-3">
-                    {labelValue("Description", businessProfile?.description)}
-                    {labelValue("Email", businessProfile?.email)}
-                    {labelValue("Address", businessProfile?.address)}
-                  </div>
+              {/* Sections */}
+              <div className="mt-10 space-y-2">
+                {/* About/Notes */}
+                <div className="group flex items-start gap-4 p-4 hover:bg-slate-50 rounded-[5px] transition-all">
+                   <div className="mt-1 text-slate-400">
+                      <Edit2 size={18} />
+                   </div>
+                   <div className="flex-1 min-w-0">
+                      <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-1">About</p>
+                      <p className="text-sm font-semibold text-slate-700 leading-relaxed">
+                        {businessProfile?.about || "No business details added."}
+                      </p>
+                   </div>
                 </div>
 
-                {websites.length ? (
-                  <div className="rounded-[5px] bg-white p-4 ring-1 ring-ink-900/10">
-                    <div className="text-[11px] font-bold uppercase tracking-widest text-ink-900/40">
-                      Websites
-                    </div>
-                    <div className="mt-3 space-y-2">
-                      {websites.map((w) => (
-                        <a
-                          key={w}
-                          href={w}
-                          target="_blank"
-                          rel="noreferrer"
-                          className="flex items-center justify-between gap-3 rounded-[5px] bg-ink-900/5 px-3 py-2 text-sm font-bold text-ink-900 hover:bg-ink-900/10"
-                        >
-                          <span className="truncate">{w}</span>
-                          <ExternalLink size={16} />
-                        </a>
-                      ))}
-                    </div>
-                  </div>
-                ) : null}
-              </div>
+                <div className="h-px bg-slate-50 mx-4" />
 
-              <div className="mt-6">
-                <Button className="w-full" onClick={onClose}>
-                  Close
-                </Button>
+                {/* Description */}
+                <div className="group flex items-start gap-4 p-4 hover:bg-slate-50 rounded-[5px] transition-all">
+                   <div className="mt-1 text-slate-400">
+                      <Edit size={18} />
+                   </div>
+                   <div className="flex-1 min-w-0">
+                      <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-1">Description</p>
+                      <p className="text-sm font-semibold text-slate-700 leading-relaxed">
+                        {businessProfile?.description || "No description added."}
+                      </p>
+                   </div>
+                </div>
+
+                <div className="h-px bg-slate-50 mx-4" />
+
+                {/* Business Info Banner */}
+                 <div className="flex items-center gap-4 p-4 bg-slate-50 rounded-[5px] border border-slate-100">
+                   <Info size={18} className="text-slate-400" />
+                   <p className="text-xs font-bold text-slate-600">This is a business account.</p>
+                </div>
+
+                <div className="h-px bg-slate-50 mx-4" />
+
+                {/* Contact Details */}
+                <div className="space-y-1">
+                   {businessProfile?.email && (
+                      <div className="flex items-center gap-4 p-4 hover:bg-emerald-50 rounded-[5px] transition-all group">
+                        <Mail size={18} className="text-slate-400 group-hover:text-emerald-600" />
+                        <span className="text-sm font-bold text-emerald-600">{businessProfile.email}</span>
+                      </div>
+                   )}
+
+                   {businessProfile?.address && (
+                      <div className="flex items-center gap-4 p-4 hover:bg-emerald-50 rounded-[5px] transition-all group">
+                        <LocationEdit size={18} className="text-slate-400 group-hover:text-emerald-600" />
+                        <span className="text-sm font-bold text-emerald-600">{businessProfile.address}</span>
+                      </div>
+                   )}
+                   
+                   {websites.map((w: string) => (
+                     <a
+                       key={w}
+                       href={w}
+                       target="_blank"
+                       rel="noreferrer"
+                        className="flex items-center gap-4 p-4 hover:bg-emerald-50 rounded-[5px] transition-all group"
+                     >
+                        <Globe size={18} className="text-slate-400 group-hover:text-emerald-600" />
+                        <span className="text-sm font-bold text-emerald-600 truncate">{w}</span>
+                     </a>
+                   ))}
+                </div>
               </div>
             </div>
           </motion.div>
         </motion.div>
       ) : null}
-    </AnimatePresence>
+    </AnimatePresence>,
+    document.body
   );
 }

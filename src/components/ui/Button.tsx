@@ -2,26 +2,34 @@ import React from "react";
 import { cn } from "../../utils/cn";
 
 type Props = React.ButtonHTMLAttributes<HTMLButtonElement> & {
-  variant?: "primary" | "ghost" | "danger";
-  size?: "sm" | "md";
+  variant?: "primary" | "secondary" | "ghost" | "danger" | "outline";
+  size?: "sm" | "md" | "lg" | "icon";
 };
 
 export function Button({ className, variant = "primary", size = "md", ...props }: Props) {
   const base =
-    "inline-flex items-center justify-center gap-2 rounded-[5px] px-4 py-2 text-sm font-semibold transition " +
-    "ring-1 ring-transparent hover:-translate-y-0.5 active:translate-y-0 focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-300 " +
-    "disabled:opacity-60 disabled:cursor-not-allowed disabled:hover:translate-y-0";
+    "inline-flex items-center justify-center gap-2 rounded-[5px] text-sm font-bold transition-all duration-200 " +
+    "active:scale-95 focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 focus-visible:ring-offset-2 " +
+    "disabled:opacity-50 disabled:cursor-not-allowed disabled:active:scale-100";
+    
   const variants: Record<string, string> = {
     primary:
-      "bg-[linear-gradient(135deg,#86ffd2,#2ef7b3)] text-ink-900",
+      "bg-brand-600 text-white shadow-md shadow-brand-600/20 hover:bg-brand-700 hover:shadow-lg hover:shadow-brand-600/30",
+    secondary:
+      "bg-brand-50 text-brand-700 hover:bg-brand-100",
+    outline:
+      "bg-white text-slate-700 border border-slate-200 hover:bg-slate-50 hover:border-slate-300",
     ghost:
-      "bg-white text-ink-900 ring-1 ring-ink-900/12 hover:ring-ink-900/18 hover:bg-brand-50/60",
+      "text-slate-600 hover:bg-slate-100 hover:text-slate-900",
     danger:
-      "bg-[#ef4444] text-white",
+      "bg-rose-500 text-white shadow-md shadow-rose-500/20 hover:bg-rose-600 hover:shadow-lg hover:shadow-rose-500/30",
   };
+  
   const sizes: Record<string, string> = {
-    sm: "px-3 py-2 text-xs",
-    md: "px-4 py-2 text-sm",
+    sm: "px-3 py-1.5 text-xs",
+    md: "px-5 py-2.5 text-sm",
+    lg: "px-6 py-3 text-base",
+    icon: "p-2",
   };
 
   return (

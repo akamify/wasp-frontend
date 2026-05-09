@@ -17,6 +17,17 @@ export const CTA_TYPE_OPTIONS = [
 
 export const COPY_CODE_BUTTON_TEXT = "Copy offer code";
 
+export const TEMPLATE_NAME_MIN_CHARS = 4;
+export const TEMPLATE_NAME_MAX_CHARS = 512;
+export const TEMPLATE_NAME_DISPLAY_CHARS = 32;
+
+export function truncateTemplateName(name: string, max = TEMPLATE_NAME_DISPLAY_CHARS) {
+  const raw = String(name || "");
+  if (raw.length <= max) return raw;
+  if (max <= 1) return raw.slice(0, 1);
+  return `${raw.slice(0, max - 1)}…`;
+}
+
 export function ctaOptionsForCategory(category: TemplateCategory) {
   if (category === "authentication") return [];
   if (category === "utility") return CTA_TYPE_OPTIONS.filter((opt) => opt.value !== "COPY_CODE");
@@ -37,6 +48,8 @@ export function newCtaButton(): CtaButton {
     type: "QUICK_REPLY",
     text: "",
     url: "",
+    urlExample: "",
+    urlMode: "static",
     phoneNumber: "",
     ttlMinutes: "43200",
     flowId: "",
@@ -44,6 +57,21 @@ export function newCtaButton(): CtaButton {
     flowType: "",
     offerCode: "",
   };
+}
+
+export function isValidHttpsSampleUrl(value: string) {
+  const v = String(value || "").trim();
+  if (!/^https:\/\//i.test(v)) return false;
+  try {
+    const u = new URL(v);
+    const host = String(u.hostname || "").toLowerCase();
+    // require at least one dot and a TLD-like suffix
+    if (!host.includes(".")) return false;
+    if (!/[a-z0-9-]+\.[a-z]{2,}$/i.test(host) && !/[a-z0-9-]+\.[a-z]{2,}\.[a-z]{2,}$/i.test(host)) return false;
+    return true;
+  } catch {
+    return false;
+  }
 }
 
 export function newAuthSupportedApp(): AuthSupportedApp {
@@ -63,6 +91,8 @@ export function buildTemplateComponents(
   mediaHandle: string,
   headerLocation: { name: string; address: string; latitude: number; longitude: number } | null,
   footerText: string,
+  headerVariableValues?: Record<number, string>,
+  variableValues?: Record<number, string>,
   authConfig?: {
     otpType: "ZERO_TAP" | "ONE_TAP" | "COPY_CODE";
     addSecurityRecommendation: boolean;
@@ -104,8 +134,33 @@ export function buildTemplateComponents(
       },
     ];
   }
+  const headerIndexes = headerType === "TEXT" ? extractVariableIndexes(headerText) : [];
+  const bodyIndexes = extractVariableIndexes(bodyText);
+
+  const headerExampleText =
+    headerIndexes.length > 0
+      ? headerIndexes
+          .slice(0, 1)
+          .map((idx) => String((headerVariableValues || {})[idx] || "").trim())
+          .filter(Boolean)
+      : [];
+
+  const bodyExampleRow =
+    bodyIndexes.length > 0
+      ? Array.from({ length: Math.max(...bodyIndexes, 0) }, (_, i) => String((variableValues || {})[i + 1] || "").trim())
+      : [];
+
   const components: any[] = [
-    ...(headerType === "TEXT" && headerText.trim() ? [{ type: "HEADER", format: "TEXT", text: headerText.trim() }] : []),
+    ...(headerType === "TEXT" && headerText.trim()
+      ? [
+          {
+            type: "HEADER",
+            format: "TEXT",
+            text: headerText.trim(),
+            ...(headerIndexes.length > 0 ? { example: { header_text: headerExampleText.length ? headerExampleText : ["Sample"] } } : {}),
+          },
+        ]
+      : []),
     ...(headerType === "IMAGE" && mediaHandle.trim()
       ? [{ type: "HEADER", format: "IMAGE", example: { header_handle: [mediaHandle.trim()] } }]
       : []),
@@ -133,14 +188,32 @@ export function buildTemplateComponents(
           },
         ]
       : []),
-    { type: "BODY", text: bodyText.trim() },
+    {
+      type: "BODY",
+      text: bodyText.trim(),
+      ...(bodyIndexes.length > 0 ? { example: { body_text: [bodyExampleRow.length ? bodyExampleRow : ["Sample"]] } } : {}),
+    },
   ];
   if (footerText.trim()) components.push({ type: "FOOTER", text: footerText.trim() });
   const buttons = ctaButtons
     .map((button) => {
       const text = button.text.trim();
       if (!text) return null;
-      if (button.type === "URL") return button.url.trim() ? { type: "URL", text, url: button.url.trim() } : null;
+      if (button.type === "URL") {
+        const url = button.url.trim();
+        if (!url) return null;
+        const placeholders = extractVariableIndexes(url);
+        const dyn = button.urlMode
+          ? button.urlMode === "dynamic"
+          : placeholders.length > 0;
+        const ex = String(button.urlExample || "").trim();
+        return {
+          type: "URL",
+          text,
+          url,
+          ...(dyn ? { example: [ex] } : {}),
+        };
+      }
       if (button.type === "PHONE_NUMBER")
         return button.phoneNumber.trim() ? { type: "PHONE_NUMBER", text, phone_number: button.phoneNumber.trim() } : null;
       if (button.type === "VOICE_CALL") return { type: "VOICE_CALL", text };
@@ -270,6 +343,8 @@ export function parseComponentsForPreview(components?: any[]) {
         type: String(button?.type || "QUICK_REPLY") as any,
         text: String(button?.text || ""),
         url: String(button?.url || ""),
+        urlExample: Array.isArray(button?.example) ? String(button.example?.[0] || "") : "",
+        urlMode: extractVariableIndexes(String(button?.url || "")).length > 0 ? "dynamic" : "static",
         phoneNumber: String(button?.phone_number || ""),
         ttlMinutes: String(button?.ttl_minutes || "43200"),
         flowId: String(button?.flow_id || ""),

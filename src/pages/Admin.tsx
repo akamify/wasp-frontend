@@ -3,6 +3,7 @@ import { API } from "../api/api";
 import { Alert } from "../components/ui/Alert";
 import { Card } from "../components/ui/Card";
 import { BRAND_NAME } from "../config/brand";
+import { formatCurrencySafe } from "../config/currency";
 
 type AdminSnapshot = {
   overview?: any;
@@ -69,7 +70,7 @@ export default function AdminPage() {
       { label: "Workspaces", value: snapshot.overview?.workspaces ?? 0 },
       { label: "Templates", value: snapshot.overview?.templates ?? 0 },
       { label: "Valid WABA creds", value: snapshot.overview?.validCredentials ?? 0 },
-      { label: "Wallet balance", value: `INR ${snapshot.overview?.walletBalance ?? 0}` },
+      { label: "Wallet balance", value: formatCurrencySafe(Number(snapshot.overview?.walletBalance ?? 0)) },
       { label: "Outbound msgs", value: snapshot.overview?.outboundMessages ?? 0 },
     ],
     [snapshot.overview]
@@ -136,7 +137,7 @@ export default function AdminPage() {
   }, [snapshot.templates, templatesPage, templatesPageSize]);
 
   return (
-    <div className="grid gap-6">
+    <div className="grid gap-6 p-4 md:p-8">
       <section id="overview" className="rounded-[5px] border border-ink-900/10 bg-white p-6 shadow-[0_20px_80px_rgba(0,0,0,0.08)] sm:p-7">
         <div className="text-xs font-semibold uppercase tracking-[0.24em] text-ink-800/60">Admin Panel</div>
         <h1 className="mt-2 text-3xl font-black tracking-tight text-ink-900 sm:text-4xl">{BRAND_NAME} Control Center</h1>
@@ -255,7 +256,7 @@ export default function AdminPage() {
                     <div className="text-xs text-ink-800/55">{user.workspace?.plan || "-"}</div>
                   </td>
                   <td className="px-3 py-3 font-semibold text-ink-900">{user.templateCount}</td>
-                  <td className="px-3 py-3 font-semibold text-ink-900">{user.wallet?.currency || "INR"} {user.wallet?.balance ?? 0}</td>
+                  <td className="px-3 py-3 font-semibold text-ink-900">{formatCurrencySafe(Number(user.wallet?.balance ?? 0), user.wallet?.currency || undefined)}</td>
                 </tr>
               ))}
             </tbody>
