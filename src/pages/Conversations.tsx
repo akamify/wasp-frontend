@@ -94,14 +94,6 @@ function renderWhatsAppText(text: string) {
   });
 }
 
-function AudioMessagePlayer({ src }: { src: string }) {
-  return (
-    <div className="max-w-[82vw] min-w-[240px] sm:min-w-[280px] sm:max-w-[340px]">
-      <audio controls preload="metadata" src={src} className="block w-full h-10" />
-    </div>
-  );
-}
-
 export default function ConversationsPage() {
   const { phone: urlPhone = "" } = useParams();
   const navigate = useNavigate();
@@ -466,10 +458,18 @@ export default function ConversationsPage() {
         const inboundAudioLink = (message as any)?.payload?.audio?.link;
         if (inboundAudioId && mediaUrls[String(inboundAudioId)]) {
           const src = mediaUrls[String(inboundAudioId)];
-          return <AudioMessagePlayer src={src} />;
+          return (
+            <div className="w-[260px] max-w-[72vw]">
+              <audio controls src={src} className="block w-full" />
+            </div>
+          );
         }
         if (inboundAudioLink) {
-          return <AudioMessagePlayer src={String(inboundAudioLink)} />;
+          return (
+            <div className="w-[260px] max-w-[72vw]">
+              <audio controls src={String(inboundAudioLink)} className="block w-full" />
+            </div>
+          );
         }
         if (inboundAudioId) {
           const id = String(inboundAudioId);
@@ -542,10 +542,18 @@ export default function ConversationsPage() {
 
     if (inboundAudioId && mediaUrls[String(inboundAudioId)]) {
       const src = mediaUrls[String(inboundAudioId)];
-      return <AudioMessagePlayer src={src} />;
+      return (
+        <div className="w-[260px] max-w-[72vw]">
+          <audio controls src={src} className="block w-full" />
+        </div>
+      );
     }
     if (inboundAudioLink) {
-      return <AudioMessagePlayer src={String(inboundAudioLink)} />;
+      return (
+        <div className="w-[260px] max-w-[72vw]">
+          <audio controls src={String(inboundAudioLink)} className="block w-full" />
+        </div>
+      );
     }
     if (inboundAudioId && !mediaUrls[String(inboundAudioId)]) {
       const id = String(inboundAudioId);
@@ -627,10 +635,18 @@ export default function ConversationsPage() {
     if (normalizedPlain === "[audio]" || normalizedPlain === "[voice]") {
       if (inboundAudioId && mediaUrls[String(inboundAudioId)]) {
         const src = mediaUrls[String(inboundAudioId)];
-        return <AudioMessagePlayer src={src} />;
+        return (
+          <div className="w-[260px] max-w-[72vw]">
+            <audio controls src={src} className="block w-full" />
+          </div>
+        );
       }
       if (inboundAudioLink) {
-        return <AudioMessagePlayer src={String(inboundAudioLink)} />;
+        return (
+          <div className="w-[260px] max-w-[72vw]">
+            <audio controls src={String(inboundAudioLink)} className="block w-full" />
+          </div>
+        );
       }
       if (inboundAudioId) {
         return (
