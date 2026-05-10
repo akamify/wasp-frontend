@@ -191,7 +191,7 @@ export default function DashboardPage() {
             <span className="xs:inline">{syncing ? "Syncing..." : "Sync"}</span>
           </Button>
           <Button size="sm" onClick={() => navigate("/app/send")} className="flex-1 sm:flex-none rounded-[5px] h-9 md:h-10 px-3 md:px-4">
-            <Plus size={14} className="mr-1.5 hidden md:block" />
+            <Plus size={14} className="mr-1.5" />
             <span>New Campaign</span>
           </Button>
         </div>

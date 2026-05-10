@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState, useRef } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { API } from "../api/api";
+import { API, getToken, getWorkspaceId } from "../api/api";
 import { ConversationListSkeleton, ChatMessagesSkeleton } from "../components/ui/Skeletons";
 import { InboxComposer } from "./conversations/InboxComposer";
 import { cn } from "../utils/cn";
@@ -24,6 +24,7 @@ type Conversation = {
 
 type ChatMessage = {
   _id: string;
+  phone?: string;
   direction: "outbound" | "inbound";
   status: string;
   createdAt: string;
@@ -119,6 +120,9 @@ export default function ConversationsPage() {
   const isInitialLoad = useRef(true);
   const headerMenuRef = useRef<HTMLDivElement>(null);
   const lastInboundToneByPhoneRef = useRef<Record<string, string>>({});
+  const inboundToneBootstrappedRef = useRef<Record<string, true>>({});
+  const audioContextRef = useRef<AudioContext | null>(null);
+  const audioUnlockedRef = useRef(false);
 
   const scrollRef = useRef<HTMLDivElement>(null);
 
@@ -150,7 +154,65 @@ export default function ConversationsPage() {
     return () => window.removeEventListener("mousedown", onDown, true);
   }, [menuOpen]);
 
+  useEffect(() => {
+    const AudioCtx = (window.AudioContext || (window as any).webkitAudioContext) as any;
+    if (!AudioCtx) return;
+    audioContextRef.current = new AudioCtx();
+
+    const unlock = () => {
+      const ctx = audioContextRef.current;
+      if (!ctx) return;
+      if (ctx.state === "suspended") {
+        void ctx.resume().then(() => {
+          audioUnlockedRef.current = true;
+        }).catch(() => { });
+      } else {
+        audioUnlockedRef.current = true;
+      }
+    };
+
+    window.addEventListener("pointerdown", unlock, { passive: true });
+    window.addEventListener("keydown", unlock);
+    return () => {
+      window.removeEventListener("pointerdown", unlock);
+      window.removeEventListener("keydown", unlock);
+      const ctx = audioContextRef.current;
+      audioContextRef.current = null;
+      if (ctx) {
+        try { void ctx.close(); } catch { }
+      }
+    };
+  }, []);
+
   function playInboundToneOnce() {
+    const ctx = audioContextRef.current;
+    if (ctx && (audioUnlockedRef.current || ctx.state === "running")) {
+      try {
+        const master = ctx.createGain();
+        master.gain.value = 1;
+        master.connect(ctx.destination);
+
+        const playBeep = (start: number, frequency: number, peak: number, duration: number) => {
+          const osc = ctx.createOscillator();
+          const gain = ctx.createGain();
+          osc.type = "sine";
+          osc.frequency.setValueAtTime(frequency, start);
+          osc.connect(gain);
+          gain.connect(master);
+
+          gain.gain.setValueAtTime(0.0001, start);
+          gain.gain.linearRampToValueAtTime(peak, start + 0.008);
+          gain.gain.exponentialRampToValueAtTime(0.0001, start + duration);
+          osc.start(start);
+          osc.stop(start + duration + 0.01);
+        };
+
+        const nowAt = ctx.currentTime;
+        playBeep(nowAt, 980, 0.16, 0.16);
+        playBeep(nowAt + 0.19, 1180, 0.13, 0.13);
+        return;
+      } catch { }
+    }
     try {
       const AudioCtx = (window.AudioContext || (window as any).webkitAudioContext) as any;
       if (!AudioCtx) return;
@@ -162,37 +224,64 @@ export default function ConversationsPage() {
       gain.gain.value = 0.0001;
       osc.connect(gain);
       gain.connect(ctx.destination);
-      const now = ctx.currentTime;
-      gain.gain.setValueAtTime(0.0001, now);
-      gain.gain.linearRampToValueAtTime(0.06, now + 0.01);
-      gain.gain.linearRampToValueAtTime(0.0001, now + 0.18);
-      osc.start(now);
-      osc.stop(now + 0.2);
+      const nowAt = ctx.currentTime;
+      gain.gain.setValueAtTime(0.0001, nowAt);
+      gain.gain.linearRampToValueAtTime(0.06, nowAt + 0.01);
+      gain.gain.linearRampToValueAtTime(0.0001, nowAt + 0.18);
+      osc.start(nowAt);
+      osc.stop(nowAt + 0.2);
       osc.onended = () => {
         try { ctx.close(); } catch { }
       };
     } catch { }
   }
 
+  function notifyInboundMessage(phone: string) {
+    if (!document.hidden) return;
+    if ("vibrate" in navigator) {
+      try { navigator.vibrate?.([120, 60, 120]); } catch { }
+    }
+    if (!("Notification" in window)) return;
+    if (Notification.permission !== "granted") return;
+    try {
+      const n = new Notification("New WhatsApp message", {
+        body: `From +${phone}`,
+        tag: `inbound-${phone}`,
+      });
+      n.onclick = () => {
+        window.focus();
+        navigate(`/app/conversations/${phone}`);
+      };
+    } catch { }
+  }
+
   useEffect(() => {
-    if (!messages.length) return;
+    if (!messages.length || !urlPhone || loadingChat) return;
     const latestInbound = [...messages].reverse().find((m) => m.direction === "inbound");
     if (!latestInbound?._id) return;
 
-    const phoneKey = String(urlPhone || "").trim();
+    const phoneKey = String(urlPhone || latestInbound.phone || "").trim();
+    if (!phoneKey) return;
     const lastHeardId = lastInboundToneByPhoneRef.current[phoneKey] || "";
 
-    // Baseline the current latest inbound message on first load, then only play when it changes.
-    if (!lastHeardId) {
+    // On first load/open for this phone, baseline current state and do not ring.
+    if (!inboundToneBootstrappedRef.current[phoneKey]) {
       lastInboundToneByPhoneRef.current[phoneKey] = latestInbound._id;
+      inboundToneBootstrappedRef.current[phoneKey] = true;
       return;
     }
 
     if (lastHeardId === latestInbound._id) return;
 
+    // Ignore stale/historical inbound rows when switching chats; ring only for fresh arrivals.
+    const latestAtMs = new Date(String(latestInbound.createdAt || "")).getTime();
+    const isFresh = Number.isFinite(latestAtMs) && Date.now() - latestAtMs <= 2 * 60 * 1000;
     lastInboundToneByPhoneRef.current[phoneKey] = latestInbound._id;
+    if (!isFresh) return;
+
     playInboundToneOnce();
-  }, [messages.length, urlPhone]);
+    notifyInboundMessage(String(latestInbound?.phone || phoneKey || ""));
+  }, [messages, urlPhone, loadingChat]);
 
   const customerServiceWindowOpen = useMemo(() => {
     const fromConversation = activeConversation?.lastInboundAt ? new Date(activeConversation.lastInboundAt).getTime() : NaN;
@@ -800,6 +889,40 @@ export default function ConversationsPage() {
       if (urlPhone) void refreshChatSilently(urlPhone);
     }, 10000);
     return () => window.clearInterval(id);
+  }, [urlPhone, search]);
+
+  useEffect(() => {
+    const token = String(getToken() || "").trim();
+    const workspaceId = String(getWorkspaceId() || "").trim();
+    if (!token || !workspaceId) return;
+
+    const base = String(API.baseUrl || "").replace(/\/+$/, "");
+    const streamUrl = `${base}/realtime/stream?token=${encodeURIComponent(token)}&workspaceId=${encodeURIComponent(workspaceId)}`;
+    const source = new EventSource(streamUrl);
+
+    const onRealtimeMessage = (evt: MessageEvent) => {
+      try {
+        const payload = JSON.parse(String(evt.data || "{}"));
+        const eventPhone = String(payload?.phone || "");
+        void refreshListSilently();
+        if (urlPhone && (!eventPhone || eventPhone === String(urlPhone))) {
+          void refreshChatSilently(urlPhone);
+        }
+      } catch {
+        void refreshListSilently();
+        if (urlPhone) void refreshChatSilently(urlPhone);
+      }
+    };
+
+    source.addEventListener("message", onRealtimeMessage as EventListener);
+    source.onerror = () => {
+      // EventSource reconnects automatically; no-op on transient network drops.
+    };
+
+    return () => {
+      source.removeEventListener("message", onRealtimeMessage as EventListener);
+      source.close();
+    };
   }, [urlPhone, search]);
 
   useEffect(() => {
