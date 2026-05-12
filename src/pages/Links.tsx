@@ -1,194 +1,210 @@
-import React, { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { API } from "../api/api";
 import { Card } from "../components/ui/Card";
-import { Input } from "../components/ui/Input";
-import { Select } from "../components/ui/Select";
 import { Button } from "../components/ui/Button";
-import { useToast } from "../context/ToastContext";
 import { Badge } from "../components/ui/Badge";
-import { Link2, Copy, ExternalLink, Info, CheckCircle2 } from "lucide-react";
-
-type Template = { _id: string; name: string };
+import { useToast } from "../context/ToastContext";
+import { Copy, Eye, Plus, QrCode, Trash2 } from "lucide-react";
+import {
+  CreateTrackedLinkModal,
+  TrackedLinkViewEditModal,
+  type TrackedLink,
+} from "../components/links/TrackedLinkModals";
 
 export default function LinksPage() {
-  const [url, setUrl] = useState("");
-  const [templateId, setTemplateId] = useState("");
-  const [messageId, setMessageId] = useState("");
-  const [templates, setTemplates] = useState<Template[]>([]);
-  const [busy, setBusy] = useState(false);
-  const [trackedUrl, setTrackedUrl] = useState<string | null>(null);
   const { toast } = useToast();
+  const [links, setLinks] = useState<TrackedLink[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string>("");
 
-  useEffect(() => {
-    API.templates
-      .list()
-      .then((d) => setTemplates(d.templates || []))
-      .catch(() => {});
-  }, []);
+  const [createOpen, setCreateOpen] = useState(false);
+  const [active, setActive] = useState<TrackedLink | null>(null);
+  const [viewOpen, setViewOpen] = useState(false);
 
-  async function onGenerate(e: React.FormEvent) {
-    e.preventDefault();
-    setTrackedUrl(null);
-    setBusy(true);
+  async function load() {
+    setLoading(true);
+    setError("");
     try {
-      const res = await API.links.create({
-        url,
-        ...(templateId ? { templateId } : {}),
-        ...(messageId ? { messageId } : {}),
-      });
-      setTrackedUrl(res.trackedUrl);
-      toast("Tracked link generated successfully.", "success");
+      const res = await API.links.tracked.list();
+      setLinks(res.links || []);
     } catch (e: any) {
-      toast(e?.response?.data?.message || "Failed to create tracked link", "error");
+      setError(e?.response?.data?.message || "Failed to load tracked links");
     } finally {
-      setBusy(false);
+      setLoading(false);
     }
   }
 
-  const copyToClipboard = () => {
-    if (trackedUrl) {
-      navigator.clipboard.writeText(trackedUrl);
-      toast("URL copied to clipboard", "success");
+  useEffect(() => {
+    load();
+  }, []);
+
+  async function deleteLink(link: TrackedLink) {
+    if (!confirm("Delete this tracked link?")) return;
+    try {
+      await API.links.tracked.remove(link._id);
+      toast("Link deleted", "success");
+      setLinks((prev) => prev.filter((l) => l._id !== link._id));
+      if (active?._id === link._id) setActive(null);
+    } catch (e: any) {
+      toast(e?.response?.data?.message || "Failed to delete link", "error");
     }
-  };
+  }
+
+  function trackedUrlFor(link: TrackedLink) {
+    return link.trackedUrl || `${window.location.origin}/t/${link.slug}`;
+  }
+
+  function copy(text: string) {
+    navigator.clipboard.writeText(text);
+    toast("Copied", "success");
+  }
+
+  const totals = useMemo(() => {
+    const totalClicks = links.reduce((sum, l) => sum + (l.clicks || 0), 0);
+    const totalScans = links.reduce((sum, l) => sum + (l.scans || 0), 0);
+    return { totalClicks, totalScans, totalLinks: links.length };
+  }, [links]);
 
   return (
-    <div className="space-y-6 p-4 md:p-8">
-      <div className="flex flex-wrap items-center justify-between gap-4">
+    <div className="space-y-6 p-2 md:p-8">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
         <div>
-          <h1 className="text-4xl font-black tracking-tight text-ink-900">Tracked Links</h1>
-          <p className="mt-2 text-sm font-semibold text-ink-800/60 uppercase tracking-widest">Analytics & Redirect Engine</p>
+          <h1 className="text-2xl font-black text-slate-900">Tracked Links</h1>
+          <p className="text-sm text-slate-500 mt-1">
+            Create WhatsApp tracked links with QR codes and per-link analytics.
+          </p>
+        </div>
+        <div className="flex items-center gap-2">
+          <Button onClick={() => setCreateOpen(true)}>
+            <Plus size={16} /> Create Tracked Link
+          </Button>
         </div>
       </div>
 
-      <div className="grid gap-6 lg:grid-cols-[1fr_400px]">
-        <div className="space-y-6">
-          <Card className="p-6 md:p-8 border-ink-900/5 shadow-xl shadow-ink-900/5">
-            <div className="flex items-center gap-3 mb-8">
-              <div className="h-12 w-12 rounded-[5px] bg-brand-50 flex items-center justify-center text-brand-600">
-                <Link2 size={24} />
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+        <Card className="p-4 border-ink-900/5 shadow-xl shadow-ink-900/5">
+          <div className="text-[11px] font-black uppercase tracking-widest text-slate-500">Total Links</div>
+          <div className="mt-1 text-2xl font-black text-slate-900">{totals.totalLinks}</div>
+        </Card>
+        <Card className="p-4 border-ink-900/5 shadow-xl shadow-ink-900/5">
+          <div className="text-[11px] font-black uppercase tracking-widest text-slate-500">Total Clicks</div>
+          <div className="mt-1 text-2xl font-black text-slate-900">{totals.totalClicks}</div>
+        </Card>
+        <Card className="p-4 border-ink-900/5 shadow-xl shadow-ink-900/5">
+          <div className="text-[11px] font-black uppercase tracking-widest text-slate-500">Total QR Scans</div>
+          <div className="mt-1 text-2xl font-black text-slate-900">{totals.totalScans}</div>
+        </Card>
+      </div>
+
+      <Card className="border-ink-900/5 shadow-xl shadow-ink-900/5 overflow-hidden">
+        <div className="flex items-center justify-between px-6 py-5 border-b border-slate-100 bg-white">
+          <div className="flex items-center gap-2">
+            <h3 className="text-sm font-black text-slate-900">All Links</h3>
+            <Badge tone="brand">{links.length}</Badge>
+          </div>
+        </div>
+
+        {error ? (
+          <div className="px-6 py-4 text-sm font-bold text-rose-600 bg-rose-50 border-b border-rose-100">
+            {error}
+          </div>
+        ) : null}
+
+        {loading ? (
+          <div className="px-6 py-8 text-sm text-slate-500">Loading…</div>
+        ) : links.length === 0 ? (
+          <div className="px-6 py-10">
+            <div className="flex items-start gap-4 rounded-[5px] border border-slate-100 bg-slate-50 p-6">
+              <div className="mt-0.5 text-slate-400">
+                <QrCode size={18} />
               </div>
-              <div>
-                <h2 className="text-xl font-black text-ink-900">URL Generator</h2>
-                <p className="text-xs font-bold text-ink-800/40 uppercase tracking-wider">Convert any URL into a tracked asset</p>
+              <div className="min-w-0">
+                <div className="text-sm font-black text-slate-900">No tracked links yet</div>
+                <div className="mt-1 text-xs font-semibold text-slate-600">
+                  Click <span className="font-black">Create Tracked Link</span> to generate your first WhatsApp redirect URL with QR and analytics.
+                </div>
+                <div className="mt-4">
+                  <Button onClick={() => setCreateOpen(true)}>
+                    <Plus size={16} /> Create Tracked Link
+                  </Button>
+                </div>
               </div>
             </div>
+          </div>
+        ) : (
+          <div className="max-h-[calc(100vh-280px)] overflow-y-auto custom-scrollbar">
+            <div className="min-w-[900px]">
+              <div className="grid grid-cols-[minmax(180px,1.6fr)_minmax(260px,1fr)_120px_120px_250px] gap-2 px-6 py-3 text-[11px] font-black uppercase tracking-widest text-slate-400 border-b border-slate-100 bg-slate-50">
+                <div>Link</div>
+                <div>Tracked URL</div>
+                <div>Clicks</div>
+                <div>Scans</div>
+                <div className="text-right">Actions</div>
+              </div>
 
-            <form onSubmit={onGenerate} className="space-y-6">
-              <Input
-                label="Destination URL"
-                value={url}
-                onChange={(e) => setUrl(e.target.value)}
-                placeholder="https://yourwebsite.com/promo-123"
-                hint="The final destination where users will be redirected"
-                required
-              />
-
-              <div className="grid gap-6 sm:grid-cols-2">
-                <Select
-                  label="Associate Template"
-                  value={templateId}
-                  onChange={(e) => setTemplateId(e.target.value)}
+              {links.map((link) => (
+                <div
+                  key={link._id}
+                  className="flex items-center grid grid-cols-[minmax(180px,1.6fr)_minmax(260px,1fr)_120px_120px_250px] gap-2 px-6 py-4 border-b border-slate-100 bg-white hover:bg-slate-50 transition-colors"
                 >
-                  <option value="">None (Standalone)</option>
-                  {templates.map((t) => (
-                    <option key={t._id} value={t._id}>
-                      {t.name}
-                    </option>
-                  ))}
-                </Select>
+                  <div className="min-w-0">
+                    <div className="flex items-center gap-2 min-w-0">
+                      <div className="truncate text-sm font-black text-slate-900">{link.title || "Untitled"}</div>
+                    </div>
+                  </div>
 
-                <Input
-                  label="Message ID"
-                  value={messageId}
-                  onChange={(e) => setMessageId(e.target.value)}
-                  placeholder="Optional ID"
-                  hint="For granular tracking"
-                />
-              </div>
+                  <div className="min-w-0">
+                    <div className="truncate text-xs font-semibold text-slate-700">{trackedUrlFor(link)}</div>
+                  </div>
 
-              <Button 
-                type="submit" 
-                disabled={busy || !url.trim()} 
-                className="w-full h-12 text-base font-black gap-2 shadow-lg shadow-brand-500/20"
-              >
-                {busy ? "Generating Engine..." : (
-                  <>
-                    <CheckCircle2 size={18} />
-                    Generate Tracked Link
-                  </>
-                )}
-              </Button>
-            </form>
+                  <div className="flex items-center text-sm font-black text-slate-900">{link.clicks || 0}</div>
+                  <div className="flex items-center text-sm font-black text-slate-900">{link.scans || 0}</div>
 
-            {trackedUrl && (
-              <div className="mt-8 p-6 rounded-[5px] bg-slate-50 border border-brand-500/20 ring-4 ring-brand-500/5 animate-in fade-in slide-in-from-top-4">
-                <div className="flex items-center justify-between mb-3">
-                  <div className="text-[10px] font-black uppercase tracking-widest text-brand-600">Tracking Engine Ready</div>
-                  <Badge tone="good" className="rounded-[3px] py-0.5 text-[9px]">ACTIVE</Badge>
+                  <div className="flex items-center justify-end gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => {
+                        setActive(link);
+                        setViewOpen(true);
+                      }}
+                    >
+                      <Eye size={14} />
+                    </Button>
+                    <Button variant="outline" size="sm" onClick={() => copy(trackedUrlFor(link))}>
+                      <Copy size={14} />
+                    </Button>
+                    <Button variant="danger" size="sm" onClick={() => deleteLink(link)}>
+                      <Trash2 size={14} />
+                    </Button>
+                  </div>
                 </div>
-                <div className="font-mono text-xs font-bold text-ink-900 break-all bg-white p-3 rounded-[3px] border border-ink-900/10 shadow-inner">
-                  {trackedUrl}
-                </div>
-                <div className="mt-4 flex gap-3">
-                  <Button 
-                    variant="ghost" 
-                    onClick={copyToClipboard}
-                    className="flex-1 h-10 border border-ink-900/10 bg-white gap-2 shadow-sm text-xs font-black uppercase tracking-widest"
-                  >
-                    <Copy size={14} />
-                    Copy
-                  </Button>
-                  <Button 
-                    variant="ghost" 
-                    onClick={() => window.open(trackedUrl, "_blank")}
-                    className="flex-1 h-10 border border-ink-900/10 bg-white gap-2 shadow-sm text-xs font-black uppercase tracking-widest"
-                  >
-                    <ExternalLink size={14} />
-                    Test Link
-                  </Button>
-                </div>
-              </div>
-            )}
-          </Card>
-        </div>
-
-        <div className="space-y-6">
-          <Card className="p-6 border-ink-900/5 bg-slate-50 shadow-sm">
-            <div className="flex items-center gap-2 mb-4">
-              <Info size={16} className="text-brand-600" />
-              <h3 className="text-xs font-black uppercase tracking-widest text-ink-900">How it works</h3>
+              ))}
             </div>
-            <div className="space-y-4">
-              <div className="flex gap-3">
-                <div className="h-5 w-5 rounded-full bg-white border border-ink-900/10 flex items-center justify-center text-[10px] font-black shrink-0">1</div>
-                <p className="text-[11px] font-medium text-ink-800/60 leading-relaxed">
-                  We generate a unique signed URL that points to our redirect server.
-                </p>
-              </div>
-              <div className="flex gap-3">
-                <div className="h-5 w-5 rounded-full bg-white border border-ink-900/10 flex items-center justify-center text-[10px] font-black shrink-0">2</div>
-                <p className="text-[11px] font-medium text-ink-800/60 leading-relaxed">
-                  When a user clicks, we log their metadata (IP, User-Agent, Timestamp).
-                </p>
-              </div>
-              <div className="flex gap-3">
-                <div className="h-5 w-5 rounded-full bg-white border border-ink-900/10 flex items-center justify-center text-[10px] font-black shrink-0">3</div>
-                <p className="text-[11px] font-medium text-ink-800/60 leading-relaxed">
-                  The user is instantly redirected to your destination URL without delay.
-                </p>
-              </div>
-            </div>
-          </Card>
+          </div>
+        )}
+      </Card>
 
-          <Card className="p-6 border-ink-900/5 bg-ink-900 text-white shadow-xl">
-            <h3 className="text-xs font-black uppercase tracking-widest text-white/40 mb-3">Best Practice</h3>
-            <p className="text-[11px] font-medium text-white/80 leading-relaxed">
-              Use tracked links in your WhatsApp templates to measure Campaign performance and ROI accurately.
-            </p>
-          </Card>
-        </div>
-      </div>
+      <CreateTrackedLinkModal
+        open={createOpen}
+        onClose={() => setCreateOpen(false)}
+        onCreated={(link) => setLinks((prev) => [link, ...prev])}
+      />
+
+      <TrackedLinkViewEditModal
+        open={viewOpen}
+        onClose={() => setViewOpen(false)}
+        link={active}
+        onUpdated={(updated) => {
+          setLinks((prev) => prev.map((l) => (l._id === updated._id ? { ...l, ...updated } : l)));
+          setActive(updated);
+        }}
+        onDeleted={(id) => {
+          setLinks((prev) => prev.filter((l) => l._id !== id));
+          if (active?._id === id) setActive(null);
+        }}
+      />
     </div>
   );
 }
+
