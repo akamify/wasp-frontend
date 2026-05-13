@@ -15,6 +15,79 @@ export const api = axios.create({
 const TOKEN_KEY = "waspakamify_token";
 const WORKSPACE_KEY = "waspakamify_workspace_id";
 
+// Coalesce duplicate GET requests and add a tiny cache window to prevent
+// UI-driven bursts from hammering the backend (and triggering rate limits).
+const __getInflight = new Map();
+const __getCache = new Map();
+const DEFAULT_GET_CACHE_TTL_MS = 1500;
+
+function stableStringify(value) {
+  try {
+    if (!value || typeof value !== "object") return String(value ?? "");
+    const seen = new WeakSet();
+    const sorter = (obj) => {
+      if (!obj || typeof obj !== "object") return obj;
+      if (seen.has(obj)) return "[Circular]";
+      seen.add(obj);
+      if (Array.isArray(obj)) return obj.map(sorter);
+      const out = {};
+      Object.keys(obj)
+        .sort()
+        .forEach((k) => {
+          const v = obj[k];
+          if (v === undefined) return;
+          out[k] = sorter(v);
+        });
+      return out;
+    };
+    return JSON.stringify(sorter(value));
+  } catch {
+    return "";
+  }
+}
+
+function buildGetKey(config) {
+  const method = String(config?.method || "get").toLowerCase();
+  const baseURL = String(config?.baseURL || API_BASE_URL || "");
+  const url = String(config?.url || "");
+  const params = stableStringify(config?.params || null);
+  // Key also varies by auth/workspace to avoid cross-user leakage.
+  const token = getToken();
+  const workspaceId = getWorkspaceId();
+  return [method, baseURL, url, params, token, workspaceId].join("|");
+}
+
+const __rawRequest = api.request.bind(api);
+api.request = (config) => {
+  const method = String(config?.method || "get").toLowerCase();
+  if (method !== "get") return __rawRequest(config);
+
+  const key = buildGetKey(config);
+  const now = Date.now();
+  const ttlMs =
+    typeof config?.cacheTtlMs === "number" ? config.cacheTtlMs : DEFAULT_GET_CACHE_TTL_MS;
+
+  const cached = __getCache.get(key);
+  if (cached && cached.expiresAt > now) return Promise.resolve(cached.response);
+
+  const inflight = __getInflight.get(key);
+  if (inflight) return inflight;
+
+  const p = __rawRequest(config)
+    .then((res) => {
+      __getInflight.delete(key);
+      if (ttlMs > 0) __getCache.set(key, { expiresAt: Date.now() + ttlMs, response: res });
+      return res;
+    })
+    .catch((err) => {
+      __getInflight.delete(key);
+      throw err;
+    });
+
+  __getInflight.set(key, p);
+  return p;
+};
+
 function workspaceFromToken(token) {
   try {
     const parts = String(token || "").split(".");
@@ -72,6 +145,15 @@ api.interceptors.response.use(
     if (status === 401) {
       // If the token is invalid/expired, clear it so the UI can re-auth cleanly.
       setToken("");
+    }
+    if (status === 429) {
+      const retryAfter =
+        Number(err?.response?.headers?.["retry-after"]) ||
+        Number(err?.response?.headers?.["x-ratelimit-reset-after"]) ||
+        0;
+      err.userMessage = retryAfter
+        ? `Rate limit hit. Please retry in ~${Math.ceil(retryAfter)}s.`
+        : "Rate limit hit. Please retry shortly.";
     }
     return Promise.reject(err);
   }
@@ -195,10 +277,21 @@ export const API = {
     },
     listFlows: (params) => api.get("/meta/flows", { params }).then(unwrap),
     createFlow: (payload) => api.post("/meta/flows", payload).then(unwrap),
+    uploadFlowJson: (flowId, flowJson) => api.post(`/meta/flows/${encodeURIComponent(flowId)}/assets`, { flowJson }).then(unwrap),
+    publishFlow: (flowId) => api.post(`/meta/flows/${encodeURIComponent(flowId)}/publish`).then(unwrap),
   },
 
   links: {
     create: (payload) => api.post("/links", payload).then(unwrap),
+    tracked: {
+      list: () => api.get("/links/tracked").then(unwrap),
+      create: (payload) => api.post("/links/tracked", payload).then(unwrap),
+      update: (id, payload) => api.put(`/links/tracked/${id}`, payload).then(unwrap),
+      remove: (id) => api.delete(`/links/tracked/${id}`).then(unwrap),
+      analytics: (id, params) => api.get(`/links/tracked/${id}/analytics`, { params }).then(unwrap),
+      qrSvgUrl: (id) => `${API_BASE_URL}/links/tracked/${encodeURIComponent(id)}/qr.svg`,
+      qrPngUrl: (id) => `${API_BASE_URL}/links/tracked/${encodeURIComponent(id)}/qr.png`,
+    },
   },
 
   wallet: {

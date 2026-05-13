@@ -65,10 +65,10 @@ export default function ApiReportsPage() {
   const [page, setPage] = useState(1);
   const [limit, setLimit] = useState(10);
   const [sort, setSort] = useState<"desc" | "asc">("desc");
-  const [status, setStatus] = useState("all");
   const [search, setSearch] = useState("");
   const [dateFrom, setDateFrom] = useState("");
   const [dateTo, setDateTo] = useState("");
+  const [statusFilter, setStatusFilter] = useState("all");
 
   const [rows, setRows] = useState<any[]>([]);
   const [total, setTotal] = useState(0);
@@ -82,13 +82,13 @@ export default function ApiReportsPage() {
       page,
       limit,
       sort,
-      status,
+      status: statusFilter,
       onlyApiCampaigns: "true",
       ...(search.trim() ? { search: search.trim() } : {}),
       ...(dateFrom ? { dateFrom } : {}),
       ...(dateTo ? { dateTo } : {}),
     }),
-    [page, limit, sort, status, search, dateFrom, dateTo]
+    [page, limit, sort, statusFilter, search, dateFrom, dateTo]
   );
 
 
@@ -150,9 +150,9 @@ export default function ApiReportsPage() {
         </div>
       </div>
 
-      <Card className="p-6 border-none shadow-xl shadow-slate-200/50">
-        <div className="grid gap-4 lg:grid-cols-5 lg:items-end">
-          <div className="lg:col-span-1">
+      <Card className="p-2 md:p-6 border-none shadow-xl shadow-slate-200/50">
+        <div className="flex items-start justify-between flex-col gap-4">
+          <div className="lg:col-span-1 w-full">
             <Input
               label="Search"
               value={search}
@@ -161,32 +161,37 @@ export default function ApiReportsPage() {
               icon={<Search size={18} />}
             />
           </div>
-          <div className="lg:col-span-4 flex items-center justify-around flex-row gap-2">
-            <div className="lg:col-span-2">
-              <Select label="Status" value={status} onChange={(e) => { setStatus(e.target.value); setPage(1); }}>
-                <option value="all">All</option>
-                <option value="queued">Queued</option>
-                <option value="accepted">Accepted</option>
-                <option value="sent">Sent</option>
-                <option value="delivered">Delivered</option>
-                <option value="read">Read</option>
-                <option value="failed">Failed</option>
-                <option value="timeout_unknown">Timeout</option>
-              </Select>
+          <div className="flex items-start flex-wrap md:items-center justify-between gap-1">
+            <div className="flex items-center flex-wrap gap-1 p-1 bg-slate-50 border border-ink-900/5 rounded-[5px]">
+              {["all", "queued", "accepted", "sent", "delivered", "read", "failed"].map((f) => (
+                <button
+                  key={f}
+                  onClick={() => setStatusFilter(f)}
+                  className={`rounded-[3px] px-4 py-1.5 text-[10px] font-black uppercase tracking-wider transition-all ${statusFilter === f
+                    ? "bg-white text-ink-900 shadow-sm shadow-ink-900/10 ring-1 ring-ink-900/5"
+                    : "text-ink-800/40 hover:text-ink-900"
+                    }`}
+                >
+                  {f}
+                </button>
+              ))}
             </div>
-            <div className="lg:col-span-2 flex items-start justify-start flex-col gap-2">
-              <span className="text-xs font-medium text-slate-700">Sort</span>
-              <Button
-                type="button"
-                variant="outline"
-                disabled={busy}
-                onClick={() => { setSort((s) => (s === "desc" ? "asc" : "desc")); setPage(1); }}
-                className="flex-1"
-              >
-                {sort === "desc" ? <ArrowUp size={18} /> : <ArrowDown size={18} />}
-              </Button>
+            <div className="flex items-center gap-1 p-1 bg-slate-50 border border-ink-900/5 rounded-[5px]">
+              {(["newest -- oldest", "oldest -- newest"] as const).map((f) => (
+                <button
+                  key={f}
+                  onClick={() => setSort(f === "newest -- oldest" ? "desc" : "asc")}
+                  className={`rounded-[3px] px-4 py-1.5 text-[10px] font-black uppercase tracking-wider transition-all ${(f === "newest -- oldest" && sort === "desc") || (f === "oldest -- newest" && sort === "asc")
+                    ? "bg-white text-ink-900 shadow-sm shadow-ink-900/10 ring-1 ring-ink-900/5"
+                    : "text-ink-800/40 hover:text-ink-900"
+                    }`}
+                >
+                  {f === "newest -- oldest" ? (<><ArrowDown size={14} className="inline -mt-[1px] mr-1" /> Newest</>) : (<><ArrowUp size={14} className="inline -mt-[1px] mr-1" /> Oldest</>)}
+                </button>
+              ))}
             </div>
-
+          </div>
+          <div className="flex items-center gap-1 md:gap-4 w-full lg:w-auto">
             <div className="lg:col-span-2">
               <Input
                 label="From"
@@ -266,9 +271,9 @@ export default function ApiReportsPage() {
                               ? "mt-[1px] text-rose-600"
                               : statusInfo.tone === "good"
                                 ? "mt-[1px] text-emerald-600"
-                              : statusInfo.tone === "ok"
-                                ? "mt-[1px] text-slate-600"
-                                : "mt-[1px] text-slate-500"
+                                : statusInfo.tone === "ok"
+                                  ? "mt-[1px] text-slate-600"
+                                  : "mt-[1px] text-slate-500"
                           }
                         >
                           <statusInfo.Icon size={14} />

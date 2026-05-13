@@ -40,11 +40,20 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     workspace: null,
     loading: true,
   }));
+  const refreshingRef = React.useRef(false);
+  const lastRefreshAtRef = React.useRef(0);
 
   const refreshMe = useCallback(async () => {
+    const now = Date.now();
+    if (refreshingRef.current) return;
+    if (now - lastRefreshAtRef.current < 1500) return;
+    refreshingRef.current = true;
+    lastRefreshAtRef.current = now;
+
     const token = getToken();
     if (!token) {
       setState((s) => ({ ...s, token: "", user: null, workspace: null, loading: false }));
+      refreshingRef.current = false;
       return;
     }
 
@@ -56,6 +65,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     } catch {
       setToken("");
       setState((s) => ({ ...s, token: "", user: null, workspace: null, loading: false }));
+    } finally {
+      refreshingRef.current = false;
     }
   }, []);
 

@@ -67,8 +67,27 @@ export default function MetaConnectPage() {
 
   useEffect(() => {
     if (metaStatus.status !== "pending") return;
-    const t = setInterval(loadStatus, 5000);
-    return () => clearInterval(t);
+
+    // Avoid hammering the backend while pending; also pause when tab is hidden.
+    let timer: number | null = null;
+    const POLL_MS = 15000;
+
+    const tick = () => {
+      if (document.hidden) return;
+      void loadStatus();
+    };
+
+    timer = window.setInterval(tick, POLL_MS);
+
+    const onVisibility = () => {
+      if (!document.hidden) tick();
+    };
+    document.addEventListener("visibilitychange", onVisibility);
+
+    return () => {
+      if (timer) window.clearInterval(timer);
+      document.removeEventListener("visibilitychange", onVisibility);
+    };
   }, [metaStatus.status, loadStatus]);
 
   const onSave = useCallback(async (event: FormEvent) => {

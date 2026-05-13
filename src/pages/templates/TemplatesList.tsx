@@ -1,8 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { Plus, Eye, RefreshCw, Trash2, MessageSquare, Folder, ShieldCheck, Megaphone, Package, Search, Filter, ChevronLeft, ChevronRight, } from "lucide-react";
+import { Plus, Eye, RefreshCw, Trash2, MessageSquare, Folder, ShieldCheck, Megaphone, Package, Search, ChevronLeft, ChevronRight, } from "lucide-react";
 import { Badge } from "../../components/ui/Badge";
 import { Button } from "../../components/ui/Button";
-import { Select } from "../../components/ui/Select";
 import { TemplatesTableSkeleton } from "../../components/ui/Skeletons";
 import { statusTone, truncateTemplateName } from "./helpers";
 import type { TemplateItem } from "./types";
@@ -96,13 +95,13 @@ export function TemplatesList(props: Props) {
   return (
     <div className="bg-white rounded-[5px] border border-slate-200 shadow-sm overflow-hidden">
       {/* Main List Container */}
-      <div className="p-6 md:p-8">
+      <div className="p-2 md:p-8">
         {/* Filters Header */}
-        <div className="border-b border-slate-100 pb-2">
+        <div className="border-b border-slate-100 py-2">
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-            <div className="flex items-center justify-around gap-3">
-              <div className="flex items-center gap-4">
-                <div className="relative group flex-1 md:flex-none md:w-64">
+            <div className="flex items-center gap-3">
+              <div className="flex items-start md:items-center flex-col md:flex-row gap-4">
+                <div className="relative group flex-1 md:flex-none w-[96%] md:w-64">
                   <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-brand-600 transition-colors" size={16} />
                   <input
                     value={search}
@@ -111,40 +110,39 @@ export function TemplatesList(props: Props) {
                     className="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-100 rounded-[5px] text-sm font-bold focus:outline-none focus:ring-2 focus:ring-brand-600/10 focus:border-brand-500 transition-all"
                   />
                 </div>
-                <div className="flex items-center gap-2 flex-1 md:flex-none">
-                  <button className="h-[44px] w-[44px] bg-slate-50 border border-slate-100 rounded-[5px] flex items-center justify-center text-slate-500 hover:bg-slate-100 transition-all">
-                    <Filter size={18} />
-                  </button>
-                  <Select
-                    value={statusFilter}
-                    onChange={(e) => setStatusFilter(e.target.value)}
-                    className="h-[44px] rounded-[5px] border-slate-100 bg-slate-50 font-bold text-xs uppercase tracking-widest flex-1 md:w-40"
-                  >
-                    <option value="all">All Status</option>
-                    <option value="approved">Approved</option>
-                    <option value="pending">Pending</option>
-                    <option value="rejected">Rejected</option>
-                  </Select>
+                <div className="flex items-center gap-1 p-1 bg-slate-50 border border-ink-900/5 rounded-[5px]">
+                  {["all", "approved", "pending", "rejected"].map((f) => (
+                    <button
+                      key={f}
+                      onClick={() => setStatusFilter(f)}
+                      className={`rounded-[3px] px-4 py-1.5 text-[10px] font-black uppercase tracking-wider transition-all ${statusFilter === f
+                        ? "bg-white text-ink-900 shadow-sm shadow-ink-900/10 ring-1 ring-ink-900/5"
+                        : "text-ink-800/40 hover:text-ink-900"
+                        }`}
+                    >
+                      {f}
+                    </button>
+                  ))}
                 </div>
               </div>
             </div>
-              <div className="flex items-center gap-3">
-                <Button
-                  variant="ghost"
-                  onClick={handleSyncMeta}
-                  disabled={syncing}
-                  className="h-11 px-5 rounded-[5px] bg-slate-900 text-white font-bold text-xs uppercase tracking-widest hover:bg-black transition-all shadow-sm"
-                >
-                  <RefreshCw size={16} className={cn("mr-2", syncing && "animate-spin")} />
-                  Sync Meta
-                </Button>
-                <Button
-                  onClick={() => onOpenAdd()}
-                  className="h-11 px-5 rounded-[5px] bg-brand-600 text-white font-bold text-xs uppercase tracking-widest hover:bg-brand-700 transition-all shadow-sm"
-                >
-                  <Plus size={16} className="mr-2" /> New Template
-                </Button>
-              </div>
+            <div className="flex items-center gap-3">
+              <Button
+                variant="ghost"
+                onClick={handleSyncMeta}
+                disabled={syncing}
+                className="h-11 px-5 rounded-[5px] bg-slate-900 text-white font-bold text-xs uppercase tracking-widest hover:bg-black transition-all shadow-sm"
+              >
+                <RefreshCw size={16} className={cn("mr-2", syncing && "animate-spin")} />
+                Sync Meta
+              </Button>
+              <Button
+                onClick={() => onOpenAdd()}
+                className="h-11 px-5 rounded-[5px] bg-brand-600 text-white font-bold text-xs uppercase tracking-widest hover:bg-brand-700 transition-all shadow-sm"
+              >
+                <Plus size={16} className="mr-2" /> New Template
+              </Button>
+            </div>
           </div>
 
           <div className="flex items-center justify-between py-4">
@@ -244,10 +242,10 @@ export function TemplatesList(props: Props) {
               <table className="w-full text-left border-collapse min-w-[800px]">
                 <thead className="bg-slate-50/50">
                   <tr>
-                    <th className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest">Template Details</th>
-                    <th className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest">Category</th>
-                    <th className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest">Status</th>
-                    <th className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest text-right">Actions</th>
+                    <th className="px-2 py-2 md:px-8 md:py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest">Category</th>
+                    <th className="px-2 py-2 md:px-8 md:py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest">Status</th>
+                    <th className="px-10 py-2 md:px-8 md:py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest text-right">Actions</th>
+                    <th className="px-8 py-2 md:px-8 md:py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest">Template Details</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-50">
@@ -258,7 +256,7 @@ export function TemplatesList(props: Props) {
                         key={template._id}
                         className={cn("group transition-colors", selectedId === template._id ? "bg-brand-50/20" : "hover:bg-slate-50/40")}
                       >
-                        <td className="px-8 py-5 cursor-pointer" onClick={() => onSelectTemplate(template)}>
+                        <td className="pl-2 pr-0 py-3 md:px-8 md:py-5 cursor-pointer" onClick={() => onSelectTemplate(template)}>
                           <button
                             onClick={() => onSelectTemplate(template)}
                             className="flex items-center gap-4 text-left group"
@@ -271,7 +269,7 @@ export function TemplatesList(props: Props) {
                             </div>
                           </button>
                         </td>
-                        <td className="px-8 py-5">
+                        <td className="pl-0 pr-2 py-3 md:px-8 md:py-5">
                           <div className="flex items-center gap-2">
                             <div className={cn("p-1.5 rounded-[5px]", bg, color)}>
                               <Icon size={14} />
@@ -279,12 +277,12 @@ export function TemplatesList(props: Props) {
                             <span className="text-xs font-bold text-slate-600">{label}</span>
                           </div>
                         </td>
-                        <td className="px-8 py-5">
+                        <td className="px-2 py-3 md:px-8 md:py-5">
                           <Badge tone={statusTone(template.status)} className="rounded-[5px] px-3 py-1 text-[10px] uppercase font-black tracking-widest">
                             {template.status}
                           </Badge>
                         </td>
-                        <td className="px-8 py-5 text-right">
+                        <td className="px-2 py-3 md:px-8 md:py-5 text-right">
                           <div className="flex items-center justify-end gap-2">
                             <Button
                               variant="ghost"

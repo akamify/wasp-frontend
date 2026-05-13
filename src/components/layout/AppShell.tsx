@@ -9,8 +9,9 @@ import {
   LayoutDashboard, Key, FileText, Send, Users,
   MessageSquare, Link2, Zap, PanelLeftClose,
   PanelLeftOpen, Menu, Wallet, Workflow,
-  Bell, Sparkles, Globe, History, Terminal, CheckCircle2, AlertCircle, MessageCircle,
-  X, MoreHorizontal, ChevronRight, FileSearch
+  Bell, Globe, History, Terminal, CheckCircle2, AlertCircle, MessageCircle,
+  X, MoreHorizontal, ChevronRight, FileSearch, Settings, CreditCard, LogOut,
+  User
 } from "lucide-react";
 import { WorkspaceStatusBar } from "./WorkspaceStatusBar";
 
@@ -343,7 +344,7 @@ function MobileDrawer({
 
             {/* Drawer Footer */}
             <button
-              onClick={() => { navigate("/app/settings"); onClose(); }}
+              onClick={() => navigate("/app/profile")}
               className="p-4 border-t border-slate-100 shrink-0 hover:bg-slate-50 active:bg-slate-100 transition-colors text-left"
             >
               <div className="flex items-center gap-3 px-1">
@@ -364,7 +365,7 @@ function MobileDrawer({
 }
 
 export function AppShell({ children }: { children: React.ReactNode }) {
-  const { user, workspace } = useAuth();
+  const { user, workspace, logout } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   const [notifOpen, setNotifOpen] = useState(false);
@@ -415,6 +416,10 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
   const desktopNavRef = useRef<HTMLDivElement | null>(null);
   const notifRef = useRef<HTMLDivElement | null>(null);
+  const profileMenuRef = useRef<HTMLDivElement | null>(null);
+  const sidebarProfileMenuRef = useRef<HTMLDivElement | null>(null);
+  const [profileMenuOpen, setProfileMenuOpen] = useState(false);
+  const [sidebarProfileMenuOpen, setSidebarProfileMenuOpen] = useState(false);
   const [notifications, setNotifications] = useState<Array<{
     id: number;
     title: string;
@@ -558,17 +563,48 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       }
     };
 
-    void loadNotifications();
-    const timer = window.setInterval(() => void loadNotifications(), 15000);
+    const tick = () => {
+      if (document.hidden) return;
+      void loadNotifications();
+    };
+
+    // Keep badge reasonably fresh without spamming the backend.
+    // When dropdown is open, refresh a bit faster.
+    tick();
+    const intervalMs = notifOpen ? 15000 : 60000;
+    const timer = window.setInterval(tick, intervalMs);
+
+    const onVisibility = () => {
+      if (!document.hidden) tick();
+    };
+    document.addEventListener("visibilitychange", onVisibility);
+
     return () => {
       alive = false;
       window.clearInterval(timer);
+      document.removeEventListener("visibilitychange", onVisibility);
     };
-  }, []);
+  }, [notifOpen]);
+
+  // Auto-scroll active nav item into view in sidebar
+  useEffect(() => {
+    if (!desktopNavRef.current) return;
+    const activeLink = desktopNavRef.current.querySelector("a[class*='bg-brand-600']");
+    if (activeLink) {
+      activeLink.scrollIntoView({ behavior: "smooth", block: "nearest" });
+    }
+  }, [location.pathname]);
+
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
       if (notifRef.current && !notifRef.current.contains(event.target as Node)) {
         setNotifOpen(false);
+      }
+      if (profileMenuRef.current && !profileMenuRef.current.contains(event.target as Node)) {
+        setProfileMenuOpen(false);
+      }
+      if (sidebarProfileMenuRef.current && !sidebarProfileMenuRef.current.contains(event.target as Node)) {
+        setSidebarProfileMenuOpen(false);
       }
     }
     document.addEventListener("mousedown", handleClickOutside);
@@ -634,22 +670,81 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           ))}
         </div>
 
-        <button
-          onClick={() => navigate("/app/settings")}
-          className="p-4 border-t border-slate-100 shrink-0 hover:bg-slate-50 transition-colors text-left"
-        >
-          <div className={cn("flex items-center gap-3", isCollapsed ? "justify-center" : "px-2")}>
-            <div className="w-9 h-9 rounded-[5px] bg-brand-100 flex items-center justify-center text-brand-700 font-bold text-xs shrink-0 uppercase shadow-sm">
-              {user?.name?.[0] || user?.email?.[0] || "?"}
-            </div>
-            {!isCollapsed && (
-              <div className="min-w-0 flex-1">
-                <p className="text-sm font-bold truncate text-slate-900">{user?.name || "User"}</p>
-                <p className="text-[10px] font-semibold text-slate-400 truncate uppercase tracking-tighter">{workspace?.plan || "Free"} Plan</p>
+        <div className="relative" ref={sidebarProfileMenuRef}>
+          <button
+            onClick={() => setSidebarProfileMenuOpen(!sidebarProfileMenuOpen)}
+            className="w-full p-4 border-t border-slate-100 shrink-0 hover:bg-slate-50 active:bg-slate-100 transition-colors text-left"
+            title={isCollapsed ? "Profile Menu" : undefined}
+          >
+            <div className={cn("flex items-center gap-3", isCollapsed ? "justify-center" : "px-2")}>
+              <div className="w-9 h-9 rounded-[5px] bg-brand-100 flex items-center justify-center text-brand-700 font-bold text-xs shrink-0 uppercase shadow-sm">
+                {user?.name?.[0] || user?.email?.[0] || "?"}
               </div>
+              {!isCollapsed && (
+                <div className="min-w-0 flex-1">
+                  <p className="text-sm font-bold truncate text-slate-900">{user?.name || "User"}</p>
+                  <p className="text-[10px] font-semibold text-slate-400 truncate uppercase tracking-tighter">{workspace?.plan || "Free"} Plan</p>
+                </div>
+              )}
+            </div>
+          </button>
+
+          <AnimatePresence>
+            {sidebarProfileMenuOpen && (
+              <motion.div
+                initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                animate={{ opacity: 1, y: 0, scale: 1 }}
+                exit={{ opacity: 0, y: 10, scale: 0.95 }}
+                transition={{ duration: 0.15 }}
+                className="fixed bg-white rounded-[5px] shadow-2xl border border-slate-100 overflow-hidden z-[500] w-56"
+                style={{
+                  bottom: isCollapsed ? "80px" : "80px",
+                  left: isCollapsed ? "8px" : "20px",
+                }}
+                onClick={(e) => e.stopPropagation()}
+              >
+                <div className="px-4 py-3 border-b border-slate-100 bg-slate-50/50">
+                  <p className="text-xs font-black text-slate-900 truncate">{user?.name || "User"}</p>
+                  <p className="text-[10px] font-semibold text-slate-500 truncate">{user?.email}</p>
+                </div>
+
+                <div className="py-2">
+                  <button
+                    onClick={() => { navigate("/app/profile"); setSidebarProfileMenuOpen(false); }}
+                    className="w-full px-4 py-2.5 text-left text-sm font-bold text-slate-900 hover:bg-slate-50 transition-colors flex items-center gap-3"
+                  >
+                    <User size={16} className="text-slate-400" />
+                    Profile
+                  </button>
+                  <button
+                    onClick={() => { navigate("/app/plan"); setSidebarProfileMenuOpen(false); }}
+                    className="w-full px-4 py-2.5 text-left text-sm font-bold text-slate-900 hover:bg-slate-50 transition-colors flex items-center gap-3"
+                  >
+                    <CreditCard size={16} className="text-slate-400" />
+                    Plan
+                  </button>
+                  <button
+                    onClick={() => { navigate("/app/settings"); setSidebarProfileMenuOpen(false); }}
+                    className="w-full px-4 py-2.5 text-left text-sm font-bold text-slate-900 hover:bg-slate-50 transition-colors flex items-center gap-3"
+                  >
+                    <Settings size={16} className="text-slate-400" />
+                    Settings
+                  </button>
+                </div>
+
+                <div className="border-t border-slate-100 py-2">
+                  <button
+                    onClick={() => { logout(); setSidebarProfileMenuOpen(false); }}
+                    className="w-full px-4 py-2.5 text-left text-sm font-bold text-rose-600 hover:bg-rose-50 transition-colors flex items-center gap-3"
+                  >
+                    <LogOut size={16} />
+                    Logout
+                  </button>
+                </div>
+              </motion.div>
             )}
-          </div>
-        </button>
+          </AnimatePresence>
+        </div>
       </motion.aside>
 
       {/* Main Content Area */}
@@ -737,19 +832,75 @@ export function AppShell({ children }: { children: React.ReactNode }) {
               </AnimatePresence>
             </div>
 
-            {/* Plan / Pricing Button */}
-            <button
-              onClick={() => navigate("/app/pricing")}
-              className="flex items-center gap-3 p-1.5 pl-3 pr-2 bg-slate-50 border border-slate-200 rounded-[5px] hover:bg-white transition-all group shadow-sm"
-            >
-              <div className="flex flex-col items-end leading-none">
-                <span className="text-[9px] font-black text-slate-400 uppercase tracking-tighter">Current Plan</span>
-                <span className="text-[11px] font-black text-brand-600">{workspace?.plan || "Starter"}</span>
-              </div>
-              <div className="w-8 h-8 rounded-[5px] bg-white border border-slate-200 flex items-center justify-center text-slate-600 group-hover:bg-brand-50 group-hover:text-brand-600 transition-colors shadow-sm">
-                <Sparkles size={16} />
-              </div>
-            </button>
+            {/* Profile Dropdown Menu */}
+            <div className="relative" ref={profileMenuRef}>
+              <button
+                onClick={() => setProfileMenuOpen(!profileMenuOpen)}
+                className="flex items-center gap-3 p-1.5 pl-3 pr-2 bg-slate-50 border border-slate-200 rounded-[5px] hover:bg-white transition-all group shadow-sm"
+              >
+                <div className="flex flex-col items-end leading-none">
+                  <span className="text-[9px] font-black text-slate-400 uppercase tracking-tighter">Current Plan</span>
+                  <span className="text-[11px] font-black text-brand-600">{workspace?.plan || "Starter"}</span>
+                </div>
+                <div className="w-8 h-8 rounded-[5px] bg-brand-100 flex items-center justify-center text-brand-700 font-black text-xs shrink-0 shadow-sm">
+                  {user?.name?.[0] || user?.email?.[0] || "?"}
+                </div>
+              </button>
+
+              <AnimatePresence>
+                {profileMenuOpen && (
+                  <motion.div
+                    initial={{ opacity: 0, y: -10, scale: 0.95 }}
+                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                    exit={{ opacity: 0, y: -10, scale: 0.95 }}
+                    transition={{ duration: 0.15 }}
+                    className="absolute right-0 mt-2 w-48 bg-white rounded-[5px] shadow-xl border border-slate-100 overflow-hidden z-50"
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    <div className="px-4 py-3 border-b border-slate-100 bg-slate-50/50">
+                      <p className="text-xs font-black text-slate-900 truncate">{user?.name || "User"}</p>
+                      <p className="text-[10px] font-semibold text-slate-500 truncate">{user?.email}</p>
+                    </div>
+
+                    <div className="py-2">
+                      <button
+                        onClick={() => { navigate("/app/profile"); setProfileMenuOpen(false); }}
+                        className="w-full px-4 py-2.5 text-left text-sm font-bold text-slate-900 hover:bg-slate-50 transition-colors flex items-center gap-3"
+                      >
+                        <div className="w-5 h-5 flex items-center justify-center text-slate-400">
+                          <User size={16} />
+                        </div>
+                        Profile
+                      </button>
+                      <button
+                        onClick={() => { navigate("/app/plan"); setProfileMenuOpen(false); }}
+                        className="w-full px-4 py-2.5 text-left text-sm font-bold text-slate-900 hover:bg-slate-50 transition-colors flex items-center gap-3"
+                      >
+                        <CreditCard size={16} className="text-slate-400" />
+                        Plan
+                      </button>
+                      <button
+                        onClick={() => { navigate("/app/settings"); setProfileMenuOpen(false); }}
+                        className="w-full px-4 py-2.5 text-left text-sm font-bold text-slate-900 hover:bg-slate-50 transition-colors flex items-center gap-3"
+                      >
+                        <Settings size={16} className="text-slate-400" />
+                        Settings
+                      </button>
+                    </div>
+
+                    <div className="border-t border-slate-100 py-2">
+                      <button
+                        onClick={() => { logout(); setProfileMenuOpen(false); }}
+                        className="w-full px-4 py-2.5 text-left text-sm font-bold text-rose-600 hover:bg-rose-50 transition-colors flex items-center gap-3"
+                      >
+                        <LogOut size={16} />
+                        Logout
+                      </button>
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
           </div>
         </header>
 

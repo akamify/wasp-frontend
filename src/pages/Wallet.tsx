@@ -26,6 +26,7 @@ export default function WalletPage() {
   const [syncing, setSyncing] = useState(false);
   const [err, setErr] = useState<string | null>(null);
   const [rechargeOpen, setRechargeOpen] = useState(false);
+  const [sort, setSort] = useState<"all" | "debited" | "credited" | "failed">("all");
   const isInitialLoad = useRef(true);
   const { toast } = useToast();
 
@@ -57,6 +58,14 @@ export default function WalletPage() {
     return formatCurrencySafe(Number(wallet?.balance ?? 0), wallet?.currency || undefined);
   }, [wallet?.balance, wallet?.currency]);
 
+  const filteredTx = useMemo(() => {
+    if (sort === "all") return tx;
+    if (sort === "credited") return tx.filter((t) => t.type === "credit");
+    if (sort === "debited") return tx.filter((t) => t.type === "debit");
+    if (sort === "failed") return tx.filter((t) => t.status === "failed" || t.error);
+    return tx;
+  }, [tx, sort]);
+
   async function loadMore() {
     if (!cursor) return;
     try {
@@ -76,15 +85,15 @@ export default function WalletPage() {
   return (
     <div className="space-y-6 p-4 md:p-8">
       {err ? <Alert tone="error">{err}</Alert> : null}
-      
+
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div>
           <h1 className="text-4xl font-black tracking-tight text-ink-900">Wallet</h1>
           <p className="mt-2 text-sm font-semibold text-ink-800/60 uppercase tracking-widest">Manage your credits and billing</p>
         </div>
-        <Button 
-          variant="ghost" 
-          onClick={load} 
+        <Button
+          variant="ghost"
+          onClick={load}
           disabled={busy || syncing}
           className="h-10 border border-ink-900/10 bg-white gap-2 shadow-sm"
         >
@@ -106,7 +115,7 @@ export default function WalletPage() {
                   Ready to send
                 </div>
               </div>
-              <Button 
+              <Button
                 onClick={() => setRechargeOpen(true)}
                 className="h-14 px-10 text-lg font-black shadow-xl shadow-brand-500/20"
               >
@@ -118,9 +127,26 @@ export default function WalletPage() {
           <Card className="order-3 p-0 border-ink-900/5 shadow-xl shadow-ink-900/5 overflow-hidden lg:order-none">
             <div className="px-6 py-5 border-b border-ink-900/5 bg-slate-50/50 flex items-center justify-between">
               <h2 className="text-sm font-black uppercase tracking-widest text-ink-800/60">Transaction history</h2>
-              <Badge tone="neutral" className="rounded-[3px] text-[10px]">{tx.length} total</Badge>
+              <Badge tone="neutral" className="rounded-[3px] text-[10px]">{filteredTx.length} total</Badge>
             </div>
-            
+
+            <div className="flex items-center justify-center p-4 border-b border-ink-900/5 bg-slate-50/50">
+              <div className="flex items-center gap-1 m-1 p-1 bg-slate-50 border border-ink-900/5 rounded-[5px]">
+                {(["all", "debited", "credited", "failed"] as const).map((f) => (
+                  <button
+                    key={f}
+                    onClick={() => setSort(f)}
+                    className={`rounded-[3px] px-4 py-1.5 text-[10px] font-black uppercase tracking-wider transition-all ${sort === f
+                      ? "bg-white text-ink-900 shadow-sm shadow-ink-900/10 ring-1 ring-ink-900/5"
+                      : "text-ink-800/40 hover:text-ink-900"
+                      }`}
+                  >
+                    {f}
+                  </button>
+                ))}
+              </div>
+            </div>
+
             <div className="hidden md:block overflow-x-auto">
               <table className="w-full text-left text-sm border-collapse">
                 <thead className="bg-slate-50 text-[10px] font-bold uppercase tracking-widest text-ink-800/40 border-b border-ink-900/5">
@@ -132,14 +158,14 @@ export default function WalletPage() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-ink-900/5">
-                  {tx.length === 0 ? (
+                  {filteredTx.length === 0 ? (
                     <tr>
                       <td colSpan={4} className="px-6 py-12 text-center text-ink-800/40 font-semibold italic">
                         No transactions found yet
                       </td>
                     </tr>
                   ) : (
-                    tx.map((t) => (
+                    filteredTx.map((t) => (
                       <tr key={t.id} className="hover:bg-slate-50/50 transition-colors">
                         <td className="px-6 py-4">
                           <Badge tone={toneForType(t.type)} className="rounded-[3px] py-1 px-2 uppercase font-black tracking-tighter">
@@ -174,12 +200,12 @@ export default function WalletPage() {
             </div>
 
             <div className="md:hidden divide-y divide-ink-900/5">
-              {tx.length === 0 ? (
+              {filteredTx.length === 0 ? (
                 <div className="px-6 py-12 text-center text-ink-800/40 font-semibold italic">
                   No transactions found yet
                 </div>
               ) : (
-                tx.map((t) => (
+                filteredTx.map((t) => (
                   <div key={t.id} className="p-4">
                     <div className="flex items-start justify-between gap-3">
                       <div className="min-w-0">
@@ -236,14 +262,14 @@ export default function WalletPage() {
           </Card>
 
           <Card className="p-6 border-ink-900/5 bg-ink-900 text-white shadow-xl">
-             <div className="flex items-center gap-3 mb-4">
-                <History size={20} className="text-brand-400" />
-                <h3 className="font-black text-black tracking-tight">Auto-Recharge</h3>
-             </div>
-             <p className="text-[11px] font-medium text-black/60 leading-relaxed mb-4">
-                Keep your campaigns running smoothly. Low balance alerts will be sent to your registered email.
-             </p>
-             <Badge tone="neutral" className="bg-white/10 text-black border-none uppercase font-black tracking-widest text-[9px]">Feature coming soon</Badge>
+            <div className="flex items-center gap-3 mb-4">
+              <History size={20} className="text-brand-400" />
+              <h3 className="font-black text-black tracking-tight">Auto-Recharge</h3>
+            </div>
+            <p className="text-[11px] font-medium text-black/60 leading-relaxed mb-4">
+              Keep your campaigns running smoothly. Low balance alerts will be sent to your registered email.
+            </p>
+            <Badge tone="neutral" className="bg-white/10 text-black border-none uppercase font-black tracking-widest text-[9px]">Feature coming soon</Badge>
           </Card>
         </div>
       </div>

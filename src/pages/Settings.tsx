@@ -6,14 +6,10 @@ import { Input } from "../components/ui/Input";
 import { useAuth } from "../context/AuthContext";
 import { useToast } from "../context/ToastContext";
 import {
-  User,
-  Mail,
-  Phone,
-  Lock,
   LogOut,
+  Lock,
   ShieldCheck,
   BadgeCheck,
-  Settings
 } from "lucide-react";
 import { SettingsSkeleton } from "../components/ui/Skeletons";
 
@@ -21,16 +17,12 @@ export default function SettingsPage() {
   const { user, refreshMe, logout } = useAuth();
   const { toast } = useToast();
   const [initialLoading, setInitialLoading] = useState(true);
-  const [profileBusy, setProfileBusy] = useState(false);
 
   useEffect(() => {
     // Simulate short load for UX consistency
     const timer = setTimeout(() => setInitialLoading(false), 600);
     return () => clearTimeout(timer);
   }, []);
-
-  const [name, setName] = useState("");
-  const [phone, setPhone] = useState("");
 
   const [passwordBusy, setPasswordBusy] = useState(false);
   const [currentPassword, setCurrentPassword] = useState("");
@@ -43,30 +35,12 @@ export default function SettingsPage() {
   const [twoFactorResendCooldown, setTwoFactorResendCooldown] = useState(0);
 
   useEffect(() => {
-    setName(user?.name || "");
-    setPhone(user?.phone || "");
-  }, [user?.name, user?.phone]);
-
-  useEffect(() => {
     if (twoFactorResendCooldown <= 0) return;
     const timer = window.setInterval(() => {
       setTwoFactorResendCooldown((v) => Math.max(0, v - 1));
     }, 1000);
     return () => window.clearInterval(timer);
   }, [twoFactorResendCooldown]);
-
-  async function saveProfile() {
-    setProfileBusy(true);
-    try {
-      await API.auth.updateProfile({ name, phone });
-      toast("Profile details updated successfully.", "success");
-      await refreshMe();
-    } catch (e: any) {
-      toast(e?.response?.data?.message || e?.message || "Failed to update profile", "error");
-    } finally {
-      setProfileBusy(false);
-    }
-  }
 
   async function changePassword() {
     if (newPassword !== confirmPassword) {
@@ -186,47 +160,8 @@ export default function SettingsPage() {
         </div>
       </div>
 
-      <div className="grid gap-8 lg:grid-cols-2">
-        {/* Profile Details Card */}
-        <div className="space-y-6">
-          <div className="flex items-center gap-2 px-2">
-            <Settings size={18} className="text-slate-400" />
-            <h3 className="text-sm font-black text-slate-900 uppercase tracking-widest">Personal Details</h3>
-          </div>
-          <Card className="p-8 border-none shadow-xl shadow-slate-200/50">
-            <div className="space-y-6">
-              <div className="grid gap-6">
-                <Input
-                  label="Full Name"
-                  icon={<User size={18} />}
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                  placeholder="John Doe"
-                />
-                <Input
-                  label="Email Address"
-                  icon={<Mail size={18} />}
-                  value={user?.email || ""}
-                  disabled
-                  placeholder="email@example.com"
-                />
-                <Input
-                  label="Phone Number"
-                  icon={<Phone size={18} />}
-                  value={phone}
-                  onChange={(e) => setPhone(e.target.value)}
-                  placeholder="+91 00000 00000"
-                />
-              </div>
-
-              <Button onClick={saveProfile} disabled={profileBusy} className="w-full h-12 rounded-[5px]">
-                {profileBusy ? "Saving..." : "Save Profile Details"}
-              </Button>
-            </div>
-          </Card>
-        </div>
-
-        {/* Security Card */}
+      <div className="grid gap-8 lg:grid-cols-1">
+        {/* Security Card - Full Width */}
         <div className="space-y-6">
           <div className="flex items-center gap-2 px-2">
             <ShieldCheck size={18} className="text-slate-400" />

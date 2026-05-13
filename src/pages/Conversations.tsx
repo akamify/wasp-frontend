@@ -117,16 +117,28 @@ export default function ConversationsPage() {
   const [editOpen, setEditOpen] = useState(false);
   const [editBusy, setEditBusy] = useState(false);
   const [editForm, setEditForm] = useState<any>({ name: "", email: "", language: "", tags: "", notes: "" });
+  const [realtimeConnected, setRealtimeConnected] = useState(false);
   const isInitialLoad = useRef(true);
   const headerMenuRef = useRef<HTMLDivElement>(null);
   const lastInboundToneByPhoneRef = useRef<Record<string, string>>({});
   const inboundToneBootstrappedRef = useRef<Record<string, true>>({});
   const audioContextRef = useRef<AudioContext | null>(null);
   const audioUnlockedRef = useRef(false);
+  const fallbackPingRef = useRef<HTMLAudioElement | null>(null);
+  const [filter, setFilter] = useState<"all" | "unread" | "read">("all");
 
   const scrollRef = useRef<HTMLDivElement>(null);
 
   const activeConversation = useMemo(() => items.find((item) => item.phone === urlPhone) || null, [items, urlPhone]);
+  const visibleConversations = useMemo(() => {
+    let result = items.filter((item) => {
+      if (filter === "unread") return Number(item.unreadCount || 0) > 0;
+      if (filter === "read") return Number(item.unreadCount || 0) === 0;
+      return true;
+    });
+
+    return result;
+  }, [items, filter]);
   const waLink = useMemo(() => {
     const p = String(urlPhone || "").replace(/[^\d]/g, "");
     return p ? `https://wa.me/${p}` : "";
@@ -213,6 +225,23 @@ export default function ConversationsPage() {
         return;
       } catch { }
     }
+
+    const fallbackPing = fallbackPingRef.current || (() => {
+      const audio = new Audio(
+        "data:audio/wav;base64,UklGRmQAAABXQVZFZm10IBAAAAABAAEAIlYAAESsAAACABAAZGF0YVAAAAAAgD8AAIC/AACAPwAAgD8AAIC/AACAPwAAgD8AAIC/AACAPwAAgD8AAIC/AACAPwAAgD8AAIC/AACAPwAAgD8AAIC/"
+      );
+      audio.preload = "auto";
+      audio.volume = 0.6;
+      fallbackPingRef.current = audio;
+      return audio;
+    })();
+
+    try {
+      fallbackPing.currentTime = 0;
+      void fallbackPing.play().catch(() => { /* silent fallback */ });
+      return;
+    } catch { }
+
     try {
       const AudioCtx = (window.AudioContext || (window as any).webkitAudioContext) as any;
       if (!AudioCtx) return;
@@ -884,12 +913,15 @@ export default function ConversationsPage() {
   }, [urlPhone]);
 
   useEffect(() => {
+    // If realtime stream is connected, avoid extra polling.
+    if (realtimeConnected) return;
     const id = window.setInterval(() => {
+      if (document.hidden) return;
       void refreshListSilently();
       if (urlPhone) void refreshChatSilently(urlPhone);
-    }, 10000);
+    }, 30000);
     return () => window.clearInterval(id);
-  }, [urlPhone, search]);
+  }, [urlPhone, search, realtimeConnected]);
 
   useEffect(() => {
     const token = String(getToken() || "").trim();
@@ -899,6 +931,7 @@ export default function ConversationsPage() {
     const base = String(API.baseUrl || "").replace(/\/+$/, "");
     const streamUrl = `${base}/realtime/stream?token=${encodeURIComponent(token)}&workspaceId=${encodeURIComponent(workspaceId)}`;
     const source = new EventSource(streamUrl);
+    source.onopen = () => setRealtimeConnected(true);
 
     const onRealtimeMessage = (evt: MessageEvent) => {
       try {
@@ -917,11 +950,13 @@ export default function ConversationsPage() {
     source.addEventListener("message", onRealtimeMessage as EventListener);
     source.onerror = () => {
       // EventSource reconnects automatically; no-op on transient network drops.
+      setRealtimeConnected(false);
     };
 
     return () => {
       source.removeEventListener("message", onRealtimeMessage as EventListener);
       source.close();
+      setRealtimeConnected(false);
     };
   }, [urlPhone, search]);
 
@@ -948,7 +983,7 @@ export default function ConversationsPage() {
 
       {/* 1. Sidebar: Chat List */}
       <div className={cn("w-full md:w-[350px] bg-white border-r border-slate-200 flex flex-col shrink-0 min-h-0", urlPhone ? "hidden md:flex" : "flex")}>
-        <div className="p-4 bg-slate-50/50 border-b border-slate-100 flex flex-col gap-4">
+        <div className="p-3 bg-slate-50/50 border-b border-slate-100 flex flex-col gap-4">
           <div className="relative group">
             <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-brand-600 transition-colors" size={16} />
             <input
@@ -958,10 +993,26 @@ export default function ConversationsPage() {
               className="w-full pl-10 pr-4 py-2.5 bg-white border border-slate-200 rounded-[5px] text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-brand-600/10 focus:border-brand-600 transition-all shadow-sm"
             />
           </div>
+          <div className="flex items-center gap-2">
+            <div className="flex items-center p-1 bg-slate-50 border border-ink-900/5 rounded-[5px]">
+              {(["all", "unread", "read"] as const).map((f) => (
+                <button
+                  key={f}
+                  onClick={() => setFilter(f)}
+                  className={`rounded-[3px] px-4 py-1.5 text-[10px] font-black uppercase tracking-wider transition-all ${filter === f
+                    ? "bg-white text-ink-900 shadow-sm shadow-ink-900/10 ring-1 ring-ink-900/5"
+                    : "text-ink-800/40 hover:text-ink-900"
+                    }`}
+                >
+                  {f}
+                </button>
+              ))}
+            </div>
+          </div>
         </div>
 
         <div className="flex-1 overflow-y-auto custom-scrollbar">
-          {loadingList ? <ConversationListSkeleton rows={12} /> : items.map((item) => (
+          {loadingList ? <ConversationListSkeleton rows={12} /> : visibleConversations.map((item) => (
             <button
               key={item.phone}
               onClick={() => navigate(`/app/conversations/${item.phone}`)}

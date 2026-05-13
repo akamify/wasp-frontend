@@ -30,7 +30,7 @@ import { Alert } from "../../components/ui/Alert";
 import { Input } from "../../components/ui/Input";
 import { Select } from "../../components/ui/Select";
 import { Textarea } from "../../components/ui/Textarea";
-import { CATEGORY_OPTIONS, COPY_CODE_BUTTON_TEXT, TEMPLATE_NAME_MAX_CHARS, TEMPLATE_NAME_MIN_CHARS, buildTemplateComponents, ctaOptionsForCategory, extractVariableIndexes, isValidHttpsSampleUrl, newAuthSupportedApp, newCtaButton, parseComponentsForPreview } from "./helpers";
+import { CATEGORY_OPTIONS, COPY_CODE_BUTTON_TEXT, TEMPLATE_NAME_MAX_CHARS, TEMPLATE_NAME_MIN_CHARS, buildTemplateComponents, ctaOptionsForCategory, extractVariableIndexes, isValidHttpsSampleUrl, newAuthSupportedApp, newCtaButton, normalizeFlowIcon, parseComponentsForPreview } from "./helpers";
 import { TemplatePreview } from "./TemplatePreview";
 import type { AuthSupportedApp, CtaButton, HeaderType, TemplateCategory } from "./types";
 
@@ -393,7 +393,7 @@ export function TemplateForm({ open, creating, languageOptions, mode = "create",
       (parsed.ctaButtons || []).map((b) => ({
         ...b,
         ttlMinutes: (b as any).ttlMinutes || "43200",
-        flowIcon: (b as any).flowIcon || "DEFAULT",
+        flowIcon: normalizeFlowIcon((b as any).flowIcon),
         flowType: "",
         offerCode: (b as any).offerCode || "",
       }))
@@ -1089,7 +1089,7 @@ export function TemplateForm({ open, creating, languageOptions, mode = "create",
                                       phoneNumber: "",
                                       flowId: "",
                                       ttlMinutes: "43200",
-                                      flowIcon: "DEFAULT",
+                                      flowIcon: "DOCUMENT",
                                       flowType: "",
                                     offerCode: "",
                                   }
@@ -1324,12 +1324,11 @@ export function TemplateForm({ open, creating, languageOptions, mode = "create",
                             <div className="text-xs font-semibold text-ink-800/80">Button icon</div>
                             <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
                               {[
-                                { value: "DEFAULT", label: "Default", Icon: Workflow },
                                 { value: "DOCUMENT", label: "Document", Icon: FileText },
                                 { value: "PROMOTION", label: "Promotion", Icon: Sparkles },
                                 { value: "REVIEW", label: "Review", Icon: Star },
                               ].map(({ value, label, Icon }) => {
-                                const active = String(button.flowIcon || "DEFAULT").toUpperCase() === value;
+                                const active = String(button.flowIcon || "DOCUMENT").toUpperCase() === value;
                                 return (
                                   <button
                                     key={value}
@@ -1389,7 +1388,7 @@ export function TemplateForm({ open, creating, languageOptions, mode = "create",
                           <div className="mt-2 flex items-center justify-between text-[11px] font-semibold text-ink-900/45">
                             <span>Selected icon</span>
                             <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-black tracking-[0.18em] text-ink-900/60">
-                              {String(button.flowIcon || "DEFAULT").toUpperCase()}
+                              {String(button.flowIcon || "DOCUMENT").toUpperCase()}
                             </span>
                           </div>
 

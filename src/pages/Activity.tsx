@@ -201,29 +201,37 @@ export default function ActivityPage() {
               className="h-10 w-full rounded-[5px] border border-ink-900/10 bg-white pl-10 pr-4 text-xs font-bold outline-none focus:border-brand-500/50 transition-all shadow-sm md:w-64"
             />
           </div>
-          <select
-            value={status}
-            onChange={(e) => setStatus(e.target.value)}
-            className="h-10 rounded-[5px] border border-ink-900/10 bg-white px-3 text-xs font-black uppercase tracking-wider text-ink-800/70 outline-none focus:border-brand-500/50"
-          >
-            <option value="all">All</option>
-            <option value="accepted">Accepted</option>
-            <option value="sent">Sent</option>
-            <option value="delivered">Delivered</option>
-            <option value="read">Read</option>
-            <option value="failed">Failed</option>
-          </select>
-          <select
-            value={sort}
-            onChange={(e) => setSort(e.target.value)}
-            className="h-10 rounded-[5px] border border-ink-900/10 bg-white px-3 text-xs font-black uppercase tracking-wider text-ink-800/70 outline-none focus:border-brand-500/50"
-          >
-            <option value="desc">Newest</option>
-            <option value="asc">Oldest</option>
-          </select>
-          <Button 
-            variant="ghost" 
-            onClick={() => loadLogs(true)} 
+          <div className="flex items-center gap-1 m-1 p-1 bg-slate-50 border border-ink-900/5 rounded-[5px]">
+            {(["all", "accepted", "sent", "delivered", "read", "failed"] as const).map((f) => (
+              <button
+                key={f}
+                onClick={() => setStatus(f)}
+                className={`rounded-[3px] px-4 py-1.5 text-[10px] font-black uppercase tracking-wider transition-all ${status === f
+                  ? "bg-white text-ink-900 shadow-sm shadow-ink-900/10 ring-1 ring-ink-900/5"
+                  : "text-ink-800/40 hover:text-ink-900"
+                  }`}
+              >
+                {f}
+              </button>
+            ))}
+          </div>
+          <div className="flex items-center gap-1 m-1 p-1 bg-slate-50 border border-ink-900/5 rounded-[5px]">
+            {(["newest", "oldest"] as const).map((f) => (
+              <button
+                key={f}
+                onClick={() => setSort(f === "newest" ? "desc" : "asc")}
+                className={`rounded-[3px] px-4 py-1.5 text-[10px] font-black uppercase tracking-wider transition-all ${(f === "newest" && sort === "desc") || (f === "oldest" && sort === "asc")
+                  ? "bg-white text-ink-900 shadow-sm shadow-ink-900/10 ring-1 ring-ink-900/5"
+                  : "text-ink-800/40 hover:text-ink-900"
+                  }`}
+              >
+                {f}
+              </button>
+            ))}
+          </div>
+          <Button
+            variant="ghost"
+            onClick={() => loadLogs(true)}
             disabled={busy || syncing}
             className="h-10 border border-ink-900/10 bg-white gap-2 shadow-sm px-4"
           >
@@ -251,16 +259,16 @@ export default function ActivityPage() {
                 )}>
                   {log.status === 'failed' ? <ArrowUpRight size={22} className="rotate-90" /> : <MessageSquare size={22} />}
                 </div>
-                
+
                 <div>
                   <div className="flex items-center gap-2">
                     <span className="text-sm font-black text-ink-900">+{phoneFor(log) || "Unknown"}</span>
                     <div className={cn(
                       "rounded-[3px] border px-2 py-0.5 text-[9px] font-black uppercase tracking-widest",
                       log.status === 'delivered' ? "bg-emerald-50 text-emerald-700 border-emerald-100" :
-                      log.status === 'read' ? "bg-blue-50 text-blue-700 border-blue-100" :
-                      log.status === 'failed' ? "bg-rose-50 text-rose-700 border-rose-100" :
-                      "bg-slate-50 text-slate-600 border-slate-200"
+                        log.status === 'read' ? "bg-blue-50 text-blue-700 border-blue-100" :
+                          log.status === 'failed' ? "bg-rose-50 text-rose-700 border-rose-100" :
+                            "bg-slate-50 text-slate-600 border-slate-200"
                     )}>
                       {log.status}
                     </div>
@@ -270,11 +278,11 @@ export default function ActivityPage() {
                       <Clock size={10} />
                       {new Date(log.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                     </div>
-                    <div className="h-1 w-1 rounded-full bg-ink-900/10" />
-                    <div className="flex items-center gap-1.5 text-[10px] font-bold text-ink-800/40 uppercase tracking-wider">
+                    {/* <div className="h-1 w-1 rounded-full bg-ink-900/10" /> */}
+                    {/* <div className="flex items-center gap-1.5 text-[10px] font-bold text-ink-800/40 uppercase tracking-wider">
                       <Smartphone size={10} />
                       {log.type || 'Manual'}
-                    </div>
+                    </div> */}
                   </div>
                 </div>
               </div>

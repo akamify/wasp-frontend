@@ -9,6 +9,7 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@dnd-kit/core": "^6.3.1",
     "@react-three/drei": "^10.7.7",
     "@react-three/fiber": "^9.6.0",
     "@types/three": "^0.184.0",
@@ -19,7 +20,10 @@
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
     "react-router-dom": "^7.9.0",
-    "three": "^0.184.0"
+    "reactflow": "^11.11.4",
+    "three": "^0.184.0",
+    "zundo": "^2.3.0",
+    "zustand": "^5.0.13"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4.1.12",

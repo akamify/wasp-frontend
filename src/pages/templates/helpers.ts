@@ -19,7 +19,15 @@ export const COPY_CODE_BUTTON_TEXT = "Copy offer code";
 
 export const TEMPLATE_NAME_MIN_CHARS = 4;
 export const TEMPLATE_NAME_MAX_CHARS = 512;
-export const TEMPLATE_NAME_DISPLAY_CHARS = 32;
+export const TEMPLATE_NAME_DISPLAY_CHARS = 25;
+
+const ALLOWED_FLOW_ICONS = new Set(["DOCUMENT", "PROMOTION", "REVIEW"]);
+
+export function normalizeFlowIcon(icon: unknown): "DOCUMENT" | "PROMOTION" | "REVIEW" {
+  const value = String(icon || "").toUpperCase();
+  if (ALLOWED_FLOW_ICONS.has(value)) return value as "DOCUMENT" | "PROMOTION" | "REVIEW";
+  return "DOCUMENT";
+}
 
 export function truncateTemplateName(name: string, max = TEMPLATE_NAME_DISPLAY_CHARS) {
   const raw = String(name || "");
@@ -53,7 +61,7 @@ export function newCtaButton(): CtaButton {
     phoneNumber: "",
     ttlMinutes: "43200",
     flowId: "",
-    flowIcon: "DEFAULT",
+    flowIcon: "DOCUMENT",
     flowType: "",
     offerCode: "",
   };
@@ -223,7 +231,7 @@ export function buildTemplateComponents(
               type: "FLOW",
               text,
               flow_id: button.flowId.trim(),
-              icon: button.flowIcon || "DEFAULT",
+              icon: normalizeFlowIcon(button.flowIcon),
             }
           : null;
       if (button.type === "COPY_CODE") return { type: "COPY_CODE", text: COPY_CODE_BUTTON_TEXT };
@@ -348,7 +356,7 @@ export function parseComponentsForPreview(components?: any[]) {
         phoneNumber: String(button?.phone_number || ""),
         ttlMinutes: String(button?.ttl_minutes || "43200"),
         flowId: String(button?.flow_id || ""),
-        flowIcon: String(button?.icon || "DEFAULT").toUpperCase() as any,
+        flowIcon: normalizeFlowIcon(button?.icon),
         flowType: "",
         offerCode: "",
       }));

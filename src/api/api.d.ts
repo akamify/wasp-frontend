@@ -79,9 +79,20 @@ export const API: {
     uploadProfilePicture(file: any): Promise<any>;
     listFlows(params?: any): Promise<any>;
     createFlow(payload: any): Promise<any>;
+    uploadFlowJson(flowId: string, flowJson: any): Promise<any>;
+    publishFlow(flowId: string): Promise<any>;
   };
   links: {
     create(payload: any): Promise<any>;
+    tracked: {
+      list(): Promise<any>;
+      create(payload: any): Promise<any>;
+      update(id: string, payload: any): Promise<any>;
+      remove(id: string): Promise<any>;
+      analytics(id: string, params?: any): Promise<any>;
+      qrSvgUrl(id: string): string;
+      qrPngUrl(id: string): string;
+    };
   };
   wallet: {
     get(): Promise<any>;

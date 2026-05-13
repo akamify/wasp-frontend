@@ -100,7 +100,7 @@ export function LandingFooter() {
             <div className="h-2 w-2 animate-pulse rounded-full bg-[#25D366]" />
             <span className="text-xs text-ink-900/55">All systems operational</span>
           </div>
-          <p className="text-xs text-ink-900/55">Developed for {BRAND_NAME}</p>
+          <p className="text-xs text-ink-900/55">Developed for <b>Akamify</b></p>
         </div>
       </div>
     </footer>

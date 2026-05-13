@@ -18,7 +18,7 @@ export type CtaButton = {
   phoneNumber: string;
   ttlMinutes: string;
   flowId: string;
-  flowIcon: "DEFAULT" | "DOCUMENT" | "PROMOTION" | "REVIEW";
+  flowIcon: "DOCUMENT" | "PROMOTION" | "REVIEW";
   flowType: string;
   offerCode: string;
 };

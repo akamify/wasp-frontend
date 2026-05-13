@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState, useRef } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
-import { Plus, RefreshCcw, Search, RotateCcw, Upload, Trash2, Send } from "lucide-react";
+import { Plus, RefreshCcw, Search, Upload, Trash2, Send } from "lucide-react";
 import { API } from "../api/api";
 import { Card } from "../components/ui/Card";
 import { Button } from "../components/ui/Button";
@@ -279,7 +279,7 @@ export default function SendPage() {
                         </div>
                         <div className="min-w-0">
                           <div className="font-bold text-ink-900 truncate group-hover:text-brand-600 transition-colors">{c.name}</div>
-                          <div className="text-[10px] text-ink-800/40 font-bold uppercase tracking-widest">ID: {c._id.slice(-8)}</div>
+                          {/* <div className="text-[10px] text-ink-800/40 font-bold uppercase tracking-widest">ID: {c._id.slice(-8)}</div> */}
                         </div>
                       </div>
                     </td>
@@ -308,18 +308,6 @@ export default function SendPage() {
                     </td>
                     <td className="px-6 py-4 text-right">
                       <div className="flex items-center justify-end gap-2">
-                        {(c.totals?.failed || 0) > 0 && (
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={(e) => { e.stopPropagation(); void openRetryBroadcastModal(c._id); }}
-                            disabled={actioningId === c._id}
-                            className="h-10 w-10 p-0 border border-ink-900/5 bg-white text-ink-900 hover:text-brand-600"
-                            title="Broadcast failed again"
-                          >
-                            <RotateCcw size={16} />
-                          </Button>
-                        )}
                         <Button
                           variant="ghost"
                           size="sm"

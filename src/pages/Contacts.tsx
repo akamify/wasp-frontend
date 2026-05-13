@@ -80,7 +80,10 @@ export default function ContactsPage() {
   const [form, setForm] = useState(EMPTY_FORM);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [multiSelected, setMultiSelected] = useState<Record<string, boolean>>({});
+  const [filter, setFilter] = useState<"all" | "has-tags" | "has-company" | "recent-activity">("all");
+  const [sort, setSort] = useState<"name" | "company" | "tags" | "recent" | "oldest">("recent");
   const isInitialLoad = useRef(true);
+  const tableRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
 
   async function load() {
@@ -103,6 +106,13 @@ export default function ContactsPage() {
 
   useEffect(() => {
     load();
+  }, [page]);
+
+  // Auto-scroll table into view when page changes
+  useEffect(() => {
+    if (tableRef.current && page > 1) {
+      tableRef.current.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
   }, [page]);
 
 
@@ -216,6 +226,21 @@ export default function ContactsPage() {
 
   const totalPages = Math.max(1, Math.ceil(total / pageSize));
 
+  // Filter and sort contacts
+  const processedContacts = contacts.filter((c) => {
+    if (filter === "has-tags") return c.tags && c.tags.length > 0;
+    if (filter === "has-company") return c.company && c.company.trim();
+    if (filter === "recent-activity") return c.lastInboundAt || c.lastOutboundAt;
+    return true;
+  }).sort((a, b) => {
+    if (sort === "name") return (a.name || a.phone).localeCompare(b.name || b.phone);
+    if (sort === "company") return (a.company || "").localeCompare(b.company || "");
+    if (sort === "tags") return (a.tags?.length || 0) - (b.tags?.length || 0);
+    if (sort === "recent") return new Date(b.lastInboundAt || b.lastOutboundAt || 0).getTime() - new Date(a.lastInboundAt || a.lastOutboundAt || 0).getTime();
+    if (sort === "oldest") return new Date(a.lastInboundAt || a.lastOutboundAt || 0).getTime() - new Date(b.lastInboundAt || b.lastOutboundAt || 0).getTime();
+    return 0;
+  });
+
   return (
     <div className="space-y-6 p-4 md:p-8">
       <div className="flex flex-wrap items-center justify-between gap-4">
@@ -238,8 +263,8 @@ export default function ContactsPage() {
 
       <Card className="p-0 border-ink-900/5 shadow-xl shadow-ink-900/5 overflow-hidden">
         <div className="border-b border-ink-900/5 bg-slate-50/50 p-4 md:p-6">
-          <form className="flex flex-wrap gap-3" onSubmit={runSearch}>
-            <div className="relative flex-1 min-w-[280px]">
+          <form className="flex items-center gap-3" onSubmit={runSearch}>
+            <div className="relative flex-1 min-w-[180px]">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-ink-800/40" size={18} />
               <input
                 type="text"
@@ -251,6 +276,36 @@ export default function ContactsPage() {
             </div>
             <Button type="submit" className="h-12 px-8">Search</Button>
           </form>
+          <div className="flex items-start flex-col flex-row  gap-3 mt-4">
+            <div className="flex items-center gap-1 m-1 p-1 bg-slate-50 border border-ink-900/5 rounded-[5px]">
+              {(["all", "has-tags", "has-company", "recent-activity"] as const).map((f) => (
+                <button
+                  key={f}
+                  onClick={() => setFilter(f)}
+                  className={`rounded-[3px] px-4 py-1.5 text-[10px] font-black uppercase tracking-wider transition-all ${filter === f
+                    ? "bg-white text-ink-900 shadow-sm shadow-ink-900/10 ring-1 ring-ink-900/5"
+                    : "text-ink-800/40 hover:text-ink-900"
+                    }`}
+                >
+                  {f === "has-tags" ? "Tags" : f === "has-company" ? "Company" : f === "recent-activity" ? "Active" : "All"}
+                </button>
+              ))}
+            </div>
+            <div className="flex items-center gap-1 m-1 p-1 bg-slate-50 border border-ink-900/5 rounded-[5px]">
+              {(["name", "recent", "oldest"] as const).map((s) => (
+                <button
+                  key={s}
+                  onClick={() => setSort(s)}
+                  className={`rounded-[3px] px-4 py-1.5 text-[10px] font-black uppercase tracking-wider transition-all ${sort === s
+                    ? "bg-white text-ink-900 shadow-sm shadow-ink-900/10 ring-1 ring-ink-900/5"
+                    : "text-ink-800/40 hover:text-ink-900"
+                    }`}
+                >
+                  {s}
+                </button>
+              ))}
+            </div>
+          </div>
         </div>
 
         {someSelected && (
@@ -267,7 +322,7 @@ export default function ContactsPage() {
           </div>
         )}
 
-        <div className="overflow-x-auto">
+        <div className="overflow-x-auto" ref={tableRef}>
           <table className="w-full border-collapse">
             <thead>
               <tr className="border-b border-ink-900/5 bg-slate-50 text-left text-[10px] font-bold uppercase tracking-wider text-ink-800/40">
@@ -297,8 +352,8 @@ export default function ContactsPage() {
                     <ContactsListSkeleton rows={8} />
                   </td>
                 </tr>
-              ) : contacts.length ? (
-                contacts.map((contact) => (
+              ) : processedContacts.length ? (
+                processedContacts.map((contact) => (
                   <tr key={contact._id} className="group hover:bg-slate-50/50 transition-colors">
                     <td className="px-6 py-4">
                       <input
@@ -360,7 +415,7 @@ export default function ContactsPage() {
                         </Button>
                         <Link to={`/app/conversations/${encodeURIComponent(contact.phone)}`}>
                           <Button size="sm" variant="ghost" className="h-10 gap-1.5 font-bold text-brand-600 hover:text-brand-700 hover:bg-brand-50">
-                            Chat 
+                            Chat
                           </Button>
                         </Link>
                       </div>
