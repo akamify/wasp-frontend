@@ -1,21 +1,21 @@
 import { useMemo, useRef, useState } from "react";
 import { ArrowLeft } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-import { API } from "../api/api";
-import { Button } from "../components/ui/Button";
-import { Card } from "../components/ui/Card";
-import { Input } from "../components/ui/Input";
-import { Select } from "../components/ui/Select";
-import { useToast } from "../context/ToastContext";
+import { API } from "@api/api";
+import { Button } from "@components/ui/Button";
+import { Card } from "@components/ui/Card";
+import { Input } from "@components/ui/Input";
+import { Select } from "@components/ui/Select";
+import { useToast } from "@shared/providers/ToastContext";
 import {
   FLOW_CATEGORIES,
   FLOW_TEMPLATES,
   templateToFlowJson,
   type FlowTemplate,
   type FlowTemplateType,
-} from "../flow-builder/templateEngine";
-import { TemplateFlowPreview } from "../flow-builder/components/TemplateFlowPreview";
-import { cn } from "../utils/cn";
+} from "@modules/flow-builder/templateEngine";
+import { TemplateFlowPreview } from "@modules/flow-builder/components/TemplateFlowPreview";
+import { cn } from "@shared/utils/cn";
 
 function getErrorMessage(e: any, fallback: string) {
   return e?.userMessage || e?.response?.data?.details?.providerError || e?.response?.data?.message || e?.message || fallback;

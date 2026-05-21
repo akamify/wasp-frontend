@@ -1,15 +1,15 @@
 import React, { useEffect, useMemo, useState, useCallback, useRef } from "react";
-import { API } from "../api/api";
-import { Card } from "../components/ui/Card";
-import { Input } from "../components/ui/Input";
-import { Select } from "../components/ui/Select";
-import { Button } from "../components/ui/Button";
-import { Alert } from "../components/ui/Alert";
-import { Badge } from "../components/ui/Badge";
-import { AutomationSkeleton } from "../components/ui/Skeletons";
+import { API } from "@api/api";
+import { Card } from "@components/ui/Card";
+import { Input } from "@components/ui/Input";
+import { Select } from "@components/ui/Select";
+import { Button } from "@components/ui/Button";
+import { Alert } from "@components/ui/Alert";
+import { Badge } from "@components/ui/Badge";
+import { AutomationSkeleton } from "@components/ui/Skeletons";
 import { RefreshCw, Workflow, CheckCircle2, Terminal, ChevronRight, AlertCircle } from "lucide-react";
-import { cn } from "../utils/cn";
-import { useToast } from "../context/ToastContext";
+import { cn } from "@shared/utils/cn";
+import { useToast } from "@shared/providers/ToastContext";
 
 type TemplateComponent = {
   type: string;

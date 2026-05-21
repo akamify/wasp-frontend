@@ -1,11 +1,11 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Clock, ShieldAlert, Zap, Wallet, ChevronDown } from "lucide-react";
-import { API } from "../../api/api";
-import { useAuth } from "../../context/AuthContext";
-import { cn } from "../../utils/cn";
+import { API } from "@api/api";
+import { useAuth } from "@shared/providers/AuthContext";
+import { cn } from "@shared/utils/cn";
 import { motion, AnimatePresence } from "framer-motion";
 import { Link } from "react-router-dom";
-import { formatCurrencySafe } from "../../config/currency";
+import { formatCurrencySafe } from "@shared/config/currency";
 
 type MetaStatus = "loading" | "active" | "pending" | "disconnected";
 type LiveState = "checking" | "live" | "pending" | "disconnected" | "rejected";

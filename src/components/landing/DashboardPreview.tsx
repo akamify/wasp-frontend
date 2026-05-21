@@ -1,7 +1,7 @@
 import { useRef } from "react";
 import { motion, useInView } from "framer-motion";
 
-import { formatCurrencySafe } from "../../config/currency";
+import { formatCurrencySafe } from "@shared/config/currency";
 
 const stats = [
   {

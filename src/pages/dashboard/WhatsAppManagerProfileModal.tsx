@@ -1,13 +1,13 @@
 import { useEffect, useMemo, useState } from "react";
 import { X, Upload, Save, AlertCircle, CheckCircle2 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
-import { API } from "../../api/api";
-import { Button } from "../../components/ui/Button";
-import { Input } from "../../components/ui/Input";
-import { Textarea } from "../../components/ui/Textarea";
-import { Select } from "../../components/ui/Select";
-import { useToast } from "../../context/ToastContext";
-import { cn } from "../../utils/cn";
+import { API } from "@api/api";
+import { Button } from "@components/ui/Button";
+import { Input } from "@components/ui/Input";
+import { Textarea } from "@components/ui/Textarea";
+import { Select } from "@components/ui/Select";
+import { useToast } from "@shared/providers/ToastContext";
+import { cn } from "@shared/utils/cn";
 
 const VERTICAL_OPTIONS = [
   "AUTO", "BEAUTY", "CLOTHING", "EDU", "ENTERTAIN", "EVENT_PLAN",

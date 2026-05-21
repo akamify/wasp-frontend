@@ -1,14 +1,25 @@
-import { BRAND_LEGAL_NAME, BRAND_NAME } from "../../config/brand";
+import { BRAND_LEGAL_NAME, BRAND_NAME } from "@shared/config/brand";
+import { Link } from "react-router-dom";
 
 // Read footer content from environment (Vite `.env`) with fallbacks
 const FOOTER_DESCRIPTION = import.meta.env.VITE_FOOTER_DESCRIPTION ||
   "The WhatsApp marketing platform built for modern businesses. Send smarter. Convert faster.";
 
-const footerLinks = {
-  Product: ["Features", "Pricing", "Changelog", "Roadmap", "API Docs"],
-  Company: ["About", "Blog", "Careers", "Press", "Contact"],
-  Legal: ["Privacy Policy", "Terms of Service", "Cookie Policy", "GDPR"],
-  Resources: ["Documentation", "Help Center", "Community", "Status Page"],
+const footerLinks: Record<string, { label: string; to: string; external?: boolean }[]> = {
+  Company: [
+    { label: "About", to: "/about" },
+    { label: "Features", to: "/#features" },
+    { label: "Pricing", to: "/#pricing" },
+  ],
+  Legal: [
+    { label: "Privacy Policy", to: "/privacy-policy" },
+    { label: "Terms of Service", to: "/terms-of-service" },
+    { label: "Cookie Policy", to: "/cookie-policy" },
+  ],
+  Resources: [
+    { label: "Help Center", to: "/help-center" },
+    { label: "Careers", to: "/careers" },
+  ],
 };
 
 const socials = [
@@ -45,9 +56,8 @@ export function LandingFooter() {
   return (
     <footer className="relative overflow-hidden border-t border-ink-900/10 bg-paper pb-8 pt-16">
       <div className="pointer-events-none absolute bottom-0 left-1/2 h-48 w-[600px] -translate-x-1/2 rounded-full bg-[#25D366]/8 blur-3xl" />
-
       <div className="mx-auto max-w-7xl px-6 lg:px-8">
-        <div className="mb-16 grid grid-cols-2 gap-10 md:grid-cols-6">
+        <div className="mb-16 grid grid-cols-2 gap-10 md:grid-cols-5">
           <div className="col-span-2 flex flex-col gap-5">
             <a href="#" className="group flex w-fit items-center gap-2">
               <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-[#25D366] to-[#06b77e] shadow-lg shadow-[#25D366]/30">
@@ -83,10 +93,21 @@ export function LandingFooter() {
               <p className="text-xs font-bold uppercase tracking-widest text-ink-900">{section}</p>
               <ul className="flex flex-col gap-2.5">
                 {links.map((link) => (
-                  <li key={link}>
-                    <a href="#" className="text-sm text-ink-900/65 transition-colors duration-200 hover:text-ink-900">
-                      {link}
-                    </a>
+                  <li key={link.label}>
+                    {link.external ? (
+                      <a
+                        href={link.to}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-sm text-ink-900/65 transition-colors duration-200 hover:text-ink-900"
+                      >
+                        {link.label}
+                      </a>
+                    ) : (
+                      <Link to={link.to} className="text-sm text-ink-900/65 transition-colors duration-200 hover:text-ink-900">
+                        {link.label}
+                      </Link>
+                    )}
                   </li>
                 ))}
               </ul>
@@ -96,10 +117,6 @@ export function LandingFooter() {
 
         <div className="flex flex-col items-center justify-between gap-4 border-t border-ink-900/10 pt-8 md:flex-row">
           <p className="text-xs text-ink-900/55">© {new Date().getFullYear()} {BRAND_LEGAL_NAME}. All rights reserved.</p>
-          <div className="flex items-center gap-2">
-            <div className="h-2 w-2 animate-pulse rounded-full bg-[#25D366]" />
-            <span className="text-xs text-ink-900/55">All systems operational</span>
-          </div>
           <p className="text-xs text-ink-900/55">Developed for <b>Akamify</b></p>
         </div>
       </div>

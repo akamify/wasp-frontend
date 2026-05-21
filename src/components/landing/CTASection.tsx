@@ -1,8 +1,8 @@
 import { useRef } from "react";
 import { motion, useInView } from "framer-motion";
 
-import { BRAND_NAME } from "../../config/brand";
-import { getPlanDisplayPrice, PLAN_PER } from "../../config/pricing";
+import { BRAND_NAME } from "@shared/config/brand";
+import { getPlanDisplayPrice, PLAN_PER } from "@shared/config/pricing";
 
 const plans = [
   {

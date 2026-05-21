@@ -1,7 +1,7 @@
 import { Check, Zap, Rocket, Crown, ArrowRight } from "lucide-react";
-import { Button } from "../components/ui/Button";
-import { Card } from "../components/ui/Card";
-import { cn } from "../utils/cn";
+import { Button } from "@components/ui/Button";
+import { Card } from "@components/ui/Card";
+import { cn } from "@shared/utils/cn";
 
 const PLANS = [
   {

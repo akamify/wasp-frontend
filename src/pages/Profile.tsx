@@ -1,12 +1,12 @@
 import { useState } from "react";
-import { useAuth } from "../context/AuthContext";
-import { Card } from "../components/ui/Card";
-import { Mail, Phone, Building2, Calendar, BadgeCheck, Edit2, X } from "lucide-react";
+import { useAuth } from "@shared/providers/AuthContext";
+import { Card } from "@components/ui/Card";
+import { Mail, Phone, Building2, Calendar, BadgeCheck, Edit2, X, Copy, Check, Shield } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-import { Button } from "../components/ui/Button";
-import { Input } from "../components/ui/Input";
-import { useToast } from "../context/ToastContext";
-import { API } from "../api/api";
+import { Button } from "@components/ui/Button";
+import { Input } from "@components/ui/Input";
+import { useToast } from "@shared/providers/ToastContext";
+import { API } from "@api/api";
 import { AnimatePresence, motion } from "framer-motion";
 
 export default function ProfilePage() {
@@ -15,7 +15,12 @@ export default function ProfilePage() {
     const { toast } = useToast();
     const [editModalOpen, setEditModalOpen] = useState(false);
     const [editBusy, setEditBusy] = useState(false);
-    const [editForm, setEditForm] = useState({ name: user?.name || "", phone: user?.phone || "" });
+    const [editForm, setEditForm] = useState({ name: user?.name || "", phone: user?.phone || "", email: user?.email || "" });
+    const [profileOtp, setProfileOtp] = useState("");
+    const [profileOtpBusy, setProfileOtpBusy] = useState(false);
+    const [profileOtpPurpose, setProfileOtpPurpose] = useState<"" | "change_email" | "change_name">("");
+    const [otpSent, setOtpSent] = useState(false);
+    const [copiedWorkspaceId, setCopiedWorkspaceId] = useState(false);
 
     const formatDate = (date?: string) => {
         if (!date) return "—";
@@ -32,10 +37,25 @@ export default function ProfilePage() {
             return;
         }
 
+        const currentEmail = String(user?.email || "").trim().toLowerCase();
+        const nextEmail = String(editForm.email || "").trim().toLowerCase();
+        const currentName = String(user?.name || "").trim();
+        const nextName = String(editForm.name || "").trim();
+
+        // Name/email changes require OTP verification.
+        if (nextEmail && nextEmail !== currentEmail) {
+            toast("Please verify OTP to change email.", "warning");
+            return;
+        }
+        if (nextName && currentName && nextName !== currentName) {
+            toast("Please verify OTP to change name.", "warning");
+            return;
+        }
+
         setEditBusy(true);
         try {
             await API.auth.updateProfile({
-                name: editForm.name,
+                name: nextName,
                 phone: editForm.phone,
             });
             await refreshMe();
@@ -46,6 +66,64 @@ export default function ProfilePage() {
         } finally {
             setEditBusy(false);
         }
+    }
+
+    async function requestOtp(purpose: "change_email" | "change_name") {
+        setProfileOtpBusy(true);
+        try {
+            if (purpose === "change_email") {
+                const nextEmail = String(editForm.email || "").trim().toLowerCase();
+                if (!nextEmail) {
+                    toast("New email is required", "warning");
+                    return;
+                }
+                await API.auth.requestProfileOtp({ purpose, email: nextEmail });
+            } else {
+                const nextName = String(editForm.name || "").trim();
+                if (!nextName) {
+                    toast("New name is required", "warning");
+                    return;
+                }
+                await API.auth.requestProfileOtp({ purpose, name: nextName });
+            }
+            setProfileOtpPurpose(purpose);
+            setOtpSent(true);
+            toast("OTP sent to your registered email", "success");
+        } catch (e: any) {
+            toast(e?.response?.data?.message || "Failed to send OTP", "error");
+        } finally {
+            setProfileOtpBusy(false);
+        }
+    }
+
+    async function verifyOtp() {
+        const otp = String(profileOtp || "").trim();
+        if (!otp) {
+            toast("Enter OTP", "warning");
+            return;
+        }
+        setProfileOtpBusy(true);
+        try {
+            await API.auth.verifyProfileOtp({ otp });
+            await refreshMe({ silent: true } as any);
+            setProfileOtp("");
+            setOtpSent(false);
+            setProfileOtpPurpose("");
+            toast("OTP verified successfully", "success");
+        } catch (e: any) {
+            toast(e?.response?.data?.message || "OTP verification failed", "error");
+        } finally {
+            setProfileOtpBusy(false);
+        }
+    }
+
+    async function copyWorkspaceId() {
+        const id = String(workspace?.id || "").trim();
+        if (!id) return;
+        await navigator.clipboard.writeText(id);
+        setCopiedWorkspaceId(true);
+        toast("Workspace ID copied", "success");
+        window.setTimeout(() => setCopiedWorkspaceId(false), 1200);
     }
 
     return (
@@ -80,7 +158,10 @@ export default function ProfilePage() {
                                     </div>
                                     <button
                                         onClick={() => {
-                                            setEditForm({ name: user?.name || "", phone: user?.phone || "" });
+                                            setEditForm({ name: user?.name || "", phone: user?.phone || "", email: user?.email || "" });
+                                            setProfileOtp("");
+                                            setOtpSent(false);
+                                            setProfileOtpPurpose("");
                                             setEditModalOpen(true);
                                         }}
                                         className="p-2 text-slate-400 hover:bg-slate-100 rounded-[5px] transition-colors flex-shrink-0"
@@ -105,6 +186,20 @@ export default function ProfilePage() {
                             <div className="flex items-center justify-center sm:justify-start gap-2 text-xs sm:text-sm font-semibold text-ink-800/70">
                                 <Building2 size={14} className="text-ink-800/40 flex-shrink-0" />
                                 <span className="truncate">{workspace?.name || "Personal Workspace"}</span>
+                            </div>
+                            <div className="flex items-center justify-center sm:justify-start gap-2 text-xs sm:text-sm font-semibold text-ink-800/70">
+                                <Shield size={14} className="text-ink-800/40 flex-shrink-0" />
+                                <span className="truncate">{workspace?.id || "—"}</span>
+                                {workspace?.id ? (
+                                  <button
+                                    type="button"
+                                    onClick={() => void copyWorkspaceId()}
+                                    className="rounded p-1 text-ink-800/60 hover:bg-slate-100"
+                                    title={copiedWorkspaceId ? "Copied" : "Copy"}
+                                  >
+                                    {copiedWorkspaceId ? <Check size={10} /> : <Copy size={10} />}
+                                  </button>
+                                ) : null}
                             </div>
                             <div className="flex items-center justify-center sm:justify-start gap-2 text-xs sm:text-sm font-semibold text-ink-800/70">
                                 <Calendar size={14} className="text-ink-800/40 flex-shrink-0" />
@@ -172,6 +267,48 @@ export default function ProfilePage() {
 
                             {/* Modal Body */}
                             <div className="space-y-3 sm:space-y-4 p-4 sm:p-6">
+                                <Input
+                                    label="Email (OTP required)"
+                                    value={editForm.email}
+                                    onChange={(e) => setEditForm((prev) => ({ ...prev, email: e.target.value }))}
+                                    placeholder="Your email"
+                                />
+
+                                <div className="flex flex-col sm:flex-row gap-2">
+                                    <Button
+                                        type="button"
+                                        variant="outline"
+                                        disabled={profileOtpBusy}
+                                        onClick={() => requestOtp("change_email")}
+                                        className="text-xs sm:text-sm w-full sm:w-auto"
+                                    >
+                                        {profileOtpBusy && profileOtpPurpose === "change_email" ? "Sending..." : "Send Email OTP"}
+                                    </Button>
+                                    <Button
+                                        type="button"
+                                        variant="outline"
+                                        disabled={profileOtpBusy}
+                                        onClick={() => requestOtp("change_name")}
+                                        className="text-xs sm:text-sm w-full sm:w-auto"
+                                    >
+                                        {profileOtpBusy && profileOtpPurpose === "change_name" ? "Sending..." : "Send Name OTP"}
+                                    </Button>
+                                </div>
+
+                                {otpSent ? (
+                                    <div className="grid gap-2">
+                                        <Input
+                                            label="OTP"
+                                            value={profileOtp}
+                                            onChange={(e) => setProfileOtp(e.target.value.replace(/[^\d]/g, "").slice(0, 6))}
+                                            placeholder="123456"
+                                        />
+                                        <Button type="button" disabled={profileOtpBusy} onClick={verifyOtp} className="text-xs sm:text-sm">
+                                            {profileOtpBusy ? "Verifying..." : "Verify OTP"}
+                                        </Button>
+                                    </div>
+                                ) : null}
+
                                 <Input
                                     label="Full Name"
                                     value={editForm.name}

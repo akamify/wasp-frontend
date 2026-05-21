@@ -1,14 +1,14 @@
 import { useMemo, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { X, CreditCard } from "lucide-react";
-import { API } from "../../api/api";
-import { Button } from "../ui/Button";
-import { Input } from "../ui/Input";
-import { Alert } from "../ui/Alert";
-import { loadRazorpay } from "../../utils/loadRazorpay";
-import { BRAND_NAME } from "../../config/brand";
-import { formatCurrencySafe, CURRENCY_SYMBOL, CURRENCY_CODE } from "../../config/currency";
-import { useToast } from "../../context/ToastContext";
+import { API } from "@api/api";
+import { Button } from "@components/ui/Button";
+import { Input } from "@components/ui/Input";
+import { Alert } from "@components/ui/Alert";
+import { loadRazorpay } from "@shared/utils/loadRazorpay";
+import { BRAND_NAME } from "@shared/config/brand";
+import { formatCurrencySafe, CURRENCY_SYMBOL, CURRENCY_CODE } from "@shared/config/currency";
+import { useToast } from "@shared/providers/ToastContext";
 
 export function RechargeModal({
   open,

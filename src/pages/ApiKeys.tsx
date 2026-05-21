@@ -1,11 +1,12 @@
 import { useEffect, useState } from "react";
-import { API } from "../api/api";
-import { Card } from "../components/ui/Card";
-import { Button } from "../components/ui/Button";
-import { Input } from "../components/ui/Input";
-import { useToast } from "../context/ToastContext";
+import { API } from "@api/api";
+import { Card } from "@components/ui/Card";
+import { Button } from "@components/ui/Button";
+import { Input } from "@components/ui/Input";
+import { useToast } from "@shared/providers/ToastContext";
 import { Copy, Eye, EyeOff, RefreshCw, Terminal, Globe, ShieldCheck } from "lucide-react";
-import { ApiKeysSkeleton } from "../components/ui/Skeletons";
+import { ApiKeysSkeleton } from "@components/ui/Skeletons";
+import { useOtpGuard } from "@shared/hooks/useOtpGuard";
 
 export default function ApiKeysPage() {
   const [apiKey, setApiKey] = useState<string | null>(null);
@@ -16,7 +17,7 @@ export default function ApiKeysPage() {
   const [copied, setCopied] = useState(false);
   const [otpPurpose, setOtpPurpose] = useState<"rotate" | "reveal" | "">("");
   const [otp, setOtp] = useState("");
-  const [resendCooldown, setResendCooldown] = useState(0);
+  const otpGuard = useOtpGuard({ cooldownSeconds: 60, maxAttempts: 5 });
   const { toast } = useToast();
 
   useEffect(() => {
@@ -47,21 +48,14 @@ export default function ApiKeysPage() {
     setMaskedKey(`${start}***${end}`);
   }, [apiKey]);
 
-  useEffect(() => {
-    if (resendCooldown <= 0) return;
-    const timer = window.setInterval(() => {
-      setResendCooldown((v) => Math.max(0, v - 1));
-    }, 1000);
-    return () => window.clearInterval(timer);
-  }, [resendCooldown]);
-
   async function requestOtp(purpose: "rotate" | "reveal") {
+    if (!otpGuard.canSend) return;
     setBusy(true);
     try {
       const res = await API.auth.requestApiKeyOtp({ purpose });
       setOtpPurpose(purpose);
       setOtp("");
-      setResendCooldown(60);
+      otpGuard.onSendSuccess();
       toast(String(res?.message || "OTP sent to your registered email."), "success");
     } catch (e: any) {
       toast(e?.response?.data?.message || e?.message || "Failed to send OTP", "error");
@@ -84,7 +78,7 @@ export default function ApiKeysPage() {
       toast(String(res?.message || "Success"), "success");
       setOtpPurpose("");
       setOtp("");
-      setResendCooldown(0);
+      otpGuard.reset();
 
       // Auto-hide after a short window (key should not stay visible forever).
       window.setTimeout(() => setApiKey(null), 20000);
@@ -215,12 +209,19 @@ export default function ApiKeysPage() {
                   </div>
                   <Button
                     variant="ghost"
-                    disabled={busy || resendCooldown > 0}
+                    disabled={busy || !otpGuard.canSend}
                     onClick={() => requestOtp(otpPurpose)}
                     className="w-full"
                   >
-                    {resendCooldown > 0 ? `Resend in ${resendCooldown}s` : "Resend OTP"}
+                    {!otpGuard.canSend
+                      ? otpGuard.cooldown > 0
+                        ? `Resend in ${otpGuard.cooldown}s`
+                        : "Resend limit reached"
+                      : "Resend OTP"}
                   </Button>
+                  <div className="text-center text-[11px] font-semibold text-slate-500">
+                    OTP tries left: {otpGuard.remainingAttempts}/{otpGuard.maxAttempts}
+                  </div>
                 </div>
               ) : (
                 <div className="grid grid-cols-1 gap-2">

@@ -1,13 +1,13 @@
 import { useCallback, useEffect, useMemo, useState, useRef } from "react";
 import type { FormEvent } from "react";
-import { API } from "../api/api";
-import { Card } from "../components/ui/Card";
-import { Button } from "../components/ui/Button";
-import { MetaConnectionSkeleton } from "../components/ui/Skeletons";
-import { useToast } from "../context/ToastContext";
+import { API } from "@api/api";
+import { Card } from "@components/ui/Card";
+import { Button } from "@components/ui/Button";
+import { MetaConnectionSkeleton } from "@components/ui/Skeletons";
+import { useToast } from "@shared/providers/ToastContext";
 import { RefreshCw, ShieldCheck, HelpCircle, ArrowRight, Zap } from "lucide-react";
-import { Input } from "../components/ui/Input";
-import { cn } from "../utils/cn";
+import { Input } from "@components/ui/Input";
+import { cn } from "@shared/utils/cn";
 import { Link } from "react-router-dom";
 
 type MetaStatus =

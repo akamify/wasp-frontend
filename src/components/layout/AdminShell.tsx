@@ -1,55 +1,121 @@
 import React, { useEffect, useState } from "react";
-import { useLocation } from "react-router-dom";
+import { NavLink, useLocation, useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import { BarChart3, FileText, KeyRound, LayoutDashboard, Menu, Wallet, X, Users } from "lucide-react";
-import { BRAND_NAME } from "../../config/brand";
-import { Button } from "../ui/Button";
-import { cn } from "../../utils/cn";
-import { useAuth } from "../../context/AuthContext";
+import {
+  BarChart3,
+  Bell,
+  Boxes,
+  Briefcase,
+  CreditCard,
+  FileText,
+  LayoutDashboard,
+  ListChecks,
+  Megaphone,
+  Menu,
+  MessageSquareText,
+  PanelLeftOpen,
+  Shield,
+  Ticket,
+  Users,
+  Wallet,
+  User,
+  X,
+  LogOut,
+  ChevronRight,
+} from "lucide-react";
+import { BRAND_NAME } from "@shared/config/brand";
+import { API } from "@api/api";
+import { Button } from "@components/ui/Button";
+import { cn } from "@shared/utils/cn";
+import { useAuth } from "@shared/providers/AuthContext";
 
-const NAV_ITEMS = [
-  { id: "overview", label: "Dashboard", kicker: "summary", icon: LayoutDashboard },
-  { id: "users", label: "Users", kicker: "accounts", icon: Users },
-  { id: "templates", label: "Templates", kicker: "library", icon: FileText },
-  { id: "credentials", label: "Credentials", kicker: "waba access", icon: KeyRound },
-  { id: "analytics", label: "Analytics", kicker: "activity", icon: BarChart3 },
-  { id: "wallets", label: "Wallets", kicker: "balances", icon: Wallet },
-] as const;
+const SIDEBAR_WIDTH_OPEN = 260;
+const SIDEBAR_WIDTH_COLLAPSED = 80;
+const SIDEBAR_SPRING = { type: "spring", damping: 26, stiffness: 260, mass: 0.9 } as const;
 
-function SideLink({ item, isCollapsed }: { item: (typeof NAV_ITEMS)[number]; isCollapsed: boolean }) {
-  const { icon: Icon, label, kicker, id } = item;
+export type AdminShellNavItem = {
+  to: string;
+  label: string;
+  kicker: string;
+  icon: React.ComponentType<{ className?: string }>;
+};
+
+const NAV_ITEMS: AdminShellNavItem[] = [
+  { to: "/admin/dashboard", label: "Dashboard", kicker: "overview", icon: LayoutDashboard },
+  { to: "/admin/users", label: "Users", kicker: "accounts", icon: Users },
+  { to: "/admin/workspaces", label: "Workspaces", kicker: "whatsapp", icon: Shield },
+  { to: "/admin/master-campaigns", label: "Master Campaigns", kicker: "broadcasts", icon: Megaphone },
+  { to: "/admin/master-templates", label: "Master Templates", kicker: "library", icon: FileText },
+  { to: "/admin/master-contacts", label: "Master Contacts", kicker: "segments", icon: ListChecks },
+  { to: "/admin/analytics", label: "Analytics", kicker: "insights", icon: BarChart3 },
+  { to: "/admin/notifications", label: "Notifications", kicker: "alerts", icon: Bell },
+  { to: "/admin/subscription-plans", label: "Subscription Plans", kicker: "pricing", icon: Boxes },
+  { to: "/admin/subscriptions-data", label: "Subscriptions Data", kicker: "users", icon: Wallet },
+  { to: "/admin/transactions-logs", label: "Transactions Logs", kicker: "payments", icon: CreditCard },
+  { to: "/admin/message-logs", label: "Message Logs", kicker: "delivery", icon: MessageSquareText },
+  { to: "/admin/pages", label: "Pages", kicker: "cms", icon: FileText },
+  { to: "/admin/docs", label: "Docs", kicker: "knowledge", icon: FileText },
+  { to: "/admin/support-tickets", label: "Support Tickets", kicker: "helpdesk", icon: Ticket },
+  { to: "/admin/career-applications", label: "Careers", kicker: "hiring", icon: Briefcase },
+  { to: "/admin/profile", label: "Profile", kicker: "account", icon: User },
+];
+
+function SideLink({ item, isCollapsed }: { item: AdminShellNavItem; isCollapsed: boolean }) {
+  const { icon: Icon, label, kicker, to } = item;
   return (
-    <a
-      href={`#${id}`}
+    <NavLink
+      to={to}
       title={isCollapsed ? label : undefined}
-      className={cn(
-        "group flex cursor-pointer items-center rounded-[5px] border transition-all duration-300 ease-out",
-        isCollapsed ? "justify-center p-3" : "justify-between gap-4 px-4 py-3",
-        "border-transparent bg-transparent text-ink-900/60 hover:bg-white/50 hover:text-ink-900"
-      )}
+      className={({ isActive }) =>
+        cn(
+          "group relative flex cursor-pointer items-center rounded-r-[5px] transition-all duration-200 ease-in-out",
+          isCollapsed ? "justify-center p-3" : "px-4 py-3 gap-3",
+          isActive
+            ? "bg-brand-600 text-white shadow-lg shadow-brand-500/20"
+            : "text-slate-500 hover:bg-slate-100 hover:text-slate-900"
+        )
+      }
     >
-      <div className="flex items-center gap-3 overflow-hidden">
-        <Icon className="flex-shrink-0 text-ink-900/40 group-hover:text-ink-900" size={20} />
-        <AnimatePresence mode="wait">
+      {({ isActive }) => (
+        <>
+          <Icon className={cn("flex-shrink-0 transition-transform group-hover:scale-110", isCollapsed ? "size-6" : "size-5")} />
           {!isCollapsed ? (
-            <motion.div initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -10 }} className="min-w-0">
-              <div className="truncate text-[10px] uppercase tracking-[0.22em] opacity-50">{kicker}</div>
-              <div className="mt-0.5 truncate text-sm font-semibold">{label}</div>
-            </motion.div>
+            <div className="min-w-0 flex-1">
+              <div className="truncate text-sm font-bold tracking-tight">{label}</div>
+              <div className="truncate text-[9px] font-black uppercase tracking-widest opacity-60">{kicker}</div>
+            </div>
           ) : null}
-        </AnimatePresence>
-      </div>
-    </a>
+          {!isCollapsed && !isActive && (
+            <ChevronRight size={14} className="opacity-0 -translate-x-2 group-hover:opacity-100 group-hover:translate-x-0 transition-all text-slate-400" />
+          )}
+          {isActive ? (
+            <motion.div layoutId="admin-active-nav" className="absolute -left-1 h-6 w-1.5 rounded-r-[5px] bg-white" />
+          ) : null}
+        </>
+      )}
+    </NavLink>
   );
 }
 
-export function AdminShell({ children }: { children: React.ReactNode }) {
-  const { logout } = useAuth();
+export function AdminShell({
+  children,
+  navItems = NAV_ITEMS,
+  storageKey = "waspakamify_admin_sidebar_collapsed",
+  brandSuffix = " Admin",
+}: {
+  children: React.ReactNode;
+  navItems?: AdminShellNavItem[];
+  storageKey?: string;
+  brandSuffix?: string;
+}) {
+  const { logout, user } = useAuth();
   const location = useLocation();
+  const navigate = useNavigate();
+  const [runtimeBrandName, setRuntimeBrandName] = useState("");
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
   const [isCollapsed, setIsCollapsed] = useState(() => {
     try {
-      return localStorage.getItem("waspakamify_admin_sidebar_collapsed") === "1";
+      return localStorage.getItem(storageKey) === "1";
     } catch {
       return false;
     }
@@ -61,27 +127,65 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     try {
-      localStorage.setItem("waspakamify_admin_sidebar_collapsed", isCollapsed ? "1" : "0");
+      localStorage.setItem(storageKey, isCollapsed ? "1" : "0");
     } catch {}
-  }, [isCollapsed]);
+  }, [isCollapsed, storageKey]);
+
+  useEffect(() => {
+    let mounted = true;
+    API.admin
+      .platformBrandGet()
+      .then((res: any) => {
+        if (!mounted) return;
+        setRuntimeBrandName(String(res?.settings?.brandName || "").trim());
+      })
+      .catch(() => {});
+    return () => {
+      mounted = false;
+    };
+  }, []);
+
+  const resolvedBrandName = runtimeBrandName || BRAND_NAME;
+
+  const visibleNavItems = React.useMemo(() => {
+    if (String(user?.role || "") !== "admin") return navItems;
+    const allowedPages = new Set(Array.isArray(user?.permissions?.pages) ? user.permissions.pages : []);
+    allowedPages.add("/admin/dashboard");
+    allowedPages.add("/admin/profile");
+    return navItems.filter((item) => allowedPages.has(item.to));
+  }, [navItems, user]);
+
+  useEffect(() => {
+    if (String(user?.role || "") !== "admin") return;
+    if (!location.pathname.startsWith("/admin")) return;
+    const allowed = new Set(visibleNavItems.map((x) => x.to));
+    const isAllowed = allowed.has(location.pathname);
+    const isChildAllowed = Array.from(allowed).some((path) => location.pathname.startsWith(`${path}/`));
+    if (isAllowed || isChildAllowed) return;
+    const fallback = allowed.has("/admin/dashboard") ? "/admin/dashboard" : "/admin/profile";
+    if (location.pathname !== fallback) navigate(fallback, { replace: true });
+  }, [user, visibleNavItems, location.pathname, navigate]);
 
   return (
-    <div className="relative min-h-dvh bg-paper font-sans text-ink-900 antialiased">
-      <div className="pointer-events-none fixed inset-0 z-0">
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_12%_0%,rgba(6,183,126,0.12),transparent_40%)]" />
-        <div className="absolute inset-0 bg-grid opacity-20" />
+    <div className="relative min-h-screen bg-[#F8FAFC] font-sans text-slate-900 antialiased overflow-x-hidden">
+      {/* Background Polish */}
+      <div className="fixed inset-0 z-0 pointer-events-none">
+        <div className="absolute top-0 left-0 w-full h-full bg-[radial-gradient(circle_at_0%_0%,rgba(6,183,126,0.05),transparent_50%)]" />
+        <div className="absolute bottom-0 right-0 w-full h-full bg-[radial-gradient(circle_at_100%_100%,rgba(6,183,126,0.03),transparent_50%)]" />
+        <div className="absolute inset-0 bg-grid opacity-[0.03]" />
       </div>
 
-      <div className="relative z-10 mx-auto max-w-[1600px] sm:p-4 lg:p-5">
-        <header className="sticky top-0 z-40 mb-4 flex items-center justify-between rounded-[5px] border-b border-ink-900/10 bg-white/80 px-4 py-3 backdrop-blur-md lg:hidden">
-          <button onClick={() => setMobileNavOpen(true)} className="rounded-[5px] border border-ink-900/5 bg-white p-2">
-            <Menu size={20} />
-          </button>
-          <div className="text-center">
-            <div className="text-[10px] font-bold uppercase tracking-widest text-brand-600">{BRAND_NAME}</div>
-            <div className="text-sm font-black">Admin Panel</div>
+      <div className="relative z-10 mx-auto max-w-[1700px] lg:p-0">
+        {/* Mobile Header */}
+        <header className="sticky top-0 z-40 mb-4 flex items-center justify-between border-b border-slate-200 bg-white/80 px-4 py-3 backdrop-blur-md lg:hidden">
+          <div className="flex items-center gap-3">
+            <button onClick={() => setMobileNavOpen(true)} className="rounded-[5px] border border-slate-200 bg-white p-2 text-slate-600">
+              <Menu size={20} />
+            </button>
+            <span className="text-lg font-black tracking-tighter text-brand-600">{resolvedBrandName}{brandSuffix}</span>
           </div>
-          <button onClick={logout} className="rounded-[5px] border border-ink-900/5 bg-white px-3 py-2 text-xs font-semibold">
+          <button onClick={logout} className="rounded-[5px] border border-slate-200 bg-white px-3 py-2 text-xs font-bold text-slate-600">
+            <LogOut size={18} className="inline mr-2" />
             Logout
           </button>
         </header>
@@ -89,20 +193,22 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
         <AnimatePresence>
           {mobileNavOpen ? (
             <>
-              <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setMobileNavOpen(false)} className="fixed inset-0 z-[60] bg-ink-900/30 backdrop-blur-sm lg:hidden" />
-              <motion.div initial={{ x: "-100%" }} animate={{ x: 0 }} exit={{ x: "-100%" }} transition={{ type: "spring", damping: 25, stiffness: 200 }} className="fixed inset-y-0 left-0 z-[70] w-[280px] lg:hidden">
-                <div className="flex h-full flex-col overflow-hidden rounded-[5px] border bg-white">
-                  <div className="flex items-center justify-between border-b border-ink-900/5 p-6">
-                    <span className="text-xl font-black tracking-tighter">{BRAND_NAME}</span>
-                    <button onClick={() => setMobileNavOpen(false)} className="rounded-[5px] p-1 hover:bg-ink-900/5">
+              <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setMobileNavOpen(false)} className="fixed inset-0 z-[60] bg-slate-900/40 backdrop-blur-sm lg:hidden" />
+              <motion.div initial={{ x: "-100%" }} animate={{ x: 0 }} exit={{ x: "-100%" }} transition={{ type: "spring", damping: 25, stiffness: 200 }} className="fixed inset-y-0 left-0 z-[70] w-[300px] lg:hidden">
+                <div className="flex h-full flex-col overflow-hidden bg-white shadow-2xl">
+                  <div className="flex items-center justify-between border-b border-slate-100 p-6">
+                    <span className="text-2xl font-black tracking-tighter text-brand-600">{resolvedBrandName}{brandSuffix}</span>
+                    <button onClick={() => setMobileNavOpen(false)} className="rounded-[5px] p-2 hover:bg-slate-100 text-slate-400">
                       <X size={24} />
                     </button>
                   </div>
-                  <nav className="flex-1 space-y-2 overflow-y-auto p-4">
-                    {NAV_ITEMS.map((item) => <SideLink key={item.id} item={item} isCollapsed={false} />)}
+                  <nav className="flex-1 space-y-1 overflow-y-auto p-4 custom-scrollbar">
+                    {visibleNavItems.map((item) => <SideLink key={item.to} item={item} isCollapsed={false} />)}
                   </nav>
-                  <div className="border-t border-ink-900/5 p-4">
-                    <Button variant="danger" className="w-full justify-start gap-3" onClick={logout}>Logout</Button>
+                  <div className="border-t border-slate-100 p-4">
+                    <Button variant="danger" className="w-full justify-start gap-3 h-12 font-bold" onClick={logout}>
+                      <LogOut size={18} /> Logout
+                    </Button>
                   </div>
                 </div>
               </motion.div>
@@ -110,36 +216,69 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
           ) : null}
         </AnimatePresence>
 
-        <div className="flex min-h-[calc(100dvh-2.5rem)] gap-5">
+        <div className="flex min-h-[100vh] gap-6">
+          {/* Desktop Sidebar (fixed) */}
+          <motion.div
+            aria-hidden
+            className="hidden lg:block flex-none"
+            animate={{ width: isCollapsed ? SIDEBAR_WIDTH_COLLAPSED : SIDEBAR_WIDTH_OPEN }}
+            transition={SIDEBAR_SPRING}
+          />
           <motion.aside
-            animate={{ width: isCollapsed ? 88 : 280 }}
-            transition={{ type: "spring", damping: 20, stiffness: 100 }}
-            className="sticky top-5 hidden h-[calc(100dvh-2.5rem)] flex-col overflow-hidden rounded-[5px] border border-ink-900/10 bg-white/70 backdrop-blur-xl lg:flex"
+            animate={{ width: isCollapsed ? SIDEBAR_WIDTH_COLLAPSED : SIDEBAR_WIDTH_OPEN }}
+            transition={SIDEBAR_SPRING}
+            className="fixed top-0 bottom-0 left-0 z-50 hidden h-[100vh] flex-col overflow-hidden rounded-[5px] border border-slate-200 bg-white shadow-sm lg:flex"
           >
-            <div className="flex items-center justify-between border-b border-ink-900/5 p-6">
-              {!isCollapsed ? <motion.span initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="text-xl font-black tracking-tighter">{BRAND_NAME}</motion.span> : null}
-              <button onClick={() => setIsCollapsed((prev) => !prev)} className="mx-auto rounded-[5px] p-2 hover:bg-ink-900/5">
-                <Menu size={20} />
+            <div className="flex items-center justify-between border-b border-slate-100 p-5">
+              <AnimatePresence initial={false} mode="wait">
+                {!isCollapsed ? (
+                  <motion.span
+                    key="brand"
+                    initial={{ opacity: 0, x: -6 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    exit={{ opacity: 0, x: -6 }}
+                    transition={{ duration: 0.18, ease: "easeOut" }}
+                    className="text-2xl font-black tracking-tighter text-brand-600"
+                  >
+                    {resolvedBrandName}{brandSuffix}
+                  </motion.span>
+                ) : (
+                  <motion.div
+                    key="brand-spacer"
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                    className="h-8 w-8"
+                  />
+                )}
+              </AnimatePresence>
+              <button onClick={() => setIsCollapsed((prev) => !prev)} className="rounded-[5px] p-2 hover:bg-slate-50 text-slate-400 hover:text-brand-600 transition-colors">
+                <PanelLeftOpen size={22} className={cn("transition-transform duration-300", isCollapsed && "rotate-180")} />
               </button>
             </div>
-            <div className="flex-1 space-y-1 overflow-y-auto p-3">
-              {NAV_ITEMS.map((item) => <SideLink key={item.id} item={item} isCollapsed={isCollapsed} />)}
+            <div className="flex-1 space-y-1 overflow-y-auto p-4 custom-scrollbar">
+              {visibleNavItems.map((item) => <SideLink key={item.to} item={item} isCollapsed={isCollapsed} />)}
             </div>
-            <div className="border-t border-ink-900/5 bg-white/40 p-4">
-              <Button variant="danger" className={cn("justify-start", isCollapsed ? "w-full justify-center px-0" : "w-full gap-3")} onClick={logout}>
-                Logout
+            <div className="border-t border-slate-100 p-4">
+              <Button 
+                variant="danger" 
+                className={cn("transition-all duration-300", isCollapsed ? "w-full justify-center px-0 h-12" : "w-full gap-3 h-12 font-bold justify-start")} 
+                onClick={logout}
+              >
+                <LogOut size={18} /> 
+                {!isCollapsed && "Logout"}
               </Button>
             </div>
           </motion.aside>
 
-          <main className="min-w-0 flex-1 rounded-[5px] overflow-x-auto overflow-y-visible">
+          {/* Main Content */}
+          <main className="min-w-0 flex-1 relative">
             <motion.div
               key={location.pathname}
-              // Avoid transforms here for the same reason as AppShell: it breaks `position: fixed` descendants.
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ duration: 0.2 }}
-              className="h-full rounded-[5px] p-0"
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.3, ease: "easeOut" }}
+              className="h-full"
             >
               {children}
             </motion.div>

@@ -1,10 +1,10 @@
 import { useMemo, useState } from "react";
 import { Link, useSearchParams, useNavigate } from "react-router-dom";
-import { API } from "../api/api";
-import { Card } from "../components/ui/Card";
-import { Input } from "../components/ui/Input";
-import { Button } from "../components/ui/Button";
-import { Alert } from "../components/ui/Alert";
+import { API } from "@api/api";
+import { Card } from "@components/ui/Card";
+import { Input } from "@components/ui/Input";
+import { Button } from "@components/ui/Button";
+import { Alert } from "@components/ui/Alert";
 
 export default function ResetPasswordPage() {
   const navigate = useNavigate();

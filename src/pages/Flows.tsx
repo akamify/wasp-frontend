@@ -1,16 +1,17 @@
 import { useEffect, useState } from "react";
-import { API } from "../api/api";
-import { Card } from "../components/ui/Card";
-import { Button } from "../components/ui/Button";
-import { FlowsSkeleton } from "../components/ui/Skeletons";
-import { useToast } from "../context/ToastContext";
+import { API } from "@api/api";
+import { Card } from "@components/ui/Card";
+import { Button } from "@components/ui/Button";
+import { FlowsSkeleton } from "@components/ui/Skeletons";
+import { useToast } from "@shared/providers/ToastContext";
 import {
   RefreshCcw,
   ExternalLink,
   Plus,
 } from "lucide-react";
-import { Badge } from "../components/ui/Badge";
+import { Badge } from "@components/ui/Badge";
 import { useNavigate } from "react-router-dom";
+
 
 type Flow = {
   id: string;

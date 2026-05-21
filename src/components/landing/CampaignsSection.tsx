@@ -1,7 +1,7 @@
 import { useRef } from "react";
 import { motion, useInView } from "framer-motion";
 
-import { CampaignsPreview } from "./CampaignsPreview";
+import { CampaignsPreview } from "@components/landing/CampaignsPreview";
 
 export function CampaignsSection() {
   const ref = useRef<HTMLDivElement>(null);

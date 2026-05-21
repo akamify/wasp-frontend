@@ -1,11 +1,12 @@
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { useAuth } from "../context/AuthContext";
-import { API, setToken, setWorkspaceId } from "../api/api";
-import { Card } from "../components/ui/Card";
-import { Input } from "../components/ui/Input";
-import { Button } from "../components/ui/Button";
-import { Alert } from "../components/ui/Alert";
+import { useAuth } from "@shared/providers/AuthContext";
+import { API, setToken, setWorkspaceId } from "@api/api";
+import { Card } from "@components/ui/Card";
+import { Input } from "@components/ui/Input";
+import { Button } from "@components/ui/Button";
+import { Alert } from "@components/ui/Alert";
+import { useOtpGuard } from "@shared/hooks/useOtpGuard";
 
 export default function RegisterPage() {
   const { register } = useAuth();
@@ -16,19 +17,9 @@ export default function RegisterPage() {
   const [otp, setOtp] = useState("");
   const [challengeToken, setChallengeToken] = useState("");
   const [requiresOtp, setRequiresOtp] = useState(false);
-  const [resendCooldown, setResendCooldown] = useState(0);
+  const otpGuard = useOtpGuard({ cooldownSeconds: 60, maxAttempts: 5 });
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
-
-  useEffect(() => {
-    if (resendCooldown <= 0) return;
-    const timer = window.setInterval(() => {
-      setResendCooldown((v) => Math.max(0, v - 1));
-    }, 1000);
-    return () => window.clearInterval(timer);
-  }, [resendCooldown]);
-
-  const startResendCooldown = () => setResendCooldown(60);
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -40,7 +31,7 @@ export default function RegisterPage() {
         setRequiresOtp(true);
         setChallengeToken(String(res.challengeToken));
         setOtp("");
-        startResendCooldown();
+        otpGuard.onSendSuccess();
         return;
       }
       if (res?.token) {
@@ -72,12 +63,12 @@ export default function RegisterPage() {
   }
 
   async function resendOtp() {
-    if (!challengeToken) return;
+    if (!challengeToken || !otpGuard.canSend) return;
     setError(null);
     setBusy(true);
     try {
       await API.auth.resendRegisterOtp({ challengeToken });
-      startResendCooldown();
+      otpGuard.onSendSuccess();
     } catch (err: any) {
       setError(err?.response?.data?.message || "Failed to resend OTP");
     } finally {
@@ -88,7 +79,7 @@ export default function RegisterPage() {
   return (
     <div className="flex min-h-dvh items-center justify-center px-4 py-10">
       <Card className="w-full max-w-md p-6">
-        <div className="text-xs font-semibold text-ink-800/60">{requiresOtp ? "Verify email" : "New tenant"}</div>
+        <div className="text-xs font-semibold text-ink-800/60">{requiresOtp ? "Verify email" : ""}</div>
         <h1 className="mt-1 text-2xl font-black tracking-tight">{requiresOtp ? "Enter OTP" : "Create account"}</h1>
         <p className="mt-2 text-sm text-ink-800/70">
           {requiresOtp
@@ -143,11 +134,18 @@ export default function RegisterPage() {
               <Button
                 type="button"
                 variant="ghost"
-                disabled={busy || resendCooldown > 0}
+                disabled={busy || !otpGuard.canSend}
                 onClick={resendOtp}
               >
-                {resendCooldown > 0 ? `Resend in ${resendCooldown}s` : "Resend OTP"}
+                {!otpGuard.canSend
+                  ? otpGuard.cooldown > 0
+                    ? `Resend in ${otpGuard.cooldown}s`
+                    : "Resend limit reached"
+                  : "Resend OTP"}
               </Button>
+              <div className="text-center text-[11px] font-semibold text-slate-500">
+                OTP tries left: {otpGuard.remainingAttempts}/{otpGuard.maxAttempts}
+              </div>
             </>
           )}
         </form>
@@ -163,4 +161,3 @@ export default function RegisterPage() {
     </div>
   );
 }
-

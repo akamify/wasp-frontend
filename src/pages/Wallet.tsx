@@ -1,15 +1,15 @@
 import { useCallback, useEffect, useState, useRef, useMemo } from "react";
-import { API } from "../api/api";
-import { Card } from "../components/ui/Card";
-import { Button } from "../components/ui/Button";
-import { Alert } from "../components/ui/Alert";
-import { Badge } from "../components/ui/Badge";
-import { RechargeModal } from "../components/wallet/RechargeModal";
-import { WalletSkeleton } from "../components/ui/Skeletons";
-import { formatCurrencySafe } from "../config/currency";
-import { RefreshCw, History, Info } from "lucide-react";
-import { cn } from "../utils/cn";
-import { useToast } from "../context/ToastContext";
+import { API } from "@api/api";
+import { Card } from "@components/ui/Card";
+import { Button } from "@components/ui/Button";
+import { Alert } from "@components/ui/Alert";
+import { Badge } from "@components/ui/Badge";
+import { RechargeModal } from "@components/wallet/RechargeModal";
+import { WalletSkeleton } from "@components/ui/Skeletons";
+import { formatCurrencySafe } from "@shared/config/currency";
+import { RefreshCw, History, Info, Plus } from "lucide-react";
+import { cn } from "@shared/utils/cn";
+import { useToast } from "@shared/providers/ToastContext";
 
 function toneForType(type: string) {
   const t = String(type || "").toLowerCase();
@@ -117,9 +117,9 @@ export default function WalletPage() {
               </div>
               <Button
                 onClick={() => setRechargeOpen(true)}
-                className="h-14 px-10 text-lg font-black shadow-xl shadow-brand-500/20"
+                className="h-14 px-5 text-lg font-black shadow-xl shadow-brand-500/20"
               >
-                Top up balance
+              <Plus size={20} /> Buy Credits
               </Button>
             </div>
           </Card>

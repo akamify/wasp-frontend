@@ -1,14 +1,14 @@
 import { AnimatePresence, motion } from "framer-motion";
 import { createPortal } from "react-dom";
 import { useEffect, useMemo, useState } from "react";
-import { Button } from "../ui/Button";
-import { Card } from "../ui/Card";
-import { Input } from "../ui/Input";
-import { Textarea } from "../ui/Textarea";
+import { Button } from "@components/ui/Button";
+import { Card } from "@components/ui/Card";
+import { Input } from "@components/ui/Input";
+import { Textarea } from "@components/ui/Textarea";
 import { Copy, Download, QrCode, Trash2, X } from "lucide-react";
-import { API, getToken, getWorkspaceId } from "../../api/api";
-import { cn } from "../../utils/cn";
-import { useToast } from "../../context/ToastContext";
+import { API, getToken, getWorkspaceId } from "@api/api";
+import { cn } from "@shared/utils/cn";
+import { useToast } from "@shared/providers/ToastContext";
 
 export type TrackedLink = {
   _id: string;

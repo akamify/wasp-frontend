@@ -1,15 +1,15 @@
 import { useEffect, useMemo, useState } from "react";
-import { API } from "../api/api";
-import { Card } from "../components/ui/Card";
-import { Button } from "../components/ui/Button";
-import { Badge } from "../components/ui/Badge";
-import { useToast } from "../context/ToastContext";
+import { API } from "@api/api";
+import { Card } from "@components/ui/Card";
+import { Button } from "@components/ui/Button";
+import { Badge } from "@components/ui/Badge";
+import { useToast } from "@shared/providers/ToastContext";
 import { Copy, Eye, Plus, QrCode, Trash2 } from "lucide-react";
 import {
   CreateTrackedLinkModal,
   TrackedLinkViewEditModal,
   type TrackedLink,
-} from "../components/links/TrackedLinkModals";
+} from "@components/links/TrackedLinkModals";
 
 export default function LinksPage() {
   const { toast } = useToast();

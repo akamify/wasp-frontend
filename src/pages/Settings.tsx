@@ -1,17 +1,18 @@
 import { useEffect, useState } from "react";
-import { API } from "../api/api";
-import { Card } from "../components/ui/Card";
-import { Button } from "../components/ui/Button";
-import { Input } from "../components/ui/Input";
-import { useAuth } from "../context/AuthContext";
-import { useToast } from "../context/ToastContext";
+import { API } from "@api/api";
+import { Card } from "@components/ui/Card";
+import { Button } from "@components/ui/Button";
+import { Input } from "@components/ui/Input";
+import { useAuth } from "@shared/providers/AuthContext";
+import { useToast } from "@shared/providers/ToastContext";
 import {
   LogOut,
   Lock,
   ShieldCheck,
   BadgeCheck,
 } from "lucide-react";
-import { SettingsSkeleton } from "../components/ui/Skeletons";
+import { SettingsSkeleton } from "@components/ui/Skeletons";
+import { useOtpGuard } from "@shared/hooks/useOtpGuard";
 
 export default function SettingsPage() {
   const { user, refreshMe, logout } = useAuth();
@@ -32,15 +33,7 @@ export default function SettingsPage() {
   const [otpBusy, setOtpBusy] = useState(false);
   const [twoFactorOtp, setTwoFactorOtp] = useState("");
   const [awaitingTwoFactorOtp, setAwaitingTwoFactorOtp] = useState(false);
-  const [twoFactorResendCooldown, setTwoFactorResendCooldown] = useState(0);
-
-  useEffect(() => {
-    if (twoFactorResendCooldown <= 0) return;
-    const timer = window.setInterval(() => {
-      setTwoFactorResendCooldown((v) => Math.max(0, v - 1));
-    }, 1000);
-    return () => window.clearInterval(timer);
-  }, [twoFactorResendCooldown]);
+  const twoFactorOtpGuard = useOtpGuard({ cooldownSeconds: 60, maxAttempts: 5 });
 
   async function changePassword() {
     if (newPassword !== confirmPassword) {
@@ -82,11 +75,12 @@ export default function SettingsPage() {
   }
 
   async function enable2fa() {
+    if (!twoFactorOtpGuard.canSend) return;
     setOtpBusy(true);
     try {
       await API.auth.requestEnable2fa();
       setAwaitingTwoFactorOtp(true);
-      setTwoFactorResendCooldown(60);
+      twoFactorOtpGuard.onSendSuccess();
       toast("OTP sent to your registered email.", "success");
     } catch (e: any) {
       toast(e?.response?.data?.message || "Failed to request 2FA OTP", "error");
@@ -105,7 +99,7 @@ export default function SettingsPage() {
       await API.auth.verifyEnable2fa({ otp: twoFactorOtp });
       setTwoFactorOtp("");
       setAwaitingTwoFactorOtp(false);
-      setTwoFactorResendCooldown(0);
+      twoFactorOtpGuard.reset();
       await refreshMe();
       toast("2FA enabled successfully.", "success");
     } catch (e: any) {
@@ -121,7 +115,7 @@ export default function SettingsPage() {
       await API.auth.disable2fa();
       setTwoFactorOtp("");
       setAwaitingTwoFactorOtp(false);
-      setTwoFactorResendCooldown(0);
+      twoFactorOtpGuard.reset();
       await refreshMe();
       toast("2FA disabled.", "success");
     } catch (e: any) {
@@ -238,14 +232,19 @@ export default function SettingsPage() {
                     <Button
                       type="button"
                       variant="ghost"
-                      disabled={otpBusy || twoFactorResendCooldown > 0}
+                      disabled={otpBusy || !twoFactorOtpGuard.canSend}
                       onClick={enable2fa}
                       className="w-full"
                     >
-                      {twoFactorResendCooldown > 0
-                        ? `Resend in ${twoFactorResendCooldown}s`
+                      {!twoFactorOtpGuard.canSend
+                        ? twoFactorOtpGuard.cooldown > 0
+                          ? `Resend in ${twoFactorOtpGuard.cooldown}s`
+                          : "Resend limit reached"
                         : "Resend OTP"}
                     </Button>
+                    <div className="text-center text-[11px] font-semibold text-slate-500">
+                      OTP tries left: {twoFactorOtpGuard.remainingAttempts}/{twoFactorOtpGuard.maxAttempts}
+                    </div>
                   </div>
                 ) : null}
               </div>

@@ -1,9 +1,9 @@
 import React, { useEffect, useState, useRef } from "react";
 import { NavLink, useLocation, useNavigate } from "react-router-dom";
-import { cn } from "../../utils/cn";
-import { useAuth } from "../../context/AuthContext";
-import { BRAND_NAME } from "../../config/brand";
-import { API } from "../../api/api";
+import { cn } from "@shared/utils/cn";
+import { useAuth } from "@shared/providers/AuthContext";
+import { BRAND_NAME } from "@shared/config/brand";
+import { API } from "@api/api";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   LayoutDashboard, Key, FileText, Send, Users,
@@ -11,9 +11,10 @@ import {
   PanelLeftOpen, Menu, Wallet, Workflow,
   Bell, Globe, History, Terminal, CheckCircle2, AlertCircle, MessageCircle,
   X, MoreHorizontal, ChevronRight, FileSearch, Settings, CreditCard, LogOut,
-  User
+  User,
+  BriefcaseBusiness
 } from "lucide-react";
-import { WorkspaceStatusBar } from "./WorkspaceStatusBar";
+import { WorkspaceStatusBar } from "@components/layout/WorkspaceStatusBar";
 
 const NAV_ITEMS = [
   { to: "/app", label: "Dashboard", kicker: "overview", icon: LayoutDashboard },
@@ -22,6 +23,7 @@ const NAV_ITEMS = [
   { to: "/app/send", label: "Campaigns", kicker: "broadcast", icon: Send },
   { to: "/app/contacts", label: "Contacts", kicker: "audience", icon: Users },
   { to: "/app/conversations", label: "Inbox", kicker: "chatroom", icon: MessageSquare },
+  { to: "/app/crm", label: "CRM", kicker: "leads", icon: BriefcaseBusiness },
   { to: "/app/flows", label: "Flows", kicker: "forms", icon: Workflow },
   { to: "/app/wallet", label: "Wallet", kicker: "credits", icon: Wallet },
   { to: "/app/links", label: "Tracked links", kicker: "analytics", icon: Link2 },
@@ -150,6 +152,7 @@ function MobileBottomTabs() {
 function MobileTopBar({
   onMenuOpen,
   workspaceName,
+  brandName,
   notifications,
   lastReadAt,
   markAllRead,
@@ -157,6 +160,7 @@ function MobileTopBar({
 }: {
   onMenuOpen: () => void;
   workspaceName?: string;
+  brandName: string;
   notifications: any[];
   lastReadAt: number;
   markAllRead: () => void;
@@ -181,7 +185,7 @@ function MobileTopBar({
         <Menu size={22} className="text-slate-700" />
       </button>
       <div className="flex flex-col items-center">
-        <span className="text-[10px] font-black text-brand-600 uppercase tracking-tighter leading-none">{BRAND_NAME}</span>
+        <span className="text-[10px] font-black text-brand-600 uppercase tracking-tighter leading-none">{brandName}</span>
         <span className="text-xs font-bold truncate max-w-[140px] text-slate-800">{workspaceName || "Workspace"}</span>
       </div>
       <div className="flex items-center gap-1">
@@ -269,12 +273,14 @@ function MobileDrawer({
   onClose,
   user,
   workspace,
+  brandName,
   navigate,
 }: {
   open: boolean;
   onClose: () => void;
   user: any;
   workspace: any;
+  brandName: string;
   navigate: (to: string) => void;
 }) {
   const location = useLocation();
@@ -303,7 +309,7 @@ function MobileDrawer({
             <div className="h-14 flex items-center justify-between px-4 border-b border-slate-100 shrink-0">
               <div className="flex items-center gap-2">
                 <div className="w-7 h-7 bg-brand-600 rounded-[5px] flex items-center justify-center text-white font-black text-[10px] shadow-lg shadow-brand-500/20">W</div>
-                <span className="font-black text-base tracking-tighter text-slate-900">{BRAND_NAME}</span>
+                <span className="font-black text-base tracking-tighter text-slate-900">{brandName}</span>
               </div>
               <button onClick={onClose} className="p-1.5 hover:bg-slate-100 rounded-[5px] text-slate-400 active:scale-95 transition-all">
                 <X size={20} />
@@ -368,6 +374,8 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const { user, workspace, logout } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
+  const [runtimeBrandName, setRuntimeBrandName] = useState("");
+  const resolvedBrandName = runtimeBrandName || BRAND_NAME;
   const [notifOpen, setNotifOpen] = useState(false);
   const [mobileDrawerOpen, setMobileDrawerOpen] = useState(false);
   const hideMobileBarsOnChatDetail =
@@ -386,6 +394,19 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     setMobileDrawerOpen(false);
   }, [location.pathname]);
+  useEffect(() => {
+    let mounted = true;
+    API.public
+      .platformBrandGet()
+      .then((res: any) => {
+        if (!mounted) return;
+        setRuntimeBrandName(String(res?.settings?.brandName || "").trim());
+      })
+      .catch(() => {});
+    return () => {
+      mounted = false;
+    };
+  }, []);
   const [isCollapsed, setIsCollapsed] = useState(() => {
     try {
       return localStorage.getItem("waspakamify_sidebar_collapsed_touched") === "1"
@@ -624,6 +645,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         <MobileTopBar
           onMenuOpen={() => setMobileDrawerOpen(true)}
           workspaceName={workspace?.name}
+          brandName={resolvedBrandName}
           notifications={notifications}
           lastReadAt={lastReadAt}
           markAllRead={markAllRead}
@@ -640,6 +662,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         onClose={() => setMobileDrawerOpen(false)}
         user={user}
         workspace={workspace}
+        brandName={resolvedBrandName}
         navigate={navigate}
       />
 
@@ -653,7 +676,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           {!isCollapsed && (
             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex items-center gap-2">
               <div className="w-8 h-8 bg-brand-600 rounded-[5px] flex items-center justify-center text-white font-black text-xs shadow-lg shadow-brand-500/20">W</div>
-              <span className="font-black text-xl tracking-tighter text-slate-900">{BRAND_NAME}</span>
+              <span className="font-black text-xl tracking-tighter text-slate-900">{resolvedBrandName}</span>
             </motion.div>
           )}
           <button

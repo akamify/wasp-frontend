@@ -1,6 +1,6 @@
 import { Navigate, Outlet, useLocation } from "react-router-dom";
-import { useAuth } from "../../context/AuthContext";
-import { SessionSkeleton } from "../ui/Skeletons";
+import { useAuth } from "@shared/providers/AuthContext";
+import { SessionSkeleton } from "@components/ui/Skeletons";
 
 export function RequireAuth() {
   const { token, loading } = useAuth();

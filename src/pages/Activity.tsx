@@ -1,13 +1,13 @@
 import { useEffect, useState, useRef, useCallback } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
-import { API } from "../api/api";
+import { API } from "@api/api";
 import { Search, ArrowUpRight, MessageSquare, Clock, Smartphone, RefreshCw, AlertCircle } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
-import { ActivityListSkeleton } from "../components/ui/Skeletons";
-import { cn } from "../utils/cn";
-import { Button } from "../components/ui/Button";
-import { Card } from "../components/ui/Card";
-import { extractMetaDebugFields, formatMetaDebugInline, isMetaBillingEligibilityPaymentIssue } from "../utils/metaErrors";
+import { ActivityListSkeleton } from "@components/ui/Skeletons";
+import { cn } from "@shared/utils/cn";
+import { Button } from "@components/ui/Button";
+import { Card } from "@components/ui/Card";
+import { extractMetaDebugFields, formatMetaDebugInline, isMetaBillingEligibilityPaymentIssue } from "@shared/utils/metaErrors";
 
 function stripUrls(text: string) {
   return String(text || "")

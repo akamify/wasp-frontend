@@ -6,6 +6,7 @@ const isLocalHost =
   isBrowser &&
   (window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1");
 const API_BASE_URL = envBaseUrl || (isLocalHost ? "http://localhost:3000" : "/api");
+const isDev = Boolean(import.meta.env.DEV);
 
 export const api = axios.create({
   baseURL: API_BASE_URL,
@@ -76,6 +77,11 @@ api.request = (config) => {
   const p = __rawRequest(config)
     .then((res) => {
       __getInflight.delete(key);
+      // If server responds 304 (no body), prefer the last cached 200 response.
+      if (res?.status === 304) {
+        const cached304 = __getCache.get(key);
+        if (cached304 && cached304.expiresAt > now) return cached304.response;
+      }
       if (ttlMs > 0) __getCache.set(key, { expiresAt: Date.now() + ttlMs, response: res });
       return res;
     })
@@ -94,6 +100,7 @@ function workspaceFromToken(token) {
     if (parts.length !== 3) return "";
     const base64 = parts[1].replace(/-/g, "+").replace(/_/g, "/");
     const payload = JSON.parse(atob(base64));
+    if (String(payload?.role || "") === "admin" || String(payload?.role || "") === "super_admin") return "";
     return String(payload?.workspaceId || "");
   } catch {
     return "";
@@ -142,6 +149,21 @@ api.interceptors.response.use(
   (res) => res,
   (err) => {
     const status = err?.response?.status;
+    const backendMessage = String(err?.response?.data?.message || "").trim();
+    const fallbackByStatus = {
+      400: "Invalid request. Please check input and try again.",
+      401: "Session expired. Please login again.",
+      403: "You are not allowed to perform this action.",
+      404: "Requested resource was not found.",
+      409: "Conflict detected. Please refresh and try again.",
+      422: "Submitted data is invalid.",
+      429: "Rate limit hit. Please retry shortly.",
+      500: "Something went wrong on server. Please try again.",
+    };
+    err.userMessage = isDev
+      ? backendMessage || err?.message || "Request failed"
+      : backendMessage || fallbackByStatus[status] || "Request failed. Please try again.";
+
     if (status === 401) {
       // If the token is invalid/expired, clear it so the UI can re-auth cleanly.
       setToken("");
@@ -175,23 +197,230 @@ export const API = {
     resendRegisterOtp: (payload) => api.post("/auth/register/resend-otp", payload).then(unwrap),
     forgotPassword: (payload) => api.post("/auth/forgot-password", payload).then(unwrap),
     resetPassword: (payload) => api.post("/auth/reset-password", payload).then(unwrap),
+    adminForgotPassword: (payload) => api.post("/auth/admin/forgot-password", payload).then(unwrap),
+    adminResetPassword: (payload) => api.post("/auth/admin/reset-password", payload).then(unwrap),
     me: () => api.get("/auth/me").then(unwrap),
     apiKeyStatus: () => api.get("/auth/api-key").then(unwrap),
+    listApiKeys: () => api.get("/api-keys").then(unwrap),
+    generateApiKey: (payload) => api.post("/api-keys/generate", payload || {}).then(unwrap),
+    regenerateApiKey: (payload) => api.post("/api-keys/regenerate", payload || {}).then(unwrap),
+    deleteApiKey: (id) => api.delete(`/api-keys/${encodeURIComponent(id)}`).then(unwrap),
     requestApiKeyOtp: (payload) => api.post("/auth/api-key/request-otp", payload).then(unwrap),
     verifyApiKeyOtp: (payload) => api.post("/auth/api-key/verify-otp", payload).then(unwrap),
     updateProfile: (payload) => api.put("/auth/profile", payload).then(unwrap),
+    requestProfileOtp: (payload) => api.post("/auth/profile/request-otp", payload).then(unwrap),
+    verifyProfileOtp: (payload) => api.post("/auth/profile/verify-otp", payload).then(unwrap),
     changePassword: (payload) => api.post("/auth/change-password", payload).then(unwrap),
     requestEnable2fa: () => api.post("/auth/2fa/request-enable").then(unwrap),
     verifyEnable2fa: (payload) => api.post("/auth/2fa/verify-enable", payload).then(unwrap),
     disable2fa: () => api.post("/auth/2fa/disable").then(unwrap),
+    logout: () => api.post("/auth/logout").then(unwrap),
   },
 
-  admin: {
-    overview: () => api.get("/admin/overview").then(unwrap),
-    users: () => api.get("/admin/users").then(unwrap),
-    templates: () => api.get("/admin/templates").then(unwrap),
-    credentials: () => api.get("/admin/credentials").then(unwrap),
-    wallets: () => api.get("/admin/wallets").then(unwrap),
+  admin: { 
+    overview: (params) => api.get("/admin/overview", { params }).then(unwrap),
+    users: (params) => api.get("/admin/users", { params }).then(unwrap),
+    updateUserStatus: (id, payload) => api.patch(`/admin/users/${encodeURIComponent(id)}/status`, payload || {}).then(unwrap),
+    userApiKeys: (id) => api.get(`/api-keys/admin/users/${encodeURIComponent(id)}`).then(unwrap),
+    sendChatAccessOtp: (id) => api.post(`/admin/users/${encodeURIComponent(id)}/chat-access/send-otp`, {}).then(unwrap),
+    verifyChatAccessOtp: (id, payload) => api.post(`/admin/users/${encodeURIComponent(id)}/chat-access/verify-otp`, payload).then(unwrap),
+    enableChatAccess: (id) => api.patch(`/admin/users/${encodeURIComponent(id)}/chat-access/enable`, {}).then(unwrap),
+    disableChatAccess: (id) => api.patch(`/admin/users/${encodeURIComponent(id)}/chat-access/disable`, {}).then(unwrap),
+    enableCampaignSendAccess: (id) => api.patch(`/admin/users/${encodeURIComponent(id)}/api-permissions/campaign-send/enable`, {}).then(unwrap),
+    disableCampaignSendAccess: (id) => api.patch(`/admin/users/${encodeURIComponent(id)}/api-permissions/campaign-send/disable`, {}).then(unwrap),
+    disableUserApiKey: (id, keyId) => api.patch(`/admin/users/${encodeURIComponent(id)}/api-keys/${encodeURIComponent(keyId)}/disable`, {}).then(unwrap),
+    enableUserApiKey: (id, keyId) => api.patch(`/admin/users/${encodeURIComponent(id)}/api-keys/${encodeURIComponent(keyId)}/enable`, {}).then(unwrap),
+    blockUser: (id) => api.patch(`/admin/users/${encodeURIComponent(id)}/block`, {}).then(unwrap),
+    unblockUser: (id) => api.patch(`/admin/users/${encodeURIComponent(id)}/unblock`, {}).then(unwrap),
+    channels: (params) => api.get("/admin/channels", { params }).then(unwrap),
+    workspaces: (params) => api.get("/admin/workspaces", { params }).then(unwrap),
+    masterCampaigns: (params) => api.get("/admin/master-campaigns", { params }).then(unwrap),
+    masterTemplates: (params) => api.get("/admin/master-templates", { params }).then(unwrap),
+    masterTemplateGet: (id) => api.get(`/admin/master-templates/${encodeURIComponent(id)}`).then(unwrap),
+    masterTemplateUpdate: (id, payload) => api.put(`/admin/master-templates/${encodeURIComponent(id)}`, payload).then(unwrap),
+    masterTemplateDelete: (id) => api.delete(`/admin/master-templates/${encodeURIComponent(id)}`).then(unwrap),
+    masterTemplateSyncStatus: (id) => api.post(`/admin/master-templates/${encodeURIComponent(id)}/sync-status`, null).then(unwrap),
+    masterTemplateSyncMeta: (payload) => api.post(`/admin/master-templates/sync-meta`, payload).then(unwrap),
+    masterContacts: (params) => api.get("/admin/master-contacts", { params }).then(unwrap),
+    notifications: (params) => api.get("/admin/notifications", { params }).then(unwrap),
+    subscriptionPlans: () => api.get("/admin/subscription-plans").then(unwrap),
+    subscriptionsData: (params) => api.get("/admin/subscriptions-data", { params }).then(unwrap),
+    transactionsLogs: (params) => api.get("/admin/transactions-logs", { params }).then(unwrap),
+    messageLogs: (params) => api.get("/admin/message-logs", { params }).then(unwrap),
+    paymentGateway: (params) => api.get("/admin/payment-gateway", { params }).then(unwrap),
+    supportTickets: (params) => api.get("/admin/support-tickets", { params }).then(unwrap),
+    resolveSupportTicket: (id, payload) => api.patch(`/admin/support-tickets/${id}/resolve`, payload || {}).then(unwrap),
+    appUpdate: () => api.get("/admin/app-update").then(unwrap),
+    changePassword: (payload) => api.put("/admin/settings/password", payload).then(unwrap),
+
+    profile: () => api.get("/admin/profile").then(unwrap),
+    profileUpdate: (payload) => api.put("/admin/profile", payload).then(unwrap),
+    profileLogins: (params) => api.get("/admin/profile/logins", { params }).then(unwrap),
+    profileRequests: (params) => api.get("/admin/profile/requests", { params }).then(unwrap),
+    createProfileRequest: (payload) => api.post("/admin/profile/requests", payload).then(unwrap),
+    verifyProfileRequestOtp: (requestId, payload) =>
+      api.post(`/admin/profile/requests/${encodeURIComponent(requestId)}/verify-otp`, payload || {}).then(unwrap),
+    resendProfileRequestOtp: (requestId) =>
+      api.post(`/admin/profile/requests/${encodeURIComponent(requestId)}/resend-otp`, {}).then(unwrap),
+
+    pages: () => api.get("/admin/pages").then(unwrap),
+    pageGet: (slug) => api.get(`/admin/pages/${encodeURIComponent(slug)}`).then(unwrap),
+    pageUpsert: (slug, payload) => api.put(`/admin/pages/${encodeURIComponent(slug)}`, payload).then(unwrap),
+    platformBrandGet: () => api.get("/admin/platform-brand").then(unwrap),
+    platformBrandUpdate: (payload) => api.put("/admin/platform-brand", payload).then(unwrap),
+    platformBrandUploadLogo: (file, onProgress) => {
+      const data = new FormData();
+      data.append("file", file);
+      return api
+        .post("/admin/platform-brand/upload-logo", data, {
+          headers: { "Content-Type": "multipart/form-data" },
+          onUploadProgress: (e) => {
+            if (!onProgress) return;
+            const total = e.total || 0;
+            const loaded = e.loaded || 0;
+            onProgress(total ? Math.round((loaded / total) * 100) : 0);
+          },
+        })
+        .then(unwrap);
+    },
+
+    careerApplications: (params) => api.get("/admin/career-applications", { params }).then(unwrap),
+    updateCareerApplication: (id, payload) => api.patch(`/admin/career-applications/${id}`, payload).then(unwrap),
+    downloadCareerResume: (id) => 
+      api.get(`/admin/career-applications/${id}/resume`, { responseType: "blob" }).then((r) => r.data), 
+
+    crmWorkspace: (workspaceId) => api.get(`/admin/crm/workspaces/${encodeURIComponent(workspaceId)}`).then(unwrap),
+    crmSetEnabled: (workspaceId, enabled) =>
+      api.patch(`/admin/crm/workspaces/${encodeURIComponent(workspaceId)}/enabled`, { enabled: !!enabled }).then(unwrap),
+    crmSetLeadWindowHours: (workspaceId, leadWindowHours) =>
+      api.put(`/admin/crm/workspaces/${encodeURIComponent(workspaceId)}/settings/lead-window`, { leadWindowHours }).then(unwrap),
+    crmEmployees: (workspaceId) => api.get(`/admin/crm/workspaces/${encodeURIComponent(workspaceId)}/employees`).then(unwrap),
+    crmCreateEmployee: (workspaceId, payload) =>
+      api.post(`/admin/crm/workspaces/${encodeURIComponent(workspaceId)}/employees`, payload).then(unwrap),
+
+    setWorkspaceExternalChatFeature: (workspaceId, enabled) =>
+      api
+        .patch(`/admin/workspaces/${encodeURIComponent(workspaceId)}/features/external-chat`, { enabled: !!enabled })
+        .then(unwrap),
+    getWorkspaceExternalChatFeature: (workspaceId) =>
+      api
+        .get(`/admin/workspaces/${encodeURIComponent(workspaceId)}/features/external-chat`)
+        .then(unwrap),
+    setApiKeyChatAccess: (userId, keyId, enabled) =>
+      api
+        .patch(`/admin/users/${encodeURIComponent(userId)}/api-keys/${encodeURIComponent(keyId)}/permissions/chat-access`, { enabled: !!enabled })
+        .then(unwrap),
+    syncApiKeysChatAccess: (userId, enabled) =>
+      api
+        .post(`/admin/users/${encodeURIComponent(userId)}/api-keys/sync-chat-access`, { enabled: !!enabled })
+        .then(unwrap),
+
+    docsList: (params) => api.get("/admin/docs", { params }).then(unwrap),
+    docsGet: (id) => api.get(`/admin/docs/${encodeURIComponent(id)}`).then(unwrap),
+    docsCreate: (payload) => api.post("/admin/docs", payload).then(unwrap),
+    docsUpdate: (id, payload) => api.put(`/admin/docs/${encodeURIComponent(id)}`, payload).then(unwrap),
+    docsDelete: (id) => api.delete(`/admin/docs/${encodeURIComponent(id)}`).then(unwrap),
+    docsBrandGet: () => api.get("/admin/docs-brand").then(unwrap),
+    docsBrandUpdate: (payload) => api.put("/admin/docs-brand", payload).then(unwrap),
+    docsBrandUploadLogo: (file, onProgress) => {
+      const data = new FormData();
+      data.append("file", file);
+      return api
+        .post("/admin/docs-brand/upload-logo", data, {
+          headers: { "Content-Type": "multipart/form-data" },
+          onUploadProgress: (e) => {
+            if (!onProgress) return;
+            const total = e.total || 0;
+            const loaded = e.loaded || 0;
+            onProgress(total ? Math.round((loaded / total) * 100) : 0);
+          },
+        })
+        .then(unwrap);
+    },
+  }, 
+
+  superAdmin: {
+    profile: () => api.get("/super-admin/profile").then(unwrap),
+    updateProfileName: (payload) => api.patch("/super-admin/profile/name", payload).then(unwrap),
+    changeProfilePassword: (payload) => api.post("/super-admin/profile/change-password", payload).then(unwrap),
+    requestProfileOtp: (payload) => api.post("/super-admin/profile/request-otp", payload).then(unwrap),
+    verifyProfileOtp: (payload) => api.post("/super-admin/profile/verify-otp", payload).then(unwrap),
+    setProfile2fa: (payload) => api.patch("/super-admin/profile/2fa", payload).then(unwrap),
+    admins: (params) => api.get("/super-admin/admins", { params }).then(unwrap),
+    adminDetail: (id) => api.get(`/super-admin/admins/${encodeURIComponent(id)}`).then(unwrap),
+    updateAdmin: (id, payload) => api.patch(`/super-admin/admins/${encodeURIComponent(id)}`, payload || {}).then(unwrap),
+    decideAdminProfileRequest: (adminId, requestId, payload) =>
+      api.post(`/super-admin/admins/${encodeURIComponent(adminId)}/profile-requests/${encodeURIComponent(requestId)}/decision`, payload || {}).then(unwrap),
+    assignAdmin: (payload) => api.post("/super-admin/admins/assign", payload).then(unwrap),
+    removeAdmin: (payload) => api.post("/super-admin/admins/remove", payload).then(unwrap),
+    suspendUser: (payload) => api.post("/super-admin/users/suspend", payload).then(unwrap),
+    resetUserPassword: (payload) => api.post("/super-admin/users/reset-password", payload).then(unwrap),
+    securityLogs: (params) => api.get("/super-admin/security-logs", { params }).then(unwrap),
+    platformSettings: () => api.get("/super-admin/platform-settings").then(unwrap),
+    platformSettingsByCategory: (category) => api.get(`/super-admin/platform-settings/${encodeURIComponent(category)}`).then(unwrap),
+    updatePlatformSetting: (key, payload) => api.put(`/super-admin/platform-settings/${encodeURIComponent(key)}`, payload || {}).then(unwrap),
+    bulkUpdatePlatformSettings: (payload) => api.post("/super-admin/platform-settings/bulk", payload || {}).then(unwrap),
+    testPlatformCategory: (category, payload) =>
+      api.post(`/super-admin/platform-settings/${encodeURIComponent(category)}/test`, payload || {}).then(unwrap),
+    platformAddons: () => api.get("/super-admin/platform-addons").then(unwrap),
+    platformAddonsByCategory: (category) => api.get(`/super-admin/platform-addons/${encodeURIComponent(category)}`).then(unwrap),
+    updatePlatformAddon: (key, payload) => api.put(`/super-admin/platform-addons/${encodeURIComponent(key)}`, payload || {}).then(unwrap),
+    bulkUpdatePlatformAddons: (payload) => api.post("/super-admin/platform-addons/bulk", payload || {}).then(unwrap),
+  },
+
+  crm: {
+    workspace: () => api.get("/crm/workspace").then(unwrap),
+    setLeadWindowHours: (leadWindowHours) =>
+      api.put("/crm/settings/lead-window", { leadWindowHours }).then(unwrap),
+    setAssignmentLockMinutes: (assignmentLockMinutes) =>
+      api.put("/crm/settings/assignment-lock", { assignmentLockMinutes }).then(unwrap),
+    employees: () => api.get("/crm/employees").then(unwrap),
+    createEmployee: (payload) => api.post("/crm/employees", payload).then(unwrap),
+    updateEmployeeStatus: (employeeId, status) =>
+      api.patch(`/crm/employees/${encodeURIComponent(employeeId)}/status`, { status }).then(unwrap),
+    employeeProfile: (employeeId) =>
+      api.get(`/crm/employees/${encodeURIComponent(employeeId)}/profile`).then(unwrap),
+    updateEmployeeProfile: (employeeId, payload) =>
+      api.patch(`/crm/employees/${encodeURIComponent(employeeId)}/profile`, payload || {}).then(unwrap),
+    employeeLeads: (employeeId, params) =>
+      api.get(`/crm/employees/${encodeURIComponent(employeeId)}/leads`, { params }).then(unwrap),
+    employeeActivities: (employeeId, params) =>
+      api.get(`/crm/employees/${encodeURIComponent(employeeId)}/activities`, { params }).then(unwrap),
+    employeeSessions: (employeeId, params) =>
+      api.get(`/crm/employees/${encodeURIComponent(employeeId)}/sessions`, { params }).then(unwrap),
+    employeeRequests: (params) => api.get("/crm/employee-requests", { params }).then(unwrap),
+    decideEmployeeRequest: (requestId, payload) =>
+      api.post(`/crm/employee-requests/${encodeURIComponent(requestId)}/decide`, payload || {}).then(unwrap),
+    verifyEmployeeEmailOtp: (employeeId, payload) =>
+      api.post(`/crm/employees/${encodeURIComponent(employeeId)}/verify-email-otp`, payload || {}).then(unwrap),
+    sendEmployeeResetLink: (employeeId) =>
+      api.post(`/crm/employees/${encodeURIComponent(employeeId)}/send-reset-link`, {}).then(unwrap),
+    resetEmployeePassword: (employeeId, payload) =>
+      api.post(`/crm/employees/${encodeURIComponent(employeeId)}/reset-password`, payload || {}).then(unwrap),
+    conversationEvents: (phone, params) =>
+      api.get(`/crm/conversations/${encodeURIComponent(phone)}/events`, { params }).then(unwrap),
+  },
+
+  public: {
+    page: (slug) => api.get(`/public/pages/${encodeURIComponent(slug)}`).then(unwrap),
+    platformBrandGet: () => api.get("/public/platform-brand").then(unwrap),
+    createSupportTicket: (payload) => api.post("/public/support-tickets", payload).then(unwrap),
+    applyCareer: (payload, file, onProgress) => {
+      const data = new FormData();
+      Object.entries(payload || {}).forEach(([k, v]) => data.append(k, String(v ?? "")));
+      data.append("resume", file);
+      return api
+        .post("/public/careers/apply", data, {
+          headers: { "Content-Type": "multipart/form-data" },
+          onUploadProgress: (e) => {
+            if (!onProgress) return;
+            const total = e.total || 0;
+            const loaded = e.loaded || 0;
+            onProgress(total ? Math.round((loaded / total) * 100) : 0);
+          },
+        })
+        .then(unwrap);
+    },
   },
 
   workspaces: {
@@ -261,7 +490,7 @@ export const API = {
   },
 
   analytics: {
-    overview: () => api.get("/analytics/overview").then(unwrap),
+    overview: (params) => api.get("/analytics/overview", { params }).then(unwrap),
     template: (id) => api.get(`/analytics/template/${id}`).then(unwrap),
   },
 

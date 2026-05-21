@@ -1,17 +1,17 @@
 import { useEffect, useState, useRef } from "react";
 import { createPortal } from "react-dom";
 import { Link } from "react-router-dom";
-import { API } from "../api/api";
-import { Card } from "../components/ui/Card";
-import { Input } from "../components/ui/Input";
-import { Textarea } from "../components/ui/Textarea";
-import { Button } from "../components/ui/Button";
-import { Alert } from "../components/ui/Alert";
-import { ContactsListSkeleton } from "../components/ui/Skeletons";
+import { API } from "@api/api";
+import { Card } from "@components/ui/Card";
+import { Input } from "@components/ui/Input";
+import { Textarea } from "@components/ui/Textarea";
+import { Button } from "@components/ui/Button";
+import { Alert } from "@components/ui/Alert";
+import { ContactsListSkeleton } from "@components/ui/Skeletons";
 import { RefreshCcw, Plus, Search, Trash2, Pencil, User, X } from "lucide-react";
-import { cn } from "../utils/cn";
-import { Badge } from "../components/ui/Badge";
-import { useToast } from "../context/ToastContext";
+import { cn } from "@shared/utils/cn";
+import { Badge } from "@components/ui/Badge";
+import { useToast } from "@shared/providers/ToastContext";
 import { AnimatePresence, motion } from "framer-motion";
 
 type Contact = {

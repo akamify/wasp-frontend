@@ -1,13 +1,13 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Plus, Eye, RefreshCw, Trash2, MessageSquare, Folder, ShieldCheck, Megaphone, Package, Search, ChevronLeft, ChevronRight, } from "lucide-react";
-import { Badge } from "../../components/ui/Badge";
-import { Button } from "../../components/ui/Button";
-import { TemplatesTableSkeleton } from "../../components/ui/Skeletons";
-import { statusTone, truncateTemplateName } from "./helpers";
-import type { TemplateItem } from "./types";
-import { cn } from "../../utils/cn";
-import { useToast } from "../../context/ToastContext";
-import { API } from "../../api/api";
+import { Badge } from "@components/ui/Badge";
+import { Button } from "@components/ui/Button";
+import { TemplatesTableSkeleton } from "@components/ui/Skeletons";
+import { statusTone, truncateTemplateName } from "@pages/templates/helpers";
+import type { TemplateItem } from "@pages/templates/types";
+import { cn } from "@shared/utils/cn";
+import { useToast } from "@shared/providers/ToastContext";
+import { API } from "@api/api";
 
 type Props = {
   templates: TemplateItem[];

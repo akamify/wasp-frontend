@@ -1,12 +1,12 @@
 import { useState } from "react";
-import { Card } from "../components/ui/Card";
-import { Button } from "../components/ui/Button";
-import { Input } from "../components/ui/Input";
-import { Textarea } from "../components/ui/Textarea";
-import { useAuth } from "../context/AuthContext";
-import { useToast } from "../context/ToastContext";
+import { Card } from "@components/ui/Card";
+import { Button } from "@components/ui/Button";
+import { Input } from "@components/ui/Input";
+import { Textarea } from "@components/ui/Textarea";
+import { useAuth } from "@shared/providers/AuthContext";
+import { useToast } from "@shared/providers/ToastContext";
 import { Check, X, Phone, ArrowRight } from "lucide-react";
-import { cn } from "../utils/cn";
+import { cn } from "@shared/utils/cn";
 import { AnimatePresence, motion } from "framer-motion";
 
 const PLANS = [

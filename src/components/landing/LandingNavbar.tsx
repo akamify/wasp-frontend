@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { BRAND_NAME } from "../../config/brand";
-import { useAuth } from "../../context/AuthContext";
+import { BRAND_NAME } from "@shared/config/brand";
+import { useAuth } from "@shared/providers/AuthContext";
 
 const navLinks = [
   { label: "Features", href: "#features" },

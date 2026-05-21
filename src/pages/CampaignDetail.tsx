@@ -17,20 +17,20 @@ import {
   ChevronRight,
 } from "lucide-react";
 
-import { API } from "../api/api";
-import { Alert } from "../components/ui/Alert";
-import { Badge } from "../components/ui/Badge";
-import { Button } from "../components/ui/Button";
-import { Card } from "../components/ui/Card";
-import { CampaignDetailSkeleton } from "../components/ui/Skeletons";
-import { TemplatePreview } from "./templates/TemplatePreview";
-import { parseComponentsForPreview } from "./templates/helpers";
-import { useToast } from "../context/ToastContext";
+import { API } from "@api/api";
+import { Alert } from "@components/ui/Alert";
+import { Badge } from "@components/ui/Badge";
+import { Button } from "@components/ui/Button";
+import { Card } from "@components/ui/Card";
+import { CampaignDetailSkeleton } from "@components/ui/Skeletons";
+import { TemplatePreview } from "@pages/templates/TemplatePreview";
+import { parseComponentsForPreview } from "@pages/templates/helpers";
+import { useToast } from "@shared/providers/ToastContext";
 import { motion } from "framer-motion";
-import { cn } from "../utils/cn";
+import { cn } from "@shared/utils/cn";
 import React from "react";
-import CampaignCreateModal from "../components/campaigns/CampaignCreateModal";
-import type { TemplateRecord } from "../utils/templateRuntime";
+import CampaignCreateModal from "@components/campaigns/CampaignCreateModal";
+import type { TemplateRecord } from "@shared/utils/templateRuntime";
 
 type Campaign = {
   _id: string;

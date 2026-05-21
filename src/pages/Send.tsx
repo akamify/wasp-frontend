@@ -1,14 +1,14 @@
 import { useEffect, useMemo, useState, useRef } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { Plus, RefreshCcw, Search, Upload, Trash2, Send } from "lucide-react";
-import { API } from "../api/api";
-import { Card } from "../components/ui/Card";
-import { Button } from "../components/ui/Button";
-import { Badge } from "../components/ui/Badge";
-import { useToast } from "../context/ToastContext";
-import { CampaignsListSkeleton } from "../components/ui/Skeletons";
-import CampaignCreateModal from "../components/campaigns/CampaignCreateModal";
-import type { TemplateRecord } from "../utils/templateRuntime";
+import { API } from "@api/api";
+import { Card } from "@components/ui/Card";
+import { Button } from "@components/ui/Button";
+import { Badge } from "@components/ui/Badge";
+import { useToast } from "@shared/providers/ToastContext";
+import { CampaignsListSkeleton } from "@components/ui/Skeletons";
+import CampaignCreateModal from "@components/campaigns/CampaignCreateModal";
+import type { TemplateRecord } from "@shared/utils/templateRuntime";
 
 type Contact = { _id: string; name?: string; phone: string; company?: string };
 

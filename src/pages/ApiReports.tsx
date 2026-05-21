@@ -1,10 +1,10 @@
 import { useEffect, useMemo, useState } from "react";
-import { API } from "../api/api";
-import { Card } from "../components/ui/Card";
-import { Input } from "../components/ui/Input";
-import { Button } from "../components/ui/Button";
-import { Select } from "../components/ui/Select";
-import { useToast } from "../context/ToastContext";
+import { API } from "@api/api";
+import { Card } from "@components/ui/Card";
+import { Input } from "@components/ui/Input";
+import { Button } from "@components/ui/Button";
+import { Select } from "@components/ui/Select";
+import { useToast } from "@shared/providers/ToastContext";
 import { AnimatePresence, motion } from "framer-motion";
 import { Search, ArrowUp, ArrowDown, X, AlertCircle, Check, Clock3, CheckCheck } from "lucide-react";
 

@@ -1,13 +1,13 @@
 import { useCallback, useEffect, useMemo, useState, useRef } from "react";
 import { useSearchParams } from "react-router-dom";
-import { API } from "../api/api";
-import { Button } from "../components/ui/Button";
-import { useToast } from "../context/ToastContext";
-import { TemplateForm } from "./templates/TemplateForm";
-import { TemplatePreview } from "./templates/TemplatePreview";
-import { TemplatesList } from "./templates/TemplatesList";
-import { parseComponentsForPreview, truncateTemplateName } from "./templates/helpers";
-import type { TemplateItem } from "./templates/types";
+import { API } from "@api/api";
+import { Button } from "@components/ui/Button";
+import { useToast } from "@shared/providers/ToastContext";
+import { TemplateForm } from "@pages/templates/TemplateForm";
+import { TemplatePreview } from "@pages/templates/TemplatePreview";
+import { TemplatesList } from "@pages/templates/TemplatesList";
+import { parseComponentsForPreview, truncateTemplateName } from "@pages/templates/helpers";
+import type { TemplateItem } from "@pages/templates/types";
 import { Pencil, X, } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
