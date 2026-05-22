@@ -65,6 +65,13 @@ export const API: {
     notifications(params?: any): Promise<any>;
     subscriptionPlans(): Promise<any>;
     subscriptionsData(params?: any): Promise<any>;
+    subscriptionWorkspaceOverview(workspaceId: string): Promise<any>;
+    subscriptionWorkspaceHistory(workspaceId: string, params?: any): Promise<any>;
+    subscriptionWorkspacePaymentLinks(workspaceId: string, params?: any): Promise<any>;
+    assignWorkspacePlan(workspaceId: string, payload: any): Promise<any>;
+    disableActiveWorkspacePlan(workspaceId: string): Promise<any>;
+    createWorkspacePaymentLink(workspaceId: string, payload: any): Promise<any>;
+    cancelWorkspacePaymentLink(id: string): Promise<any>;
     transactionsLogs(params?: any): Promise<any>;
     messageLogs(params?: any): Promise<any>;
     paymentGateway(params?: any): Promise<any>;
@@ -135,6 +142,18 @@ export const API: {
     platformAddonsByCategory(category: string): Promise<any>;
     updatePlatformAddon(key: string, payload: any): Promise<any>;
     bulkUpdatePlatformAddons(payload: any): Promise<any>;
+    billingPlans(params?: any): Promise<any>;
+    billingPlanGet(id: string): Promise<any>;
+    billingPlanCreate(payload: any): Promise<any>;
+    billingPlanUpdate(id: string, payload: any): Promise<any>;
+    billingPlanReview(id: string, payload?: any): Promise<any>;
+    billingPlanPublish(id: string, payload?: any): Promise<any>;
+    billingPlanDisable(id: string): Promise<any>;
+    billingPlanArchive(id: string): Promise<any>;
+    billingPlanDelete(id: string): Promise<any>;
+    billingSettingsGet(): Promise<any>;
+    billingSettingsUpdate(payload: any): Promise<any>;
+    billingPricePreview(payload: any): Promise<any>;
   };
   crm: {
     workspace(): Promise<any>;
@@ -220,6 +239,11 @@ export const API: {
       qrPngUrl(id: string): string;
     };
   };
+  billing: {
+    plans(): Promise<any>;
+    current(): Promise<any>;
+    history(params?: any): Promise<any>;
+  };
   wallet: {
     get(): Promise<any>;
     createRechargeOrder(payload: any): Promise<any>;
@@ -258,6 +282,7 @@ export const API: {
     create(payload: any): Promise<any>;
     update(id: string, payload: any): Promise<any>;
     remove(id: string): Promise<any>;
+    exportCsv(contactIds: string[]): Promise<any>;
   };
   automation: {
     triggerEvent(payload: any): Promise<any>;

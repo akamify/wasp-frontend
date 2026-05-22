@@ -245,6 +245,20 @@ export const API = {
     notifications: (params) => api.get("/admin/notifications", { params }).then(unwrap),
     subscriptionPlans: () => api.get("/admin/subscription-plans").then(unwrap),
     subscriptionsData: (params) => api.get("/admin/subscriptions-data", { params }).then(unwrap),
+    subscriptionWorkspaceOverview: (workspaceId) =>
+      api.get(`/admin/subscriptions-data/${encodeURIComponent(workspaceId)}/overview`).then(unwrap),
+    subscriptionWorkspaceHistory: (workspaceId, params) =>
+      api.get(`/admin/subscriptions-data/${encodeURIComponent(workspaceId)}/history`, { params }).then(unwrap),
+    subscriptionWorkspacePaymentLinks: (workspaceId, params) =>
+      api.get(`/admin/subscriptions-data/${encodeURIComponent(workspaceId)}/payment-links`, { params }).then(unwrap),
+    assignWorkspacePlan: (workspaceId, payload) =>
+      api.post(`/admin/subscriptions-data/${encodeURIComponent(workspaceId)}/assign-plan`, payload || {}).then(unwrap),
+    disableActiveWorkspacePlan: (workspaceId) =>
+      api.post(`/admin/subscriptions-data/${encodeURIComponent(workspaceId)}/disable-active-plan`, {}).then(unwrap),
+    createWorkspacePaymentLink: (workspaceId, payload) =>
+      api.post(`/admin/subscriptions-data/${encodeURIComponent(workspaceId)}/payment-links`, payload || {}).then(unwrap),
+    cancelWorkspacePaymentLink: (id) =>
+      api.patch(`/admin/subscriptions-data/payment-links/${encodeURIComponent(id)}/cancel`, {}).then(unwrap),
     transactionsLogs: (params) => api.get("/admin/transactions-logs", { params }).then(unwrap),
     messageLogs: (params) => api.get("/admin/message-logs", { params }).then(unwrap),
     paymentGateway: (params) => api.get("/admin/payment-gateway", { params }).then(unwrap),
@@ -366,6 +380,16 @@ export const API = {
     platformAddonsByCategory: (category) => api.get(`/super-admin/platform-addons/${encodeURIComponent(category)}`).then(unwrap),
     updatePlatformAddon: (key, payload) => api.put(`/super-admin/platform-addons/${encodeURIComponent(key)}`, payload || {}).then(unwrap),
     bulkUpdatePlatformAddons: (payload) => api.post("/super-admin/platform-addons/bulk", payload || {}).then(unwrap),
+    billingPlans: (params) => api.get("/admin/billing/plans", { params }).then(unwrap),
+    billingPlanGet: (id) => api.get(`/admin/billing/plans/${encodeURIComponent(id)}`).then(unwrap),
+    billingPlanCreate: (payload) => api.post("/admin/billing/plans", payload || {}).then(unwrap),
+    billingPlanUpdate: (id, payload) => api.put(`/admin/billing/plans/${encodeURIComponent(id)}`, payload || {}).then(unwrap),
+    billingPlanReview: (id, payload) => api.post(`/admin/billing/plans/${encodeURIComponent(id)}/review`, payload || {}).then(unwrap),
+    billingPlanPublish: (id, payload) => api.post(`/admin/billing/plans/${encodeURIComponent(id)}/publish`, payload || {}).then(unwrap),
+    billingPlanDisable: (id) => api.patch(`/admin/billing/plans/${encodeURIComponent(id)}/disable`, {}).then(unwrap),
+    billingSettingsGet: () => api.get("/admin/billing/settings").then(unwrap),
+    billingSettingsUpdate: (payload) => api.put("/admin/billing/settings", payload || {}).then(unwrap),
+    billingPricePreview: (payload) => api.post("/admin/billing/plans/price-preview", payload || {}).then(unwrap),
   },
 
   crm: {
@@ -523,6 +547,12 @@ export const API = {
     },
   },
 
+  billing: {
+    plans: () => api.get("/billing/plans").then(unwrap),
+    current: () => api.get("/billing/current").then(unwrap),
+    history: (params) => api.get("/billing/history", { params }).then(unwrap),
+  },
+
   wallet: {
     get: () => api.get("/wallet").then(unwrap),
     createRechargeOrder: (payload) => api.post("/wallet/recharge/order", payload).then(unwrap),
@@ -565,6 +595,12 @@ export const API = {
     create: (payload) => api.post("/contacts", payload).then(unwrap),
     update: (id, payload) => api.put(`/contacts/${id}`, payload).then(unwrap),
     remove: (id) => api.delete(`/contacts/${id}`).then(unwrap),
+    exportCsv: (contactIds) =>
+      api.post(
+        "/contacts/export-csv",
+        { contactIds: Array.isArray(contactIds) ? contactIds : [] },
+        { responseType: "blob" }
+      ),
   },
 
   automation: {

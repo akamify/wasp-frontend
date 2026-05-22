@@ -1,6 +1,6 @@
 import { useEffect, useState, useRef } from "react";
 import { createPortal } from "react-dom";
-import { Link } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { API } from "@api/api";
 import { Card } from "@components/ui/Card";
 import { Input } from "@components/ui/Input";
@@ -8,7 +8,7 @@ import { Textarea } from "@components/ui/Textarea";
 import { Button } from "@components/ui/Button";
 import { Alert } from "@components/ui/Alert";
 import { ContactsListSkeleton } from "@components/ui/Skeletons";
-import { RefreshCcw, Plus, Search, Trash2, Pencil, User, X } from "lucide-react";
+import { RefreshCcw, Plus, Search, Trash2, Pencil, User, X, Download } from "lucide-react";
 import { cn } from "@shared/utils/cn";
 import { Badge } from "@components/ui/Badge";
 import { useToast } from "@shared/providers/ToastContext";
@@ -67,6 +67,7 @@ const EMPTY_FORM = {
 };
 
 export default function ContactsPage() {
+  const navigate = useNavigate();
   const [contacts, setContacts] = useState<Contact[]>([]);
   const [loading, setLoading] = useState(true);
   const [syncing, setSyncing] = useState(false);
@@ -185,6 +186,32 @@ export default function ContactsPage() {
       toast(`${selectedIds.length} contacts deleted.`, "success");
     } catch (e: any) {
       toast("Bulk delete failed", "error");
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  async function exportSelectedCsv() {
+    const selectedIds = Object.keys(multiSelected).filter((id) => multiSelected[id]);
+    if (!selectedIds.length) {
+      toast("Select contacts to export.", "error");
+      return;
+    }
+    setSaving(true);
+    try {
+      const response = await API.contacts.exportCsv(selectedIds);
+      const blob = response?.data instanceof Blob ? response.data : new Blob([response?.data || ""], { type: "text/csv;charset=utf-8" });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = `contacts-export-${Date.now()}.csv`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+      toast(`Exported ${selectedIds.length} contacts.`, "success");
+    } catch (e: any) {
+      toast(e?.response?.data?.message || "Contacts export failed", "error");
     } finally {
       setSaving(false);
     }
@@ -314,6 +341,9 @@ export default function ContactsPage() {
               {selectedCount} contacts selected
             </div>
             <div className="flex items-center gap-2">
+              <Button size="sm" variant="ghost" onClick={exportSelectedCsv} disabled={saving} className="h-8 gap-1.5">
+                <Download size={14} /> Export CSV
+              </Button>
               <Button size="sm" variant="danger" onClick={bulkDelete} disabled={saving} className="h-8 gap-1.5">
                 <Trash2 size={14} /> Delete Selected
               </Button>
@@ -354,11 +384,16 @@ export default function ContactsPage() {
                 </tr>
               ) : processedContacts.length ? (
                 processedContacts.map((contact) => (
-                  <tr key={contact._id} className="group hover:bg-slate-50/50 transition-colors">
+                  <tr
+                    key={contact._id}
+                    className="group hover:bg-slate-50/50 transition-colors cursor-pointer"
+                    onClick={() => navigate(`/app/conversations/${encodeURIComponent(contact.phone)}`)}
+                  >
                     <td className="px-6 py-4">
                       <input
                         type="checkbox"
                         checked={!!multiSelected[contact._id]}
+                        onClick={(e) => e.stopPropagation()}
                         onChange={() => setMultiSelected(p => ({ ...p, [contact._id]: !p[contact._id] }))}
                         className="rounded-[3px] border-ink-900/20"
                       />
@@ -399,7 +434,10 @@ export default function ContactsPage() {
                         <Button
                           variant="ghost"
                           size="sm"
-                          onClick={() => fillForm(contact)}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            fillForm(contact);
+                          }}
                           className="h-10 w-10 p-0 transition-opacity"
                         >
                           <Pencil size={14} />
@@ -407,17 +445,26 @@ export default function ContactsPage() {
                         <Button
                           variant="ghost"
                           size="sm"
-                          onClick={() => deleteContact(contact)}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            deleteContact(contact);
+                          }}
                           disabled={saving}
                           className="h-10 w-10 p-0 transition-opacity text-rose-600 hover:bg-rose-50 hover:text-rose-700"
                         >
                           <Trash2 size={14} />
                         </Button>
-                        <Link to={`/app/conversations/${encodeURIComponent(contact.phone)}`}>
-                          <Button size="sm" variant="ghost" className="h-10 gap-1.5 font-bold text-brand-600 hover:text-brand-700 hover:bg-brand-50">
-                            Chat
-                          </Button>
-                        </Link>
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          className="h-10 gap-1.5 font-bold text-brand-600 hover:text-brand-700 hover:bg-brand-50"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            navigate(`/app/conversations/${encodeURIComponent(contact.phone)}`);
+                          }}
+                        >
+                          Chat
+                        </Button>
                       </div>
                     </td>
                   </tr>

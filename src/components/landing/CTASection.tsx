@@ -2,43 +2,30 @@ import { useRef } from "react";
 import { motion, useInView } from "framer-motion";
 
 import { BRAND_NAME } from "@shared/config/brand";
-import { getPlanDisplayPrice, PLAN_PER } from "@shared/config/pricing";
+import { usePlans } from "@modules/billing/hooks/usePlans";
 
-const plans = [
-  {
-    name: "Starter",
-    price: getPlanDisplayPrice("Starter"),
-    per: PLAN_PER,
-    desc: "Perfect for small businesses getting started with WhatsApp marketing.",
-    features: ["5,000 messages/month", "2 WhatsApp numbers", "Basic automation", "Email support"],
-    cta: "Start Free Trial",
-    featured: false,
-  },
-  {
-    name: "Growth",
-    price: getPlanDisplayPrice("Growth"),
-    per: PLAN_PER,
-    desc: "For growing teams who want to scale campaigns and automate more.",
-    features: ["50,000 messages/month", "10 WhatsApp numbers", "Advanced automation", "Smart link tracking", "Priority support", "Team inbox"],
-    cta: "Get Started",
-    featured: true,
-  },
-  {
-    name: "Enterprise",
-    price: getPlanDisplayPrice("Enterprise"),
-    per: "",
-    desc: "Unlimited scale, dedicated support, and custom integrations for large teams.",
-    features: ["Unlimited messages", "Unlimited numbers", "Custom bot flows", "API access", "Dedicated account manager", "SLA guarantee"],
-    cta: "Contact Sales",
-    featured: false,
-  },
-];
+function formatPlanPrice(plan: any) {
+  const paise = plan?.pricing?.discountedPricePaise;
+  if (paise == null) return "Custom";
+  return `?${Math.round(Number(paise) / 100).toLocaleString("en-IN")}`;
+}
 
 const logos = ["Shopify", "HubSpot", "Zapier", "Salesforce", "Stripe", "Notion"];
 
 export function CTASection() {
+  const { items } = usePlans();
   const ref = useRef<HTMLDivElement>(null);
   const inView = useInView(ref, { once: true, margin: "-80px" });
+  const plans = (Array.isArray(items) ? items : []).slice(0, 3).map((plan: any) => ({
+    name: plan.name,
+    price: formatPlanPrice(plan),
+    per: plan.planType === "custom" ? "" : "/month",
+    desc: plan.description || "",
+    features: Array.isArray(plan.displayFeatures) ? plan.displayFeatures.slice(0, 6) : [],
+    cta: plan?.buttonText || "Buy Now",
+    badgeText: String(plan?.badgeText || ""),
+    featured: Boolean(plan?.recommended),
+  }));
 
   return (
     <section
@@ -49,7 +36,6 @@ export function CTASection() {
       <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[800px] h-[400px] rounded-full bg-[#25D366]/8 blur-3xl pointer-events-none" />
 
       <div className="max-w-7xl mx-auto px-6 lg:px-8">
-        {/* Section header */}
         <motion.div
           ref={ref}
           initial={{ opacity: 0, y: 30 }}
@@ -57,9 +43,6 @@ export function CTASection() {
           transition={{ duration: 0.7 }}
           className="text-center mb-16"
         >
-          {/* <span className="inline-block text-xs font-bold tracking-widest uppercase text-[#f59e0b] bg-[#f59e0b]/10 border border-[#f59e0b]/20 rounded-full px-4 py-1.5 mb-4">
-            Pricing
-          </span> */}
           <h2 className="text-4xl lg:text-5xl font-extrabold text-ink-900 mb-4">
             Simple pricing,{" "}
             <span className="bg-gradient-to-r from-[#25D366] to-[#f59e0b] bg-clip-text text-transparent">
@@ -71,7 +54,6 @@ export function CTASection() {
           </p>
         </motion.div>
 
-        {/* Pricing cards */}
         <div className="grid md:grid-cols-3 gap-6 mb-24">
           {plans.map((plan, i) => (
             <motion.div
@@ -87,7 +69,7 @@ export function CTASection() {
             >
               {plan.featured && (
                 <div className="absolute -top-4 left-1/2 -translate-x-1/2 bg-gradient-to-r from-[#25D366] to-[#06b77e] text-white text-xs font-bold px-5 py-1.5 rounded-full">
-                  Most Popular
+                  {plan.badgeText || "Recommended"}
                 </div>
               )}
               <div>
@@ -99,7 +81,7 @@ export function CTASection() {
                 <p className="text-sm text-ink-900/65 mt-2 leading-relaxed">{plan.desc}</p>
               </div>
               <ul className="flex flex-col gap-3">
-                {plan.features.map((f) => (
+                {plan.features.map((f: string) => (
                   <li key={f} className="flex items-center gap-2.5 text-sm text-ink-900/72">
                     <svg className="w-4 h-4 text-[#25D366] shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
@@ -120,8 +102,10 @@ export function CTASection() {
             </motion.div>
           ))}
         </div>
+        <p className="text-xs text-center font-semibold text-ink-900/60 -mt-16 mb-16">
+          WhatsApp/message charges are billed separately from wallet balance where applicable.
+        </p>
 
-        {/* Trusted by logos */}
         <motion.div
           initial={{ opacity: 0 }}
           animate={inView ? { opacity: 1 } : {}}
@@ -138,7 +122,6 @@ export function CTASection() {
           </div>
         </motion.div>
 
-        {/* Final CTA banner */}
         <motion.div
           initial={{ opacity: 0, y: 40 }}
           animate={inView ? { opacity: 1, y: 0 } : {}}
@@ -157,7 +140,7 @@ export function CTASection() {
             <div className="flex flex-wrap justify-center gap-4">
               <a href="/register"
                 className="bg-white text-[#059267] font-extrabold px-8 py-4 rounded-2xl hover:scale-105 hover:shadow-2xl transition-all duration-200">
-                Start Free — No Credit Card
+                Start Free - No Credit Card
               </a>
               <a href="/login"
                 className="border-2 border-white/40 text-white font-bold px-8 py-4 rounded-2xl hover:bg-white/10 transition-all duration-200">

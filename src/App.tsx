@@ -41,6 +41,7 @@ import AutomationPage from "@pages/Automation";
 import SettingsPage from "@pages/Settings";
 import ProfilePage from "@pages/Profile";
 import PlanPage from "@pages/Plan";
+import PlanHistoryPage from "@pages/PlanHistory";
 import ApiKeysPage from "@pages/ApiKeys";
 import ApiReportsPage from "@pages/ApiReports";
 import ActivityPage from "@pages/Activity";
@@ -289,6 +290,14 @@ export default function App() {
               }
             />
             <Route
+              path="/app/plan/history"
+              element={
+                <AppShell>
+                  <PlanHistoryPage />
+                </AppShell>
+              }
+            />
+            <Route
               path="/app/api-keys"
               element={
                 <AppShell>
@@ -422,15 +431,15 @@ export default function App() {
               }
             />
             <Route
-              path="/admin/subscription-plans"
+              path="/admin/subscriptions-data"
               element={
                 <AdminShell>
-                  <AdminSubscriptionPlansPage />
+                  <AdminSubscriptionsDataPage />
                 </AdminShell>
               }
             />
             <Route
-              path="/admin/subscriptions-data"
+              path="/admin/subscriptions-data/:workspaceId"
               element={
                 <AdminShell>
                   <AdminSubscriptionsDataPage />
@@ -650,7 +659,47 @@ export default function App() {
               }
             />
             <Route
+              path="/super-admin/subscription-plans/create"
+              element={
+                <SuperAdminShell>
+                  <AdminSubscriptionPlansPage />
+                </SuperAdminShell>
+              }
+            />
+            <Route
+              path="/super-admin/subscription-plans/:id"
+              element={
+                <SuperAdminShell>
+                  <AdminSubscriptionPlansPage />
+                </SuperAdminShell>
+              }
+            />
+            <Route
+              path="/super-admin/subscription-plans/:id/edit"
+              element={
+                <SuperAdminShell>
+                  <AdminSubscriptionPlansPage />
+                </SuperAdminShell>
+              }
+            />
+            <Route
+              path="/super-admin/subscription-plans/:id/review"
+              element={
+                <SuperAdminShell>
+                  <AdminSubscriptionPlansPage />
+                </SuperAdminShell>
+              }
+            />
+            <Route
               path="/super-admin/subscriptions-data"
+              element={
+                <SuperAdminShell>
+                  <AdminSubscriptionsDataPage />
+                </SuperAdminShell>
+              }
+            />
+            <Route
+              path="/super-admin/subscriptions-data/:workspaceId"
               element={
                 <SuperAdminShell>
                   <AdminSubscriptionsDataPage />

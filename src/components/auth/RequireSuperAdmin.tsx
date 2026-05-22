@@ -3,7 +3,7 @@ import { useAuth } from "../../context/AuthContext";
 import { SessionSkeleton } from "../ui/Skeletons";
 import { normalizeRole } from "../../shared/utils/authRole";
 
-export function RequireAdmin() {
+export function RequireSuperAdmin() {
   const { token, user, loading } = useAuth();
   const location = useLocation();
 
@@ -15,13 +15,7 @@ export function RequireAdmin() {
     return <Navigate to="/admin/login" replace state={{ from: location.pathname }} />;
   }
 
-  const role = normalizeRole(user?.role);
-
-  if (role === "super_admin") {
-    return <Navigate to="/super-admin" replace />;
-  }
-
-  if (role !== "admin") {
+  if (normalizeRole(user?.role) !== "super_admin") {
     return <Navigate to="/app" replace />;
   }
 

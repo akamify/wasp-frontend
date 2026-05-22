@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Card } from "@components/ui/Card";
 import { Button } from "@components/ui/Button";
 import { Input } from "@components/ui/Input";
@@ -8,63 +8,9 @@ import { useToast } from "@shared/providers/ToastContext";
 import { Check, X, Phone, ArrowRight } from "lucide-react";
 import { cn } from "@shared/utils/cn";
 import { AnimatePresence, motion } from "framer-motion";
-
-const PLANS = [
-    {
-        name: "Starter",
-        price: "$0",
-        period: "/month",
-        description: "Perfect for getting started",
-        features: [
-            "Up to 100 contacts",
-            "Basic templates",
-            "1,000 messages/month",
-            "Email support",
-            "1 user",
-        ],
-        notIncluded: ["API access", "Automation flows", "Priority support", "Custom integration"],
-        cta: "Free Plan",
-        recommended: false,
-        isCurrentPlan: true,
-    },
-    {
-        name: "Professional",
-        price: "$99",
-        period: "/month",
-        description: "For growing businesses",
-        features: [
-            "Unlimited contacts",
-            "Advanced templates",
-            "100,000 messages/month",
-            "Phone & email support",
-            "Up to 5 users",
-            "API access",
-            "Automation flows",
-        ],
-        notIncluded: ["Priority support", "Custom integration"],
-        cta: "Upgrade Now",
-        recommended: true,
-        isCurrentPlan: false,
-    },
-    {
-        name: "Enterprise",
-        price: "Custom",
-        period: "",
-        description: "For large organizations",
-        features: [
-            "Unlimited everything",
-            "Priority phone support",
-            "Unlimited users",
-            "Custom API limits",
-            "White-label option",
-            "Dedicated account manager",
-        ],
-        notIncluded: [],
-        cta: "Contact Sales",
-        recommended: false,
-        isCurrentPlan: false,
-    },
-];
+import { usePlans } from "@modules/billing/hooks/usePlans";
+import { API } from "@api/api";
+import { useNavigate } from "react-router-dom";
 
 function SalesContactModal({
     open,
@@ -224,13 +170,50 @@ function SalesContactModal({
 export default function PlanPage() {
     const { workspace } = useAuth();
     const { toast } = useToast();
+    const navigate = useNavigate();
+    const { items: livePlans, loading, error } = usePlans();
     const [selectedPlan, setSelectedPlan] = useState<string | null>(null);
     const [paymentProcessing, setPaymentProcessing] = useState(false);
+    const [currentModalOpen, setCurrentModalOpen] = useState(false);
+    const [currentDetails, setCurrentDetails] = useState<any>(null);
 
-    const currentPlan = PLANS.find((p) => p.isCurrentPlan);
+    const plans = (Array.isArray(livePlans) ? livePlans : []).map((p: any) => ({
+            id: String(p?.id || p?.slug || p?.name || ""),
+            name: p?.name || "Plan",
+            price: p?.pricing?.discountedPricePaise == null ? "Custom" : `₹${Math.round(Number(p.pricing.discountedPricePaise) / 100).toLocaleString("en-IN")}`,
+            period: p?.planType === "custom" ? "" : "/month",
+            description: p?.description || "",
+            features: Array.isArray(p?.displayFeatures) ? p.displayFeatures : [],
+            notIncluded: Array.isArray(p?.unavailableFeatures) ? p.unavailableFeatures : [],
+            cta: p?.buttonText || (p?.planType === "custom" ? "Contact Sales" : "Buy Now"),
+            planType: p?.planType || "basic",
+            recommended: Boolean(p?.recommended),
+            isCurrentPlan: String((workspace?.plan || "").toLowerCase()) === String((p?.slug || "").toLowerCase()),
+          }));
+
+    const currentPlan = plans.find((p) => p.isCurrentPlan);
+
+    useEffect(() => {
+        let mounted = true;
+        API.billing.current()
+            .then((res: any) => {
+                if (!mounted) return;
+                setCurrentDetails(res || null);
+            })
+            .catch(() => {});
+        return () => {
+            mounted = false;
+        };
+    }, []);
 
     async function handlePlanAction(planName: string) {
-        if (planName === "Professional") {
+        const selected = plans.find((plan) => plan.name === planName);
+        if (selected?.planType === "custom") {
+            setSelectedPlan(planName);
+            return;
+        }
+
+        if (planName) {
             // Direct payment for Professional plan
             setPaymentProcessing(true);
             try {
@@ -244,10 +227,17 @@ export default function PlanPage() {
             } finally {
                 setPaymentProcessing(false);
             }
-        } else if (planName === "Enterprise") {
-            // Show sales contact form for Enterprise
-            setSelectedPlan(planName);
-        }
+        } 
+    }
+
+    function getUsageCards() {
+        const usage = currentDetails?.usage || {};
+        return [
+            { key: "contacts", label: "Contacts", data: usage.contacts },
+            { key: "templates", label: "Templates", data: usage.templates },
+            { key: "employees", label: "Employees", data: usage.employees },
+            { key: "campaigns", label: "Campaigns", data: usage.campaigns },
+        ];
     }
 
     return (
@@ -257,16 +247,25 @@ export default function PlanPage() {
                 <p className="mt-2 text-sm font-semibold text-ink-800/60 uppercase tracking-widest">
                     Choose the perfect plan for your business
                 </p>
-                <p className="mt-4 text-sm font-semibold text-ink-800">
-                    Current Plan: <span className="text-brand-600 font-black">{currentPlan?.name} ({workspace?.plan || "Free"})</span>
-                </p>
+                <div className="mt-4 flex flex-wrap items-center gap-3">
+                    <p className="text-sm font-semibold text-ink-800">
+                        Current Plan: <span className="text-brand-600 font-black">{currentPlan?.name} ({workspace?.plan || "Free"})</span>
+                    </p>
+                    <Button variant="ghost" onClick={() => navigate("/app/plan/history")}>History</Button>
+                </div>
             </div>
+
+            {loading ? <Card className="p-6 border-slate-200 text-sm font-semibold text-slate-500">Loading plans...</Card> : null}
+            {!loading && error ? <Card className="p-6 border-rose-200 bg-rose-50 text-sm font-semibold text-rose-700">{error}</Card> : null}
+            {!loading && !error && plans.length === 0 ? (
+                <Card className="p-6 border-slate-200 text-sm font-semibold text-slate-500">No plans are published yet. Please check back soon.</Card>
+            ) : null}
 
             {/* Pricing Cards */}
             <div className="grid gap-6 md:grid-cols-3">
-                {PLANS.map((plan) => (
+                {plans.map((plan) => (
                     <motion.div
-                        key={plan.name}
+                        key={plan.id || plan.name}
                         layout
                         className={cn(
                             "relative overflow-hidden rounded-[5px] border transition-all",
@@ -298,18 +297,18 @@ export default function PlanPage() {
                             )}
 
                             <Button
-                                onClick={() => handlePlanAction(plan.name)}
-                                className={cn("w-full mt-6 gap-2", !plan.isCurrentPlan && plan.name !== "Starter" && "bg-brand-600 hover:bg-brand-700")}
+                                onClick={() => (plan.isCurrentPlan ? setCurrentModalOpen(true) : handlePlanAction(plan.name))}
+                                className={cn("w-full mt-6 gap-2", !plan.isCurrentPlan && plan.planType !== "basic" && "bg-brand-600 hover:bg-brand-700")}
                                 variant={plan.isCurrentPlan ? "outline" : "primary"}
-                                disabled={plan.isCurrentPlan || (plan.name === "Professional" && paymentProcessing)}
+                                disabled={!plan.isCurrentPlan && plan.planType !== "custom" && paymentProcessing}
                             >
-                                {plan.name === "Enterprise" ? (
+                                {plan.isCurrentPlan ? (
+                                    "View Now"
+                                ) : plan.planType === "custom" ? (
                                     <>
                                         <Phone size={16} /> {plan.cta}
                                     </>
-                                ) : plan.isCurrentPlan ? (
-                                    "Your Current Plan"
-                                ) : plan.name === "Professional" && paymentProcessing ? (
+                                ) : paymentProcessing ? (
                                     "Processing..."
                                 ) : (
                                     <>
@@ -320,7 +319,7 @@ export default function PlanPage() {
 
                             <div className="mt-6 space-y-3 border-t border-slate-200 pt-6">
                                 <p className="text-xs font-black uppercase tracking-wider text-slate-500">Includes:</p>
-                                {plan.features.map((feature, i) => (
+                                {plan.features.map((feature: string, i: number) => (
                                     <div key={i} className="flex items-start gap-2">
                                         <Check size={16} className="mt-0.5 shrink-0 text-emerald-600" />
                                         <span className="text-sm font-semibold text-slate-700">{feature}</span>
@@ -330,7 +329,7 @@ export default function PlanPage() {
                                 {plan.notIncluded.length > 0 && (
                                     <>
                                         <p className="pt-3 text-xs font-black uppercase tracking-wider text-slate-400">Not included:</p>
-                                        {plan.notIncluded.map((feature, i) => (
+                                        {plan.notIncluded.map((feature: string, i: number) => (
                                             <div key={i} className="flex items-start gap-2 opacity-50">
                                                 <X size={16} className="mt-0.5 shrink-0 text-slate-400" />
                                                 <span className="text-sm font-semibold text-slate-500">{feature}</span>
@@ -368,9 +367,82 @@ export default function PlanPage() {
                     </Card>
                 </div>
             </div>
+            <Card className="p-4 border-slate-200 bg-slate-50 text-xs font-semibold text-slate-600">
+                WhatsApp/message charges are billed separately from wallet balance where applicable.
+            </Card>
 
             {/* Sales Contact Modal - Only for Enterprise */}
-            <SalesContactModal open={selectedPlan === "Enterprise"} onClose={() => setSelectedPlan(null)} planName={selectedPlan || ""} />
+            <SalesContactModal open={selectedPlan !== null} onClose={() => setSelectedPlan(null)} planName={selectedPlan || ""} />
+
+            <AnimatePresence>
+                {currentModalOpen ? (
+                    <motion.div
+                        className="fixed inset-0 z-[999] flex items-center justify-center overflow-y-auto bg-slate-900/40 p-4 backdrop-blur-sm"
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        onClick={() => setCurrentModalOpen(false)}
+                    >
+                        <motion.div
+                            className="relative w-full max-w-5xl overflow-hidden rounded-[5px] border border-slate-100 bg-white shadow-2xl"
+                            initial={{ y: 20, opacity: 0, scale: 0.95 }}
+                            animate={{ y: 0, opacity: 1, scale: 1 }}
+                            exit={{ y: 20, opacity: 0, scale: 0.95 }}
+                            onClick={(e) => e.stopPropagation()}
+                        >
+                            <div className="flex items-center justify-between border-b border-slate-100 px-6 py-4 bg-slate-50">
+                                <div>
+                                    <div className="text-[10px] font-black uppercase tracking-widest text-brand-600">Current Plan</div>
+                                    <h2 className="mt-1 text-lg font-black text-slate-900">{currentDetails?.subscription?.planName || currentPlan?.name || "Active Plan"}</h2>
+                                </div>
+                                <button onClick={() => setCurrentModalOpen(false)} className="p-2 text-slate-400 hover:bg-slate-100 rounded-[5px] transition-colors">
+                                    <X size={20} />
+                                </button>
+                            </div>
+                            <div className="p-6 space-y-4">
+                                <div className="grid gap-4 md:grid-cols-4">
+                                    {getUsageCards().map((card: any) => (
+                                        <div key={card.key} className="rounded-[5px] border border-slate-200 p-3">
+                                            <div className="text-xs font-black uppercase tracking-wider text-slate-500">{card.label}</div>
+                                            <div className="mt-2 text-xl font-black text-slate-900">
+                                                {Number(card?.data?.used || 0)}{card?.data?.limit == null ? " / ∞" : ` / ${card.data.limit}`}
+                                            </div>
+                                            <div className="text-xs text-slate-600 mt-1">
+                                                Remaining: {card?.data?.remaining == null ? "∞" : card.data.remaining}
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+
+                                <div className="grid gap-4 md:grid-cols-2">
+                                    <div className="rounded-[5px] border border-slate-200 p-4">
+                                        <div className="text-xs font-black uppercase tracking-wider text-slate-500">Validity</div>
+                                        <div className="mt-2 text-sm font-semibold text-slate-800">
+                                            Start: {currentDetails?.subscription?.currentPeriodStart ? new Date(currentDetails.subscription.currentPeriodStart).toLocaleString("en-IN", { timeZone: "Asia/Kolkata" }) : "-"}
+                                        </div>
+                                        <div className="mt-1 text-sm font-semibold text-slate-800">
+                                            End: {currentDetails?.subscription?.currentPeriodEnd ? new Date(currentDetails.subscription.currentPeriodEnd).toLocaleString("en-IN", { timeZone: "Asia/Kolkata" }) : "-"}
+                                        </div>
+                                        <div className="mt-1 text-sm font-semibold text-slate-800">
+                                            Status: {currentDetails?.subscription?.status || "-"}
+                                        </div>
+                                    </div>
+                                    <div className="rounded-[5px] border border-slate-200 p-4">
+                                        <div className="text-xs font-black uppercase tracking-wider text-slate-500">Enabled Features</div>
+                                        <div className="mt-2 space-y-1">
+                                            {Object.entries(currentDetails?.subscription?.features || {}).map(([k, v]: any) => (
+                                                <div key={k} className="text-sm font-semibold text-slate-700">
+                                                    {k}: <span className={v ? "text-emerald-700" : "text-slate-400"}>{v ? "Enabled" : "Disabled"}</span>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </motion.div>
+                    </motion.div>
+                ) : null}
+            </AnimatePresence>
         </div>
     );
 }

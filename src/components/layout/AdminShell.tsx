@@ -1,10 +1,9 @@
 import React, { useEffect, useState } from "react";
-import { NavLink, useLocation, useNavigate } from "react-router-dom";
+import { NavLink, useLocation } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   BarChart3,
   Bell,
-  Boxes,
   Briefcase,
   CreditCard,
   FileText,
@@ -17,8 +16,8 @@ import {
   Shield,
   Ticket,
   Users,
-  Wallet,
   User,
+  Wallet,
   X,
   LogOut,
   ChevronRight,
@@ -49,8 +48,7 @@ const NAV_ITEMS: AdminShellNavItem[] = [
   { to: "/admin/master-contacts", label: "Master Contacts", kicker: "segments", icon: ListChecks },
   { to: "/admin/analytics", label: "Analytics", kicker: "insights", icon: BarChart3 },
   { to: "/admin/notifications", label: "Notifications", kicker: "alerts", icon: Bell },
-  { to: "/admin/subscription-plans", label: "Subscription Plans", kicker: "pricing", icon: Boxes },
-  { to: "/admin/subscriptions-data", label: "Subscriptions Data", kicker: "users", icon: Wallet },
+  { to: "/admin/subscriptions-data", label: "Subscriptions Data", kicker: "plans", icon: Wallet },
   { to: "/admin/transactions-logs", label: "Transactions Logs", kicker: "payments", icon: CreditCard },
   { to: "/admin/message-logs", label: "Message Logs", kicker: "delivery", icon: MessageSquareText },
   { to: "/admin/pages", label: "Pages", kicker: "cms", icon: FileText },
@@ -110,7 +108,6 @@ export function AdminShell({
 }) {
   const { logout, user } = useAuth();
   const location = useLocation();
-  const navigate = useNavigate();
   const [runtimeBrandName, setRuntimeBrandName] = useState("");
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
   const [isCollapsed, setIsCollapsed] = useState(() => {
@@ -154,17 +151,6 @@ export function AdminShell({
     allowedPages.add("/admin/profile");
     return navItems.filter((item) => allowedPages.has(item.to));
   }, [navItems, user]);
-
-  useEffect(() => {
-    if (String(user?.role || "") !== "admin") return;
-    if (!location.pathname.startsWith("/admin")) return;
-    const allowed = new Set(visibleNavItems.map((x) => x.to));
-    const isAllowed = allowed.has(location.pathname);
-    const isChildAllowed = Array.from(allowed).some((path) => location.pathname.startsWith(`${path}/`));
-    if (isAllowed || isChildAllowed) return;
-    const fallback = allowed.has("/admin/dashboard") ? "/admin/dashboard" : "/admin/profile";
-    if (location.pathname !== fallback) navigate(fallback, { replace: true });
-  }, [user, visibleNavItems, location.pathname, navigate]);
 
   return (
     <div className="relative min-h-screen bg-[#F8FAFC] font-sans text-slate-900 antialiased overflow-x-hidden">

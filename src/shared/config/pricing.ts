@@ -1,26 +1,11 @@
-import { formatCurrency } from "@shared/config/currency";
+// Pricing is DB-driven via /billing/plans.
+// This module is kept only for compatibility with legacy imports.
+export const PLAN_AMOUNT_STARTER: null = null;
+export const PLAN_AMOUNT_GROWTH: null = null;
+export const PLAN_AMOUNT_ENTERPRISE: "custom" = "custom";
+export const PLAN_PER = "/month";
 
-export const PLAN_AMOUNT_STARTER = Number(import.meta.env.VITE_PLAN_STARTER_PRICE || 29);
-export const PLAN_AMOUNT_GROWTH = Number(import.meta.env.VITE_PLAN_GROWTH_PRICE || 99);
-const enterpriseEnv = import.meta.env.VITE_PLAN_ENTERPRISE_PRICE;
-export const PLAN_AMOUNT_ENTERPRISE: number | "custom" =
-    enterpriseEnv === undefined || enterpriseEnv === null || enterpriseEnv === ""
-        ? "custom"
-        : isNaN(Number(enterpriseEnv))
-            ? "custom"
-            : Number(enterpriseEnv);
-
-export const PLAN_PER = (import.meta.env.VITE_PLAN_PER as string) || "/mo";
-
-export function getPlanDisplayPrice(name: string) {
-    const map: Record<string, number | "custom"> = {
-        Starter: PLAN_AMOUNT_STARTER,
-        Growth: PLAN_AMOUNT_GROWTH,
-        Enterprise: PLAN_AMOUNT_ENTERPRISE,
-    };
-    const val = map[name];
-    if (val === undefined) return "—";
-    if (val === "custom") return "Custom";
-    if (Number(val) === 0) return "Free";
-    return formatCurrency(Number(val));
+export function getPlanDisplayPrice() {
+  return "Custom";
 }
+

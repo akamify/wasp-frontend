@@ -1,6 +1,7 @@
 import { Navigate, Outlet, useLocation } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
 import { SessionSkeleton } from "../ui/Skeletons";
+import { normalizeRole } from "../../shared/utils/authRole";
 
 export function RequireUser() {
   const { token, user, loading } = useAuth();
@@ -14,8 +15,14 @@ export function RequireUser() {
     return <Navigate to="/login" replace state={{ from: location.pathname }} />;
   }
 
-  if (user?.role === "admin") {
+  const role = normalizeRole(user?.role);
+
+  if (role === "admin") {
     return <Navigate to="/admin" replace />;
+  }
+
+  if (role === "super_admin") {
+    return <Navigate to="/super-admin" replace />;
   }
 
   return <Outlet />;
