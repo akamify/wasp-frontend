@@ -658,18 +658,24 @@ export default function DashboardPage() {
             })}
           </div>
         </div>
-        <div className="mt-6 px-1 md:px-2 text-[9px] md:text-[10px] font-bold text-slate-400 uppercase tracking-widest relative z-20 overflow-x-auto">
-          <div className="min-w-[720px] flex">
+        <div className="mt-6 px-1 md:px-2 text-[9px] md:text-[10px] font-bold text-slate-400 uppercase tracking-widest relative z-20 overflow-hidden">
+          <div
+            className="grid items-center"
+            style={{ gridTemplateColumns: `repeat(${Math.max(graphData.length, 1)}, minmax(0, 1fr))` }}
+          >
             {graphData.map((d, i) => (
-              <span key={i} className={cn(
-                "flex-1 text-center transition-opacity whitespace-nowrap px-1",
-                // reduce label clutter
-                chartFilter === "Today"
-                  ? (i % 3 !== 0 ? "opacity-0 md:opacity-100" : "opacity-100")
-                  : (chartFilter === "30 Days" || chartFilter === "Last 7 Days") && i % 2 !== 0
-                    ? "opacity-0 md:opacity-100"
-                    : "opacity-100"
-              )}>
+              <span
+                key={i}
+                className={cn(
+                  "text-center transition-opacity whitespace-nowrap px-0.5 truncate",
+                  // reduce label clutter without introducing horizontal scroll
+                  chartFilter === "Today"
+                    ? (i % 3 !== 0 ? "opacity-0 md:opacity-100" : "opacity-100")
+                    : (chartFilter === "30 Days" || chartFilter === "Last 7 Days") && i % 2 !== 0
+                      ? "opacity-0 md:opacity-100"
+                      : "opacity-100"
+                )}
+              >
                 {d.label}
               </span>
             ))}

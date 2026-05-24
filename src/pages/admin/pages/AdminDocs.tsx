@@ -50,79 +50,6 @@ const TOOLBAR = [
   { label: "Mermaid", title: "Mermaid Diagram" },
   { label: "Step", title: "Step Card" },
 ] as const;
-const CMS_PAGE_SLUGS = new Set(["about", "privacy-policy", "terms-of-service", "cookie-policy", "help-center", "careers"]);
-const NON_DOC_SYSTEM_SLUGS = new Set(["brand", "settings", "home", "dashboard", "profile"]);
-const KNOWN_DOC_SLUGS = new Set(["introduction", "quick-start", "authentication", "meta-setup", "webhooks"]);
-
-function normalizeSlug(value: any) {
-  return String(value || "")
-    .trim()
-    .toLowerCase();
-}
-
-function isLikelyDocPage(item: any) {
-  const slug = normalizeSlug(item?.slug);
-  if (!slug) return false;
-  if (NON_DOC_SYSTEM_SLUGS.has(slug)) return false;
-  if (slug.startsWith("docs/") || slug.startsWith("docs-")) return true;
-  if (KNOWN_DOC_SLUGS.has(slug)) return true;
-  const data = item?.data || {};
-  const hasDocType = String(data?.__type || data?.type || "").toLowerCase() === "doc";
-  const hasDocShape =
-    typeof data?.content === "string" ||
-    typeof data?.description === "string" ||
-    Array.isArray(data?.keywords) ||
-    typeof data?.category === "string" ||
-    typeof data?.order === "number" ||
-    typeof data?.status === "string" ||
-    !!data?.sidebar ||
-    !!data?.seo;
-  const hasMarkdownBody = typeof data?.bodyMarkdown === "string" && data.bodyMarkdown.trim().length > 0;
-
-  if (hasDocType || hasDocShape) return true;
-  if (hasMarkdownBody && !CMS_PAGE_SLUGS.has(slug)) return true;
-  return false;
-}
-
-function mapPageToDoc(item: any, index: number) {
-  const slug = normalizeSlug(item?.slug);
-  const data = item?.data || {};
-  const nested = data?.data && typeof data.data === "object" ? data.data : {};
-  const source = { ...nested, ...data };
-  const content = String(
-    source?.content ||
-      source?.bodyMarkdown ||
-      source?.introMarkdown ||
-      source?.markdown ||
-      ""
-  );
-  const status = String(source?.status || "").toLowerCase();
-  const normalizedStatus = status === "published" ? "published" : "draft";
-  const category = String(source?.category || source?.sidebar?.section || "general");
-  const keywords = Array.isArray(source?.keywords) ? source.keywords : [];
-  return {
-    id: String(item?.id || item?._id || slug || `doc-fallback-${index}`),
-    slug,
-    title: String(source?.title || item?.title || slug || "Untitled"),
-    description: String(source?.description || ""),
-    content,
-    keywords,
-    category,
-    status: normalizedStatus,
-    sidebar: {
-      section: String(source?.sidebar?.section || category),
-      sectionOrder: Number(source?.sidebar?.sectionOrder || 0),
-      itemOrder: Number(source?.sidebar?.itemOrder || index + 1),
-    },
-    seo: {
-      metaTitle: String(source?.seo?.metaTitle || source?.title || ""),
-      metaDescription: String(source?.seo?.metaDescription || source?.description || ""),
-      ogImage: String(source?.seo?.ogImage || ""),
-      noIndex: !!source?.seo?.noIndex,
-    },
-    updatedAt: item?.updatedAt,
-  };
-}
 
 function slugify(value: string) {
   return String(value || "")
@@ -260,16 +187,7 @@ export default function AdminDocsPage() {
       const [docsRes, brandRes]: any = await Promise.allSettled([API.admin.docsList(), API.admin.docsBrandGet()]);
       const docsData = docsRes?.status === "fulfilled" ? docsRes.value : null;
       const brandData = brandRes?.status === "fulfilled" ? brandRes.value : null;
-      let nextItems = Array.isArray(docsData?.items) ? docsData.items : [];
-      if (!nextItems.length) {
-        try {
-          const pagesRes: any = await API.admin.pages();
-          const pagesItems = Array.isArray(pagesRes?.items) ? pagesRes.items : [];
-          nextItems = pagesItems.filter(isLikelyDocPage).map(mapPageToDoc);
-        } catch (_e) {
-          nextItems = [];
-        }
-      }
+      const nextItems = Array.isArray(docsData?.items) ? docsData.items : [];
       setItems(nextItems);
       setBrandSettings({
         brandName: String(brandData?.settings?.brandName || docsData?.meta?.brandName || ""),

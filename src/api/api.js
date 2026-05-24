@@ -15,6 +15,7 @@ export const api = axios.create({
 
 const TOKEN_KEY = "waspakamify_token";
 const WORKSPACE_KEY = "waspakamify_workspace_id";
+let __workspaceResolvePromise = null;
 
 // Coalesce duplicate GET requests and add a tiny cache window to prevent
 // UI-driven bursts from hammering the backend (and triggering rate limits).
@@ -131,18 +132,72 @@ export function setToken(token) {
   if (workspaceId) setWorkspaceId(workspaceId);
 }
 
+function roleFromToken(token) {
+  try {
+    const parts = String(token || "").split(".");
+    if (parts.length !== 3) return "";
+    const base64 = parts[1].replace(/-/g, "+").replace(/_/g, "/");
+    const payload = JSON.parse(atob(base64));
+    return String(payload?.role || "").toLowerCase();
+  } catch {
+    return "";
+  }
+}
+
+async function resolveWorkspaceIdFromApi(token) {
+  if (!token) return "";
+  if (__workspaceResolvePromise) return __workspaceResolvePromise;
+
+  __workspaceResolvePromise = axios
+    .get(`${API_BASE_URL}/workspaces`, {
+      timeout: 10000,
+      headers: { Authorization: `Bearer ${token}` },
+    })
+    .then((res) => {
+      const list = Array.isArray(res?.data?.workspaces) ? res.data.workspaces : [];
+      const firstId =
+        String(list?.[0]?._id || list?.[0]?.id || "").trim();
+      if (firstId) {
+        setWorkspaceId(firstId);
+        return firstId;
+      }
+      return "";
+    })
+    .catch(() => "")
+    .finally(() => {
+      __workspaceResolvePromise = null;
+    });
+
+  return __workspaceResolvePromise;
+}
+
 api.interceptors.request.use((config) => {
-  const token = getToken();
-  if (token) {
-    config.headers = config.headers || {};
-    config.headers.Authorization = `Bearer ${token}`;
-  }
-  const workspaceId = getWorkspaceId();
-  if (workspaceId) {
-    config.headers = config.headers || {};
-    config.headers["x-workspace-id"] = workspaceId;
-  }
-  return config;
+  const proceed = async () => {
+    const token = getToken();
+    if (token) {
+      config.headers = config.headers || {};
+      config.headers.Authorization = `Bearer ${token}`;
+    }
+
+    let workspaceId = getWorkspaceId();
+    const tokenRole = roleFromToken(token);
+    const isAdminRole = tokenRole === "admin" || tokenRole === "super_admin";
+    if (!workspaceId && token && !isAdminRole) {
+      workspaceId = workspaceFromToken(token) || "";
+      if (!workspaceId) {
+        workspaceId = await resolveWorkspaceIdFromApi(token);
+      }
+      if (workspaceId) setWorkspaceId(workspaceId);
+    }
+
+    if (workspaceId) {
+      config.headers = config.headers || {};
+      config.headers["x-workspace-id"] = workspaceId;
+    }
+    return config;
+  };
+
+  return proceed();
 });
 
 api.interceptors.response.use(

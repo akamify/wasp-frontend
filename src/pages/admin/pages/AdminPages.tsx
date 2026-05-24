@@ -91,7 +91,16 @@ export default function AdminPagesPage() {
         const docsSlugSet = new Set<string>(docsItems.map((x: any) => normalizeSlug(x?.slug)).filter(Boolean));
         const pageItems = Array.isArray(pagesRes.value?.items) ? pagesRes.value.items : [];
         const filteredItems = pageItems.filter((item: PageItem) => !isDocLikeSlug(item?.slug, docsSlugSet));
-        setItems(filteredItems);
+        const mergedBySlug = new Map<string, PageItem>();
+        for (const slug of COMMON_SLUGS) {
+          mergedBySlug.set(slug, { slug, title: "", updatedAt: "" });
+        }
+        for (const item of filteredItems) {
+          const slug = normalizeSlug(item?.slug);
+          if (!slug) continue;
+          mergedBySlug.set(slug, { slug, title: String(item?.title || ""), updatedAt: item?.updatedAt });
+        }
+        setItems(Array.from(mergedBySlug.values()));
       })
       .catch((e: any) => setListError(e?.userMessage || e?.response?.data?.message || e?.message || "Failed to load pages"))
       .finally(() => setLoadingList(false));
