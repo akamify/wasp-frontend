@@ -27,6 +27,16 @@ export function EditContactModal({ busy, form, open, onClose, onFormChange, onSa
           <EditInput label="Language" value={form.language} placeholder="e.g. en, hi" onChange={(value) => onFormChange((previous) => ({ ...previous, language: value }))} />
           <EditInput label="Tags (comma separated)" value={form.tags} placeholder="vip, lead, returning" onChange={(value) => onFormChange((previous) => ({ ...previous, tags: value }))} />
           <div>
+            <div className="text-xs font-black uppercase tracking-widest text-slate-400">Attributes</div>
+            <textarea
+              className="mt-2 w-full min-h-[90px] rounded-[5px] border border-slate-200 px-3 py-2 text-sm font-semibold"
+              value={form.attributes || ""}
+              placeholder={"city: Delhi\nplan: premium\nsource: website"}
+              onChange={(e) => onFormChange((previous) => ({ ...previous, attributes: e.target.value }))}
+            />
+            <div className="mt-1 text-[10px] font-bold uppercase tracking-wider text-slate-400">Use key:value per line</div>
+          </div>
+          <div>
             <div className="text-xs font-black uppercase tracking-widest text-slate-400">Notes</div>
             <textarea className="mt-2 w-full min-h-[110px] rounded-[5px] border border-slate-200 px-3 py-2 text-sm font-semibold" value={form.notes} onChange={(e) => onFormChange((previous) => ({ ...previous, notes: e.target.value }))} />
           </div>
@@ -50,4 +60,3 @@ function EditInput({ label, onChange, placeholder, value }: { label: string; onC
     </div>
   );
 }
-

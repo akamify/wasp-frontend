@@ -22,6 +22,7 @@ type Contact = {
   company?: string;
   notes?: string;
   tags?: string[];
+  attributes?: Record<string, string | number | boolean>;
   source?: string;
   lastMessagePreview?: string;
   lastInboundAt?: string;
@@ -57,12 +58,38 @@ function formatDate(value?: string) {
   return value ? new Date(value).toLocaleString() : "-";
 }
 
+function formatAttributes(attributes?: Record<string, string | number | boolean>) {
+  if (!attributes || typeof attributes !== "object") return "";
+  return Object.entries(attributes)
+    .filter(([key]) => String(key || "").trim())
+    .map(([key, value]) => `${key}:${String(value ?? "").trim()}`)
+    .join("\n");
+}
+
+function parseAttributes(raw: string) {
+  const out: Record<string, string> = {};
+  const lines = String(raw || "")
+    .split(/\n+/)
+    .map((line) => line.trim())
+    .filter(Boolean);
+  for (const line of lines) {
+    const splitAt = line.indexOf(":");
+    if (splitAt <= 0) continue;
+    const key = line.slice(0, splitAt).trim();
+    const value = line.slice(splitAt + 1).trim();
+    if (!key || !value) continue;
+    out[key] = value;
+  }
+  return out;
+}
+
 const EMPTY_FORM = {
   name: "",
   phone: "",
   email: "",
   company: "",
   tags: "",
+  attributes: "",
   notes: "",
 };
 
@@ -132,6 +159,7 @@ export default function ContactsPage() {
       email: contact.email || "",
       company: contact.company || "",
       tags: joinTags(contact.tags),
+      attributes: formatAttributes(contact.attributes),
       notes: contact.notes || "",
     });
     setIsModalOpen(true);
@@ -149,6 +177,7 @@ export default function ContactsPage() {
       email: form.email,
       company: form.company,
       tags: parseTags(form.tags),
+      attributes: parseAttributes(form.attributes),
       notes: form.notes,
     };
 
@@ -353,7 +382,7 @@ export default function ContactsPage() {
         )}
 
         <div className="overflow-x-auto" ref={tableRef}>
-          <table className="w-full border-collapse">
+          <table className="w-full min-w-[1300px] border-collapse">
             <thead>
               <tr className="border-b border-ink-900/5 bg-slate-50 text-left text-[10px] font-bold uppercase tracking-wider text-ink-800/40">
                 <th className="w-12 px-6 py-4">
@@ -373,12 +402,13 @@ export default function ContactsPage() {
                 <th className="px-6 py-4">Tags</th>
                 <th className="px-6 py-4">Last Active</th>
                 <th className="px-6 py-4 text-right">Actions</th>
+                <th className="px-6 py-4">Attributes</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-ink-900/5">
               {loading ? (
                 <tr>
-                  <td colSpan={6} className="p-8">
+                  <td colSpan={7} className="p-8">
                     <ContactsListSkeleton rows={8} />
                   </td>
                 </tr>
@@ -442,36 +472,31 @@ export default function ContactsPage() {
                         >
                           <Pencil size={14} />
                         </Button>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            deleteContact(contact);
-                          }}
-                          disabled={saving}
-                          className="h-10 w-10 p-0 transition-opacity text-rose-600 hover:bg-rose-50 hover:text-rose-700"
-                        >
-                          <Trash2 size={14} />
-                        </Button>
-                        <Button
-                          size="sm"
-                          variant="ghost"
-                          className="h-10 gap-1.5 font-bold text-brand-600 hover:text-brand-700 hover:bg-brand-50"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            navigate(`/app/conversations/${encodeURIComponent(contact.phone)}`);
-                          }}
-                        >
-                          Chat
-                        </Button>
                       </div>
+                    </td>
+                    <td className="px-6 py-4">
+                      {contact.attributes && Object.keys(contact.attributes).length ? (
+                        <div className="flex flex-wrap gap-1.5 max-w-[320px]">
+                          {Object.entries(contact.attributes)
+                            .slice(0, 3)
+                            .map(([key, value]) => (
+                              <Badge key={key} tone="neutral" className="bg-white border border-ink-900/5 text-[10px] py-0.5 px-2">
+                                {key}:{String(value)}
+                              </Badge>
+                            ))}
+                          {Object.keys(contact.attributes).length > 3 ? (
+                            <span className="text-[10px] font-bold text-ink-800/30">+{Object.keys(contact.attributes).length - 3}</span>
+                          ) : null}
+                        </div>
+                      ) : (
+                        <span className="text-sm font-semibold text-ink-800/50">-</span>
+                      )}
                     </td>
                   </tr>
                 ))
               ) : (
                 <tr>
-                  <td colSpan={6} className="px-6 py-20 text-center">
+                  <td colSpan={7} className="px-6 py-20 text-center">
                     <div className="mx-auto w-16 h-16 rounded-full bg-slate-50 flex items-center justify-center text-ink-800/20 mb-4">
                       <User size={32} />
                     </div>
@@ -580,6 +605,14 @@ export default function ContactsPage() {
                     onChange={(e) => setForm((current) => ({ ...current, tags: e.target.value }))}
                     placeholder="vip, new-lead, search-campaign"
                     hint="Comma separated tags"
+                  />
+                  <Textarea
+                    label="Attributes"
+                    value={form.attributes}
+                    onChange={(e) => setForm((current) => ({ ...current, attributes: e.target.value }))}
+                    placeholder={"city: Delhi\nplan: premium\nsource: website"}
+                    hint="One per line in key:value format"
+                    className="min-h-[90px]"
                   />
                   <Textarea
                     label="Private Notes"

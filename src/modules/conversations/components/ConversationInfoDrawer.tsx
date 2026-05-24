@@ -1,5 +1,5 @@
 import { AnimatePresence, motion } from "framer-motion";
-import { Edit3, Languages, Mail, StickyNote, Tag, X } from "lucide-react";
+import { Edit3, Languages, Mail, StickyNote, Tag, X, ListFilter } from "lucide-react";
 import type { Conversation } from "@modules/conversations/types/conversations.types";
 import { formatDurationShort } from "@modules/conversations/utils/timeFormat";
 import { cn } from "@shared/utils/cn";
@@ -102,6 +102,10 @@ function ContactInfoBody({ activeConversation, contactDetail, customerServiceWin
 
 function ContactInfoFields({ contactDetail }: { contactDetail: any | null }) {
   const tags = Array.isArray(contactDetail?.tags) ? contactDetail.tags : [];
+  const attributes =
+    contactDetail?.attributes && typeof contactDetail.attributes === "object"
+      ? Object.entries(contactDetail.attributes).filter(([key]) => String(key || "").trim())
+      : [];
   return (
     <div className="mt-5 space-y-3">
       <InfoField icon={<Mail size={12} />} label="Email">{contactDetail?.email || "Not set"}</InfoField>
@@ -110,6 +114,21 @@ function ContactInfoFields({ contactDetail }: { contactDetail: any | null }) {
         <div className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-slate-400"><Tag size={12} /> Tags</div>
         <div className="mt-2 flex flex-wrap gap-2">
           {tags.length ? tags.slice(0, 10).map((tag: string) => <span key={tag} className="rounded-full bg-slate-100 px-3 py-1 text-xs font-bold text-slate-700">{tag}</span>) : <span className="text-sm font-bold text-slate-900">Not set</span>}
+        </div>
+      </div>
+      <div className="rounded-[5px] border border-slate-100 bg-white p-4">
+        <div className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-slate-400"><ListFilter size={12} /> Attributes</div>
+        <div className="mt-2 space-y-1.5">
+          {attributes.length ? (
+            attributes.slice(0, 12).map(([key, value]) => (
+              <div key={String(key)} className="flex items-center justify-between gap-3 rounded-[5px] bg-slate-50 px-2.5 py-1.5 text-xs">
+                <span className="font-black text-slate-600">{String(key)}</span>
+                <span className="font-semibold text-slate-900">{String(value ?? "")}</span>
+              </div>
+            ))
+          ) : (
+            <span className="text-sm font-bold text-slate-900">Not set</span>
+          )}
         </div>
       </div>
       <InfoField icon={<StickyNote size={12} />} label="Notes" multiline>{contactDetail?.notes || "Not set"}</InfoField>
