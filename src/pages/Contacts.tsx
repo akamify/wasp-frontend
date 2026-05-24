@@ -434,7 +434,7 @@ export default function ContactsPage() {
                           {contact.name ? contact.name[0].toUpperCase() : <User size={18} />}
                         </div>
                         <div className="min-w-0">
-                          <div className="font-bold text-ink-900 truncate max-w-[200px]">{contact.name || contact.phone}</div>
+                          <div className="font-bold text-sm text-ink-900 truncate max-w-[200px]">{contact.name || contact.phone}</div>
                           <div className="text-xs text-ink-800/60 font-medium">{contact.phone}</div>
                         </div>
                       </div>
