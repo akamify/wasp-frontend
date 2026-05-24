@@ -190,7 +190,8 @@ export const API = {
 
   auth: {
     register: (payload) => api.post("/auth/register", payload).then(unwrap),
-    login: (payload) => api.post("/auth/login", payload).then(unwrap),
+    // Login can include OTP email dispatch in some flows; keep a higher timeout.
+    login: (payload) => api.post("/auth/login", payload, { timeout: 60000 }).then(unwrap),
     verifyLoginOtp: (payload) => api.post("/auth/login/verify-otp", payload).then(unwrap),
     resendLoginOtp: (payload) => api.post("/auth/login/resend-otp", payload).then(unwrap),
     verifyRegisterOtp: (payload) => api.post("/auth/register/verify-otp", payload).then(unwrap),
@@ -394,10 +395,15 @@ export const API = {
 
   crm: {
     workspace: () => api.get("/crm/workspace").then(unwrap),
+    dashboard: () => api.get("/crm/dashboard").then(unwrap),
     setLeadWindowHours: (leadWindowHours) =>
       api.put("/crm/settings/lead-window", { leadWindowHours }).then(unwrap),
     setAssignmentLockMinutes: (assignmentLockMinutes) =>
       api.put("/crm/settings/assignment-lock", { assignmentLockMinutes }).then(unwrap),
+    setAssignmentMode: (payload) =>
+      api.put("/crm/settings/assignment-mode", payload || {}).then(unwrap),
+    setAssignmentSchedule: (payload) =>
+      api.put("/crm/settings/assignment-schedule", payload || {}).then(unwrap),
     employees: () => api.get("/crm/employees").then(unwrap),
     createEmployee: (payload) => api.post("/crm/employees", payload).then(unwrap),
     updateEmployeeStatus: (employeeId, status) =>
@@ -421,6 +427,8 @@ export const API = {
       api.post(`/crm/employees/${encodeURIComponent(employeeId)}/send-reset-link`, {}).then(unwrap),
     resetEmployeePassword: (employeeId, payload) =>
       api.post(`/crm/employees/${encodeURIComponent(employeeId)}/reset-password`, payload || {}).then(unwrap),
+    manualAssignLead: (phone, payload) =>
+      api.post(`/crm/leads/${encodeURIComponent(phone)}/assign`, payload || {}).then(unwrap),
     conversationEvents: (phone, params) =>
       api.get(`/crm/conversations/${encodeURIComponent(phone)}/events`, { params }).then(unwrap),
   },

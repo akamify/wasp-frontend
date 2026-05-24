@@ -157,8 +157,11 @@ export const API: {
   };
   crm: {
     workspace(): Promise<any>;
+    dashboard(): Promise<any>;
     setLeadWindowHours(leadWindowHours: number): Promise<any>;
     setAssignmentLockMinutes(assignmentLockMinutes: number): Promise<any>;
+    setAssignmentMode(payload: any): Promise<any>;
+    setAssignmentSchedule(payload: any): Promise<any>;
     employees(): Promise<any>;
     createEmployee(payload: any): Promise<any>;
     updateEmployeeStatus(employeeId: string, status: string): Promise<any>;
@@ -172,6 +175,7 @@ export const API: {
     verifyEmployeeEmailOtp(employeeId: string, payload: any): Promise<any>;
     sendEmployeeResetLink(employeeId: string): Promise<any>;
     resetEmployeePassword(employeeId: string, payload: any): Promise<any>;
+    manualAssignLead(phone: string, payload: any): Promise<any>;
     conversationEvents(phone: string, params?: any): Promise<any>;
   };
   public: {

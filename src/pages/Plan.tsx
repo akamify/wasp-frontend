@@ -177,11 +177,13 @@ export default function PlanPage() {
     const [currentModalOpen, setCurrentModalOpen] = useState(false);
     const [currentDetails, setCurrentDetails] = useState<any>(null);
 
-    const plans = (Array.isArray(livePlans) ? livePlans : []).map((p: any) => ({
+    const plans = (Array.isArray(livePlans) ? livePlans : [])
+        .map((p: any) => ({
             id: String(p?.id || p?.slug || p?.name || ""),
+            slug: String(p?.slug || "").toLowerCase(),
             name: p?.name || "Plan",
             price: p?.pricing?.discountedPricePaise == null ? "Custom" : `₹${Math.round(Number(p.pricing.discountedPricePaise) / 100).toLocaleString("en-IN")}`,
-            period: p?.planType === "custom" ? "" : "/month",
+            period: p?.pricing?.discountedPricePaise == null || String(p?.slug || "").toLowerCase() === "free" ? "" : "/month",
             description: p?.description || "",
             features: Array.isArray(p?.displayFeatures) ? p.displayFeatures : [],
             notIncluded: Array.isArray(p?.unavailableFeatures) ? p.unavailableFeatures : [],
@@ -189,7 +191,14 @@ export default function PlanPage() {
             planType: p?.planType || "basic",
             recommended: Boolean(p?.recommended),
             isCurrentPlan: String((workspace?.plan || "").toLowerCase()) === String((p?.slug || "").toLowerCase()),
-          }));
+        }))
+        .sort((a: any, b: any) => {
+            if (a.slug === "free" && b.slug !== "free") return -1;
+            if (b.slug === "free" && a.slug !== "free") return 1;
+            return 0;
+        });
+    const topPlans = plans.slice(0, 3);
+    const horizontalPlan = plans[3] || null;
 
     const currentPlan = plans.find((p) => p.isCurrentPlan);
 
@@ -240,6 +249,98 @@ export default function PlanPage() {
         ];
     }
 
+
+
+    function renderPlanCard(plan: any, horizontal = false) {
+        const isFreePlan = plan.slug === "free";
+        const showRecommendedStyle = plan.recommended && !isFreePlan;
+        return (
+            <motion.div
+                key={plan.id || plan.name}
+                layout
+                className={cn(
+                    "relative overflow-hidden rounded-[5px] border transition-all",
+                    horizontal ? "md:col-span-3" : "",
+                    showRecommendedStyle
+                        ? "border-brand-500 bg-gradient-to-br from-brand-50 to-white shadow-2xl shadow-brand-500/20 md:scale-[1.04]"
+                        : "border-slate-200 bg-white shadow-sm",
+                    plan.isCurrentPlan && "ring-2 ring-brand-600",
+                    isFreePlan && "border-slate-200 bg-white"
+                )}
+            >
+                {showRecommendedStyle && (
+                    <div className="absolute top-0 left-0 right-0 bg-brand-600 text-white text-xs font-black uppercase tracking-wider py-1.5 text-center">
+                        Recommended
+                    </div>
+                )}
+
+                <div className={cn("p-6", showRecommendedStyle && "pt-12", horizontal && "md:grid md:grid-cols-[1.05fr_1fr] md:gap-8 md:items-start")}>
+                    <div>
+                        <h3 className={cn("font-black text-slate-900", showRecommendedStyle ? "text-2xl" : "text-lg")}>{plan.name}</h3>
+                        <p className="mt-1 text-xs font-semibold text-slate-500">{plan.description}</p>
+
+                        <div className="mt-6 flex items-baseline gap-1">
+                            <span className={cn("font-black text-slate-900", showRecommendedStyle ? "text-5xl" : "text-4xl")}>{plan.price}</span>
+                            {plan.period && <span className="text-sm font-semibold text-slate-500">{plan.period}</span>}
+                        </div>
+
+                        {plan.isCurrentPlan && (
+                            <div className="mt-4 inline-block rounded-[3px] bg-brand-100 px-3 py-1 text-[10px] font-black uppercase tracking-wider text-brand-700">
+                                Current Plan
+                            </div>
+                        )}
+
+                        <Button
+                            onClick={() => (plan.isCurrentPlan ? setCurrentModalOpen(true) : handlePlanAction(plan.name))}
+                            className={cn("w-full mt-6 gap-2", !plan.isCurrentPlan && plan.planType !== "basic" && "bg-brand-600 hover:bg-brand-700")}
+                            variant={plan.isCurrentPlan ? "outline" : "primary"}
+                            disabled={!plan.isCurrentPlan && plan.planType !== "custom" && paymentProcessing}
+                        >
+                            {plan.isCurrentPlan ? (
+                                "View Now"
+                            ) : plan.planType === "custom" ? (
+                                <>
+                                    <Phone size={16} /> {plan.cta}
+                                </>
+                            ) : paymentProcessing ? (
+                                "Processing..."
+                            ) : (
+                                <>
+                                    {plan.cta} <ArrowRight size={16} />
+                                </>
+                            )}
+                        </Button>
+                    </div>
+
+                    <div className="mt-6 border-t border-slate-200 pt-6 md:mt-0 md:border-t-0 md:pt-0">
+                        <p className="text-xs font-black uppercase tracking-wider text-slate-500">Includes:</p>
+                        <div className={cn("mt-3", horizontal ? "grid gap-2 md:grid-cols-2" : "space-y-3")}>
+                            {plan.features.map((feature: string, i: number) => (
+                                <div key={i} className="flex items-start gap-2">
+                                    <Check size={16} className="mt-0.5 shrink-0 text-emerald-600" />
+                                    <span className="text-sm font-semibold text-slate-700">{feature}</span>
+                                </div>
+                            ))}
+                        </div>
+
+                        {plan.notIncluded.length > 0 && (
+                            <>
+                                <p className="pt-3 text-xs font-black uppercase tracking-wider text-slate-400">Not included:</p>
+                                <div className={cn("mt-2", horizontal ? "grid gap-2 md:grid-cols-2" : "space-y-3")}>
+                                    {plan.notIncluded.map((feature: string, i: number) => (
+                                        <div key={i} className="flex items-start gap-2 opacity-50">
+                                            <X size={16} className="mt-0.5 shrink-0 text-slate-400" />
+                                            <span className="text-sm font-semibold text-slate-500">{feature}</span>
+                                        </div>
+                                    ))}
+                                </div>
+                            </>
+                        )}
+                    </div>
+                </div>
+            </motion.div>
+        );
+    }
     return (
         <div className="space-y-8 p-4 md:p-8">
             <div>
@@ -263,84 +364,8 @@ export default function PlanPage() {
 
             {/* Pricing Cards */}
             <div className="grid gap-6 md:grid-cols-3">
-                {plans.map((plan) => (
-                    <motion.div
-                        key={plan.id || plan.name}
-                        layout
-                        className={cn(
-                            "relative overflow-hidden rounded-[5px] border transition-all",
-                            plan.recommended
-                                ? "border-brand-400 bg-brand-50/50 shadow-xl shadow-brand-500/10 md:scale-105 md:-my-4"
-                                : "border-slate-200 bg-white shadow-sm",
-                            plan.isCurrentPlan && "ring-2 ring-brand-600"
-                        )}
-                    >
-                        {plan.recommended && (
-                            <div className="absolute top-0 left-0 right-0 bg-brand-600 text-white text-xs font-black uppercase tracking-wider py-1 text-center">
-                                Recommended
-                            </div>
-                        )}
-
-                        <div className={cn("p-6", plan.recommended && "pt-12")}>
-                            <h3 className="text-lg font-black text-slate-900">{plan.name}</h3>
-                            <p className="mt-1 text-xs font-semibold text-slate-500">{plan.description}</p>
-
-                            <div className="mt-6 flex items-baseline gap-1">
-                                <span className="text-4xl font-black text-slate-900">{plan.price}</span>
-                                {plan.period && <span className="text-sm font-semibold text-slate-500">{plan.period}</span>}
-                            </div>
-
-                            {plan.isCurrentPlan && (
-                                <div className="mt-4 inline-block rounded-[3px] bg-brand-100 px-3 py-1 text-[10px] font-black uppercase tracking-wider text-brand-700">
-                                    Current Plan
-                                </div>
-                            )}
-
-                            <Button
-                                onClick={() => (plan.isCurrentPlan ? setCurrentModalOpen(true) : handlePlanAction(plan.name))}
-                                className={cn("w-full mt-6 gap-2", !plan.isCurrentPlan && plan.planType !== "basic" && "bg-brand-600 hover:bg-brand-700")}
-                                variant={plan.isCurrentPlan ? "outline" : "primary"}
-                                disabled={!plan.isCurrentPlan && plan.planType !== "custom" && paymentProcessing}
-                            >
-                                {plan.isCurrentPlan ? (
-                                    "View Now"
-                                ) : plan.planType === "custom" ? (
-                                    <>
-                                        <Phone size={16} /> {plan.cta}
-                                    </>
-                                ) : paymentProcessing ? (
-                                    "Processing..."
-                                ) : (
-                                    <>
-                                        {plan.cta} <ArrowRight size={16} />
-                                    </>
-                                )}
-                            </Button>
-
-                            <div className="mt-6 space-y-3 border-t border-slate-200 pt-6">
-                                <p className="text-xs font-black uppercase tracking-wider text-slate-500">Includes:</p>
-                                {plan.features.map((feature: string, i: number) => (
-                                    <div key={i} className="flex items-start gap-2">
-                                        <Check size={16} className="mt-0.5 shrink-0 text-emerald-600" />
-                                        <span className="text-sm font-semibold text-slate-700">{feature}</span>
-                                    </div>
-                                ))}
-
-                                {plan.notIncluded.length > 0 && (
-                                    <>
-                                        <p className="pt-3 text-xs font-black uppercase tracking-wider text-slate-400">Not included:</p>
-                                        {plan.notIncluded.map((feature: string, i: number) => (
-                                            <div key={i} className="flex items-start gap-2 opacity-50">
-                                                <X size={16} className="mt-0.5 shrink-0 text-slate-400" />
-                                                <span className="text-sm font-semibold text-slate-500">{feature}</span>
-                                            </div>
-                                        ))}
-                                    </>
-                                )}
-                            </div>
-                        </div>
-                    </motion.div>
-                ))}
+                {topPlans.map((plan) => renderPlanCard(plan))}
+                {horizontalPlan ? renderPlanCard(horizontalPlan, true) : null}
             </div>
 
             {/* FAQ Section */}

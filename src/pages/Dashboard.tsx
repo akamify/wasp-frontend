@@ -135,11 +135,10 @@ export default function DashboardPage() {
 
   const steps = useMemo(() => [
     { id: 1, label: "Connect Meta Account", done: snapshot?.metaStatus === "active", href: "/app/meta" },
-    { id: 2, label: "Buy Subscription Plan", done: Boolean(snapshot?.billingCurrent?.subscription?.id), href: "/app/plan" },
-    { id: 3, label: "Create Template", done: snapshot?.templates?.some((t: any) => t.status === 'approved'), href: "/app/templates" },
-    { id: 4, label: "Add Your Contacts", done: snapshot?.contacts?.length > 0, href: "/app/contacts" },
-    { id: 5, label: "Add Wallet Balance", done: (snapshot?.wallet?.balance > 0) || !!snapshot?.walletHasRechargedOnce, href: "/app/wallet" },
-    { id: 6, label: "Create Campaign", done: snapshot?.campaigns?.length > 0, href: "/app/send" },
+    { id: 2, label: "Create Template", done: snapshot?.templates?.some((t: any) => t.status === 'approved'), href: "/app/templates" },
+    { id: 3, label: "Add Your Contacts", done: snapshot?.contacts?.length > 0, href: "/app/contacts" },
+    { id: 4, label: "Add Wallet Balance", done: (snapshot?.wallet?.balance > 0) || !!snapshot?.walletHasRechargedOnce, href: "/app/wallet" },
+    { id: 5, label: "Create Campaign", done: snapshot?.campaigns?.length > 0, href: "/app/send" },
   ], [snapshot]);
 
   const allStepsDone = useMemo(() => steps.length > 0 && steps.every((s) => s.done), [steps]);

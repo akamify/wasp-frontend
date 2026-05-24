@@ -1,26 +1,9 @@
 import { employeeApi } from "@modules/crm/services/employeeApi";
-import { getEmployeeToken, setEmployeeToken } from "@modules/crm/services/employeeAuthStorage";
+import { getEmployeeToken } from "@modules/crm/services/employeeAuthStorage";
 
 function unwrap(res: any) {
   return res?.data?.body || res?.data;
 }
-
-employeeApi.interceptors.request.use((config) => {
-  const token = getEmployeeToken();
-  if (token) {
-    config.headers = config.headers || {};
-    (config.headers as any).Authorization = `Bearer ${token}`;
-  }
-  return config;
-});
-
-employeeApi.interceptors.response.use(
-  (res) => res,
-  (err) => {
-    if (err?.response?.status === 401) setEmployeeToken("");
-    throw err;
-  }
-);
 
 export const crmEmployeeInboxService = {
   conversations: {
@@ -53,6 +36,12 @@ export const crmEmployeeInboxService = {
       employeeApi.get(`/crm/employee/messages/media/${encodeURIComponent(id)}`, { responseType: "blob" }).then((r) => r.data),
   },
   realtime: {
-    streamUrl: () => `${String(employeeApi.defaults.baseURL || "").replace(/\/+$/, "")}/crm/employee/realtime/stream`,
+    streamUrl: () => {
+      const base = String(employeeApi.defaults.baseURL || "").replace(/\/+$/, "");
+      const token = String(getEmployeeToken() || "").trim();
+      const url = `${base}/crm/employee/realtime/stream`;
+      if (!token) return url;
+      return `${url}?token=${encodeURIComponent(token)}`;
+    },
   },
 };

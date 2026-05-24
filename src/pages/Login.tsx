@@ -8,6 +8,7 @@ import { Button } from "../components/ui/Button";
 import { Alert } from "../components/ui/Alert";
 import { BRAND_NAME } from "../config/brand";
 import { normalizeRole } from "../shared/utils/authRole";
+import { Eye, EyeOff } from "lucide-react";
 
 export default function LoginPage() {
   const { login } = useAuth();
@@ -21,6 +22,7 @@ export default function LoginPage() {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [resendCooldown, setResendCooldown] = useState(0);
+  const [showPassword, setShowPassword] = useState(false);
 
   const from = (location.state as any)?.from || null;
 
@@ -47,7 +49,12 @@ export default function LoginPage() {
       const target = from || defaultTargetByRole(res?.user?.role);
       navigate(target, { replace: true });
     } catch (err: any) {
-      setError(err?.response?.data?.message || "Login failed");
+      const timeout = String(err?.code || "").toUpperCase() === "ECONNABORTED";
+      setError(
+        err?.userMessage ||
+        err?.response?.data?.message ||
+        (timeout ? "Login is taking too long. Please try again in a few seconds." : "Login failed")
+      );
     } finally {
       setBusy(false);
     }
@@ -120,10 +127,13 @@ export default function LoginPage() {
               />
               <Input
                 label="Password"
-                type="password"
+                type={showPassword ? "text" : "password"}
                 autoComplete="current-password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
+                rightIcon={showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                onRightIconClick={() => setShowPassword((v) => !v)}
+                rightIconLabel={showPassword ? "Hide password" : "Show password"}
                 required
               />
               <div className="text-right">

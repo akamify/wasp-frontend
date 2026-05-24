@@ -149,6 +149,8 @@ export default function AdminSubscriptionPlansPage() {
     sortOrder: 1,
     reviewNote: "",
     featureRows: [createRow()],
+    isFreePlan: false,
+    freeLimits: { maxContacts: "10", maxTemplates: "5", maxCampaignsPerMonth: "3", maxContactsExport: "10" },
   });
 
   async function loadList() {
@@ -204,6 +206,13 @@ export default function AdminSubscriptionPlansPage() {
       displayFeatures: Array.isArray(item?.displayFeatures) ? item.displayFeatures : [],
       unavailableFeatures: Array.isArray(item?.unavailableFeatures) ? item.unavailableFeatures : [],
       featureRows: rows,
+      isFreePlan: Boolean(item?.isFreePlan || item?.slug === "free" || item?.id === "free-plan"),
+      freeLimits: {
+        maxContacts: String(item?.limits?.maxContacts ?? 0),
+        maxTemplates: String(item?.limits?.maxTemplates ?? 0),
+        maxCampaignsPerMonth: String(item?.limits?.maxCampaignsPerMonth ?? 0),
+        maxContactsExport: String(item?.limits?.maxContactsExport ?? item?.limits?.maxExportsPerMonth ?? 0),
+      },
     });
   }
 
@@ -236,6 +245,8 @@ export default function AdminSubscriptionPlansPage() {
             displayFeatures: [],
             unavailableFeatures: [],
             featureRows: [createRow()],
+            isFreePlan: false,
+            freeLimits: { maxContacts: "10", maxTemplates: "5", maxCampaignsPerMonth: "3", maxContactsExport: "10" },
           });
         } else if (isView || isEdit || isReview) {
           await loadDetail(planId);
@@ -257,6 +268,10 @@ export default function AdminSubscriptionPlansPage() {
 
   async function computePreview() {
     if (!isEditorMode && !isView) return;
+    if (editor?.isFreePlan) {
+      setPreview(null);
+      return;
+    }
     try {
       const res = await API.superAdmin.billingPricePreview({
         originalPriceRupees: editor.originalPriceRupees === "" ? null : Number(editor.originalPriceRupees),
@@ -333,6 +348,21 @@ export default function AdminSubscriptionPlansPage() {
     setSaving(true);
     setError("");
     try {
+      if (editor?.isFreePlan) {
+        await API.superAdmin.billingPlanUpdate(editor.id, {
+          name: editor.name,
+          description: editor.description,
+          buttonText: editor.buttonText || "Current Plan",
+          limits: {
+            maxContacts: Number(editor?.freeLimits?.maxContacts || 0),
+            maxTemplates: Number(editor?.freeLimits?.maxTemplates || 0),
+            maxCampaignsPerMonth: Number(editor?.freeLimits?.maxCampaignsPerMonth || 0),
+            maxContactsExport: Number(editor?.freeLimits?.maxContactsExport || 0),
+          },
+        });
+        navigate("/super-admin/subscription-plans", { replace: true });
+        return;
+      }
       const payload = {
         slug: editor.slug || undefined,
         name: editor.name,
@@ -422,6 +452,7 @@ export default function AdminSubscriptionPlansPage() {
     const readOnly = false;
     const title = isCreate ? "Create Plan" : isEdit ? "Edit Plan" : isReview ? "Review Plan" : "View Plan";
     const status = String(editor.status || "in_review");
+    const isFreePlan = Boolean(editor?.isFreePlan || editor?.slug === "free" || editor?.id === "free-plan");
     const displayFeatures = Array.isArray(editor.displayFeatures) && editor.displayFeatures.length
       ? editor.displayFeatures
       : uniqueFeatureRows.filter((r: FeatureRow) => r.included && String(r.label || "").trim()).map((r: FeatureRow) => r.label);
@@ -438,8 +469,8 @@ export default function AdminSubscriptionPlansPage() {
           </div>
           <div className="flex gap-2 flex-wrap">
             <Button variant="ghost" onClick={() => navigate("/super-admin/subscription-plans")}>Back to Plans</Button>
-            {editor.id ? <Button onClick={() => setConfirmAction({ id: editor.id, action: "publish", name: editor.name || "this plan" })}>Publish</Button> : null}
-            {editor.id ? <Button variant="ghost" onClick={() => setConfirmAction({ id: editor.id, action: "disable", name: editor.name || "this plan" })}>Disable</Button> : null}
+            {editor.id && !isFreePlan ? <Button onClick={() => setConfirmAction({ id: editor.id, action: "publish", name: editor.name || "this plan" })}>Publish</Button> : null}
+            {editor.id && !isFreePlan ? <Button variant="ghost" onClick={() => setConfirmAction({ id: editor.id, action: "disable", name: editor.name || "this plan" })}>Disable</Button> : null}
           </div>
         </div>
 
@@ -452,10 +483,10 @@ export default function AdminSubscriptionPlansPage() {
                 <Input label="Plan Name" value={editor.name} onChange={(e) => setEditor((s: any) => ({ ...s, name: e.target.value }))} disabled={readOnly} />
                 <Input label="Slug (optional)" value={editor.slug} onChange={(e) => setEditor((s: any) => ({ ...s, slug: e.target.value }))} disabled={readOnly} />
                 <div className="md:col-span-2"><Textarea label="Description" value={editor.description} onChange={(e) => setEditor((s: any) => ({ ...s, description: e.target.value }))} disabled={readOnly} /></div>
-                <Input label="Original Price (Rupees)" value={editor.originalPriceRupees} onChange={(e) => setEditor((s: any) => ({ ...s, originalPriceRupees: e.target.value.replace(/[^\d.]/g, "") }))} disabled={readOnly} />
-                <Input label="Discounted Price (Rupees)" value={editor.discountedPriceRupees} onChange={(e) => setEditor((s: any) => ({ ...s, discountedPriceRupees: e.target.value.replace(/[^\d.]/g, "") }))} disabled={readOnly} />
-                <Input label="GST Percent" value={editor.gstPercent} onChange={(e) => setEditor((s: any) => ({ ...s, gstPercent: e.target.value.replace(/[^\d.]/g, "") }))} disabled={readOnly} />
-                <Input label="Tax Mode" value="exclusive" disabled />
+                <Input label="Original Price (Rupees)" value={editor.originalPriceRupees} onChange={(e) => setEditor((s: any) => ({ ...s, originalPriceRupees: e.target.value.replace(/[^\d.]/g, "") }))} disabled={readOnly || isFreePlan} />
+                <Input label="Discounted Price (Rupees)" value={editor.discountedPriceRupees} onChange={(e) => setEditor((s: any) => ({ ...s, discountedPriceRupees: e.target.value.replace(/[^\d.]/g, "") }))} disabled={readOnly || isFreePlan} />
+                <Input label="GST Percent" value={editor.gstPercent} onChange={(e) => setEditor((s: any) => ({ ...s, gstPercent: e.target.value.replace(/[^\d.]/g, "") }))} disabled={readOnly || isFreePlan} />
+                <Input label="Tax Mode" value={isFreePlan ? "N/A (free)" : "exclusive"} disabled />
                 <Input label="Button Text" value={editor.buttonText} onChange={(e) => setEditor((s: any) => ({ ...s, buttonText: e.target.value }))} disabled={readOnly} />
                 <div>
                   <div className="mb-1 text-xs font-semibold text-slate-500 uppercase">Sort Order</div>
@@ -475,7 +506,7 @@ export default function AdminSubscriptionPlansPage() {
                 <div className="md:col-span-2 border border-slate-200 rounded-[5px] p-3">
                   <div className="flex justify-between items-center mb-2">
                     <div className="text-sm font-black text-slate-900">Feature Builder</div>
-                    {!readOnly ? (
+                    {!readOnly && !isFreePlan ? (
                       <div className="flex items-center gap-2">
                         <Button variant="outline" onClick={() => setEditor((s: any) => ({ ...s, featureRows: [...s.featureRows, createRow()] }))}>
                           Add Row
@@ -483,13 +514,36 @@ export default function AdminSubscriptionPlansPage() {
                       </div>
                     ) : null}
                   </div>
+                  {isFreePlan ? (
+                    <div className="space-y-3">
+                      <div className="text-xs font-semibold text-slate-500">Free plan include/exclude is fixed. You can update only limits below.</div>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                        <div className="rounded-[5px] border border-emerald-200 bg-emerald-50 p-3">
+                          <div className="text-xs font-black uppercase tracking-wider text-emerald-700">Included</div>
+                          <ul className="mt-2 space-y-1 text-xs font-semibold text-emerald-900">
+                            {displayFeatures.map((feature: string, i: number) => (
+                              <li key={`free-included-${i}`}>- {feature}</li>
+                            ))}
+                          </ul>
+                        </div>
+                        <div className="rounded-[5px] border border-rose-200 bg-rose-50 p-3">
+                          <div className="text-xs font-black uppercase tracking-wider text-rose-700">Excluded</div>
+                          <ul className="mt-2 space-y-1 text-xs font-semibold text-rose-900">
+                            {unavailableFeatures.map((feature: string, i: number) => (
+                              <li key={`free-excluded-${i}`}>- {feature}</li>
+                            ))}
+                          </ul>
+                        </div>
+                      </div>
+                    </div>
+                  ) : (
                   <div className="space-y-3">
                     {editor.featureRows.map((row: FeatureRow, idx: number) => (
                       <div key={idx} className="border border-slate-100 rounded-[5px] p-3 space-y-3">
                         <div className="grid grid-cols-1 gap-2">
                           <Input label="Label" value={row.label} onChange={(e) => setEditor((s: any) => {
                             const next = [...s.featureRows]; next[idx] = { ...next[idx], label: e.target.value }; return { ...s, featureRows: next };
-                          })} disabled={readOnly} />
+                          })} disabled={readOnly || isFreePlan} />
                         </div>
 
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
@@ -509,7 +563,7 @@ export default function AdminSubscriptionPlansPage() {
                                 unlimited: nextType === "page" ? next[idx].unlimited : false,
                               };
                               return { ...s, featureRows: next };
-                            })} disabled={readOnly}>
+                            })} disabled={readOnly || isFreePlan}>
                               <option value="text">text</option><option value="page">page</option>
                             </select>
                           </div>
@@ -532,7 +586,7 @@ export default function AdminSubscriptionPlansPage() {
                                     unlimited: false,
                                   };
                                   return { ...s, featureRows: next };
-                                })} disabled={readOnly}>
+                                })} disabled={readOnly || isFreePlan}>
                                   <option value="">Select page access</option>
                                   {PAGE_ACCESS_OPTIONS.map((k) => <option key={k} value={k}>{k}</option>)}
                                 </select>
@@ -558,7 +612,7 @@ export default function AdminSubscriptionPlansPage() {
                                     const next = [...s.featureRows];
                                     next[idx] = { ...next[idx], targetType, functionalityKey: targetType === "functionality" ? next[idx].functionalityKey : "", limitKey: targetType === "limit" ? next[idx].limitKey : "", value: "", unlimited: false };
                                     return { ...s, featureRows: next };
-                                  })} disabled={readOnly || !row.pageAccessKey}>
+                                  })} disabled={readOnly || isFreePlan || !row.pageAccessKey}>
                                     <option value="">None</option>
                                     <option value="functionality">functionality</option>
                                     <option value="limit">limit</option>
@@ -576,7 +630,7 @@ export default function AdminSubscriptionPlansPage() {
                                 <div className="mb-1 text-xs font-semibold text-slate-500 uppercase">Functionality</div>
                                 <select className="w-full rounded-[5px] border border-slate-200 px-2 py-2" value={row.functionalityKey} onChange={(e) => setEditor((s: any) => {
                                   const next = [...s.featureRows]; next[idx] = { ...next[idx], functionalityKey: e.target.value }; return { ...s, featureRows: next };
-                                })} disabled={readOnly || !row.pageAccessKey}>
+                                })} disabled={readOnly || isFreePlan || !row.pageAccessKey}>
                                   <option value="">Select functionality</option>
                                   {availableFunctionalityKeys(idx, row.pageAccessKey).map((k) => <option key={k} value={k}>{k}</option>)}
                                 </select>
@@ -590,14 +644,14 @@ export default function AdminSubscriptionPlansPage() {
                                   <div className="mb-1 text-xs font-semibold text-slate-500 uppercase">Limit Key</div>
                                   <select className="w-full rounded-[5px] border border-slate-200 px-2 py-2" value={row.limitKey} onChange={(e) => setEditor((s: any) => {
                                     const next = [...s.featureRows]; next[idx] = { ...next[idx], limitKey: e.target.value }; return { ...s, featureRows: next };
-                                  })} disabled={readOnly || !row.pageAccessKey}>
+                                  })} disabled={readOnly || isFreePlan || !row.pageAccessKey}>
                                     <option value="">Select limit</option>
                                     {availableLimitKeys(idx, row.pageAccessKey).map((k) => <option key={k} value={k}>{k}</option>)}
                                   </select>
                                 </div>
                                 <Input label="Value" value={row.value} onChange={(e) => setEditor((s: any) => {
                                   const next = [...s.featureRows]; next[idx] = { ...next[idx], value: e.target.value.replace(/[^\d]/g, "") }; return { ...s, featureRows: next };
-                                })} disabled={readOnly || row.unlimited} />
+                                })} disabled={readOnly || isFreePlan || row.unlimited} />
                               </>
                             ) : null}
                           </div>
@@ -617,7 +671,7 @@ export default function AdminSubscriptionPlansPage() {
                                   next[idx] = { ...next[idx], included: true };
                                   return { ...s, featureRows: next };
                                 })}
-                                disabled={readOnly}
+                                disabled={readOnly || isFreePlan}
                               />
                               included
                             </label>
@@ -631,7 +685,7 @@ export default function AdminSubscriptionPlansPage() {
                                   next[idx] = { ...next[idx], included: false };
                                   return { ...s, featureRows: next };
                                 })}
-                                disabled={readOnly}
+                                disabled={readOnly || isFreePlan}
                               />
                               excluded
                             </label>
@@ -640,22 +694,35 @@ export default function AdminSubscriptionPlansPage() {
                           <label className={`text-xs font-semibold inline-flex items-center gap-2 pb-2 ${row.type === "page" && row.targetType === "limit" ? "text-slate-700" : "text-slate-400"}`}>
                             <input type="checkbox" checked={row.unlimited} onChange={(e) => setEditor((s: any) => {
                               const next = [...s.featureRows]; next[idx] = { ...next[idx], unlimited: e.target.checked }; return { ...s, featureRows: next };
-                            })} disabled={readOnly || row.type !== "page" || row.targetType !== "limit"} />
+                            })} disabled={readOnly || isFreePlan || row.type !== "page" || row.targetType !== "limit"} />
                             unlimited
                           </label>
 
                           <div className="pb-1">
-                            {!readOnly ? <Button variant="outline" onClick={() => setEditor((s: any) => ({ ...s, featureRows: s.featureRows.filter((_: any, i: number) => i !== idx) }))}>Remove</Button> : null}
+                            {!readOnly && !isFreePlan ? <Button variant="outline" onClick={() => setEditor((s: any) => ({ ...s, featureRows: s.featureRows.filter((_: any, i: number) => i !== idx) }))}>Remove</Button> : null}
                           </div>
                         </div>
                       </div>
                     ))}
                   </div>
+                  )}
                 </div>
+
+                {isFreePlan ? (
+                  <div className="md:col-span-2 border border-slate-200 rounded-[5px] p-3">
+                    <div className="text-sm font-black text-slate-900 mb-2">Free Plan Limits</div>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                      <Input label="Max Contacts / Month" value={editor?.freeLimits?.maxContacts || ""} onChange={(e) => setEditor((s: any) => ({ ...s, freeLimits: { ...(s.freeLimits || {}), maxContacts: e.target.value.replace(/[^\d]/g, "") } }))} />
+                      <Input label="Max Templates / Month" value={editor?.freeLimits?.maxTemplates || ""} onChange={(e) => setEditor((s: any) => ({ ...s, freeLimits: { ...(s.freeLimits || {}), maxTemplates: e.target.value.replace(/[^\d]/g, "") } }))} />
+                      <Input label="Max Campaigns / Month" value={editor?.freeLimits?.maxCampaignsPerMonth || ""} onChange={(e) => setEditor((s: any) => ({ ...s, freeLimits: { ...(s.freeLimits || {}), maxCampaignsPerMonth: e.target.value.replace(/[^\d]/g, "") } }))} />
+                      <Input label="Max Contact Exports / Month" value={editor?.freeLimits?.maxContactsExport || ""} onChange={(e) => setEditor((s: any) => ({ ...s, freeLimits: { ...(s.freeLimits || {}), maxContactsExport: e.target.value.replace(/[^\d]/g, "") } }))} />
+                    </div>
+                  </div>
+                ) : null}
 
 
                 <div className="md:col-span-2"><Textarea label="Review Note" value={editor.reviewNote} onChange={(e) => setEditor((s: any) => ({ ...s, reviewNote: e.target.value }))} disabled={readOnly} /></div>
-              {preview ? (
+              {preview && !isFreePlan ? (
                 <div className="col-span-2 rounded-[5px] border border-slate-200 bg-slate-50 p-4">
                   <div className="text-sm font-black text-slate-900">Price Preview</div>
                   <div className="mt-3 grid grid-cols-2 gap-2 md:grid-cols-3">
@@ -691,7 +758,7 @@ export default function AdminSubscriptionPlansPage() {
               {!readOnly ? (
                 <div className="sticky bottom-0 bg-white pt-4 flex justify-end gap-2">
                   <Button variant="ghost" onClick={() => navigate("/super-admin/subscription-plans")}>Cancel</Button>
-                  <Button onClick={() => void saveEditor()} disabled={saving || !editor.name}>{saving ? "Saving..." : "Save (In Review)"}</Button>
+                  <Button onClick={() => void saveEditor()} disabled={saving || !editor.name}>{saving ? "Saving..." : (isFreePlan ? "Save Free Plan" : "Save (In Review)")}</Button>
                 </div>
               ) : null}
 

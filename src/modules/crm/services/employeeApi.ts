@@ -1,4 +1,5 @@
 import axios from "axios";
+import { getEmployeeToken, setEmployeeToken } from "@modules/crm/services/employeeAuthStorage";
 
 const envBaseUrl = String(import.meta.env.VITE_API_BASE_URL || "").trim();
 const isBrowser = typeof window !== "undefined";
@@ -13,3 +14,24 @@ export const employeeApi = axios.create({
   timeout: 20000,
 });
 
+let __employeeApiInterceptorsBound = false;
+if (!__employeeApiInterceptorsBound) {
+  __employeeApiInterceptorsBound = true;
+
+  employeeApi.interceptors.request.use((config) => {
+    const token = getEmployeeToken();
+    if (token) {
+      config.headers = config.headers || {};
+      (config.headers as any).Authorization = `Bearer ${token}`;
+    }
+    return config;
+  });
+
+  employeeApi.interceptors.response.use(
+    (res) => res,
+    (err) => {
+      if (err?.response?.status === 401) setEmployeeToken("");
+      throw err;
+    }
+  );
+}

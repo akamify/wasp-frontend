@@ -5,7 +5,6 @@ const ITEMS = [
   { to: "/app/crm", label: "Dashboard" },
   { to: "/app/crm/leads", label: "Leads" },
   { to: "/app/crm/employees", label: "Employees" },
-  { to: "/app/crm/analytics", label: "Analytics" },
   { to: "/app/crm/settings", label: "Settings" },
 ] as const;
 
@@ -36,4 +35,3 @@ export function CrmSectionNav() {
     </div>
   );
 }
-

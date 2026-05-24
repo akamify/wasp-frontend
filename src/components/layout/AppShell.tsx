@@ -510,7 +510,14 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       pathname.startsWith("/app/profile") ||
       pathname.startsWith("/app/settings") ||
       pathname.startsWith("/app/plan") ||
-      pathname.startsWith("/app/pricing")
+      pathname.startsWith("/app/pricing") ||
+      pathname === "/app" ||
+      pathname.startsWith("/app/dashboard") ||
+      pathname.startsWith("/app/templates") ||
+      pathname.startsWith("/app/send") ||
+      pathname.startsWith("/app/contacts") ||
+      pathname.startsWith("/app/conversations") ||
+      pathname.startsWith("/app/wallet")
     ) {
       return null;
     }
@@ -547,7 +554,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const requiredPlan = requiredPlanForPath(location.pathname);
   const currentFeatures = billingCurrent?.effective?.features || {};
   const hasActiveSubscription = Boolean(billingCurrent?.subscription?.id);
-  const hasBasicAccess = hasActiveSubscription;
+  const hasBasicAccess = true;
   const hasProAccess = Boolean(
     currentFeatures?.crmAccess ||
     currentFeatures?.externalChatApiAccess ||
@@ -558,17 +565,30 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     requiredPlan !== null &&
     ((requiredPlan === "basic" && !hasBasicAccess) || (requiredPlan === "pro" && !hasProAccess));
   const requiredFeature = requiredFeatureForPath(location.pathname);
+  const proFeatureKeys: RequiredFeatureKey[] = [
+    "crmPageAccess",
+    "flowsPageAccess",
+    "linksPageAccess",
+    "automationPageAccess",
+    "activityPageAccess",
+    "apiKeysPageAccess",
+    "apiReportsPageAccess",
+  ];
+  const featureNeedsPro = requiredFeature ? proFeatureKeys.includes(requiredFeature) : false;
+  const planRestrictionEnabled = billingCurrent?.enforcement?.planRestrictionsEnabled === true;
   const hasFeaturePageAccess =
     requiredFeature == null
       ? true
-      : currentFeatures?.[requiredFeature] === undefined
-        ? true
-        : Boolean(currentFeatures?.[requiredFeature]);
+      : Boolean(currentFeatures?.[requiredFeature]);
   const isBlockedByFeature =
     !billingLoading &&
     requiredFeature !== null &&
     !hasFeaturePageAccess;
-  const isPlanAccessBlocked = isBlockedByPlan || isBlockedByFeature;
+  const isPlanAccessBlocked = planRestrictionEnabled && (isBlockedByPlan || isBlockedByFeature);
+  const isAccessCheckPending =
+    planRestrictionEnabled &&
+    billingLoading &&
+    (requiredPlan !== null || requiredFeature !== null);
 
   const relativeTime = (value?: string | null) => {
     if (!value) return "just now";
@@ -1048,16 +1068,23 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           )}
         >
           {isPlanAccessBlocked ? (
-            <div className="absolute inset-0 z-[120] flex items-center justify-center bg-slate-900/45 backdrop-blur-sm p-4">
+            <>
+              <div className="fixed inset-0 z-[350] bg-white/35 backdrop-blur-[1px]" />
+              <div className="fixed inset-0 z-[351] cursor-not-allowed" />
+            </>
+          ) : null}
+
+          {isPlanAccessBlocked ? (
+            <div className="fixed inset-0 z-[360] flex items-center justify-center p-4">
               <div className="w-full max-w-xl rounded-[5px] border border-slate-200 bg-white p-6 shadow-2xl">
                 <div className="text-[11px] font-black uppercase tracking-widest text-brand-600">Access Restricted</div>
                 <h3 className="mt-2 text-2xl font-black text-slate-900">
-                  {requiredPlan === "pro" ? "Upgrade to Pro to access this page" : "Buy Basic Plan to continue"}
+                  {(requiredPlan === "pro" || featureNeedsPro) ? "Upgrade to Pro to access this page" : "Buy Basic Plan to continue"}
                 </h3>
                 <p className="mt-2 text-sm font-semibold text-slate-600">
-                  {requiredPlan === "pro"
+                  {(requiredPlan === "pro" || featureNeedsPro)
                     ? "This module is available on Pro plan. Upgrade to unlock this feature."
-                    : "You can create account, setup WhatsApp credentials, and access profile/settings. For this module, buy at least Basic plan."}
+                    : "This module is available on paid plans. You can preview the UI, but actions are locked until you buy a plan."}
                 </p>
                 <div className="mt-5 flex flex-wrap gap-2">
                   <button
@@ -1065,7 +1092,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                     className="rounded-[5px] bg-brand-600 px-4 py-2 text-sm font-black text-white hover:bg-brand-700 transition-colors"
                     onClick={() => navigate("/app/plan")}
                   >
-                    {requiredPlan === "pro" ? "Upgrade to Pro" : "Buy Basic Plan"}
+                    {(requiredPlan === "pro" || featureNeedsPro) ? "Upgrade to Pro" : "Buy Basic Plan"}
                   </button>
                   <button
                     type="button"
@@ -1092,7 +1119,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                 "p-0"
               )}
             >
-              {isPlanAccessBlocked ? null : children}
+              {isAccessCheckPending ? null : children}
             </motion.div>
           </AnimatePresence>
         </main>

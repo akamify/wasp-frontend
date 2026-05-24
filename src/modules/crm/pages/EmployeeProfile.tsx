@@ -77,7 +77,7 @@ export default function EmployeeProfilePage() {
   }
 
   return (
-    <div className="p-6 bg-slate-50 min-h-full">
+    <div className="p-6 bg-slate-50 min-h-[calc(100dvh-4rem)]">
       <div className="max-w-2xl mx-auto space-y-4">
         <Card className="p-6 border-slate-200 shadow-sm rounded-[5px]">
           <div className="text-xs font-black uppercase tracking-widest text-slate-500">Profile</div>

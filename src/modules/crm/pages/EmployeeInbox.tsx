@@ -69,6 +69,10 @@ export default function EmployeeInboxPage() {
     return () => window.removeEventListener("mousedown", onDown, true);
   }, [menuOpen]);
 
+  if (!urlPhone && visibleConversations.length === 0) {
+    return <NoAssignedConversations loading={loadingList} onRefresh={refreshListSilently} onGoLeads={() => navigate("/employee/leads")} />;
+  }
+
   return (
     <div className="flex bg-white overflow-hidden relative h-dvh lg:h-full min-h-0">
       <ConversationsSidebar
@@ -189,6 +193,54 @@ function EmptyConversationState() {
       </div>
       <h2 className="text-2xl font-black text-slate-900 tracking-tight">Employee Inbox</h2>
       <p className="mt-2 text-slate-500 font-bold max-w-sm">Select an assigned conversation from the sidebar to start messaging.</p>
+    </div>
+  );
+}
+
+function NoAssignedConversations({
+  loading,
+  onRefresh,
+  onGoLeads,
+}: {
+  loading: boolean;
+  onRefresh: () => void;
+  onGoLeads: () => void;
+}) {
+  return (
+    <div className="h-[calc(100dvh-4rem)] bg-slate-50 flex items-center justify-center p-6">
+      <div className="w-full max-w-2xl rounded-[8px] border border-slate-200 bg-white shadow-sm p-8">
+        <div className="flex flex-col sm:flex-row sm:items-start gap-5">
+          <div className="h-14 w-14 rounded-[12px] bg-brand-50 border border-brand-100 flex items-center justify-center text-brand-700 shrink-0">
+            <MessageSquare size={24} />
+          </div>
+          <div className="flex-1 min-w-0">
+            <div className="text-lg font-black text-slate-900">No assigned conversations yet</div>
+            <div className="mt-1 text-sm font-semibold text-slate-500">
+              {loading
+                ? "Loading your assigned conversations..."
+                : "When leads are assigned to you, chats will show here automatically. You can also check your Leads page."}
+            </div>
+            <div className="mt-5 flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
+              <button
+                type="button"
+                onClick={onGoLeads}
+                disabled={loading}
+                className="h-10 px-4 rounded-[8px] bg-brand-600 text-white font-black text-sm hover:bg-brand-700"
+              >
+                Open Leads
+              </button>
+              <button
+                type="button"
+                onClick={onRefresh}
+                disabled={loading}
+                className="h-10 px-4 rounded-[8px] border border-slate-200 bg-white text-slate-700 font-black text-sm hover:bg-slate-50"
+              >
+                Refresh
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
   );
 }

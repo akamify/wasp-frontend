@@ -7,6 +7,7 @@ import { Button } from "@components/ui/Button";
 import { Input } from "@components/ui/Input";
 import { Modal } from "@components/ui/Modal";
 import { cn } from "@shared/utils/cn";
+import { AssignLeadModal } from "@modules/crm/components/AssignLeadModal";
 
 type Employee = {
   id: string;
@@ -158,6 +159,10 @@ export default function CrmEmployeeProfilePage() {
   const [leadsRange, setLeadsRange] = useState<"all" | "today" | "7d">("all");
   const [leads, setLeads] = useState<PagedRes<LeadItem> | null>(null);
   const [selectedLead, setSelectedLead] = useState<LeadItem | null>(null);
+  const [leadMultiSelected, setLeadMultiSelected] = useState<Record<string, boolean>>({});
+  const [transferOpen, setTransferOpen] = useState(false);
+  const [transferPhones, setTransferPhones] = useState<string[]>([]);
+  const [employeesForTransfer, setEmployeesForTransfer] = useState<any[]>([]);
   const [activities, setActivities] = useState<PagedRes<any> | null>(null);
   const [sessions, setSessions] = useState<PagedRes<any> | null>(null);
   const [requests, setRequests] = useState<{ id: string; createdAt?: string; metadata: any }[] | null>(null);
@@ -270,10 +275,23 @@ export default function CrmEmployeeProfilePage() {
     try {
       const res: PagedRes<LeadItem> = await API.crm.employeeLeads(employeeId, { range: leadsRange, page: 1, limit: 25 });
       setLeads(res);
+      setLeadMultiSelected({});
     } catch (e: any) {
       setError(e?.response?.data?.message || "Failed to load leads");
     } finally {
       setBusy(false);
+    }
+  }
+
+  async function ensureEmployeesForTransferLoaded() {
+    if (employeesForTransfer.length) return;
+    try {
+      const res: any = await API.crm.employees();
+      const items = Array.isArray(res?.items) ? res.items : Array.isArray(res) ? res : [];
+      const currentId = String(employeeId || "");
+      setEmployeesForTransfer(items.filter((e: any) => String(e?.id || "") !== currentId));
+    } catch {
+      // ignore
     }
   }
 
@@ -322,6 +340,15 @@ export default function CrmEmployeeProfilePage() {
   const closedSeries = Array.isArray(metrics?.series?.closedLast7Days) ? metrics?.series?.closedLast7Days! : [];
 
   const title = useMemo(() => (employee ? employee.name || employee.email : "Employee"), [employee]);
+
+  const selectedLeadPhones = useMemo(
+    () => Object.keys(leadMultiSelected || {}).filter((p) => leadMultiSelected[p]),
+    [leadMultiSelected]
+  );
+  const selectedLeadsCount = selectedLeadPhones.length;
+  const someLeadsSelected = selectedLeadsCount > 0;
+  const leadsItems = leads?.items || [];
+  const allLeadsSelected = leadsItems.length > 0 && leadsItems.every((l) => !!leadMultiSelected[l.phone]);
 
   async function sendResetLink() {
     if (!employeeId) return;
@@ -534,15 +561,54 @@ export default function CrmEmployeeProfilePage() {
               </Button>
             </div>
           </div>
+
+          {someLeadsSelected ? (
+            <div className="bg-brand-50 border-y border-brand-100 px-4 py-3 flex items-center justify-between">
+              <div className="text-sm font-bold text-brand-700">{selectedLeadsCount} leads selected</div>
+              <div className="flex items-center gap-2">
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  className="h-8"
+                  onClick={async () => {
+                    await ensureEmployeesForTransferLoaded();
+                    setTransferPhones(selectedLeadPhones);
+                    setTransferOpen(true);
+                  }}
+                  disabled={busy}
+                >
+                  Transfer Selected
+                </Button>
+                <Button size="sm" variant="ghost" className="h-8" onClick={() => setLeadMultiSelected({})}>
+                  Cancel
+                </Button>
+              </div>
+            </div>
+          ) : null}
+
           <div className="overflow-x-auto">
             <table className="min-w-[900px] w-full text-[12px]">
               <thead className="bg-slate-50 text-slate-600">
                 <tr className="text-left">
+                  <th className="w-12 px-4 py-3 font-black uppercase tracking-widest text-[10px]">
+                    <input
+                      type="checkbox"
+                      checked={allLeadsSelected}
+                      onChange={(e) => {
+                        const next: Record<string, boolean> = { ...(leadMultiSelected || {}) };
+                        if (e.target.checked) leadsItems.forEach((l) => (next[l.phone] = true));
+                        else leadsItems.forEach((l) => delete next[l.phone]);
+                        setLeadMultiSelected(next);
+                      }}
+                      className="rounded-[3px] border-ink-900/20"
+                    />
+                  </th>
                   <th className="px-4 py-3 font-black uppercase tracking-widest text-[10px]">Phone</th>
                   <th className="px-4 py-3 font-black uppercase tracking-widest text-[10px]">Status</th>
                   <th className="px-4 py-3 font-black uppercase tracking-widest text-[10px]">Assigned</th>
                   <th className="px-4 py-3 font-black uppercase tracking-widest text-[10px]">Last inbound</th>
                   <th className="px-4 py-3 font-black uppercase tracking-widest text-[10px]">Created</th>
+                  <th className="px-4 py-3 font-black uppercase tracking-widest text-[10px]">Actions</th>
                 </tr>
               </thead>
               <tbody>
@@ -552,16 +618,39 @@ export default function CrmEmployeeProfilePage() {
                     className="border-t border-slate-100 hover:bg-slate-50/60 cursor-pointer"
                     onClick={() => setSelectedLead(l)}
                   >
+                    <td className="px-4 py-3" onClick={(e) => e.stopPropagation()}>
+                      <input
+                        type="checkbox"
+                        checked={!!leadMultiSelected[l.phone]}
+                        onChange={() => setLeadMultiSelected((p) => ({ ...(p || {}), [l.phone]: !p?.[l.phone] }))}
+                        className="rounded-[3px] border-ink-900/20"
+                      />
+                    </td>
                     <td className="px-4 py-3 font-black text-slate-900">{l.phone}</td>
                     <td className="px-4 py-3 font-semibold text-slate-700">{l.status}</td>
                     <td className="px-4 py-3 text-slate-600 font-semibold">{fmtDate(l.assignedAt)}</td>
                     <td className="px-4 py-3 text-slate-600 font-semibold">{fmtDate(l.lastInboundAt)}</td>
                     <td className="px-4 py-3 text-slate-600 font-semibold">{fmtDate(l.createdAt)}</td>
+                    <td className="px-4 py-3" onClick={(e) => e.stopPropagation()}>
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        className="h-8"
+                        disabled={busy}
+                        onClick={async () => {
+                          await ensureEmployeesForTransferLoaded();
+                          setTransferPhones([l.phone]);
+                          setTransferOpen(true);
+                        }}
+                      >
+                        Transfer
+                      </Button>
+                    </td>
                   </tr>
                 ))}
                 {!busy && (leads?.items || []).length === 0 ? (
                   <tr>
-                    <td colSpan={5} className="px-4 py-10 text-center text-slate-500 font-semibold">
+                    <td colSpan={7} className="px-4 py-10 text-center text-slate-500 font-semibold">
                       No leads found.
                     </td>
                   </tr>
@@ -571,6 +660,33 @@ export default function CrmEmployeeProfilePage() {
           </div>
         </Card>
       ) : null}
+
+      <AssignLeadModal
+        open={transferOpen}
+        onClose={() => setTransferOpen(false)}
+        phone={transferPhones[0] || ""}
+        phones={transferPhones}
+        employees={employeesForTransfer || []}
+        onAssign={async (toEmployeeId, reason) => {
+          if (!employeeId) return;
+          const phones = (transferPhones || []).filter(Boolean);
+          if (!phones.length) return;
+          setBusy(true);
+          setError(null);
+          try {
+            await Promise.all(phones.map((p) => API.crm.manualAssignLead(p, { employeeId: toEmployeeId, reason: reason || "transfer" })));
+            setTransferOpen(false);
+            setTransferPhones([]);
+            setLeadMultiSelected({});
+            await loadLeads();
+            await reloadProfile();
+          } catch (e: any) {
+            setError(e?.response?.data?.message || "Failed to transfer leads");
+          } finally {
+            setBusy(false);
+          }
+        }}
+      />
 
       {tab === "requests" ? (
         <Card className="border-slate-200 shadow-sm rounded-[5px] overflow-hidden">

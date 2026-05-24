@@ -4,10 +4,10 @@ import { API } from "@api/api";
 import { Card } from "@components/ui/Card";
 import { Alert } from "@components/ui/Alert";
 import { Button } from "@components/ui/Button";
-import { Input } from "@components/ui/Input";
 import { cn } from "@shared/utils/cn";
-import { Plus, ShieldAlert, UserX, Users } from "lucide-react";
+import { Plus, ShieldAlert, UserX, Users, Pencil } from "lucide-react";
 import { CrmSectionNav } from "@modules/crm/components/CrmSectionNav";
+import { CrmEmployeeUpsertModal } from "@modules/crm/components/CrmEmployeeUpsertModal";
 
 type Employee = {
   id: string;
@@ -36,10 +36,9 @@ export default function CrmEmployeesPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const [createOpen, setCreateOpen] = useState(false);
+  const [upsertOpen, setUpsertOpen] = useState(false);
+  const [editingEmployee, setEditingEmployee] = useState<Employee | null>(null);
   const [busy, setBusy] = useState(false);
-  const [email, setEmail] = useState("");
-  const [name, setName] = useState("");
 
   function reload() {
     setLoading(true);
@@ -58,24 +57,6 @@ export default function CrmEmployeesPage() {
 
   const activeCount = useMemo(() => items.filter((e) => e.status === "ACTIVE").length, [items]);
   const blockedCount = useMemo(() => items.filter((e) => e.status === "BLOCKED").length, [items]);
-
-  async function onCreate(e: React.FormEvent) {
-    e.preventDefault();
-    if (!email.trim()) return;
-    setBusy(true);
-    setError(null);
-    try {
-      await API.crm.createEmployee({ email, name });
-      setEmail("");
-      setName("");
-      setCreateOpen(false);
-      reload();
-    } catch (e2: any) {
-      setError(e2?.response?.data?.message || "Failed to create employee");
-    } finally {
-      setBusy(false);
-    }
-  }
 
   async function updateStatus(employeeId: string, nextStatus: Employee["status"]) {
     if (!window.confirm(`Set employee status to ${nextStatus}?`)) return;
@@ -100,7 +81,13 @@ export default function CrmEmployeesPage() {
           <p className="mt-2 text-slate-500 font-medium">Manage employee inbox access and assignment eligibility.</p>
         </div>
         <div className="flex items-center gap-2">
-          <Button onClick={() => setCreateOpen((v) => !v)} className="gap-2">
+          <Button
+            onClick={() => {
+              setEditingEmployee(null);
+              setUpsertOpen(true);
+            }}
+            className="gap-2"
+          >
             <Plus size={16} /> New Employee
           </Button>
           <Button variant="ghost" disabled={loading || busy} onClick={reload}>
@@ -148,27 +135,6 @@ export default function CrmEmployeesPage() {
           </div>
         </Card>
       </div>
-
-      {createOpen ? (
-        <Card className="p-5 border-slate-200 shadow-sm rounded-[5px]">
-          <div className="text-sm font-black text-slate-900">Create employee</div>
-          <div className="mt-1 text-xs text-slate-500 font-medium">
-            System sends a secure password setup link to the employee email. No password is ever shown in the app or emailed to the owner.
-          </div>
-          <form className="mt-4 grid gap-3 md:grid-cols-2" onSubmit={onCreate}>
-            <Input label="Employee email" value={email} onChange={(e) => setEmail(e.target.value)} required />
-            <Input label="Name (optional)" value={name} onChange={(e) => setName(e.target.value)} />
-            <div className="md:col-span-2 flex items-center gap-2">
-              <Button type="submit" disabled={busy}>
-                {busy ? "Creating..." : "Create"}
-              </Button>
-              <Button type="button" variant="ghost" disabled={busy} onClick={() => setCreateOpen(false)}>
-                Cancel
-              </Button>
-            </div>
-          </form>
-        </Card>
-      ) : null}
 
       <Card className="border-slate-200 shadow-sm rounded-[5px] overflow-hidden">
         <div className="p-4 border-b border-slate-100 flex items-center justify-between">
@@ -222,6 +188,19 @@ export default function CrmEmployeesPage() {
                         disabled={busy}
                         onClick={(ev) => {
                           ev.stopPropagation();
+                          setEditingEmployee(e);
+                          setUpsertOpen(true);
+                        }}
+                      >
+                        <Pencil size={16} className="mr-2" />
+                        Edit
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        className="h-8 px-3"
+                        disabled={busy}
+                        onClick={(ev) => {
+                          ev.stopPropagation();
                           updateStatus(e.id, e.status === "BLOCKED" ? "ACTIVE" : "BLOCKED");
                         }}
                       >
@@ -255,6 +234,22 @@ export default function CrmEmployeesPage() {
           </table>
         </div>
       </Card>
+
+      <CrmEmployeeUpsertModal
+        open={upsertOpen}
+        onClose={() => setUpsertOpen(false)}
+        employee={
+          editingEmployee
+            ? {
+                id: editingEmployee.id,
+                email: editingEmployee.email,
+                name: editingEmployee.name,
+                role: editingEmployee.role,
+              }
+            : null
+        }
+        onSaved={reload}
+      />
     </div>
   );
 }

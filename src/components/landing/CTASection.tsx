@@ -91,7 +91,7 @@ export function CTASection() {
                 ))}
               </ul>
               <a
-                href="/register"
+                href="/app/plan"
                 className={`mt-auto text-center font-bold py-3.5 rounded-xl text-sm transition-all duration-200 ${plan.featured
                     ? "bg-gradient-to-r from-[#25D366] to-[#06b77e] text-white hover:shadow-lg hover:shadow-[#25D366]/30 hover:scale-105"
                     : "border border-ink-900/12 text-ink-900 hover:bg-brand-50/60"

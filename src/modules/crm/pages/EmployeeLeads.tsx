@@ -3,6 +3,8 @@ import { Card } from "@components/ui/Card";
 import { Alert } from "@components/ui/Alert";
 import { Button } from "@components/ui/Button";
 import { crmEmployeeLeadsService } from "@modules/crm/services/crmEmployeeLeads.service";
+import { Link } from "react-router-dom";
+import { BriefcaseBusiness, MessageSquare } from "lucide-react";
 
 type LeadItem = {
   id: string;
@@ -49,8 +51,8 @@ export default function EmployeeLeadsPage() {
   }, [range]);
 
   return (
-    <div className="p-6 bg-slate-50 min-h-full">
-      <div className="max-w-5xl mx-auto space-y-4">
+    <div className="p-6 bg-slate-50 min-h-[calc(100dvh-4rem)]">
+      <div className="max-w-5xl mx-auto space-y-4 flex flex-col min-h-[calc(100dvh-4rem-3rem)]">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
           <div>
             <div className="text-sm font-black text-slate-900">Leads</div>
@@ -74,39 +76,64 @@ export default function EmployeeLeadsPage() {
 
         {error ? <Alert variant="danger">{error}</Alert> : null}
 
-        <Card className="border-slate-200 shadow-sm rounded-[5px] overflow-hidden">
-          <div className="overflow-x-auto">
-            <table className="min-w-[900px] w-full text-[12px]">
-              <thead className="bg-slate-50 text-slate-600">
-                <tr className="text-left">
-                  <th className="px-4 py-3 font-black uppercase tracking-widest text-[10px]">Phone</th>
-                  <th className="px-4 py-3 font-black uppercase tracking-widest text-[10px]">Status</th>
-                  <th className="px-4 py-3 font-black uppercase tracking-widest text-[10px]">Assigned</th>
-                  <th className="px-4 py-3 font-black uppercase tracking-widest text-[10px]">Last inbound</th>
-                  <th className="px-4 py-3 font-black uppercase tracking-widest text-[10px]">Created</th>
-                </tr>
-              </thead>
-              <tbody>
-                {items.map((l) => (
-                  <tr key={l.id} className="border-t border-slate-100 hover:bg-slate-50/60 cursor-pointer" onClick={() => setSelected(l)}>
-                    <td className="px-4 py-3 font-black text-slate-900">{l.phone}</td>
-                    <td className="px-4 py-3 font-semibold text-slate-700">{l.status}</td>
-                    <td className="px-4 py-3 text-slate-600 font-semibold">{fmtDate(l.assignedAt)}</td>
-                    <td className="px-4 py-3 text-slate-600 font-semibold">{fmtDate(l.lastInboundAt)}</td>
-                    <td className="px-4 py-3 text-slate-600 font-semibold">{fmtDate(l.createdAt)}</td>
+        {!loading && items.length === 0 ? (
+          <Card className="border-slate-200 shadow-sm rounded-[5px] bg-white flex-1 flex items-center justify-center p-8">
+            <div className="w-full max-w-2xl">
+              <div className="flex flex-col sm:flex-row sm:items-start gap-5">
+                <div className="h-12 w-12 rounded-[8px] bg-slate-50 border border-slate-200 flex items-center justify-center text-slate-700 shrink-0">
+                  <BriefcaseBusiness size={20} />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="text-lg font-black text-slate-900">No assigned leads yet</div>
+                  <div className="mt-1 text-sm font-semibold text-slate-500">
+                    When a lead is assigned to you, it will appear here automatically. You can also check your Inbox for new messages.
+                  </div>
+                  <div className="mt-5 flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
+                    <Link to="/employee/inbox" className="inline-flex">
+                      <Button className="gap-2 w-full sm:w-auto">
+                        <MessageSquare size={16} /> Open Inbox
+                      </Button>
+                    </Link>
+                    <Button variant="ghost" className="w-full sm:w-auto" onClick={reload} disabled={loading || busy}>
+                      Refresh
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </Card>
+        ) : (
+          <Card className="border-slate-200 shadow-sm rounded-[5px] overflow-hidden">
+            <div className="overflow-x-auto">
+              <table className="min-w-[900px] w-full text-[12px]">
+                <thead className="bg-slate-50 text-slate-600">
+                  <tr className="text-left">
+                    <th className="px-4 py-3 font-black uppercase tracking-widest text-[10px]">Phone</th>
+                    <th className="px-4 py-3 font-black uppercase tracking-widest text-[10px]">Status</th>
+                    <th className="px-4 py-3 font-black uppercase tracking-widest text-[10px]">Assigned</th>
+                    <th className="px-4 py-3 font-black uppercase tracking-widest text-[10px]">Last inbound</th>
+                    <th className="px-4 py-3 font-black uppercase tracking-widest text-[10px]">Created</th>
                   </tr>
-                ))}
-                {!loading && items.length === 0 ? (
-                  <tr>
-                    <td colSpan={5} className="px-4 py-10 text-center text-slate-500 font-semibold">
-                      No leads found.
-                    </td>
-                  </tr>
-                ) : null}
-              </tbody>
-            </table>
-          </div>
-        </Card>
+                </thead>
+                <tbody>
+                  {items.map((l) => (
+                    <tr
+                      key={l.id}
+                      className="border-t border-slate-100 hover:bg-slate-50/60 cursor-pointer"
+                      onClick={() => setSelected(l)}
+                    >
+                      <td className="px-4 py-3 font-black text-slate-900">{l.phone}</td>
+                      <td className="px-4 py-3 font-semibold text-slate-700">{l.status}</td>
+                      <td className="px-4 py-3 text-slate-600 font-semibold">{fmtDate(l.assignedAt)}</td>
+                      <td className="px-4 py-3 text-slate-600 font-semibold">{fmtDate(l.lastInboundAt)}</td>
+                      <td className="px-4 py-3 text-slate-600 font-semibold">{fmtDate(l.createdAt)}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </Card>
+        )}
 
         {selected ? (
           <div className="fixed inset-0 z-[999] flex items-center justify-center bg-slate-900/40 p-4 backdrop-blur-sm" onClick={() => setSelected(null)}>

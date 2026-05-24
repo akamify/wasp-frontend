@@ -19,7 +19,6 @@ import CrmDashboardPage from "@modules/crm/pages/CrmDashboard";
 import CrmEmployeesPage from "@modules/crm/pages/CrmEmployees";
 import CrmEmployeeProfilePage from "@modules/crm/pages/CrmEmployeeProfile";
 import CrmLeadsPage from "@modules/crm/pages/CrmLeads";
-import CrmAnalyticsPage from "@modules/crm/pages/CrmAnalytics";
 import CrmSettingsPage from "@modules/crm/pages/CrmSettings";
 
 import LandingPage from "@pages/Landing";
@@ -229,14 +228,6 @@ export default function App() {
                 element={
                   <AppShell>
                     <CrmLeadsPage />
-                  </AppShell>
-                }
-              />
-              <Route
-                path="/app/crm/analytics"
-                element={
-                  <AppShell>
-                    <CrmAnalyticsPage />
                   </AppShell>
                 }
               />

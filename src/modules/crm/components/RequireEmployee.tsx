@@ -1,10 +1,10 @@
 import { Navigate, Outlet, useLocation } from "react-router-dom";
-import { getEmployeeToken } from "@modules/crm/services/employeeAuthStorage";
+import { useEmployeeAuth } from "@modules/crm/providers/EmployeeAuthContext";
 
 export function RequireEmployee() {
   const loc = useLocation();
-  const token = String(getEmployeeToken() || "").trim();
-  if (!token) return <Navigate to="/employee/login" replace state={{ from: loc.pathname }} />;
+  const { token } = useEmployeeAuth();
+  const safeToken = String(token || "").trim();
+  if (!safeToken) return <Navigate to="/employee/login" replace state={{ from: loc.pathname }} />;
   return <Outlet />;
 }
-
