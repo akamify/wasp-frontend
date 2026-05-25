@@ -13,8 +13,8 @@ export function EditContactModal({ busy, form, open, onClose, onFormChange, onSa
   if (!open) return null;
 
   return (
-    <div className="fixed inset-0 z-[120] bg-slate-900/40 backdrop-blur-sm p-4" onMouseDown={(e) => { if (e.target === e.currentTarget) onClose(); }}>
-      <div className="mx-auto my-12 w-full max-w-xl overflow-hidden rounded-[5px] bg-white shadow-2xl ring-1 ring-black/10">
+    <div className="fixed inset-0 z-[999] bg-slate-900/40 backdrop-blur-sm p-4 flex items-center justify-center overflow-y-auto" onMouseDown={(e) => { if (e.target === e.currentTarget) onClose(); }}>
+      <div className="mx-auto my-auto w-full max-w-xl overflow-hidden rounded-[5px] bg-white shadow-2xl ring-1 ring-black/10">
         <div className="flex items-center justify-between border-b border-slate-100 px-5 py-4">
           <div className="text-sm font-black text-slate-900">Edit contact</div>
           <button className="rounded-[5px] p-2 text-slate-500 hover:bg-slate-50" onClick={onClose}><X size={18} /></button>

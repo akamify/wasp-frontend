@@ -32,14 +32,14 @@ export function Modal({
   if (!resolvedOpen) return null;
 
   return createPortal(
-    <div className="fixed inset-0 z-[9999]">
+    <div className="fixed inset-0 z-[999]">
       <button
         type="button"
         onClick={onClose}
         className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm"
         aria-label="Close modal"
       />
-      <div className="absolute inset-0 flex items-start justify-center p-4 sm:p-6">
+      <div className="absolute inset-0 flex items-center justify-center p-4 sm:p-6">
         <div
           role="dialog"
           aria-modal="true"

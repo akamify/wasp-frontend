@@ -369,7 +369,7 @@ export default function ApiReportsPage() {
       <AnimatePresence>
         {detailOpen ? (
           <motion.div
-            className="fixed inset-0 z-[100] overflow-y-auto bg-slate-900/40 backdrop-blur-sm p-4"
+            className="fixed inset-0 z-[999] overflow-y-auto bg-slate-900/40 backdrop-blur-sm p-4 flex items-center justify-center"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}

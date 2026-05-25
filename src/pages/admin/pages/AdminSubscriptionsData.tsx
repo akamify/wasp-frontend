@@ -514,7 +514,7 @@ function SubscriptionWorkspaceDetail() {
       ) : null}
 
       {linkResultModalOpen && generatedLink ? (
-        <div className="fixed inset-0 z-[2300] bg-slate-900/45 backdrop-blur-sm p-4 flex items-center justify-center">
+        <div className="fixed inset-0 z-[999] bg-slate-900/45 backdrop-blur-sm p-4 flex items-center justify-center">
           <div className="w-full max-w-2xl rounded-[5px] border border-slate-200 bg-white p-5 md:p-6">
             <div className="text-lg font-black text-slate-900">Payment Link Generated</div>
             <div className="mt-3 rounded-[5px] border border-slate-200 bg-slate-50 p-3 text-xs break-all">{generatedLink.purchaseUrl}</div>
@@ -546,7 +546,7 @@ function SubscriptionWorkspaceDetail() {
 
 function PlanModal(props: any) {
   return (
-    <div className="fixed inset-0 z-[2100] bg-slate-900/45 backdrop-blur-sm p-4 flex items-center justify-center" onClick={props.onClose}>
+    <div className="fixed inset-0 z-[999] bg-slate-900/45 backdrop-blur-sm p-4 flex items-center justify-center" onClick={props.onClose}>
       <div className="w-full max-w-6xl max-h-[92vh] overflow-y-auto rounded-[5px] border border-slate-200 bg-white p-5 md:p-6" onClick={(e) => e.stopPropagation()}>
         <div className="flex items-center justify-between mb-4">
           <h3 className="text-lg font-black text-slate-900">{props.title}</h3>
@@ -603,7 +603,7 @@ function PriceSummary({ pricing }: { pricing: any }) {
 
 function ConfirmModal({ title, text, onNo, onYes, loading, yesLabel }: any) {
   return (
-    <div className="fixed inset-0 z-[2200] bg-slate-900/50 p-4 flex items-center justify-center" onClick={onNo}>
+    <div className="fixed inset-0 z-[999] bg-slate-900/50 p-4 flex items-center justify-center" onClick={onNo}>
       <div className="w-full max-w-md rounded-[5px] border border-slate-200 bg-white p-5" onClick={(e) => e.stopPropagation()}>
         <div className="text-base font-black text-slate-900">{title}</div>
         <div className="text-sm text-slate-600 mt-2">{text}</div>
@@ -619,7 +619,7 @@ function ConfirmModal({ title, text, onNo, onYes, loading, yesLabel }: any) {
 function PaymentLinkDetailModal({ row, onClose, onDisable }: any) {
   const amount = row.amountSummary || {};
   return (
-    <div className="fixed inset-0 z-[2300] bg-slate-900/45 backdrop-blur-sm p-4 flex items-center justify-center" onClick={onClose}>
+    <div className="fixed inset-0 z-[999] bg-slate-900/45 backdrop-blur-sm p-4 flex items-center justify-center" onClick={onClose}>
       <div className="w-full max-w-5xl max-h-[90vh] overflow-y-auto rounded-[5px] border border-slate-200 bg-white p-5 md:p-6" onClick={(e) => e.stopPropagation()}>
         <div className="flex items-center justify-between mb-4">
           <h3 className="text-lg font-black text-slate-900">Payment Link Details</h3>
@@ -668,7 +668,7 @@ function PaymentLinkDetailModal({ row, onClose, onDisable }: any) {
 
 function HistoryDetailModal({ row, onClose }: any) {
   return (
-    <div className="fixed inset-0 z-[2300] bg-slate-900/45 backdrop-blur-sm p-4 flex items-center justify-center" onClick={onClose}>
+    <div className="fixed inset-0 z-[999] bg-slate-900/45 backdrop-blur-sm p-4 flex items-center justify-center" onClick={onClose}>
       <div className="w-full max-w-3xl max-h-[90vh] overflow-y-auto rounded-[5px] border border-slate-200 bg-white p-5 md:p-6" onClick={(e) => e.stopPropagation()}>
         <div className="flex items-center justify-between mb-4">
           <h3 className="text-lg font-black text-slate-900">Subscription History Detail</h3>
