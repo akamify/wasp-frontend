@@ -172,7 +172,7 @@ export function HeroSection() {
             className="relative h-[420px] sm:h-[520px] lg:h-[620px]"
           >
             <div className="absolute inset-0 rounded-3xl bg-[radial-gradient(circle_at_50%_50%,rgba(37,211,102,0.08),transparent_70%)]" />
-            <div className="relative h-full p-6">
+            <div className="relative h-full p-2">
               <HeroIllustration />
             </div>
           </motion.div>
