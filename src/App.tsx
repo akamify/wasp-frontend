@@ -22,32 +22,32 @@ import CrmLeadsPage from "@modules/crm/pages/CrmLeads";
 import CrmSettingsPage from "@modules/crm/pages/CrmSettings";
 
 import LandingPage from "@pages/Landing";
-import LoginPage from "@pages/Login";
-import RegisterPage from "@pages/Register";
-import ForgotPasswordPage from "@pages/ForgotPassword";
-import ResetPasswordPage from "@pages/ResetPassword";
-import AdminForgotPasswordPage from "@pages/AdminForgotPassword";
-import AdminResetPasswordPage from "@pages/AdminResetPassword";
-import DashboardPage from "@pages/Dashboard";
-import MetaConnectPage from "@pages/Meta";
-import TemplatesPage from "@pages/Templates";
-import SendPage from "@pages/Send";
-import CampaignDetailPage from "@pages/CampaignDetail";
-import ContactsPage from "@pages/Contacts";
-import ConversationsPage from "@pages/Conversations";
-import LinksPage from "@pages/Links";
-import AutomationPage from "@pages/Automation";
-import SettingsPage from "@pages/Settings";
-import ProfilePage from "@pages/Profile";
-import PlanPage from "@pages/Plan";
-import PlanHistoryPage from "@pages/PlanHistory";
-import ApiKeysPage from "@pages/ApiKeys";
-import ApiReportsPage from "@pages/ApiReports";
-import ActivityPage from "@pages/Activity";
-import PricingPage from "@pages/Pricing";
-import WalletPage from "@pages/Wallet";
-import FlowsPage from "@pages/Flows";
-import FlowsCreatePage from "@pages/FlowsCreate";
+import LoginPage from "@pages/auth/pages/Login";
+import RegisterPage from "@pages/auth/pages/Register";
+import ForgotPasswordPage from "@pages/auth/pages/ForgotPassword";
+import ResetPasswordPage from "@pages/auth/pages/ResetPassword";
+import AdminForgotPasswordPage from "@pages/auth/pages/AdminForgotPassword";
+import AdminResetPasswordPage from "@pages/auth/pages/AdminResetPassword";
+import DashboardPage from "@pages/user/pages/Dashboard";
+import MetaConnectPage from "@pages/user/pages/Meta";
+import TemplatesPage from "@pages/user/pages/Templates";
+import SendPage from "@pages/user/pages/Send";
+import CampaignDetailPage from "@pages/user/pages/CampaignDetail";
+import ContactsPage from "@pages/user/pages/Contacts";
+import ConversationsPage from "@pages/user/pages/Conversations";
+import LinksPage from "@pages/user/pages/Links";
+import AutomationPage from "@pages/user/pages/Automation";
+import SettingsPage from "@pages/user/pages/Settings";
+import ProfilePage from "@pages/user/pages/ProfilePage";
+import PlanPage from "@pages/user/pages/Plan";
+import PlanHistoryPage from "@pages/user/pages/PlanHistory";
+import ApiKeysPage from "@pages/user/pages/ApiKeys";
+import ApiReportsPage from "@pages/user/pages/ApiReports";
+import ActivityPage from "@pages/user/pages/Activity";
+import PricingPage from "@pages/user/pages/Pricing";
+import WalletPage from "@pages/user/pages/Wallet";
+import FlowsPage from "@pages/user/pages/Flows";
+import FlowsCreatePage from "@pages/user/pages/FlowsCreate";
 import NotFoundPage from "@pages/NotFound";
 import HelpCenterPage from "@pages/public/HelpCenter";
 import RaiseTicketPage from "@pages/public/RaiseTicket";
@@ -770,3 +770,5 @@ export default function App() {
     </AuthProvider>
   );
 }
+
+

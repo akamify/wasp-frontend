@@ -28,8 +28,8 @@ import {
   Boxes,
   LayoutDashboard,
 } from "lucide-react";
-import { WhatsAppManagerProfileModal } from "@pages/dashboard/WhatsAppManagerProfileModal";
-import { WhatsAppManagerProfileViewModal } from "@pages/dashboard/WhatsAppManagerProfileViewModal";
+import { WhatsAppManagerProfileModal } from "@pages/user/dashboard/WhatsAppManagerProfileModal";
+import { WhatsAppManagerProfileViewModal } from "@pages/user/dashboard/WhatsAppManagerProfileViewModal";
 import { RechargeModal } from "@components/wallet/RechargeModal";
 
 import { formatCurrencySafe } from "@shared/config/currency";
@@ -730,3 +730,4 @@ export default function DashboardPage() {
     </div>
   );
 }
+

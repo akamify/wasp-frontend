@@ -3,8 +3,8 @@ import { Plus, Eye, RefreshCw, Trash2, MessageSquare, Folder, ShieldCheck, Megap
 import { Badge } from "@components/ui/Badge";
 import { Button } from "@components/ui/Button";
 import { TemplatesTableSkeleton } from "@components/ui/Skeletons";
-import { statusTone, truncateTemplateName } from "@pages/templates/helpers";
-import type { TemplateItem } from "@pages/templates/types";
+import { statusTone, truncateTemplateName } from "@pages/user/templates/helpers";
+import type { TemplateItem } from "@pages/user/templates/types";
 import { cn } from "@shared/utils/cn";
 import { useToast } from "@shared/providers/ToastContext";
 import { API } from "@api/api";
@@ -324,3 +324,4 @@ export function TemplatesList(props: Props) {
     </div>
   );
 }
+

@@ -23,8 +23,8 @@ import { Badge } from "@components/ui/Badge";
 import { Button } from "@components/ui/Button";
 import { Card } from "@components/ui/Card";
 import { CampaignDetailSkeleton } from "@components/ui/Skeletons";
-import { TemplatePreview } from "@pages/templates/TemplatePreview";
-import { parseComponentsForPreview } from "@pages/templates/helpers";
+import { TemplatePreview } from "@pages/user/templates/TemplatePreview";
+import { parseComponentsForPreview } from "@pages/user/templates/helpers";
 import { useToast } from "@shared/providers/ToastContext";
 import { motion } from "framer-motion";
 import { cn } from "@shared/utils/cn";
@@ -900,3 +900,4 @@ export default function CampaignDetailPage() {
     </div>
   );
 }
+

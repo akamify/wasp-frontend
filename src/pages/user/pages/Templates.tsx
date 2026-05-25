@@ -3,11 +3,11 @@ import { useSearchParams } from "react-router-dom";
 import { API } from "@api/api";
 import { Button } from "@components/ui/Button";
 import { useToast } from "@shared/providers/ToastContext";
-import { TemplateForm } from "@pages/templates/TemplateForm";
-import { TemplatePreview } from "@pages/templates/TemplatePreview";
-import { TemplatesList } from "@pages/templates/TemplatesList";
-import { parseComponentsForPreview, truncateTemplateName } from "@pages/templates/helpers";
-import type { TemplateItem } from "@pages/templates/types";
+import { TemplateForm } from "@pages/user/templates/TemplateForm";
+import { TemplatePreview } from "@pages/user/templates/TemplatePreview";
+import { TemplatesList } from "@pages/user/templates/TemplatesList";
+import { parseComponentsForPreview, truncateTemplateName } from "@pages/user/templates/helpers";
+import type { TemplateItem } from "@pages/user/templates/types";
 import { Pencil, X, } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
@@ -214,3 +214,4 @@ export default function TemplatesPage() {
     </div>
   );
 }
+

@@ -1,13 +1,13 @@
 import React, { useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import { useAuth } from "../context/AuthContext";
-import { API, setToken, setWorkspaceId } from "../api/api";
-import { Card } from "../components/ui/Card";
-import { Input } from "../components/ui/Input";
-import { Button } from "../components/ui/Button";
-import { Alert } from "../components/ui/Alert";
-import { BRAND_NAME } from "../config/brand";
-import { normalizeRole } from "../shared/utils/authRole";
+import { useAuth } from "@shared/providers/AuthContext";
+import { API, setToken, setWorkspaceId } from "@api/api";
+import { Card } from "@components/ui/Card";
+import { Input } from "@components/ui/Input";
+import { Button } from "@components/ui/Button";
+import { Alert } from "@components/ui/Alert";
+import { BRAND_NAME } from "../../../config/brand";
+import { normalizeRole } from "@shared/utils/authRole";
 import { Eye, EyeOff } from "lucide-react";
 
 export default function LoginPage() {
