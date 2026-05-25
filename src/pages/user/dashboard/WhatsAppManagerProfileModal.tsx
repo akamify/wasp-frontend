@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { X, Upload, Save, AlertCircle, CheckCircle2 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
+import { createPortal } from "react-dom";
 import { API } from "@api/api";
 import { Button } from "@components/ui/Button";
 import { Input } from "@components/ui/Input";
@@ -109,7 +110,7 @@ export function WhatsAppManagerProfileModal({
     }
   }
 
-  return (
+  return createPortal(
     <AnimatePresence>
       {open ? (
         <motion.div
@@ -235,6 +236,7 @@ export function WhatsAppManagerProfileModal({
           </motion.div>
         </motion.div>
       ) : null}
-    </AnimatePresence>
+    </AnimatePresence>,
+    document.body
   );
 }
