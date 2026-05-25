@@ -25,7 +25,7 @@ function inAdmin(page: ReactNode) {
   return <AdminShell>{page}</AdminShell>;
 }
 
-export function AdminRoutes() {
+export function adminRoutes() {
   return (
     <Route element={<RequireAdmin />}>
       <Route path="/admin" element={<Navigate to="/admin/dashboard" replace />} />

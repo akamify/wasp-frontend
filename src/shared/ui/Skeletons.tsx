@@ -543,12 +543,11 @@ export function CampaignsListSkeleton({ rows = 6 }: { rows?: number }) {
               <SkeletonBar className="h-2.5 w-24 rounded-[5px] opacity-60" />
             </div>
           </td>
-          <td className="px-6 py-6"><SkeletonBar className="h-4 w-16 rounded-[5px]" /></td>
-          <td className="px-6 py-6"><SkeletonBar className="h-4 w-28 rounded-[5px]" /></td>
-          <td className="px-6 py-6"><SkeletonBar className="h-8 w-24 rounded-[5px]" /></td>
-          <td className="px-6 py-6"><SkeletonBar className="h-4 w-10 rounded-[5px]" /></td>
-          <td className="px-6 py-6"><SkeletonBar className="h-4 w-10 rounded-[5px]" /></td>
-          <td className="px-6 py-6 text-right pr-10">
+          <td className="px-6 py-6 text-center"><SkeletonBar className="h-4 w-16 rounded-[5px] mx-auto" /></td>
+          <td className="px-6 py-6 text-center"><SkeletonBar className="h-4 w-20 rounded-[5px] mx-auto" /></td>
+          <td className="px-6 py-6"><SkeletonBar className="h-5 w-20 rounded-[5px]" /></td>
+          <td className="px-6 py-6"><SkeletonBar className="h-4 w-24 rounded-[5px]" /></td>
+          <td className="px-6 py-6 text-right">
             <div className="flex justify-end"><SkeletonBar className="h-8 w-8 rounded-[5px]" /></div>
           </td>
         </tr>

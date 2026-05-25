@@ -5,7 +5,7 @@ import EmployeeInboxPage from "@modules/crm/pages/EmployeeInbox";
 import EmployeeProfilePage from "@modules/crm/pages/EmployeeProfile";
 import EmployeeLeadsPage from "@modules/crm/pages/EmployeeLeads";
 
-export function EmployeeRoutes() {
+export function employeeRoutes() {
   return (
     <Route element={<RequireEmployee />}>
       <Route path="/employee" element={<Navigate to="/employee/inbox" replace />} />

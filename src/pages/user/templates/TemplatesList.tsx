@@ -174,7 +174,9 @@ export function TemplatesList(props: Props) {
           {loading ? (
             <div className="py-8">
               <table className="w-full">
-                <TemplatesTableSkeleton rows={8} />
+                <tbody>
+                  <TemplatesTableSkeleton rows={8} />
+                </tbody>
               </table>
             </div>
           ) : filteredTemplates.length === 0 ? (

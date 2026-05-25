@@ -14,7 +14,7 @@ import { PublicCmsPage } from "@pages/public/PublicCmsPage";
 import EmployeeLoginPage from "@modules/crm/pages/EmployeeLogin";
 import EmployeeResetPasswordPage from "@modules/crm/pages/EmployeeResetPassword";
 
-export function PublicRoutes() {
+export function publicRoutes() {
   return (
     <>
       <Route path="/" element={<LandingPage />} />

@@ -261,11 +261,7 @@ export default function SendPage() {
             </thead>
             <tbody className="divide-y divide-ink-900/5">
               {loading ? (
-                <tr>
-                  <td colSpan={6} className="p-8">
-                    <CampaignsListSkeleton rows={8} />
-                  </td>
-                </tr>
+                <CampaignsListSkeleton rows={8} />
               ) : paginatedCampaigns.length > 0 ? (
                 paginatedCampaigns.map((c) => (
                   <tr

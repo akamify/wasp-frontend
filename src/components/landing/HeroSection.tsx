@@ -93,29 +93,6 @@ export function HeroSection() {
       </div>
 
       <div className="relative mx-auto max-w-7xl px-6 lg:px-8 bg-white/60 backdrop-blur">
-        <defs>
-          <linearGradient id="g1" x1="0" y1="0" x2="1" y2="1">
-            <stop offset="0" stopColor="#25D366" stopOpacity="0.95" />
-            <stop offset="0.55" stopColor="#11d593" stopOpacity="0.95" />
-            <stop offset="1" stopColor="#06b6d4" stopOpacity="0.95" />
-          </linearGradient>
-          <linearGradient id="g2" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0" stopColor="#ffffff" stopOpacity="0.92" />
-            <stop offset="1" stopColor="#ffffff" stopOpacity="0.65" />
-          </linearGradient>
-          <filter id="shadow" x="-30%" y="-30%" width="160%" height="160%">
-            <feDropShadow dx="0" dy="16" stdDeviation="18" floodColor="#0b1222" floodOpacity="0.16" />
-          </filter>
-          <pattern id="grid" width="28" height="28" patternUnits="userSpaceOnUse">
-            <path d="M 28 0 L 0 0 0 28" fill="none" stroke="rgba(11,16,32,0.06)" strokeWidth="1" />
-          </pattern>
-        </defs>
-
-        <rect x="0" y="0" width="720" height="720" fill="url(#grid)" />
-
-        {/* Glow blobs */}
-        <circle cx="520" cy="170" r="150" fill="#25D366" opacity="0.10" />
-        <circle cx="210" cy="520" r="170" fill="#06b6d4" opacity="0.10" />
         <div className="grid items-center gap-12 lg:grid-cols-2">
           {/* Left */}
           <div>

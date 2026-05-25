@@ -33,7 +33,7 @@ function inApp(page: ReactNode) {
   return <AppShell>{page}</AppShell>;
 }
 
-export function UserRoutes() {
+export function userRoutes() {
   return (
     <Route element={<RequireUser />}>
       <Route path="/app" element={inApp(<DashboardPage />)} />

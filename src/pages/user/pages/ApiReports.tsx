@@ -6,7 +6,7 @@ import { Button } from "@components/ui/Button";
 import { Select } from "@components/ui/Select";
 import { useToast } from "@shared/providers/ToastContext";
 import { AnimatePresence, motion } from "framer-motion";
-import { Search, ArrowUp, ArrowDown, X, AlertCircle, Check, Clock3, CheckCheck } from "lucide-react";
+import { Search, ArrowUp, ArrowDown, X, AlertCircle, Check, Clock3, CheckCheck, RefreshCcw } from "lucide-react";
 
 function truncate(value: any, max = 22) {
   const s = String(value ?? "");
@@ -37,6 +37,46 @@ function extractErrorMessage(value: any): string {
     value.metaDebug?.raw?.error?.message ||
     ""
   );
+}
+
+function buildErrorViewModel(value: any) {
+  const message = extractErrorMessage(value) || "Message delivery failed.";
+  const code =
+    value?.providerCode ||
+    value?.error?.code ||
+    value?.metaDebug?.meta?.code ||
+    value?.metaDebug?.raw?.error?.code ||
+    "";
+  const subcode =
+    value?.providerSubcode ||
+    value?.error?.error_subcode ||
+    value?.metaDebug?.meta?.error_subcode ||
+    value?.metaDebug?.raw?.error?.error_subcode ||
+    "";
+  const traceId =
+    value?.traceId ||
+    value?.metaDebug?.meta?.fbtrace_id ||
+    value?.metaDebug?.raw?.error?.fbtrace_id ||
+    "";
+
+  let guidance = "Verify template status, phone number format, and campaign payload.";
+  const normalized = message.toLowerCase();
+  if (normalized.includes("rate") || normalized.includes("throttle")) {
+    guidance = "Rate limit hit. Retry after some time or reduce request burst.";
+  } else if (normalized.includes("template")) {
+    guidance = "Template issue. Check template approval status and variable mapping.";
+  } else if (normalized.includes("phone") || normalized.includes("recipient")) {
+    guidance = "Recipient issue. Validate country code and WhatsApp-enabled number.";
+  } else if (normalized.includes("auth") || normalized.includes("token") || normalized.includes("permission")) {
+    guidance = "Authorization issue. Reconnect Meta account and verify permissions.";
+  }
+
+  return {
+    message,
+    code: [code, subcode].filter(Boolean).join(" / "),
+    traceId: String(traceId || ""),
+    guidance,
+  };
 }
 
 function statusMeta(status: any, hasError: boolean) {
@@ -218,6 +258,10 @@ export default function ApiReportsPage() {
             Results <span className="text-slate-400">({total})</span>
           </div>
           <div className="flex items-center gap-2">
+            <Button variant="outline" disabled={busy} onClick={() => void load()} className="gap-2">
+              <RefreshCcw size={14} className={busy ? "animate-spin" : ""} />
+              {busy ? "Refreshing..." : "Refresh"}
+            </Button>
             <Select label="Rows" value={String(limit)} onChange={(e) => { setLimit(Number(e.target.value)); setPage(1); }}>
               {[10, 25, 50, 100].map((n) => (
                 <option key={n} value={n}>{n}</option>
@@ -375,12 +419,34 @@ export default function ApiReportsPage() {
                     </div>
 
                     {detail.error ? (
-                      <div className="rounded-[5px] bg-rose-50 p-4 ring-1 ring-rose-200">
-                        <div className="text-[10px] font-black uppercase tracking-widest text-rose-700">Error</div>
-                        <pre className="mt-2 overflow-x-auto text-xs text-rose-900 leading-relaxed">
-                          {JSON.stringify(detail.error, null, 2)}
-                        </pre>
-                      </div>
+                      (() => {
+                        const errorView = buildErrorViewModel(detail.error);
+                        return (
+                          <div className="rounded-[5px] bg-rose-50 p-4 ring-1 ring-rose-200 space-y-3">
+                            <div className="text-[10px] font-black uppercase tracking-widest text-rose-700">Delivery Error</div>
+                            <div>
+                              <div className="text-xs font-black uppercase tracking-widest text-rose-600">What happened</div>
+                              <div className="mt-1 text-sm font-semibold text-rose-900">{errorView.message}</div>
+                            </div>
+                            {errorView.code ? (
+                              <div>
+                                <div className="text-xs font-black uppercase tracking-widest text-rose-600">Provider Code</div>
+                                <div className="mt-1 text-sm font-semibold text-rose-900">{errorView.code}</div>
+                              </div>
+                            ) : null}
+                            {errorView.traceId ? (
+                              <div>
+                                <div className="text-xs font-black uppercase tracking-widest text-rose-600">Trace ID</div>
+                                <div className="mt-1 text-sm font-mono text-rose-900 break-all">{errorView.traceId}</div>
+                              </div>
+                            ) : null}
+                            <div>
+                              <div className="text-xs font-black uppercase tracking-widest text-rose-600">What to check</div>
+                              <div className="mt-1 text-sm font-semibold text-rose-900">{errorView.guidance}</div>
+                            </div>
+                          </div>
+                        );
+                      })()
                     ) : null}
                   </>
                 ) : (

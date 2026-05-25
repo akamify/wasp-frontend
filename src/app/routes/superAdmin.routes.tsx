@@ -29,7 +29,7 @@ function inSuperAdmin(page: ReactNode) {
   return <SuperAdminShell>{page}</SuperAdminShell>;
 }
 
-export function SuperAdminRoutes() {
+export function superAdminRoutes() {
   return (
     <Route element={<RequireSuperAdmin />}>
       <Route path="/super-admin" element={<Navigate to="/super-admin/dashboard" replace />} />
