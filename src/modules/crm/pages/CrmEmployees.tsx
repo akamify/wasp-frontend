@@ -8,6 +8,7 @@ import { cn } from "@shared/utils/cn";
 import { Plus, ShieldAlert, UserX, Users, Pencil } from "lucide-react";
 import { CrmSectionNav } from "@modules/crm/components/CrmSectionNav";
 import { CrmEmployeeUpsertModal } from "@modules/crm/components/CrmEmployeeUpsertModal";
+import { CrmEmployeesSkeleton } from "@components/ui/Skeletons";
 
 type Employee = {
   id: string;
@@ -71,6 +72,8 @@ export default function CrmEmployeesPage() {
       setBusy(false);
     }
   }
+
+  if (loading && !items.length) return <CrmEmployeesSkeleton />;
 
   return (
     <div className="flex flex-col gap-6 p-4 md:p-8 pb-24">

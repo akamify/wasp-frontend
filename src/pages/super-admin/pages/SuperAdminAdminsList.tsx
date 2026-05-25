@@ -4,6 +4,7 @@ import { AdminToolbar } from "@pages/admin/components/AdminToolbar";
 import { AdminPagination } from "@pages/admin/components/AdminPagination";
 import { TableSkeleton } from "@pages/admin/components/AdminSkeletons";
 import { AdminLimitSelect } from "@pages/admin/components/AdminLimitSelect";
+import { Button } from "@components/ui/Button";
 import { useSuperAdminAdminsList } from "@pages/super-admin/hooks/useSuperAdminAdminsList";
 
 export default function SuperAdminAdminsListPage() {
@@ -19,7 +20,12 @@ export default function SuperAdminAdminsListPage() {
         setQuery={list.setQuery}
         onRefresh={list.refresh}
         isSyncing={list.loading}
-        right={<AdminLimitSelect limit={list.limit} setLimit={list.setLimit} />}
+        right={
+          <div className="flex items-center gap-2">
+            <Button onClick={() => navigate("/super-admin/admins/create/edit")}>Create Admin</Button>
+            <AdminLimitSelect limit={list.limit} setLimit={list.setLimit} />
+          </div>
+        }
       />
 
       {list.loading && !list.items.length ? (

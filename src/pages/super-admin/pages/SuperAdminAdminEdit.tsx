@@ -58,10 +58,11 @@ const PAGE_ACTIONS: Record<string, string[]> = {
 
 export default function SuperAdminAdminEditPage() {
   const { id = "" } = useParams();
+  const isCreateMode = id === "create";
   const navigate = useNavigate();
   const { toast } = useToast();
 
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(!isCreateMode);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
 
@@ -75,6 +76,18 @@ export default function SuperAdminAdminEditPage() {
   const [actions, setActions] = useState<string[]>([]);
 
   useEffect(() => {
+    if (isCreateMode) {
+      setLoading(false);
+      setName("");
+      setEmail("");
+      setPhone("");
+      setStatus("active");
+      setTwoFactorEnabled(false);
+      setPages([]);
+      setComponents([]);
+      setActions([]);
+      return;
+    }
     let active = true;
     setLoading(true);
     API.superAdmin.adminDetail(id)
@@ -98,7 +111,7 @@ export default function SuperAdminAdminEditPage() {
     return () => {
       active = false;
     };
-  }, [id]);
+  }, [id, isCreateMode]);
 
   const availableComponents = useMemo(() => pages.flatMap((p) => PAGE_COMPONENTS[p] || []), [pages]);
   const availableActions = useMemo(() => pages.flatMap((p) => PAGE_ACTIONS[p] || []), [pages]);
@@ -107,21 +120,34 @@ export default function SuperAdminAdminEditPage() {
     setSaving(true);
     setError("");
     try {
-      await API.superAdmin.updateAdmin(id, {
-        name,
-        phone,
-        status,
-        twoFactorEnabled,
-        permissions: {
-          pages,
-          components: components.filter((x) => availableComponents.includes(x)),
-          actions: actions.filter((x) => availableActions.includes(x)),
-        },
-      });
-      toast("Admin profile updated", "success");
-      navigate(`/super-admin/admins/${id}/profile`);
+      const permissions = {
+        pages,
+        components: components.filter((x) => availableComponents.includes(x)),
+        actions: actions.filter((x) => availableActions.includes(x)),
+      };
+      const cleanEmail = String(email || "").trim().toLowerCase();
+
+      if (isCreateMode) {
+        if (!cleanEmail) throw new Error("Email is required");
+        const created: any = await API.superAdmin.assignAdmin({ email: cleanEmail, name: String(name || "").trim() });
+        const newAdminId = String(created?.user?.id || "");
+        if (!newAdminId) throw new Error("Admin created but id was not returned");
+        await API.superAdmin.updateAdmin(newAdminId, { name, phone, permissions });
+        toast(created?.message || "Admin created. Password setup link sent.", "success");
+        navigate(`/super-admin/admins/${newAdminId}/profile`);
+      } else {
+        await API.superAdmin.updateAdmin(id, {
+          name,
+          phone,
+          status,
+          twoFactorEnabled,
+          permissions,
+        });
+        toast("Admin profile updated", "success");
+        navigate(`/super-admin/admins/${id}/profile`);
+      }
     } catch (e: any) {
-      const msg = e?.response?.data?.message || "Failed to save";
+      const msg = e?.response?.data?.message || e?.message || "Failed to save";
       setError(msg);
       toast(msg, "error");
     } finally {
@@ -135,12 +161,12 @@ export default function SuperAdminAdminEditPage() {
     <div className="space-y-4">
       <div className="rounded-[5px] border border-slate-200 bg-white p-4 flex items-center justify-between">
         <div>
-          <div className="text-lg font-black text-slate-900">Edit Admin Profile</div>
-          <div className="text-xs text-slate-500 mt-1">{email}</div>
+          <div className="text-lg font-black text-slate-900">{isCreateMode ? "Create Admin" : "Edit Admin Profile"}</div>
+          <div className="text-xs text-slate-500 mt-1">{isCreateMode ? "New admin login credentials will be sent via email with password setup link." : email}</div>
         </div>
         <div className="flex gap-2">
           <Button variant="ghost" onClick={() => navigate(-1)}>Back</Button>
-          <Button onClick={onSave} disabled={saving}>{saving ? "Saving..." : "Save"}</Button>
+          <Button onClick={onSave} disabled={saving}>{saving ? (isCreateMode ? "Creating..." : "Saving...") : (isCreateMode ? "Create Admin" : "Save")}</Button>
         </div>
       </div>
 
@@ -149,22 +175,26 @@ export default function SuperAdminAdminEditPage() {
       <div className="rounded-[5px] border border-slate-200 bg-white p-5 space-y-4">
         <div className="grid gap-3 md:grid-cols-2">
           <Input label="Name" value={name} onChange={(e) => setName(e.target.value)} />
-          <Input label="Email" value={email} disabled />
+          <Input label="Email" value={email} onChange={(e) => setEmail(e.target.value)} disabled={!isCreateMode} />
           <Input label="Phone" value={phone} onChange={(e) => setPhone(e.target.value)} />
-          <Select label="Status" value={status} onChange={(e) => setStatus(e.target.value)}>
-            <option value="active">active</option>
-            <option value="banned">banned</option>
-            <option value="fired">fired</option>
-            <option value="retired">retired</option>
-          </Select>
+          {!isCreateMode ? (
+            <Select label="Status" value={status} onChange={(e) => setStatus(e.target.value)}>
+              <option value="active">active</option>
+              <option value="banned">banned</option>
+              <option value="fired">fired</option>
+              <option value="retired">retired</option>
+            </Select>
+          ) : null}
         </div>
 
-        <div className="rounded border border-slate-200 p-3">
-          <label className="flex items-center gap-2 text-xs font-bold text-slate-700">
-            <input type="checkbox" checked={twoFactorEnabled} onChange={(e) => setTwoFactorEnabled(e.target.checked)} />
-            2FA Enabled
-          </label>
-        </div>
+        {!isCreateMode ? (
+          <div className="rounded border border-slate-200 p-3">
+            <label className="flex items-center gap-2 text-xs font-bold text-slate-700">
+              <input type="checkbox" checked={twoFactorEnabled} onChange={(e) => setTwoFactorEnabled(e.target.checked)} />
+              2FA Enabled
+            </label>
+          </div>
+        ) : null}
 
         <div className="grid gap-3 md:grid-cols-3">
           <PermissionPicker title="Pages" items={Object.keys(PAGE_COMPONENTS)} selected={pages} setSelected={setPages} />

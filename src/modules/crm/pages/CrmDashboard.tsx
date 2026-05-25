@@ -20,35 +20,8 @@ import {
 import { Link } from "react-router-dom";
 import { CrmSectionNav } from "@modules/crm/components/CrmSectionNav";
 import { AdminChartLabels, AdminLineChart } from "@pages/admin/components/AdminMiniChart";
-
-function StatCard({
-  label,
-  value,
-  icon: Icon,
-  bg,
-  color,
-}: {
-  label: string;
-  value: string;
-  icon: any;
-  bg: string;
-  color: string;
-}) {
-  return (
-    <Card className="p-6 relative overflow-hidden border-slate-200 shadow-sm rounded-[5px]">
-      <div className={cn("absolute top-0 right-0 w-24 h-24 blur-3xl rounded-full -mr-12 -mt-12 opacity-50", bg)} />
-      <div className="flex items-center justify-between relative z-10">
-        <div className="min-w-0">
-          <div className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">{label}</div>
-          <div className="mt-1 text-3xl font-black tracking-tight text-slate-900 truncate">{value}</div>
-        </div>
-        <div className={cn("p-3 rounded-[5px]", bg, color)}>
-          <Icon size={22} />
-        </div>
-      </div>
-    </Card>
-  );
-}
+import { CrmStatCard } from "@modules/crm/pages/components/CrmStatCard";
+import { CrmDashboardSkeleton } from "@components/ui/Skeletons";
 
 export default function CrmDashboardPage() {
   const [data, setData] = useState<any | null>(null);
@@ -143,6 +116,8 @@ export default function CrmDashboardPage() {
   const points = (series || []).map((p: any) => ({ label: String(p.day || ""), count: Number(p.count || 0) }));
   const recent = Array.isArray(data?.recentActivities) ? data.recentActivities : [];
 
+  if (loading && !data) return <CrmDashboardSkeleton />;
+
   return (
     <div className="flex flex-col gap-8 p-4 md:p-8 pb-24">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
@@ -187,7 +162,7 @@ export default function CrmDashboardPage() {
 
       <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
         {cards.map((c) => (
-          <StatCard key={c.label} label={c.label} value={loading ? "..." : c.value} icon={c.icon} bg={c.bg} color={c.color} />
+          <CrmStatCard key={c.label} label={c.label} value={loading ? "..." : c.value} icon={c.icon} bg={c.bg} color={c.color} />
         ))}
       </div>
 
