@@ -9,6 +9,7 @@ import { RefreshCw, ShieldCheck, HelpCircle, ArrowRight, Zap } from "lucide-reac
 import { Input } from "@components/ui/Input";
 import { cn } from "@shared/utils/cn";
 import { Link } from "react-router-dom";
+import { loadMetaSdk } from "@shared/utils/metaSdk";
 
 type MetaStatus =
   | { status: "loading" }
@@ -29,7 +30,12 @@ export default function MetaConnectPage() {
   const [graphApiVersion, setGraphApiVersion] = useState("v22.0");
   const [overrideEnabled, setOverrideEnabled] = useState(false);
   const [overrideReason, setOverrideReason] = useState("");
+  const [embeddedBusy, setEmbeddedBusy] = useState(false);
+  const [embeddedError, setEmbeddedError] = useState("");
+  const [embeddedConnection, setEmbeddedConnection] = useState<any>(null);
+  const [embeddedSession, setEmbeddedSession] = useState<{ waba_id: string; phone_number_id: string } | null>(null);
   const isInitialLoad = useRef(true);
+  const pendingCodeRef = useRef("");
 
   const statusLabel = useMemo(() => {
     if (metaStatus.status === "loading") return "Loading";
@@ -51,6 +57,12 @@ export default function MetaConnectPage() {
       else if (status === "pending") setMetaStatus({ status: "pending", credentials: res.credentials });
       else setMetaStatus({ status: "disconnected", credentials: null });
       if (res?.credentials?.graphApiVersion) setGraphApiVersion(String(res.credentials.graphApiVersion));
+      try {
+        const con = await API.meta.connection();
+        setEmbeddedConnection(con || null);
+      } catch {
+        setEmbeddedConnection(null);
+      }
       if (!isInitialLoad.current) toast("Connection status updated", "success");
     } catch (e: any) {
       toast(e?.response?.data?.message || "Failed to fetch Meta connection status", "error");
@@ -60,6 +72,99 @@ export default function MetaConnectPage() {
       isInitialLoad.current = false;
     }
   }, [toast]);
+
+  useEffect(() => {
+    const handler = (event: MessageEvent) => {
+      const allowed = ["https://www.facebook.com", "https://web.facebook.com"];
+      if (!allowed.includes(String(event.origin || ""))) return;
+      try {
+        const payload = typeof event.data === "string" ? JSON.parse(event.data) : event.data;
+        if (!payload || payload.type !== "WA_EMBEDDED_SIGNUP") return;
+        const e = String(payload.event || "").toUpperCase();
+        if (e === "CANCEL") {
+          setEmbeddedBusy(false);
+          setEmbeddedError("Meta signup was cancelled");
+          return;
+        }
+        if (e === "ERROR") {
+          setEmbeddedBusy(false);
+          setEmbeddedError("Meta embedded signup failed");
+          return;
+        }
+        if (e === "FINISH" || e === "COMPLETED" || e === "COMPLETE") {
+          const wabaId = String(payload?.data?.waba_id || payload?.waba_id || "").trim();
+          const phoneNumberId = String(payload?.data?.phone_number_id || payload?.phone_number_id || "").trim();
+          if (wabaId && phoneNumberId) setEmbeddedSession({ waba_id: wabaId, phone_number_id: phoneNumberId });
+        }
+      } catch {
+        // ignore malformed messages
+      }
+    };
+    window.addEventListener("message", handler);
+    return () => window.removeEventListener("message", handler);
+  }, []);
+
+  const connectWhatsApp = useCallback(async () => {
+    setEmbeddedBusy(true);
+    setEmbeddedError("");
+    try {
+      const env = (import.meta as any).env || {};
+      const configId = String(env.NEXT_PUBLIC_META_EMBEDDED_SIGNUP_CONFIG_ID || env.VITE_META_EMBEDDED_SIGNUP_CONFIG_ID || "").trim();
+      if (!configId) throw new Error("Missing META Embedded Signup Config ID env");
+      const fb = await loadMetaSdk();
+      await new Promise<void>((resolve, reject) => {
+        fb.login(
+          (response: any) => {
+            const code = String(response?.authResponse?.code || "").trim();
+            if (!code) {
+              reject(new Error("Meta signup was cancelled"));
+              return;
+            }
+            pendingCodeRef.current = code;
+            resolve();
+          },
+          {
+            config_id: configId,
+            response_type: "code",
+            override_default_response_type: true,
+            extras: { sessionInfoVersion: "3" },
+          }
+        );
+      });
+      if (!embeddedSession?.waba_id || !embeddedSession?.phone_number_id) {
+        throw new Error("Embedded signup details missing. Please complete signup popup flow.");
+      }
+      await API.meta.embeddedSignupExchange({
+        code: pendingCodeRef.current,
+        waba_id: embeddedSession.waba_id,
+        phone_number_id: embeddedSession.phone_number_id,
+      });
+      toast("WhatsApp connected successfully", "success");
+      await loadStatus();
+    } catch (e: any) {
+      const msg = e?.response?.data?.message || e?.message || "Could not exchange Meta code";
+      setEmbeddedError(msg);
+      toast(msg, "error");
+    } finally {
+      setEmbeddedBusy(false);
+    }
+  }, [embeddedSession, loadStatus, toast]);
+
+  const disconnectWhatsApp = useCallback(async () => {
+    setEmbeddedBusy(true);
+    setEmbeddedError("");
+    try {
+      await API.meta.disconnect();
+      toast("WhatsApp disconnected", "success");
+      await loadStatus();
+    } catch (e: any) {
+      const msg = e?.response?.data?.message || "Failed to disconnect WhatsApp";
+      setEmbeddedError(msg);
+      toast(msg, "error");
+    } finally {
+      setEmbeddedBusy(false);
+    }
+  }, [loadStatus, toast]);
 
   useEffect(() => {
     loadStatus();
@@ -134,18 +239,35 @@ export default function MetaConnectPage() {
               <span className="text-lg font-black text-black">{statusLabel}</span>
 
             </div>
+            <div className="text-xs font-semibold text-slate-500">
+              {embeddedConnection?.connected
+                ? `Connected ${embeddedConnection?.display_phone_number || ""}`
+                : "Not connected via Embedded Signup"}
+            </div>
           </div>
-          <Button
-            variant="outline"
-            size="sm"
-            className="bg-white border-gray-200 text-black hover:bg-gray-50 rounded-[5px]"
-            onClick={loadStatus}
-            disabled={busy || syncing}
-          >
-            <RefreshCw size={14} className={cn("mr-2", (busy || syncing) && "animate-spin")} />
-            {syncing ? "Syncing..." : "Refresh Status"}
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button
+              variant={embeddedConnection?.connected ? "outline" : "primary"}
+              size="sm"
+              className="rounded-[5px]"
+              onClick={embeddedConnection?.connected ? disconnectWhatsApp : connectWhatsApp}
+              disabled={embeddedBusy}
+            >
+              {embeddedBusy ? "Please wait..." : embeddedConnection?.connected ? "Disconnect WhatsApp" : "Connect WhatsApp"}
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              className="bg-white border-gray-200 text-black hover:bg-gray-50 rounded-[5px]"
+              onClick={loadStatus}
+              disabled={busy || syncing}
+            >
+              <RefreshCw size={14} className={cn("mr-2", (busy || syncing) && "animate-spin")} />
+              {syncing ? "Syncing..." : "Refresh Status"}
+            </Button>
+          </div>
         </div>
+        {embeddedError ? <div className="text-xs font-semibold text-rose-600 mt-3">{embeddedError}</div> : null}
       </section>
 
 

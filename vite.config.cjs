@@ -3,6 +3,7 @@ const react = require("@vitejs/plugin-react");
 const path = require("path");
 
 module.exports = defineConfig({
+  envPrefix: ["VITE_", "NEXT_PUBLIC_"],
   plugins: [react()],
   resolve: {
     alias: {
@@ -28,4 +29,3 @@ module.exports = defineConfig({
     },
   },
 });
-

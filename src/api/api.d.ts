@@ -224,6 +224,9 @@ export const API: {
     status(): Promise<any>;
     subscriptionHealth(): Promise<any>;
     save(payload: any): Promise<any>;
+    embeddedSignupExchange(payload: any): Promise<any>;
+    connection(): Promise<any>;
+    disconnect(): Promise<any>;
     updateProfile(payload: any): Promise<any>;
     uploadProfilePicture(file: any): Promise<any>;
     listFlows(params?: any): Promise<any>;
