@@ -1,77 +1,61 @@
-import { useCallback, useEffect, useMemo, useState, useRef } from "react";
-import type { FormEvent } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { API } from "@api/api";
 import { Card } from "@components/ui/Card";
 import { Button } from "@components/ui/Button";
 import { MetaConnectionSkeleton } from "@components/ui/Skeletons";
 import { useToast } from "@shared/providers/ToastContext";
-import { RefreshCw, ShieldCheck, HelpCircle, ArrowRight, Zap } from "lucide-react";
-import { Input } from "@components/ui/Input";
+import { RefreshCw, HelpCircle, ArrowRight } from "lucide-react";
 import { cn } from "@shared/utils/cn";
 import { Link } from "react-router-dom";
 import { loadMetaSdk } from "@shared/utils/metaSdk";
 
 type MetaStatus =
-  | { status: "loading" }
+  | { status: "loading"; credentials: null }
   | { status: "disconnected"; credentials: null }
   | { status: "pending"; credentials: any }
   | { status: "active"; credentials: any };
 
-
-
 export default function MetaConnectPage() {
-  const [metaStatus, setMetaStatus] = useState<MetaStatus>({ status: "loading" });
-  const [busy, setBusy] = useState(false);
+  const [metaStatus, setMetaStatus] = useState<MetaStatus>({ status: "loading", credentials: null });
   const [syncing, setSyncing] = useState(false);
-  const { toast } = useToast();
-  const [accessToken, setAccessToken] = useState("");
-  const [phoneNumberId, setPhoneNumberId] = useState("");
-  const [wabaId, setWabaId] = useState("");
-  const [graphApiVersion, setGraphApiVersion] = useState("v22.0");
-  const [overrideEnabled, setOverrideEnabled] = useState(false);
-  const [overrideReason, setOverrideReason] = useState("");
   const [embeddedBusy, setEmbeddedBusy] = useState(false);
   const [embeddedError, setEmbeddedError] = useState("");
   const [embeddedConnection, setEmbeddedConnection] = useState<any>(null);
   const [embeddedSession, setEmbeddedSession] = useState<{ waba_id: string; phone_number_id: string } | null>(null);
-  const isInitialLoad = useRef(true);
   const pendingCodeRef = useRef("");
+  const isInitialLoad = useRef(true);
+  const { toast } = useToast();
 
   const statusLabel = useMemo(() => {
     if (metaStatus.status === "loading") return "Loading";
     if (metaStatus.status === "active") return "Connected";
-    if (metaStatus.status === "pending") return "Pending Verification";
+    if (metaStatus.status === "pending") return "Pending";
     return "Disconnected";
   }, [metaStatus.status]);
 
   const loadStatus = useCallback(async () => {
-    if (isInitialLoad.current) {
-       // keep initial loading
-    } else {
-       setSyncing(true);
-    }
+    if (!isInitialLoad.current) setSyncing(true);
     try {
-      const res = await API.meta.status();
-      const status = res?.status;
-      if (status === "active") setMetaStatus({ status: "active", credentials: res.credentials });
-      else if (status === "pending") setMetaStatus({ status: "pending", credentials: res.credentials });
+      const [statusRes, connectionRes] = await Promise.all([API.meta.status(), API.meta.connection()]);
+      const status = String(statusRes?.status || "disconnected");
+      if (status === "active") setMetaStatus({ status: "active", credentials: statusRes.credentials || null });
+      else if (status === "pending") setMetaStatus({ status: "pending", credentials: statusRes.credentials || null });
       else setMetaStatus({ status: "disconnected", credentials: null });
-      if (res?.credentials?.graphApiVersion) setGraphApiVersion(String(res.credentials.graphApiVersion));
-      try {
-        const con = await API.meta.connection();
-        setEmbeddedConnection(con || null);
-      } catch {
-        setEmbeddedConnection(null);
-      }
+      setEmbeddedConnection(connectionRes || null);
       if (!isInitialLoad.current) toast("Connection status updated", "success");
     } catch (e: any) {
-      toast(e?.response?.data?.message || "Failed to fetch Meta connection status", "error");
       setMetaStatus({ status: "disconnected", credentials: null });
+      setEmbeddedConnection(null);
+      toast(e?.response?.data?.message || "Failed to fetch WhatsApp connection status", "error");
     } finally {
       setSyncing(false);
       isInitialLoad.current = false;
     }
   }, [toast]);
+
+  useEffect(() => {
+    void loadStatus();
+  }, [loadStatus]);
 
   useEffect(() => {
     const handler = (event: MessageEvent) => {
@@ -80,24 +64,26 @@ export default function MetaConnectPage() {
       try {
         const payload = typeof event.data === "string" ? JSON.parse(event.data) : event.data;
         if (!payload || payload.type !== "WA_EMBEDDED_SIGNUP") return;
-        const e = String(payload.event || "").toUpperCase();
-        if (e === "CANCEL") {
+        const currentEvent = String(payload.event || "").toUpperCase();
+        if (currentEvent === "CANCEL") {
           setEmbeddedBusy(false);
           setEmbeddedError("Meta signup was cancelled");
           return;
         }
-        if (e === "ERROR") {
+        if (currentEvent === "ERROR") {
           setEmbeddedBusy(false);
           setEmbeddedError("Meta embedded signup failed");
           return;
         }
-        if (e === "FINISH" || e === "COMPLETED" || e === "COMPLETE") {
+        if (currentEvent === "FINISH" || currentEvent === "COMPLETED" || currentEvent === "COMPLETE") {
           const wabaId = String(payload?.data?.waba_id || payload?.waba_id || "").trim();
           const phoneNumberId = String(payload?.data?.phone_number_id || payload?.phone_number_id || "").trim();
-          if (wabaId && phoneNumberId) setEmbeddedSession({ waba_id: wabaId, phone_number_id: phoneNumberId });
+          if (wabaId && phoneNumberId) {
+            setEmbeddedSession({ waba_id: wabaId, phone_number_id: phoneNumberId });
+          }
         }
       } catch {
-        // ignore malformed messages
+        // ignore malformed payloads
       }
     };
     window.addEventListener("message", handler);
@@ -109,19 +95,19 @@ export default function MetaConnectPage() {
     setEmbeddedError("");
     try {
       const env = (import.meta as any).env || {};
-      const configId = String(env.NEXT_PUBLIC_META_EMBEDDED_SIGNUP_CONFIG_ID || env.VITE_META_EMBEDDED_SIGNUP_CONFIG_ID || "").trim();
+      const configId = String(
+        env.NEXT_PUBLIC_META_EMBEDDED_SIGNUP_CONFIG_ID || env.VITE_META_EMBEDDED_SIGNUP_CONFIG_ID || ""
+      ).trim();
       if (!configId) throw new Error("Missing META Embedded Signup Config ID env");
+
       const fb = await loadMetaSdk();
       await new Promise<void>((resolve, reject) => {
         fb.login(
           (response: any) => {
             const code = String(response?.authResponse?.code || "").trim();
-            if (!code) {
-              reject(new Error("Meta signup was cancelled"));
-              return;
-            }
+            if (!code) return reject(new Error("Meta signup was cancelled"));
             pendingCodeRef.current = code;
-            resolve();
+            return resolve();
           },
           {
             config_id: configId,
@@ -131,9 +117,11 @@ export default function MetaConnectPage() {
           }
         );
       });
+
       if (!embeddedSession?.waba_id || !embeddedSession?.phone_number_id) {
         throw new Error("Embedded signup details missing. Please complete signup popup flow.");
       }
+
       await API.meta.embeddedSignupExchange({
         code: pendingCodeRef.current,
         waba_id: embeddedSession.waba_id,
@@ -142,9 +130,9 @@ export default function MetaConnectPage() {
       toast("WhatsApp connected successfully", "success");
       await loadStatus();
     } catch (e: any) {
-      const msg = e?.response?.data?.message || e?.message || "Could not exchange Meta code";
-      setEmbeddedError(msg);
-      toast(msg, "error");
+      const message = e?.response?.data?.message || e?.message || "Could not exchange Meta code";
+      setEmbeddedError(message);
+      toast(message, "error");
     } finally {
       setEmbeddedBusy(false);
     }
@@ -158,86 +146,28 @@ export default function MetaConnectPage() {
       toast("WhatsApp disconnected", "success");
       await loadStatus();
     } catch (e: any) {
-      const msg = e?.response?.data?.message || "Failed to disconnect WhatsApp";
-      setEmbeddedError(msg);
-      toast(msg, "error");
+      const message = e?.response?.data?.message || "Failed to disconnect WhatsApp";
+      setEmbeddedError(message);
+      toast(message, "error");
     } finally {
       setEmbeddedBusy(false);
     }
   }, [loadStatus, toast]);
 
-  useEffect(() => {
-    loadStatus();
-  }, [loadStatus]);
-
-  useEffect(() => {
-    if (metaStatus.status !== "pending") return;
-
-    // Avoid hammering the backend while pending; also pause when tab is hidden.
-    let timer: number | null = null;
-    const POLL_MS = 15000;
-
-    const tick = () => {
-      if (document.hidden) return;
-      void loadStatus();
-    };
-
-    timer = window.setInterval(tick, POLL_MS);
-
-    const onVisibility = () => {
-      if (!document.hidden) tick();
-    };
-    document.addEventListener("visibilitychange", onVisibility);
-
-    return () => {
-      if (timer) window.clearInterval(timer);
-      document.removeEventListener("visibilitychange", onVisibility);
-    };
-  }, [metaStatus.status, loadStatus]);
-
-  const onSave = useCallback(async (event: FormEvent) => {
-    event.preventDefault();
-    setBusy(true);
-    try {
-      if (overrideEnabled && overrideReason.trim().length < 10) {
-        toast("Override reason must be at least 10 characters.", "warning");
-        setBusy(false);
-        return;
-      }
-      await API.meta.save({
-        accessToken: accessToken.trim(),
-        phoneNumberId: phoneNumberId.trim(),
-        wabaId: wabaId.trim(),
-        graphApiVersion: graphApiVersion.trim() || "v22.0",
-        override: overrideEnabled,
-        overrideReason: overrideEnabled ? overrideReason.trim() : "",
-      });
-      toast("Credentials validated and saved successfully.", "success");
-      setAccessToken("");
-      setOverrideEnabled(false);
-      setOverrideReason("");
-      await loadStatus();
-    } catch (e: any) {
-      toast(e?.response?.data?.message || "Failed to validate credentials", "error");
-    } finally {
-      setBusy(false);
-    }
-  }, [accessToken, phoneNumberId, wabaId, graphApiVersion, overrideEnabled, overrideReason, loadStatus]);
-
   return (
     <div className="space-y-8 pb-12 p-4 md:p-8">
-      {/* Hero Section */}
       <section>
         <div className="flex items-center justify-between p-6 min-w-full border border-gray-200 rounded-[5px] bg-white shadow-sm">
           <div className="flex flex-col justify-start gap-5">
             <div className="text-xs font-bold text-slate-500 uppercase tracking-widest">Current Status</div>
             <div className="flex items-center gap-2">
-              <div className={cn(
-                "size-3 rounded-full animate-pulse",
-                metaStatus.status === "active" ? "bg-emerald-500" : metaStatus.status === "pending" ? "bg-amber-500" : "bg-rose-500"
-              )} />
+              <div
+                className={cn(
+                  "size-3 rounded-full animate-pulse",
+                  metaStatus.status === "active" ? "bg-emerald-500" : metaStatus.status === "pending" ? "bg-amber-500" : "bg-rose-500"
+                )}
+              />
               <span className="text-lg font-black text-black">{statusLabel}</span>
-
             </div>
             <div className="text-xs font-semibold text-slate-500">
               {embeddedConnection?.connected
@@ -259,10 +189,10 @@ export default function MetaConnectPage() {
               variant="outline"
               size="sm"
               className="bg-white border-gray-200 text-black hover:bg-gray-50 rounded-[5px]"
-              onClick={loadStatus}
-              disabled={busy || syncing}
+              onClick={() => void loadStatus()}
+              disabled={syncing || embeddedBusy}
             >
-              <RefreshCw size={14} className={cn("mr-2", (busy || syncing) && "animate-spin")} />
+              <RefreshCw size={14} className={cn("mr-2", (syncing || embeddedBusy) && "animate-spin")} />
               {syncing ? "Syncing..." : "Refresh Status"}
             </Button>
           </div>
@@ -270,124 +200,62 @@ export default function MetaConnectPage() {
         {embeddedError ? <div className="text-xs font-semibold text-rose-600 mt-3">{embeddedError}</div> : null}
       </section>
 
-
       <div className="grid gap-8 lg:grid-cols-[1.5fr_1fr]">
-        {/* Left Column: Form */}
         <div className="space-y-6">
           <Card className="p-8 rounded-[5px]">
-            <div className="flex items-center gap-3 mb-8">
-              <div className="p-2 bg-brand-50 text-brand-600 rounded-[5px]">
-                <Zap size={20} fill="currentColor" />
-              </div>
-              <h3 className="text-xl font-black text-slate-900">Credentials Setup</h3>
-            </div>
-
-            <form className="space-y-6" onSubmit={onSave}>
-              <Input
-                label="Meta Access Token"
-                type="password"
-                value={accessToken}
-                onChange={(event) => setAccessToken(event.target.value)}
-                required
-                placeholder="EAAB..."
-                hint="Your Permanent System User Token or Temporary Access Token."
-                className="rounded-[5px]"
-              />
-
-              <div className="grid gap-6 sm:grid-cols-2">
-                <Input
-                  label="Phone Number ID"
-                  value={phoneNumberId}
-                  onChange={(event) => setPhoneNumberId(event.target.value)}
-                  required
-                  placeholder="123456789012345"
-                  className="rounded-[5px]"
-                />
-                <Input
-                  label="WABA ID"
-                  value={wabaId}
-                  onChange={(event) => setWabaId(event.target.value)}
-                  required
-                  placeholder="123456789012345"
-                  className="rounded-[5px]"
-                />
-              </div>
-
-              <Input
-                label="Graph API Version"
-                value={graphApiVersion}
-                onChange={(event) => setGraphApiVersion(event.target.value)}
-                placeholder="v22.0"
-                hint="Default is v22.0. Change only if Meta updates their API."
-                className="rounded-[5px]"
-              />
-
-              {metaStatus.status === "active" && (
-                <div className="rounded-[5px] border border-amber-100 bg-amber-50/50 p-6">
-                  <div className="flex items-center gap-3 mb-4">
-                    <input
-                      type="checkbox"
-                      id="override"
-                      checked={overrideEnabled}
-                      onChange={(e) => setOverrideEnabled(e.target.checked)}
-                      className="size-4 rounded border-slate-300 text-brand-600 focus:ring-brand-500"
-                    />
-                    <label htmlFor="override" className="text-sm font-black text-slate-900">
-                      Enable Credential Override
-                    </label>
-                  </div>
-                  <p className="text-xs text-slate-500 font-medium mb-4 leading-relaxed">
-                    Override is only required if you are changing the Phone ID or WABA ID for this workspace.
-                    Tokens can be refreshed without enabling override.
-                  </p>
-                  {overrideEnabled && (
-                    <div className="space-y-2">
-                      <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Override Reason</label>
-                      <textarea
-                        value={overrideReason}
-                        onChange={(e) => setOverrideReason(e.target.value)}
-                        className="w-full rounded-[5px] border border-slate-200 bg-white px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500"
-                        rows={3}
-                        placeholder="Please explain why you are changing these IDs..."
-                        required
-                      />
-                    </div>
-                  )}
+            <h3 className="text-xl font-black text-slate-900">Embedded Signup Active</h3>
+            <p className="mt-3 text-sm text-slate-600 font-medium leading-relaxed">
+              Manual credentials setup has been removed. Connect WhatsApp using the central Embedded Signup flow only.
+            </p>
+            {embeddedConnection ? (
+              <div className="mt-6 space-y-3 text-sm">
+                <div className="flex justify-between border-b border-slate-100 py-2">
+                  <span className="text-slate-500">Connection Status</span>
+                  <span className="font-black text-slate-900">{String(embeddedConnection.status || "disconnected")}</span>
                 </div>
-              )}
-
-              <Button type="submit" className="w-full py-4 text-base rounded-[5px]" disabled={busy}>
-                {busy ? (
-                  <><RefreshCw size={18} className="mr-2 animate-spin" /> Validating Credentials...</>
-                ) : (
-                  <><ShieldCheck size={18} className="mr-2" /> Activate Workspace</>
-                )}
-              </Button>
-            </form>
+                <div className="flex justify-between border-b border-slate-100 py-2">
+                  <span className="text-slate-500">WABA ID</span>
+                  <span className="font-black text-slate-900">{embeddedConnection.waba_id || "-"}</span>
+                </div>
+                <div className="flex justify-between border-b border-slate-100 py-2">
+                  <span className="text-slate-500">Phone Number ID</span>
+                  <span className="font-black text-slate-900">{embeddedConnection.phone_number_id || "-"}</span>
+                </div>
+                <div className="flex justify-between border-b border-slate-100 py-2">
+                  <span className="text-slate-500">Display Phone Number</span>
+                  <span className="font-black text-slate-900">{embeddedConnection.display_phone_number || "-"}</span>
+                </div>
+                <div className="flex justify-between border-b border-slate-100 py-2">
+                  <span className="text-slate-500">Webhook Subscribed</span>
+                  <span className="font-black text-slate-900">{embeddedConnection.webhook_subscribed ? "Yes" : "No"}</span>
+                </div>
+              </div>
+            ) : null}
           </Card>
         </div>
 
-        {/* Right Column: Info/Help */}
         <div className="space-y-6">
           <Card className="p-8 bg-slate-50 border-slate-100 h-full rounded-[5px]">
-              {metaStatus.status === "loading" ? (
+            {metaStatus.status === "loading" ? (
               <MetaConnectionSkeleton />
             ) : (
               <div className="space-y-8">
                 <div>
                   <h4 className="text-sm font-black text-slate-900 uppercase tracking-widest mb-4 flex items-center gap-2">
                     <HelpCircle size={16} className="text-brand-600" />
-                    How to find IDs?
+                    Embedded Signup
                   </h4>
                   <ul className="space-y-4">
                     {[
-                      "Login to Meta App Dashboard",
-                      "Go to WhatsApp > API Setup",
-                      "Copy 'Phone Number ID' and 'WABA ID'",
-                      "Generate token in 'System Users' section"
+                      "Click Connect WhatsApp",
+                      "Complete Meta popup onboarding",
+                      "Workspace WABA + phone are auto-linked",
+                      "Webhook subscription is validated automatically",
                     ].map((step, i) => (
                       <li key={i} className="flex items-start gap-3">
-                        <div className="size-5 rounded-full bg-white border border-slate-200 flex items-center justify-center text-[10px] font-black text-slate-400 shrink-0 mt-0.5">{i + 1}</div>
+                        <div className="size-5 rounded-full bg-white border border-slate-200 flex items-center justify-center text-[10px] font-black text-slate-400 shrink-0 mt-0.5">
+                          {i + 1}
+                        </div>
                         <span className="text-xs font-medium text-slate-600">{step}</span>
                       </li>
                     ))}
@@ -395,28 +263,6 @@ export default function MetaConnectPage() {
                   <Link to="#" className="mt-6 inline-flex items-center text-xs font-bold text-brand-600 hover:gap-2 transition-all">
                     View Documentation <ArrowRight size={14} className="ml-1" />
                   </Link>
-                </div>
-
-                <div className="pt-8 border-t border-slate-200">
-                  <h4 className="text-sm font-black text-slate-900 uppercase tracking-widest mb-6">Integration Details</h4>
-                  {metaStatus.status === "active" ? (
-                    <div className="space-y-4">
-                      <div className="flex justify-between items-center py-2 border-b border-slate-100">
-                        <span className="text-xs text-slate-500 font-medium">Graph API</span>
-                        <span className="text-xs font-bold text-slate-900">{metaStatus.credentials?.graphApiVersion || "v22.0"}</span>
-                      </div>
-                      <div className="flex justify-between items-center py-2 border-b border-slate-100">
-                        <span className="text-xs text-slate-500 font-medium">Verified At</span>
-                        <span className="text-xs font-bold text-slate-900">
-                          {metaStatus.credentials?.lastValidatedAt ? new Date(metaStatus.credentials.lastValidatedAt).toLocaleDateString() : "Never"}
-                        </span>
-                      </div>
-                    </div>
-                  ) : (
-                    <p className="text-xs text-slate-500 font-medium italic">
-                      Integration details will appear once a connection is established.
-                    </p>
-                  )}
                 </div>
               </div>
             )}

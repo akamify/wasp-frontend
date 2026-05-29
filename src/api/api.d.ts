@@ -223,7 +223,6 @@ export const API: {
   meta: {
     status(): Promise<any>;
     subscriptionHealth(): Promise<any>;
-    save(payload: any): Promise<any>;
     embeddedSignupExchange(payload: any): Promise<any>;
     connection(): Promise<any>;
     disconnect(): Promise<any>;
