@@ -65,9 +65,6 @@ export function WhatsAppManagerProfileViewModal({
                     <h2 className="text-2xl font-black tracking-tight text-slate-900">
                       {phone?.verified_name || "WhatsApp Business"}
                     </h2>
-                    {phone?.verified_name && (
-                      <img src="/verified-badge.png" alt="verified" className="size-5" />
-                    )}
                   </div>
                   <p className="mt-1 text-base font-bold text-slate-500">
                     {phone?.display_phone_number || "—"}

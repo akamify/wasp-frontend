@@ -16,7 +16,7 @@ export function DashboardSidebar({ snapshot, onView, onEdit, onRecharge }: any) 
             ) : (
               <div className="h-16 w-16 rounded-[5px] bg-brand-600 flex items-center justify-center text-white font-black text-2xl shadow-lg shadow-brand-500/20">{snapshot?.meta?.phone?.verified_name?.[0] || "W"}</div>
             )}
-            <div className="min-w-0"><h2 className="text-lg font-black text-slate-900 truncate">{snapshot?.meta?.phone?.verified_name || "WhatsApp Business"}</h2><div className="flex items-center gap-1.5"><img src="/verified-badge.png" alt="verified-badge" className="size-3" /><span className="text-xs font-bold text-slate-500">{snapshot?.metaStatus === "active" ? "Verified" : "Offline"}</span></div></div>
+            <div className="min-w-0"><h2 className="text-lg font-black text-slate-900 truncate">{snapshot?.meta?.phone?.verified_name || "WhatsApp Business"}</h2><div className="flex items-center gap-1.5"><span className="text-xs font-bold text-slate-500">{snapshot?.metaStatus === "active" ? "Verified" : "Offline"}</span></div></div>
           </div>
           <div className="space-y-4 mb-6">
             <div className="flex items-center gap-3 p-3 bg-slate-50 rounded-[5px] border border-slate-100"><Phone size={16} className="text-slate-400" /><div className="min-w-0"><p className="text-[10px] font-bold text-slate-400 uppercase">Phone Number</p><p className="text-xs font-bold text-slate-900 truncate">{snapshot?.meta?.phone?.display_phone_number || "Not Linked"}</p></div></div>
