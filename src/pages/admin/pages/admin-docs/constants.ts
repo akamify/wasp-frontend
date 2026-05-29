@@ -6,6 +6,7 @@ export const EMPTY_DOC = {
   content: "",
   keywords: [] as string[],
   category: "general",
+  order: 0,
   status: "draft",
   sidebar: { section: "", sectionOrder: 0, itemOrder: 0 },
   seo: { metaTitle: "", metaDescription: "", ogImage: "", noIndex: false },

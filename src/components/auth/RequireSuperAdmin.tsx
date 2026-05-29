@@ -12,7 +12,7 @@ export function RequireSuperAdmin() {
   }
 
   if (!token) {
-    return <Navigate to="/admin/login" replace state={{ from: location.pathname }} />;
+    return <Navigate to="/login" replace state={{ from: location.pathname }} />;
   }
 
   if (normalizeRole(user?.role) !== "super_admin") {
