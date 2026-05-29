@@ -1,12 +1,19 @@
 import axios from "axios";
 import { getEmployeeToken, setEmployeeToken } from "@modules/crm/services/employeeAuthStorage";
 
-const envBaseUrl = String(import.meta.env.VITE_API_BASE_URL || "").trim();
+const rawEnvBaseUrl = String(import.meta.env.VITE_API_BASE_URL || "").trim();
 const isBrowser = typeof window !== "undefined";
 const isLocalHost =
   isBrowser &&
   (window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1");
 
+function normalizeApiBaseUrl(value: string) {
+  const v = String(value || "").trim();
+  if (!v || v === "/" || v === "./") return "";
+  return v.replace(/\/+$/, "");
+}
+
+const envBaseUrl = normalizeApiBaseUrl(rawEnvBaseUrl);
 export const EMPLOYEE_API_BASE_URL = envBaseUrl || (isLocalHost ? "http://localhost:3000" : "/api");
 
 export const employeeApi = axios.create({
