@@ -57,6 +57,8 @@ export default function MetaConnectPage() {
     if (metaStatus.status === "pending") return "Pending";
     return "Disconnected";
   }, [metaStatus.status]);
+  const isDisconnected = metaStatus.status === "disconnected" || !embeddedConnection?.connected;
+  const isStatusLoading = syncing || embeddedBusy;
 
   const loadStatus = useCallback(async () => {
     if (!isInitialLoad.current) setSyncing(true);
@@ -272,20 +274,22 @@ export default function MetaConnectPage() {
               size="sm"
               className="rounded-[5px]"
               onClick={embeddedConnection?.connected ? disconnectWhatsApp : connectWhatsApp}
-              disabled={embeddedBusy}
+              disabled={isStatusLoading}
             >
-              {embeddedBusy ? "Please wait..." : embeddedConnection?.connected ? "Disconnect WhatsApp" : "Connect WhatsApp"}
+              {isStatusLoading ? "Connecting..." : embeddedConnection?.connected ? "Disconnect WhatsApp" : "Connect WhatsApp"}
             </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              className="bg-white border-gray-200 text-black hover:bg-gray-50 rounded-[5px]"
-              onClick={() => void loadStatus()}
-              disabled={syncing || embeddedBusy}
-            >
-              <RefreshCw size={14} className={cn("mr-2", (syncing || embeddedBusy) && "animate-spin")} />
-              {syncing ? "Syncing..." : "Refresh Status"}
-            </Button>
+            {!isDisconnected ? (
+              <Button
+                variant="outline"
+                size="sm"
+                className="bg-white border-gray-200 text-black hover:bg-gray-50 rounded-[5px]"
+                onClick={() => void loadStatus()}
+                disabled={isStatusLoading}
+              >
+                <RefreshCw size={14} className={cn("mr-2", isStatusLoading && "animate-spin")} />
+                {syncing ? "Refreshing..." : "Refresh Status"}
+              </Button>
+            ) : null}
           </div>
         </div>
         {embeddedError ? <div className="text-xs font-semibold text-rose-600 mt-3">{embeddedError}</div> : null}
@@ -299,30 +303,11 @@ export default function MetaConnectPage() {
             <p className="mt-3 text-sm text-slate-600 font-medium leading-relaxed">
               Manual credentials setup has been removed. Connect WhatsApp using the central Embedded Signup flow only.
             </p>
-            {embeddedConnection ? (
-              <div className="mt-6 space-y-3 text-sm">
-                <div className="flex justify-between border-b border-slate-100 py-2">
-                  <span className="text-slate-500">Connection Status</span>
-                  <span className="font-black text-slate-900">{String(embeddedConnection.status || "disconnected")}</span>
-                </div>
-                <div className="flex justify-between border-b border-slate-100 py-2">
-                  <span className="text-slate-500">WABA ID</span>
-                  <span className="font-black text-slate-900">{embeddedConnection.waba_id || "-"}</span>
-                </div>
-                <div className="flex justify-between border-b border-slate-100 py-2">
-                  <span className="text-slate-500">Phone Number ID</span>
-                  <span className="font-black text-slate-900">{embeddedConnection.phone_number_id || "-"}</span>
-                </div>
-                <div className="flex justify-between border-b border-slate-100 py-2">
-                  <span className="text-slate-500">Display Phone Number</span>
-                  <span className="font-black text-slate-900">{embeddedConnection.display_phone_number || "-"}</span>
-                </div>
-                <div className="flex justify-between border-b border-slate-100 py-2">
-                  <span className="text-slate-500">Webhook Subscribed</span>
-                  <span className="font-black text-slate-900">{embeddedConnection.webhook_subscribed ? "Yes" : "No"}</span>
-                </div>
-              </div>
-            ) : null}
+            <div className="mt-6 text-sm text-slate-600 font-medium">
+              {embeddedConnection?.connected
+                ? "WhatsApp is connected via Embedded Signup."
+                : "No active WhatsApp connection. Click Connect WhatsApp to start again."}
+            </div>
           </Card>
         </div>
 
