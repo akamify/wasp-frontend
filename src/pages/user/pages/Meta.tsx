@@ -20,6 +20,7 @@ export default function MetaConnectPage() {
   const [syncing, setSyncing] = useState(false);
   const [embeddedBusy, setEmbeddedBusy] = useState(false);
   const [embeddedError, setEmbeddedError] = useState("");
+  const [embeddedDebugError, setEmbeddedDebugError] = useState("");
   const [embeddedConnection, setEmbeddedConnection] = useState<any>(null);
   const [embeddedSession, setEmbeddedSession] = useState<{ waba_id: string | null; phone_number_id: string | null }>({
     waba_id: null,
@@ -88,6 +89,7 @@ export default function MetaConnectPage() {
   const connectWhatsApp = useCallback(async () => {
     setEmbeddedBusy(true);
     setEmbeddedError("");
+    setEmbeddedDebugError("");
     authCodeRef.current = null;
     exchangeStartedRef.current = false;
     signupActiveRef.current = true;
@@ -212,13 +214,16 @@ export default function MetaConnectPage() {
       }
     } catch (e: any) {
       const backendMessage = e?.response?.data?.message || "";
+      const backendDetail = e?.response?.data?.details?.message || "";
       const message = /could not be matched to the selected waba/i.test(backendMessage)
         ? "Meta returned a phone number that does not match the selected WABA. Please reconnect WhatsApp. If this repeats, contact support."
         : backendMessage || e?.message || "Could not exchange Meta code";
       setEmbeddedError(message);
+      setEmbeddedDebugError(String(backendDetail || ""));
       toast(message, "error");
       signupActiveRef.current = false;
       clearMessageListener();
+      await loadStatus();
     } finally {
       setEmbeddedBusy(false);
     }
@@ -284,6 +289,7 @@ export default function MetaConnectPage() {
           </div>
         </div>
         {embeddedError ? <div className="text-xs font-semibold text-rose-600 mt-3">{embeddedError}</div> : null}
+        {embeddedDebugError ? <div className="text-[11px] font-medium text-slate-500 mt-1">Debug: {embeddedDebugError}</div> : null}
       </section>
 
       <div className="grid gap-8 lg:grid-cols-[1.5fr_1fr]">
