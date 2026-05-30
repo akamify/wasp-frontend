@@ -268,6 +268,7 @@ export default function MetaConnectPage() {
                 : "Not connected via Embedded Signup"}
             </div>
           </div>
+          console.log("Using Embedded Signup config:", process.env.NEXT_PUBLIC_META_EMBEDDED_SIGNUP_CONFIG_ID);
           <div className="flex items-center gap-2">
             <Button
               variant={embeddedConnection?.connected ? "outline" : "primary"}
