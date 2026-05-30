@@ -23,6 +23,7 @@ export default function MetaConnectPage() {
   const [embeddedConnection, setEmbeddedConnection] = useState<any>(null);
   const [embeddedSession, setEmbeddedSession] = useState<{ waba_id: string; phone_number_id: string } | null>(null);
   const pendingCodeRef = useRef("");
+  const pendingSessionResolveRef = useRef<((v: { waba_id: string; phone_number_id: string }) => void) | null>(null);
   const isInitialLoad = useRef(true);
   const { toast } = useToast();
 
@@ -59,7 +60,11 @@ export default function MetaConnectPage() {
 
   useEffect(() => {
     const handler = (event: MessageEvent) => {
-      const allowed = ["https://www.facebook.com", "https://web.facebook.com"];
+      const allowed = [
+        "https://www.facebook.com",
+        "https://web.facebook.com",
+        "https://business.facebook.com",
+      ];
       if (!allowed.includes(String(event.origin || ""))) return;
       try {
         const payload = typeof event.data === "string" ? JSON.parse(event.data) : event.data;
@@ -75,11 +80,22 @@ export default function MetaConnectPage() {
           setEmbeddedError("Meta embedded signup failed");
           return;
         }
-        if (currentEvent === "FINISH" || currentEvent === "COMPLETED" || currentEvent === "COMPLETE") {
+        if (
+          currentEvent === "FINISH" ||
+          currentEvent === "COMPLETED" ||
+          currentEvent === "COMPLETE" ||
+          currentEvent === "FINISH_WHATSAPP_BUSINESS_APP_ONBOARDING" ||
+          currentEvent === "FINISH_ONLY_WABA"
+        ) {
           const wabaId = String(payload?.data?.waba_id || payload?.waba_id || "").trim();
           const phoneNumberId = String(payload?.data?.phone_number_id || payload?.phone_number_id || "").trim();
           if (wabaId && phoneNumberId) {
-            setEmbeddedSession({ waba_id: wabaId, phone_number_id: phoneNumberId });
+            const session = { waba_id: wabaId, phone_number_id: phoneNumberId };
+            setEmbeddedSession(session);
+            if (pendingSessionResolveRef.current) {
+              pendingSessionResolveRef.current(session);
+              pendingSessionResolveRef.current = null;
+            }
           }
         }
       } catch {
@@ -101,6 +117,20 @@ export default function MetaConnectPage() {
       if (!configId) throw new Error("Missing META Embedded Signup Config ID env");
 
       const fb = await loadMetaSdk();
+      const sessionPromise = new Promise<{ waba_id: string; phone_number_id: string }>((resolve, reject) => {
+        if (embeddedSession?.waba_id && embeddedSession?.phone_number_id) {
+          resolve(embeddedSession);
+          return;
+        }
+        pendingSessionResolveRef.current = resolve;
+        window.setTimeout(() => {
+          if (pendingSessionResolveRef.current) {
+            pendingSessionResolveRef.current = null;
+            reject(new Error("Embedded signup details missing. Please complete signup popup flow."));
+          }
+        }, 15000);
+      });
+
       await new Promise<void>((resolve, reject) => {
         fb.login(
           (response: any) => {
@@ -118,14 +148,12 @@ export default function MetaConnectPage() {
         );
       });
 
-      if (!embeddedSession?.waba_id || !embeddedSession?.phone_number_id) {
-        throw new Error("Embedded signup details missing. Please complete signup popup flow.");
-      }
+      const resolvedSession = await sessionPromise;
 
       await API.meta.embeddedSignupExchange({
         code: pendingCodeRef.current,
-        waba_id: embeddedSession.waba_id,
-        phone_number_id: embeddedSession.phone_number_id,
+        waba_id: resolvedSession.waba_id,
+        phone_number_id: resolvedSession.phone_number_id,
       });
       toast("WhatsApp connected successfully", "success");
       await loadStatus();
