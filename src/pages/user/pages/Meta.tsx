@@ -32,6 +32,8 @@ export default function MetaConnectPage() {
   });
   const exchangeStartedRef = useRef(false);
   const signupActiveRef = useRef(false);
+  const flowIdRef = useRef<string | null>(null);
+  const messageHandlerRef = useRef<((event: MessageEvent) => void) | null>(null);
   const isInitialLoad = useRef(true);
   const { toast } = useToast();
 
@@ -40,6 +42,13 @@ export default function MetaConnectPage() {
     // eslint-disable-next-line no-console
     console.info(`[embedded-signup] ${label}`, data);
   };
+
+  const clearMessageListener = useCallback(() => {
+    if (messageHandlerRef.current) {
+      window.removeEventListener("message", messageHandlerRef.current);
+      messageHandlerRef.current = null;
+    }
+  }, []);
 
   const statusLabel = useMemo(() => {
     if (metaStatus.status === "loading") return "Loading";
@@ -73,71 +82,8 @@ export default function MetaConnectPage() {
   }, [loadStatus]);
 
   useEffect(() => {
-    const handler = (event: MessageEvent) => {
-      const allowed = [
-        "https://www.facebook.com",
-        "https://web.facebook.com",
-        "https://business.facebook.com",
-      ];
-      if (!allowed.includes(String(event.origin || ""))) return;
-      try {
-        const payload = typeof event.data === "string" ? JSON.parse(event.data) : event.data;
-        if (!payload || payload.type !== "WA_EMBEDDED_SIGNUP") return;
-        const currentEvent = String(payload.event || "").toUpperCase();
-        debug("event received", { event: currentEvent });
-        if (currentEvent === "CANCEL") {
-          setEmbeddedBusy(false);
-          setEmbeddedError("Meta signup was cancelled");
-          signupActiveRef.current = false;
-          exchangeStartedRef.current = false;
-          authCodeRef.current = null;
-          setEmbeddedSession({ waba_id: null, phone_number_id: null });
-          return;
-        }
-        if (currentEvent === "ERROR") {
-          setEmbeddedBusy(false);
-          setEmbeddedError("Meta embedded signup failed");
-          signupActiveRef.current = false;
-          return;
-        }
-        if (
-          currentEvent === "FINISH" ||
-          currentEvent === "COMPLETED" ||
-          currentEvent === "COMPLETE" ||
-          currentEvent === "FINISH_WHATSAPP_BUSINESS_APP_ONBOARDING" ||
-          currentEvent === "FINISH_ONLY_WABA"
-        ) {
-          const data = payload?.data && typeof payload.data === "object" ? payload.data : {};
-          const wabaId = String(
-            data?.waba_id ||
-            data?.whatsapp_business_account_id ||
-            payload?.waba_id ||
-            ""
-          ).trim() || null;
-          const phoneNumberId = String(
-            data?.phone_number_id ||
-            data?.phone?.id ||
-            payload?.phone_number_id ||
-            ""
-          ).trim() || null;
-          debug("finish payload parsed", {
-            hasWabaId: !!wabaId,
-            hasPhoneNumberId: !!phoneNumberId,
-          });
-          const session = {
-            waba_id: wabaId,
-            phone_number_id: phoneNumberId,
-          };
-          signupDetailsRef.current = session;
-          setEmbeddedSession(session);
-        }
-      } catch {
-        // ignore malformed payloads
-      }
-    };
-    window.addEventListener("message", handler);
-    return () => window.removeEventListener("message", handler);
-  }, []);
+    return () => clearMessageListener();
+  }, [clearMessageListener]);
 
   const connectWhatsApp = useCallback(async () => {
     setEmbeddedBusy(true);
@@ -145,8 +91,10 @@ export default function MetaConnectPage() {
     authCodeRef.current = null;
     exchangeStartedRef.current = false;
     signupActiveRef.current = true;
+    flowIdRef.current = `${Date.now()}-${Math.random().toString(16).slice(2, 8)}`;
     signupDetailsRef.current = { waba_id: null, phone_number_id: null };
     setEmbeddedSession({ waba_id: null, phone_number_id: null });
+    clearMessageListener();
     try {
       const env = (import.meta as any).env || {};
       const configId = String(
@@ -156,8 +104,10 @@ export default function MetaConnectPage() {
 
       const fb = await loadMetaSdk();
 
+      const currentFlowId = flowIdRef.current;
       const maybeCompleteSignup = async () => {
         if (!signupActiveRef.current) return;
+        if (!currentFlowId || flowIdRef.current !== currentFlowId) return;
         if (exchangeStartedRef.current) return;
         if (!authCodeRef.current) return;
         if (!signupDetailsRef.current.waba_id) return;
@@ -180,6 +130,57 @@ export default function MetaConnectPage() {
         await loadStatus();
       };
 
+      const handler = (event: MessageEvent) => {
+        const allowed = ["https://www.facebook.com", "https://web.facebook.com"];
+        if (!allowed.includes(String(event.origin || ""))) return;
+        if (!signupActiveRef.current || exchangeStartedRef.current) return;
+        if (!currentFlowId || flowIdRef.current !== currentFlowId) return;
+        try {
+          const payload = typeof event.data === "string" ? JSON.parse(event.data) : event.data;
+          if (!payload || payload.type !== "WA_EMBEDDED_SIGNUP") return;
+          const currentEvent = String(payload.event || "").toUpperCase();
+          if (currentEvent === "CANCEL") {
+            setEmbeddedBusy(false);
+            setEmbeddedError("Meta signup was cancelled");
+            signupActiveRef.current = false;
+            clearMessageListener();
+            return;
+          }
+          if (currentEvent === "ERROR") {
+            setEmbeddedBusy(false);
+            setEmbeddedError("Meta embedded signup failed");
+            signupActiveRef.current = false;
+            clearMessageListener();
+            return;
+          }
+          if (currentEvent !== "FINISH") return;
+          const data = payload?.data && typeof payload.data === "object" ? payload.data : {};
+          const wabaId = String(data?.waba_id || "").trim() || null;
+          const phoneNumberId = String(data?.phone_number_id || "").trim() || null;
+          debug("WA Embedded Signup FINISH received", {
+            type: payload?.type || null,
+            event: payload?.event || null,
+            dataKeys: Object.keys(data || {}),
+            hasWabaId: !!wabaId,
+            hasPhoneNumberId: !!phoneNumberId,
+          });
+          if (!wabaId || !phoneNumberId) {
+            setEmbeddedError("Meta did not return WABA ID or Phone Number ID. Please try again.");
+            signupActiveRef.current = false;
+            clearMessageListener();
+            return;
+          }
+          const session = { waba_id: wabaId, phone_number_id: phoneNumberId };
+          signupDetailsRef.current = session;
+          setEmbeddedSession(session);
+          void maybeCompleteSignup();
+        } catch {
+          // ignore malformed payloads
+        }
+      };
+      messageHandlerRef.current = handler;
+      window.addEventListener("message", handler);
+
       await new Promise<void>((resolve, reject) => {
         fb.login(
           (response: any) => {
@@ -188,9 +189,8 @@ export default function MetaConnectPage() {
             debug("fb login callback", { hasCode });
             if (!hasCode) return reject(new Error("Meta authorization code missing. Please try again."));
             authCodeRef.current = code;
-            void maybeCompleteSignup()
-              .then(() => resolve())
-              .catch((err) => reject(err));
+            void maybeCompleteSignup().catch((err) => reject(err));
+            return resolve();
           },
           {
             config_id: configId,
@@ -211,14 +211,18 @@ export default function MetaConnectPage() {
         throw new Error("Embedded signup details missing. Please complete signup popup flow.");
       }
     } catch (e: any) {
-      const message = e?.response?.data?.message || e?.message || "Could not exchange Meta code";
+      const backendMessage = e?.response?.data?.message || "";
+      const message = /could not be matched to the selected waba/i.test(backendMessage)
+        ? "Meta returned a phone number that does not match the selected WABA. Please reconnect WhatsApp. If this repeats, contact support."
+        : backendMessage || e?.message || "Could not exchange Meta code";
       setEmbeddedError(message);
       toast(message, "error");
       signupActiveRef.current = false;
+      clearMessageListener();
     } finally {
       setEmbeddedBusy(false);
     }
-  }, [loadStatus, toast]);
+  }, [clearMessageListener, loadStatus, toast]);
 
   const disconnectWhatsApp = useCallback(async () => {
     setEmbeddedBusy(true);
