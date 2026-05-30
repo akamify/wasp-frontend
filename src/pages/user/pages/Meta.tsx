@@ -21,11 +21,25 @@ export default function MetaConnectPage() {
   const [embeddedBusy, setEmbeddedBusy] = useState(false);
   const [embeddedError, setEmbeddedError] = useState("");
   const [embeddedConnection, setEmbeddedConnection] = useState<any>(null);
-  const [embeddedSession, setEmbeddedSession] = useState<{ waba_id: string; phone_number_id: string } | null>(null);
-  const pendingCodeRef = useRef("");
-  const pendingSessionResolveRef = useRef<((v: { waba_id: string; phone_number_id: string }) => void) | null>(null);
+  const [embeddedSession, setEmbeddedSession] = useState<{ waba_id: string | null; phone_number_id: string | null }>({
+    waba_id: null,
+    phone_number_id: null,
+  });
+  const authCodeRef = useRef<string | null>(null);
+  const signupDetailsRef = useRef<{ waba_id: string | null; phone_number_id: string | null }>({
+    waba_id: null,
+    phone_number_id: null,
+  });
+  const exchangeStartedRef = useRef(false);
+  const signupActiveRef = useRef(false);
   const isInitialLoad = useRef(true);
   const { toast } = useToast();
+
+  const debug = (label: string, data: Record<string, unknown>) => {
+    // safe temporary diagnostics; no secrets logged
+    // eslint-disable-next-line no-console
+    console.info(`[embedded-signup] ${label}`, data);
+  };
 
   const statusLabel = useMemo(() => {
     if (metaStatus.status === "loading") return "Loading";
@@ -70,14 +84,20 @@ export default function MetaConnectPage() {
         const payload = typeof event.data === "string" ? JSON.parse(event.data) : event.data;
         if (!payload || payload.type !== "WA_EMBEDDED_SIGNUP") return;
         const currentEvent = String(payload.event || "").toUpperCase();
+        debug("event received", { event: currentEvent });
         if (currentEvent === "CANCEL") {
           setEmbeddedBusy(false);
           setEmbeddedError("Meta signup was cancelled");
+          signupActiveRef.current = false;
+          exchangeStartedRef.current = false;
+          authCodeRef.current = null;
+          setEmbeddedSession({ waba_id: null, phone_number_id: null });
           return;
         }
         if (currentEvent === "ERROR") {
           setEmbeddedBusy(false);
           setEmbeddedError("Meta embedded signup failed");
+          signupActiveRef.current = false;
           return;
         }
         if (
@@ -87,16 +107,29 @@ export default function MetaConnectPage() {
           currentEvent === "FINISH_WHATSAPP_BUSINESS_APP_ONBOARDING" ||
           currentEvent === "FINISH_ONLY_WABA"
         ) {
-          const wabaId = String(payload?.data?.waba_id || payload?.waba_id || "").trim();
-          const phoneNumberId = String(payload?.data?.phone_number_id || payload?.phone_number_id || "").trim();
-          if (wabaId && phoneNumberId) {
-            const session = { waba_id: wabaId, phone_number_id: phoneNumberId };
-            setEmbeddedSession(session);
-            if (pendingSessionResolveRef.current) {
-              pendingSessionResolveRef.current(session);
-              pendingSessionResolveRef.current = null;
-            }
-          }
+          const data = payload?.data && typeof payload.data === "object" ? payload.data : {};
+          const wabaId = String(
+            data?.waba_id ||
+            data?.whatsapp_business_account_id ||
+            payload?.waba_id ||
+            ""
+          ).trim() || null;
+          const phoneNumberId = String(
+            data?.phone_number_id ||
+            data?.phone?.id ||
+            payload?.phone_number_id ||
+            ""
+          ).trim() || null;
+          debug("finish payload parsed", {
+            hasWabaId: !!wabaId,
+            hasPhoneNumberId: !!phoneNumberId,
+          });
+          const session = {
+            waba_id: wabaId,
+            phone_number_id: phoneNumberId,
+          };
+          signupDetailsRef.current = session;
+          setEmbeddedSession(session);
         }
       } catch {
         // ignore malformed payloads
@@ -109,6 +142,11 @@ export default function MetaConnectPage() {
   const connectWhatsApp = useCallback(async () => {
     setEmbeddedBusy(true);
     setEmbeddedError("");
+    authCodeRef.current = null;
+    exchangeStartedRef.current = false;
+    signupActiveRef.current = true;
+    signupDetailsRef.current = { waba_id: null, phone_number_id: null };
+    setEmbeddedSession({ waba_id: null, phone_number_id: null });
     try {
       const env = (import.meta as any).env || {};
       const configId = String(
@@ -117,27 +155,42 @@ export default function MetaConnectPage() {
       if (!configId) throw new Error("Missing META Embedded Signup Config ID env");
 
       const fb = await loadMetaSdk();
-      const sessionPromise = new Promise<{ waba_id: string; phone_number_id: string }>((resolve, reject) => {
-        if (embeddedSession?.waba_id && embeddedSession?.phone_number_id) {
-          resolve(embeddedSession);
-          return;
-        }
-        pendingSessionResolveRef.current = resolve;
-        window.setTimeout(() => {
-          if (pendingSessionResolveRef.current) {
-            pendingSessionResolveRef.current = null;
-            reject(new Error("Embedded signup details missing. Please complete signup popup flow."));
-          }
-        }, 15000);
-      });
+
+      const maybeCompleteSignup = async () => {
+        if (!signupActiveRef.current) return;
+        if (exchangeStartedRef.current) return;
+        if (!authCodeRef.current) return;
+        if (!signupDetailsRef.current.waba_id) return;
+        if (!signupDetailsRef.current.phone_number_id) return;
+
+        exchangeStartedRef.current = true;
+        debug("calling exchange", {
+          hasCode: !!authCodeRef.current,
+          hasWabaId: !!signupDetailsRef.current.waba_id,
+          hasPhoneNumberId: !!signupDetailsRef.current.phone_number_id,
+        });
+
+        await API.meta.embeddedSignupExchange({
+          code: authCodeRef.current,
+          waba_id: signupDetailsRef.current.waba_id,
+          phone_number_id: signupDetailsRef.current.phone_number_id,
+        });
+        toast("WhatsApp connected successfully", "success");
+        signupActiveRef.current = false;
+        await loadStatus();
+      };
 
       await new Promise<void>((resolve, reject) => {
         fb.login(
           (response: any) => {
             const code = String(response?.authResponse?.code || "").trim();
-            if (!code) return reject(new Error("Meta signup was cancelled"));
-            pendingCodeRef.current = code;
-            return resolve();
+            const hasCode = !!code;
+            debug("fb login callback", { hasCode });
+            if (!hasCode) return reject(new Error("Meta authorization code missing. Please try again."));
+            authCodeRef.current = code;
+            void maybeCompleteSignup()
+              .then(() => resolve())
+              .catch((err) => reject(err));
           },
           {
             config_id: configId,
@@ -148,23 +201,24 @@ export default function MetaConnectPage() {
         );
       });
 
-      const resolvedSession = await sessionPromise;
-
-      await API.meta.embeddedSignupExchange({
-        code: pendingCodeRef.current,
-        waba_id: resolvedSession.waba_id,
-        phone_number_id: resolvedSession.phone_number_id,
-      });
-      toast("WhatsApp connected successfully", "success");
-      await loadStatus();
+      // If session event comes after callback, keep trying briefly.
+      const startedAt = Date.now();
+      while (!exchangeStartedRef.current && Date.now() - startedAt < 20000) {
+        await new Promise((r) => setTimeout(r, 400));
+        await maybeCompleteSignup();
+      }
+      if (!exchangeStartedRef.current) {
+        throw new Error("Embedded signup details missing. Please complete signup popup flow.");
+      }
     } catch (e: any) {
       const message = e?.response?.data?.message || e?.message || "Could not exchange Meta code";
       setEmbeddedError(message);
       toast(message, "error");
+      signupActiveRef.current = false;
     } finally {
       setEmbeddedBusy(false);
     }
-  }, [embeddedSession, loadStatus, toast]);
+  }, [loadStatus, toast]);
 
   const disconnectWhatsApp = useCallback(async () => {
     setEmbeddedBusy(true);
