@@ -227,6 +227,7 @@ export const API: {
     subscriptionHealth(): Promise<any>;
     embeddedSignupExchange(payload: any): Promise<any>;
     connection(): Promise<any>;
+    refreshConnectionMetadata(): Promise<any>;
     disconnect(): Promise<any>;
     updateProfile(payload: any): Promise<any>;
     uploadProfilePicture(file: any): Promise<any>;

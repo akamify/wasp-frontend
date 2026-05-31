@@ -24,8 +24,6 @@ export default function MetaConnectPage() {
   const [embeddedPhones, setEmbeddedPhones] = useState<Array<{ id: string; display_phone_number: string | null }>>([]);
   const [embeddedConnection, setEmbeddedConnection] = useState<any>(null);
   const authCodeRef = useRef<string | null>(null);
-  const [connection, setConnection] = useState<any>(null);
-  const [templateMetadata, setTemplateMetadata] = useState<any>(null);
 
   const signupDetailsRef = useRef<{ waba_id: string | null; phone_number_id: string | null }>({
     waba_id: null,
@@ -270,6 +268,41 @@ export default function MetaConnectPage() {
     }
   }, [loadStatus, toast]);
 
+  const refreshConnectionMetadata = useCallback(async () => {
+    setSyncing(true);
+    setEmbeddedError("");
+    try {
+      const result = await API.meta.refreshConnectionMetadata();
+      clearApiGetCache();
+      setEmbeddedConnection(result?.connection || null);
+      toast("WhatsApp account metadata refreshed", "success");
+      await loadStatus();
+    } catch (e: any) {
+      const message = e?.response?.data?.message || "Failed to refresh WhatsApp account metadata";
+      setEmbeddedError(message);
+      toast(message, "error");
+    } finally {
+      setSyncing(false);
+    }
+  }, [loadStatus, toast]);
+
+  const connectionStatusMessage =
+    embeddedConnection?.connectionStatus === "pending_verification"
+      ? "Phone connected, verification pending"
+      : embeddedConnection?.connectionStatus === "pending_display_name_review"
+        ? "Display name review pending"
+        : embeddedConnection?.connectionStatus === "metadata_partial"
+          ? "Metadata partially available from Meta"
+          : null;
+  const registrationWarning =
+    embeddedConnection?.connected &&
+    (["pending_verification", "metadata_partial"].includes(String(embeddedConnection?.connectionStatus || "")) ||
+      (embeddedConnection?.codeVerificationStatus &&
+        String(embeddedConnection.codeVerificationStatus).toUpperCase() !== "VERIFIED"))
+      ? "Cloud API registration may still be required before sending messages"
+      : null;
+  const businessProfile = embeddedConnection?.businessProfile || {};
+
   return (
     <div className="space-y-8 pb-12 p-4 md:p-8">
       <section>
@@ -325,13 +358,52 @@ export default function MetaConnectPage() {
       </section>
 
       <div className="mb-4 rounded-[5px] border border-slate-200 bg-white p-4 shadow-sm">
-        <div className="text-xs font-black uppercase tracking-widest text-slate-500">Current WhatsApp Account</div>
-        <div className="mt-2 grid gap-2 text-xs font-semibold text-slate-700 md:grid-cols-4">
-          <span>WABA: {connection?.waba_name || templateMetadata?.wabaName || "Connected WABA"}</span>
-          <span>WABA ID: {connection?.waba_id_masked || templateMetadata?.currentWabaIdMasked || "-"}</span>
-          <span>Phone: {connection?.display_phone_number || templateMetadata?.displayPhoneNumber || "-"}</span>
-          <span>Phone ID: {connection?.phone_number_id_masked || templateMetadata?.currentPhoneNumberIdMasked || "-"}</span>
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div className="text-xs font-black uppercase tracking-widest text-slate-500">Current WhatsApp Account</div>
+          {embeddedConnection?.maskedWabaId ? (
+            <Button variant="outline" size="sm" className="rounded-[5px]" onClick={() => void refreshConnectionMetadata()} disabled={syncing}>
+              <RefreshCw size={14} className={cn("mr-2", syncing && "animate-spin")} />
+              Refresh Metadata
+            </Button>
+          ) : null}
         </div>
+        <div className="mt-3 grid gap-2 text-xs font-semibold text-slate-700 md:grid-cols-4">
+          <span>WABA: {embeddedConnection?.wabaName || "Not available yet"}</span>
+          <span>Account status: {embeddedConnection?.connectionStatus || "Not available yet"}</span>
+          <span>WABA ID: {embeddedConnection?.maskedWabaId || "Not available yet"}</span>
+          <span>Phone: {embeddedConnection?.displayPhoneNumber || "Not available yet"}</span>
+          <span>Phone ID: {embeddedConnection?.maskedPhoneNumberId || "Not available yet"}</span>
+          <span>Verified display name: {embeddedConnection?.verifiedName || "Pending"}</span>
+          <span>Display name status: {embeddedConnection?.nameStatus || "Not available yet"}</span>
+          <span>Code verification: {embeddedConnection?.codeVerificationStatus || "Not available yet"}</span>
+          <span>Quality rating: {embeddedConnection?.qualityRating || "Not available yet"}</span>
+          <span>Platform type: {embeddedConnection?.platformType || "Not available yet"}</span>
+          <span>Account mode: {embeddedConnection?.accountMode || "Not available yet"}</span>
+          <span>Throughput: {embeddedConnection?.throughput ? JSON.stringify(embeddedConnection.throughput) : "Not available yet"}</span>
+          <span>Messaging limit tier: {embeddedConnection?.messagingLimitTier || "Not available yet"}</span>
+          <span>Last synced: {embeddedConnection?.lastMetadataSyncAt ? new Date(embeddedConnection.lastMetadataSyncAt).toLocaleString() : "Not available yet"}</span>
+        </div>
+        {connectionStatusMessage ? <div className="mt-3 text-xs font-bold text-amber-700">{connectionStatusMessage}</div> : null}
+        {registrationWarning ? <div className="mt-1 text-xs font-semibold text-amber-700">{registrationWarning}</div> : null}
+        {businessProfile.about || businessProfile.description || businessProfile.address || businessProfile.email || businessProfile.vertical || businessProfile.profilePictureUrl || businessProfile.websites?.length ? (
+          <div className="mt-4 border-t border-slate-100 pt-3">
+            <div className="text-[11px] font-black uppercase tracking-widest text-slate-400">Business Profile</div>
+            <div className="mt-2 grid gap-2 text-xs font-semibold text-slate-700 md:grid-cols-3">
+              {businessProfile.about ? <span>About: {businessProfile.about}</span> : null}
+              {businessProfile.description ? <span>Description: {businessProfile.description}</span> : null}
+              {businessProfile.address ? <span>Address: {businessProfile.address}</span> : null}
+              {businessProfile.email ? <span>Email: {businessProfile.email}</span> : null}
+              {businessProfile.vertical ? <span>Vertical: {businessProfile.vertical}</span> : null}
+              {businessProfile.profilePictureUrl ? <span>Profile picture: Available</span> : null}
+              {businessProfile.websites?.length ? <span>Websites: {businessProfile.websites.join(", ")}</span> : null}
+            </div>
+          </div>
+        ) : null}
+        {Array.isArray(embeddedConnection?.metadataWarnings) && embeddedConnection.metadataWarnings.length ? (
+          <div className="mt-3 text-[11px] font-medium text-slate-500">
+            Meta metadata warnings: {embeddedConnection.metadataWarnings.join(" | ")}
+          </div>
+        ) : null}
       </div>
 
       <div className="">

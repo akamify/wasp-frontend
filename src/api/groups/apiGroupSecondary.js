@@ -85,6 +85,7 @@ export function buildApiGroupSecondary(api, unwrap, API_BASE_URL) {
       subscriptionHealth: () => api.get("/meta/subscription-health").then(unwrap),
       embeddedSignupExchange: (payload) => api.post("/integrations/whatsapp/embedded-signup/exchange", payload).then(unwrap),
       connection: () => api.get("/integrations/whatsapp/connection").then(unwrap),
+      refreshConnectionMetadata: () => api.post("/integrations/whatsapp/connection/refresh-metadata").then(unwrap),
       disconnect: () => api.post("/integrations/whatsapp/disconnect").then(unwrap),
       updateProfile: (payload) => api.put("/meta/profile", payload).then(unwrap),
       uploadProfilePicture: (file) => {
