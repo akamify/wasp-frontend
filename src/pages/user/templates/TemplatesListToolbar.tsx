@@ -76,7 +76,7 @@ export function TemplatesListToolbar(props: Props) {
             className="h-11 px-5 rounded-[5px] bg-slate-900 text-white font-bold text-xs uppercase tracking-widest hover:bg-black transition-all shadow-sm"
           >
             <RefreshCw size={16} className={cn("mr-2", syncing && "animate-spin")} />
-            Refresh Templates
+            Sync Templates
           </Button>
           <Button
             onClick={onOpenAdd}

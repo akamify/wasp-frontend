@@ -24,6 +24,9 @@ export default function MetaConnectPage() {
   const [embeddedPhones, setEmbeddedPhones] = useState<Array<{ id: string; display_phone_number: string | null }>>([]);
   const [embeddedConnection, setEmbeddedConnection] = useState<any>(null);
   const authCodeRef = useRef<string | null>(null);
+  const [connection, setConnection] = useState<any>(null);
+  const [templateMetadata, setTemplateMetadata] = useState<any>(null);
+
   const signupDetailsRef = useRef<{ waba_id: string | null; phone_number_id: string | null }>({
     waba_id: null,
     phone_number_id: null,
@@ -191,7 +194,7 @@ export default function MetaConnectPage() {
           }
           const session = { waba_id: wabaId, phone_number_id: phoneNumberId };
           signupDetailsRef.current = session;
-          void maybeCompleteSignup().catch(() => {});
+          void maybeCompleteSignup().catch(() => { });
         } catch {
           // ignore malformed payloads
         }
@@ -320,6 +323,16 @@ export default function MetaConnectPage() {
           </div>
         ) : null}
       </section>
+
+      <div className="mb-4 rounded-[5px] border border-slate-200 bg-white p-4 shadow-sm">
+        <div className="text-xs font-black uppercase tracking-widest text-slate-500">Current WhatsApp Account</div>
+        <div className="mt-2 grid gap-2 text-xs font-semibold text-slate-700 md:grid-cols-4">
+          <span>WABA: {connection?.waba_name || templateMetadata?.wabaName || "Connected WABA"}</span>
+          <span>WABA ID: {connection?.waba_id_masked || templateMetadata?.currentWabaIdMasked || "-"}</span>
+          <span>Phone: {connection?.display_phone_number || templateMetadata?.displayPhoneNumber || "-"}</span>
+          <span>Phone ID: {connection?.phone_number_id_masked || templateMetadata?.currentPhoneNumberIdMasked || "-"}</span>
+        </div>
+      </div>
 
       <div className="">
         <div className="space-y-6">

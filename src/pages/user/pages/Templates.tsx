@@ -181,11 +181,6 @@ export default function TemplatesPage() {
           <span>Phone ID: {connection?.phone_number_id_masked || templateMetadata?.currentPhoneNumberIdMasked || "-"}</span>
         </div>
       </div>
-      {Number(templateMetadata?.staleTemplateCountIgnored || 0) > 0 ? (
-        <div className="mb-4 rounded-[5px] border border-amber-200 bg-amber-50 px-4 py-3 text-xs font-bold text-amber-900">
-          Templates from previous WhatsApp accounts are hidden. Only current WABA templates are shown.
-        </div>
-      ) : null}
       {/* Main List */}
       <div className="relative">
         {showCreatePanel ? (
