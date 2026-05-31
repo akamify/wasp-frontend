@@ -262,13 +262,7 @@ export default function MetaConnectPage() {
               />
               <span className="text-lg font-black text-black">{statusLabel}</span>
             </div>
-            <div className="text-xs font-semibold text-slate-500">
-              {embeddedConnection?.connected
-                ? `Connected ${embeddedConnection?.display_phone_number || ""}`
-                : "Not connected via Embedded Signup"}
-            </div>
           </div>
-          console.log("Using Embedded Signup config:", process.env.NEXT_PUBLIC_META_EMBEDDED_SIGNUP_CONFIG_ID);
           <div className="flex items-center gap-2">
             <Button
               variant={embeddedConnection?.connected ? "outline" : "primary"}
@@ -300,10 +294,6 @@ export default function MetaConnectPage() {
       <div className="grid gap-8 lg:grid-cols-[1.5fr_1fr]">
         <div className="space-y-6">
           <Card className="p-8 rounded-[5px]">
-            <h3 className="text-xl font-black text-slate-900">Embedded Signup Active</h3>
-            <p className="mt-3 text-sm text-slate-600 font-medium leading-relaxed">
-              Manual credentials setup has been removed. Connect WhatsApp using the central Embedded Signup flow only.
-            </p>
             <div className="mt-6 text-sm text-slate-600 font-medium">
               {embeddedConnection?.connected
                 ? "WhatsApp is connected via Embedded Signup."
