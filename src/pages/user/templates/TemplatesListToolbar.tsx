@@ -76,13 +76,13 @@ export function TemplatesListToolbar(props: Props) {
             className="h-11 px-5 rounded-[5px] bg-slate-900 text-white font-bold text-xs uppercase tracking-widest hover:bg-black transition-all shadow-sm"
           >
             <RefreshCw size={16} className={cn("mr-2", syncing && "animate-spin")} />
-            Sync Templates
+            Sync
           </Button>
           <Button
             onClick={onOpenAdd}
             className="h-11 px-5 rounded-[5px] bg-brand-600 text-white font-bold text-xs uppercase tracking-widest hover:bg-brand-700 transition-all shadow-sm"
           >
-            <Plus size={16} className="mr-2" /> New Template
+            <Plus size={16} className="mr-2" /> New
           </Button>
         </div>
       </div>
