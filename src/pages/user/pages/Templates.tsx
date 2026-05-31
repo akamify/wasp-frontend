@@ -172,15 +172,6 @@ export default function TemplatesPage() {
 
   return (
     <div className=" p-4 md:p-8 relative">
-      <div className="mb-4 rounded-[5px] border border-slate-200 bg-white p-4 shadow-sm">
-        <div className="text-xs font-black uppercase tracking-widest text-slate-500">Current WhatsApp Account</div>
-        <div className="mt-2 grid gap-2 text-xs font-semibold text-slate-700 md:grid-cols-4">
-          <span>WABA: {connection?.waba_name || templateMetadata?.wabaName || "Connected WABA"}</span>
-          <span>WABA ID: {connection?.waba_id_masked || templateMetadata?.currentWabaIdMasked || "-"}</span>
-          <span>Phone: {connection?.display_phone_number || templateMetadata?.displayPhoneNumber || "-"}</span>
-          <span>Phone ID: {connection?.phone_number_id_masked || templateMetadata?.currentPhoneNumberIdMasked || "-"}</span>
-        </div>
-      </div>
       {/* Main List */}
       <div className="relative">
         {showCreatePanel ? (
