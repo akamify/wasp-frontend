@@ -315,17 +315,7 @@ export default function MetaConnectPage() {
         ) : null}
       </section>
 
-      <div className="grid gap-8 lg:grid-cols-[1.5fr_1fr]">
-        <div className="space-y-6">
-          <Card className="p-8 rounded-[5px]">
-            <div className="mt-6 text-sm text-slate-600 font-medium">
-              {embeddedConnection?.connected
-                ? "WhatsApp is connected via Embedded Signup."
-                : "No active WhatsApp connection. Click Connect WhatsApp to start again."}
-            </div>
-          </Card>
-        </div>
-
+      <div className="">
         <div className="space-y-6">
           <Card className="p-8 bg-slate-50 border-slate-100 h-full rounded-[5px]">
             {metaStatus.status === "loading" ? (
