@@ -135,6 +135,11 @@ export default function MetaConnectPage() {
             clearMessageListener();
             return;
           }
+          await API.templates.syncMeta().catch((error: any) => {
+            debug("template sync after connect failed", {
+              message: error?.response?.data?.message || error?.message || "Unknown error",
+            });
+          });
           toast("WhatsApp connected successfully", "success");
           signupActiveRef.current = false;
           clearMessageListener();

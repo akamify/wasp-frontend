@@ -39,6 +39,7 @@ export default function TemplatesPage() {
     if (isFirst) setLoading(true);
     setSyncing(true);
     try {
+      if (isFirst) await API.templates.syncMeta().catch(() => null);
       const response = await API.templates.list();
       setTemplates(Array.isArray(response?.templates) ? response.templates : []);
       if (!isFirst) toast("Templates refreshed", "success");
