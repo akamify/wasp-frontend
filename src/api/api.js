@@ -34,6 +34,10 @@ const __getInflight = new Map();
 const __getCache = new Map();
 const DEFAULT_GET_CACHE_TTL_MS = 1500;
 
+export function clearApiGetCache() {
+  __getCache.clear();
+}
+
 function stableStringify(value) {
   try {
     if (!value || typeof value !== "object") return String(value ?? "");

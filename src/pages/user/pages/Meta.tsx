@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { API } from "@api/api";
+import { API, clearApiGetCache } from "@api/api";
 import { Card } from "@components/ui/Card";
 import { Button } from "@components/ui/Button";
 import { MetaConnectionSkeleton } from "@components/ui/Skeletons";
@@ -135,11 +135,12 @@ export default function MetaConnectPage() {
             clearMessageListener();
             return;
           }
-          await API.templates.syncMeta().catch((error: any) => {
+          await API.templates.refreshWhatsApp().catch((error: any) => {
             debug("template sync after connect failed", {
               message: error?.response?.data?.message || error?.message || "Unknown error",
             });
           });
+          clearApiGetCache();
           toast("WhatsApp connected successfully", "success");
           signupActiveRef.current = false;
           clearMessageListener();

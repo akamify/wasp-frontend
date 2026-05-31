@@ -7,7 +7,7 @@ import { statusTone, truncateTemplateName } from "@pages/user/templates/helpers"
 import type { TemplateItem } from "@pages/user/templates/types";
 import { cn } from "@shared/utils/cn";
 import { useToast } from "@shared/providers/ToastContext";
-import { API } from "@api/api";
+import { API, clearApiGetCache } from "@api/api";
 import { TemplatesListToolbar } from "@pages/user/templates/TemplatesListToolbar";
 
 type Props = {
@@ -55,7 +55,8 @@ export function TemplatesList(props: Props) {
   const handleSyncMeta = useCallback(async () => {
     setSyncing(true);
     try {
-      await API.templates.syncMeta();
+      await API.templates.refreshWhatsApp();
+      clearApiGetCache();
       toast("WhatsApp templates synced successfully.", "success");
       onRefresh();
     } catch (e: any) {

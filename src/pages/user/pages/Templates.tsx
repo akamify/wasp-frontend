@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState, useRef } from "react";
 import { useSearchParams } from "react-router-dom";
-import { API } from "@api/api";
+import { API, clearApiGetCache } from "@api/api";
 import { Button } from "@components/ui/Button";
 import { useToast } from "@shared/providers/ToastContext";
 import { TemplateForm } from "@pages/user/templates/TemplateForm";
@@ -14,6 +14,8 @@ import { motion, AnimatePresence } from "framer-motion";
 export default function TemplatesPage() {
   const FALLBACK_TEMPLATE_LANGUAGES = ["en_US", "en_GB", "hi", "ar", "pt_BR", "es", "fr", "de", "it", "id"];
   const [templates, setTemplates] = useState<TemplateItem[]>([]);
+  const [templateMetadata, setTemplateMetadata] = useState<any>(null);
+  const [connection, setConnection] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [syncing, setSyncing] = useState(false);
   const { toast } = useToast();
@@ -39,9 +41,17 @@ export default function TemplatesPage() {
     if (isFirst) setLoading(true);
     setSyncing(true);
     try {
-      if (isFirst) await API.templates.syncMeta().catch(() => null);
-      const response = await API.templates.list();
+      if (isFirst) {
+        await API.templates.refreshWhatsApp().catch(() => null);
+        clearApiGetCache();
+      }
+      const [response, connectionResponse] = await Promise.all([
+        API.templates.list(),
+        API.meta.connection().catch(() => null),
+      ]);
       setTemplates(Array.isArray(response?.templates) ? response.templates : []);
+      setTemplateMetadata(response?.metadata || null);
+      setConnection(connectionResponse || null);
       if (!isFirst) toast("Templates refreshed", "success");
     } catch (e: any) {
       toast(e?.response?.data?.message || "Failed to load templates", "error");
@@ -106,7 +116,7 @@ export default function TemplatesPage() {
       await loadTemplates();
       setSearchParams({});
     } catch (e: any) {
-      const message = e?.response?.data?.details?.metaDebug?.meta?.error_user_msg || e?.response?.data?.message || "Failed to create template";
+      const message = e?.response?.data?.message || e?.response?.data?.details?.metaDebug?.meta?.error_user_msg || "Failed to create template";
       toast(message, "error");
     } finally { setCreating(false); }
   }, [loadTemplates, setSearchParams]);
@@ -126,7 +136,7 @@ export default function TemplatesPage() {
       setSearchParams({});
       await loadTemplates();
     } catch (e: any) {
-      const message = e?.response?.data?.details?.metaDebug?.meta?.error_user_msg || e?.response?.data?.message || "Failed to update template";
+      const message = e?.response?.data?.message || e?.response?.data?.details?.metaDebug?.meta?.error_user_msg || "Failed to update template";
       toast(message, "error");
     } finally { setCreating(false); }
   }, [editingTemplate, loadTemplates, setSearchParams]);
@@ -162,6 +172,20 @@ export default function TemplatesPage() {
 
   return (
     <div className=" p-4 md:p-8 relative">
+      <div className="mb-4 rounded-[5px] border border-slate-200 bg-white p-4 shadow-sm">
+        <div className="text-xs font-black uppercase tracking-widest text-slate-500">Current WhatsApp Account</div>
+        <div className="mt-2 grid gap-2 text-xs font-semibold text-slate-700 md:grid-cols-4">
+          <span>WABA: {connection?.waba_name || templateMetadata?.wabaName || "Connected WABA"}</span>
+          <span>WABA ID: {connection?.waba_id_masked || templateMetadata?.currentWabaIdMasked || "-"}</span>
+          <span>Phone: {connection?.display_phone_number || templateMetadata?.displayPhoneNumber || "-"}</span>
+          <span>Phone ID: {connection?.phone_number_id_masked || templateMetadata?.currentPhoneNumberIdMasked || "-"}</span>
+        </div>
+      </div>
+      {Number(templateMetadata?.staleTemplateCountIgnored || 0) > 0 ? (
+        <div className="mb-4 rounded-[5px] border border-amber-200 bg-amber-50 px-4 py-3 text-xs font-bold text-amber-900">
+          Templates from previous WhatsApp accounts are hidden. Only current WABA templates are shown.
+        </div>
+      ) : null}
       {/* Main List */}
       <div className="relative">
         {showCreatePanel ? (

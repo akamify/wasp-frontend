@@ -37,6 +37,7 @@ export function buildApiGroupSecondary(api, unwrap, API_BASE_URL) {
       submit: (id) => api.post(`/templates/${id}/submit`, null, { timeout: 180000 }).then(unwrap),
       status: (id) => api.get(`/templates/${id}/status`).then(unwrap),
       syncMeta: (payload) => api.post("/templates/sync-meta", payload || {}).then(unwrap),
+      refreshWhatsApp: () => api.post("/integrations/whatsapp/templates/refresh", {}).then(unwrap),
       uploadMedia: (file, onProgress) => {
         const data = new FormData();
         data.append("file", file);

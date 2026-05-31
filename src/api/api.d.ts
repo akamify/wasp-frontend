@@ -5,6 +5,7 @@ export function getToken(): string;
 export function getWorkspaceId(): string;
 export function setWorkspaceId(workspaceId: string): void;
 export function setToken(token: string): void;
+export function clearApiGetCache(): void;
 
 // Keep responses loosely typed; the UI can narrow as needed.
 export const API: {
@@ -202,6 +203,7 @@ export const API: {
     submit(id: string): Promise<any>;
     status(id: string): Promise<any>;
     syncMeta(payload?: any): Promise<any>;
+    refreshWhatsApp(): Promise<any>;
     uploadMedia(file: any, onProgress?: (pct: number) => void): Promise<any>;
     downloadMediaByHandle(handle: string): Promise<any>;
   };
