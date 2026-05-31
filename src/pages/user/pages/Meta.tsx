@@ -198,7 +198,10 @@ export default function MetaConnectPage() {
           (response: any) => {
             const code = String(response?.authResponse?.code || "").trim();
             const hasCode = !!code;
-            debug("fb login callback", { hasCode });
+            debug("fb login callback", {
+              hasCode: Boolean(response?.authResponse?.code),
+              grantedScopes: response?.authResponse?.grantedScopes || null,
+            });
             if (!hasCode) return reject(new Error("Meta authorization code missing. Please try again."));
             authCodeRef.current = code;
             void maybeCompleteSignup().catch((err) => reject(err));
@@ -208,6 +211,8 @@ export default function MetaConnectPage() {
             config_id: configId,
             response_type: "code",
             override_default_response_type: true,
+            return_scopes: true,
+            auth_type: "rerequest",
             extras: { sessionInfoVersion: "3" },
           }
         );
