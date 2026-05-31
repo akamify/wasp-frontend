@@ -21,11 +21,8 @@ export default function MetaConnectPage() {
   const [embeddedBusy, setEmbeddedBusy] = useState(false);
   const [embeddedError, setEmbeddedError] = useState("");
   const [embeddedDebugError, setEmbeddedDebugError] = useState("");
+  const [embeddedPhones, setEmbeddedPhones] = useState<Array<{ id: string; display_phone_number: string | null }>>([]);
   const [embeddedConnection, setEmbeddedConnection] = useState<any>(null);
-  const [embeddedSession, setEmbeddedSession] = useState<{ waba_id: string | null; phone_number_id: string | null }>({
-    waba_id: null,
-    phone_number_id: null,
-  });
   const authCodeRef = useRef<string | null>(null);
   const signupDetailsRef = useRef<{ waba_id: string | null; phone_number_id: string | null }>({
     waba_id: null,
@@ -92,12 +89,12 @@ export default function MetaConnectPage() {
     setEmbeddedBusy(true);
     setEmbeddedError("");
     setEmbeddedDebugError("");
+    setEmbeddedPhones([]);
     authCodeRef.current = null;
     exchangeStartedRef.current = false;
     signupActiveRef.current = true;
     flowIdRef.current = `${Date.now()}-${Math.random().toString(16).slice(2, 8)}`;
     signupDetailsRef.current = { waba_id: null, phone_number_id: null };
-    setEmbeddedSession({ waba_id: null, phone_number_id: null });
     clearMessageListener();
     try {
       const env = (import.meta as any).env || {};
@@ -109,13 +106,13 @@ export default function MetaConnectPage() {
       const fb = await loadMetaSdk();
 
       const currentFlowId = flowIdRef.current;
+      let exchangePromise: Promise<void> | null = null;
       const maybeCompleteSignup = async () => {
         if (!signupActiveRef.current) return;
         if (!currentFlowId || flowIdRef.current !== currentFlowId) return;
-        if (exchangeStartedRef.current) return;
+        if (exchangePromise) return exchangePromise;
         if (!authCodeRef.current) return;
         if (!signupDetailsRef.current.waba_id) return;
-        if (!signupDetailsRef.current.phone_number_id) return;
 
         exchangeStartedRef.current = true;
         debug("calling exchange", {
@@ -124,14 +121,26 @@ export default function MetaConnectPage() {
           hasPhoneNumberId: !!signupDetailsRef.current.phone_number_id,
         });
 
-        await API.meta.embeddedSignupExchange({
-          code: authCodeRef.current,
-          waba_id: signupDetailsRef.current.waba_id,
-          phone_number_id: signupDetailsRef.current.phone_number_id,
-        });
-        toast("WhatsApp connected successfully", "success");
-        signupActiveRef.current = false;
-        await loadStatus();
+        exchangePromise = (async () => {
+          const result = await API.meta.embeddedSignupExchange({
+            code: authCodeRef.current,
+            waba_id: signupDetailsRef.current.waba_id,
+            phone_number_id: signupDetailsRef.current.phone_number_id,
+          });
+          if (result?.needsPhoneSelection) {
+            const phones = Array.isArray(result?.phones) ? result.phones : [];
+            setEmbeddedPhones(phones);
+            setEmbeddedError(result?.message || "Meta did not return a phone number. Please select a phone number and reconnect WhatsApp.");
+            signupActiveRef.current = false;
+            clearMessageListener();
+            return;
+          }
+          toast("WhatsApp connected successfully", "success");
+          signupActiveRef.current = false;
+          clearMessageListener();
+          await loadStatus();
+        })();
+        return exchangePromise;
       };
 
       const handler = (event: MessageEvent) => {
@@ -168,16 +177,15 @@ export default function MetaConnectPage() {
             hasWabaId: !!wabaId,
             hasPhoneNumberId: !!phoneNumberId,
           });
-          if (!wabaId || !phoneNumberId) {
-            setEmbeddedError("Meta did not return WABA ID or Phone Number ID. Please try again.");
+          if (!wabaId) {
+            setEmbeddedError("Meta did not return a WABA ID. Please try again.");
             signupActiveRef.current = false;
             clearMessageListener();
             return;
           }
           const session = { waba_id: wabaId, phone_number_id: phoneNumberId };
           signupDetailsRef.current = session;
-          setEmbeddedSession(session);
-          void maybeCompleteSignup();
+          void maybeCompleteSignup().catch(() => {});
         } catch {
           // ignore malformed payloads
         }
@@ -214,6 +222,7 @@ export default function MetaConnectPage() {
       if (!exchangeStartedRef.current) {
         throw new Error("Embedded signup details missing. Please complete signup popup flow.");
       }
+      await exchangePromise;
     } catch (e: any) {
       const backendMessage = e?.response?.data?.message || "";
       const backendDetail = e?.response?.data?.details?.message || "";
@@ -289,6 +298,16 @@ export default function MetaConnectPage() {
         </div>
         {embeddedError ? <div className="text-xs font-semibold text-rose-600 mt-3">{embeddedError}</div> : null}
         {embeddedDebugError ? <div className="text-[11px] font-medium text-slate-500 mt-1">Debug: {embeddedDebugError}</div> : null}
+        {embeddedPhones.length ? (
+          <div className="mt-3 rounded-[5px] border border-amber-200 bg-amber-50 p-3">
+            <div className="text-xs font-bold text-amber-900">Available phone numbers returned by Meta:</div>
+            {embeddedPhones.map((phone) => (
+              <div key={phone.id} className="mt-1 text-xs font-medium text-amber-800">
+                {phone.display_phone_number || "Phone number"} ({phone.id})
+              </div>
+            ))}
+          </div>
+        ) : null}
       </section>
 
       <div className="grid gap-8 lg:grid-cols-[1.5fr_1fr]">
