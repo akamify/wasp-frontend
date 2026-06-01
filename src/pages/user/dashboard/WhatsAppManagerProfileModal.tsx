@@ -1,8 +1,8 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { X, Upload, Save, AlertCircle, CheckCircle2 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { createPortal } from "react-dom";
-import { API } from "@api/api";
+import { API, clearApiGetCache } from "@api/api";
 import { Button } from "@components/ui/Button";
 import { Input } from "@components/ui/Input";
 import { Textarea } from "@components/ui/Textarea";
@@ -47,9 +47,17 @@ export function WhatsAppManagerProfileModal({
   const [profilePictureUrl, setProfilePictureUrl] = useState<string>("");
   const [profilePictureHandle, setProfilePictureHandle] = useState<string>("");
   const [uploadBusy, setUploadBusy] = useState(false);
+  const previewUrlRef = useRef("");
+
+  function clearLocalPreview() {
+    if (!previewUrlRef.current) return;
+    URL.revokeObjectURL(previewUrlRef.current);
+    previewUrlRef.current = "";
+  }
 
   useEffect(() => {
     if (!open) return;
+    clearLocalPreview();
     setAbout(businessProfile?.about || "");
     setDescription(businessProfile?.description || "");
     setAddress(businessProfile?.address || "");
@@ -60,6 +68,7 @@ export function WhatsAppManagerProfileModal({
     setProfilePictureUrl(businessProfile?.profile_picture_url || "");
     setProfilePictureHandle("");
   }, [open, businessProfile]);
+  useEffect(() => () => clearLocalPreview(), []);
 
   const normalizedWebsites = useMemo(
     () => websites.map((w) => String(w || "").trim()).filter(Boolean),
@@ -75,12 +84,18 @@ export function WhatsAppManagerProfileModal({
   }, [normalizedWebsites]);
 
   async function onPickImage(file: File) {
+    clearLocalPreview();
+    const previewUrl = URL.createObjectURL(file);
+    previewUrlRef.current = previewUrl;
+    setProfilePictureUrl(previewUrl);
     setUploadBusy(true);
     try {
       const res = await API.meta.uploadProfilePicture(file);
       setProfilePictureHandle(res.handle);
       toast("Profile picture uploaded. Click Save to apply it.", "success");
     } catch (e: any) {
+      clearLocalPreview();
+      setProfilePictureUrl(businessProfile?.profile_picture_url || "");
       toast(e?.response?.data?.message || e?.message || "Upload failed", "error");
     } finally {
       setUploadBusy(false);
@@ -100,6 +115,7 @@ export function WhatsAppManagerProfileModal({
         vertical,
         profilePictureHandle: profilePictureHandle || undefined,
       });
+      clearApiGetCache();
       toast(String(res?.message || "Profile updated successfully!"), "success");
       onClose();
       onSaved?.();

@@ -147,7 +147,7 @@ export default function DashboardPage() {
       <DashboardChart chartFilter={chartFilter} setChartFilter={setChartFilter} graphData={graphData} />
       <DashboardActivity liveActivities={liveActivities} />
 
-      <WhatsAppManagerProfileModal open={editOpen} onClose={() => setEditOpen(false)} businessProfile={snapshot?.meta?.businessProfile || null} onSaved={() => loadDashboard()} />
+      <WhatsAppManagerProfileModal open={editOpen} onClose={() => setEditOpen(false)} businessProfile={snapshot?.meta?.businessProfile || null} onSaved={() => { void loadDashboard(); window.setTimeout(() => void loadDashboard(), 2500); }} />
       <WhatsAppManagerProfileViewModal open={viewOpen} onClose={() => setViewOpen(false)} phone={snapshot?.meta?.phone || null} businessProfile={snapshot?.meta?.businessProfile || null} />
       <RechargeModal open={rechargeOpen} onClose={() => setRechargeOpen(false)} onPaid={() => setTimeout(() => loadDashboard(), 3500)} />
     </div>

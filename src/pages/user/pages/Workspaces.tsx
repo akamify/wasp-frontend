@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { API } from "@api/api";
 import { Button } from "@components/ui/Button";
+import { SkeletonBar } from "@components/ui/Skeletons";
 import { useAuth } from "@shared/providers/AuthContext";
 
 export default function WorkspacesPage() {
@@ -9,13 +10,14 @@ export default function WorkspacesPage() {
   const [openingId, setOpeningId] = useState("");
   const [name, setName] = useState("");
   const [busy, setBusy] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [profileOpen, setProfileOpen] = useState(false);
   const profileRef = useRef<HTMLDivElement | null>(null);
   const avatarLetter = String(user?.name || user?.email || "?").trim().charAt(0).toUpperCase() || "?";
 
   useEffect(() => {
-    API.workspaces.list().then((res: any) => setItems(Array.isArray(res?.workspaces) ? res.workspaces : [])).catch(() => setItems([]));
+    API.workspaces.list().then((res: any) => setItems(Array.isArray(res?.workspaces) ? res.workspaces : [])).catch(() => setItems([])).finally(() => setLoading(false));
   }, []);
   useEffect(() => {
     function closeProfile(event: MouseEvent) {
@@ -65,7 +67,14 @@ export default function WorkspacesPage() {
       </div>
       {error ? <div className="rounded-[5px] border border-rose-200 bg-rose-50 p-3 text-sm font-semibold text-rose-700">{error}</div> : null}
       <div className="grid gap-4 grid-cols-2 md:grid-cols-4">
-        {items.map((workspace) => (
+        {loading ? Array.from({ length: 4 }).map((_, index) => (
+          <div key={index} className="space-y-3 rounded-[5px] border border-slate-200 bg-white p-3 px-4">
+            <SkeletonBar className="h-5 w-28 rounded-[5px]" />
+            <SkeletonBar className="h-4 w-20 rounded-[5px] opacity-60" />
+            <SkeletonBar className="h-4 w-32 rounded-[5px] opacity-50" />
+            <SkeletonBar className="h-9 w-full rounded-[5px]" />
+          </div>
+        )) : items.map((workspace) => (
           <div key={workspace.id} className="rounded-[5px] space-y-3 border border-slate-200 bg-white p-3 px-4">
             <div className="text-lg font-black">{workspace.name}</div>
             <div className="text-sm flex items-center gap-2">Plan: {workspace.plan ? <div className="text-sm text-slate-500">{workspace.plan}</div> : null}</div>
