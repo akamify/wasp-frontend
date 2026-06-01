@@ -35,7 +35,7 @@ export default function RegisterPage() {
         return;
       }
       if (res?.token) {
-        navigate("/app", { replace: true });
+        navigate("/workspaces", { replace: true });
       }
     } catch (err: any) {
       setError(err?.response?.data?.message || "Registration failed");
@@ -54,7 +54,7 @@ export default function RegisterPage() {
       if (!token) throw new Error("Missing token");
       setToken(token);
       if (res?.workspace?.id) setWorkspaceId(res.workspace.id);
-      navigate("/app", { replace: true });
+      navigate("/workspaces", { replace: true });
     } catch (err: any) {
       setError(err?.response?.data?.message || "OTP verification failed");
     } finally {

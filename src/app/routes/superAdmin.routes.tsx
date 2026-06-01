@@ -43,6 +43,7 @@ export function superAdminRoutes() {
       <Route path="/super-admin/platform-settings" element={inSuperAdmin(<SuperAdminPlatformSettingsPage />)} />
       <Route path="/super-admin/users" element={inSuperAdmin(<AdminUsersPage />)} />
       <Route path="/super-admin/workspaces" element={inSuperAdmin(<AdminChannelsPage />)} />
+      <Route path="/super-admin/workspaces/:workspaceId" element={inSuperAdmin(<AdminSubscriptionsDataPage />)} />
       <Route path="/super-admin/master-campaigns" element={inSuperAdmin(<AdminMasterCampaignsPage />)} />
       <Route path="/super-admin/master-templates" element={inSuperAdmin(<AdminMasterTemplatesPage />)} />
       <Route path="/super-admin/master-contacts" element={inSuperAdmin(<AdminMasterContactsPage />)} />

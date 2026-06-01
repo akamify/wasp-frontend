@@ -1,5 +1,5 @@
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
-import { API, getToken, setToken, setWorkspaceId } from "@api/api";
+import { API, clearApiGetCache, getToken, setToken, setWorkspaceId } from "@api/api";
 
 type User = {
   id: string;
@@ -34,6 +34,7 @@ type AuthContextValue = AuthState & {
   register: (email: string, password: string, name?: string) => Promise<any>;
   logout: () => Promise<void>;
   refreshMe: (options?: { silent?: boolean }) => Promise<void>;
+  switchWorkspace: (workspaceId: string) => Promise<void>;
 };
 
 const AuthContext = createContext<AuthContextValue | null>(null);
@@ -141,6 +142,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setState({ token: "", user: null, workspace: null, loading: false });
   }, []);
 
+  const switchWorkspace = useCallback(async (workspaceId: string) => {
+    const normalized = String(workspaceId || "").trim();
+    if (!normalized) return;
+    setWorkspaceId(normalized);
+    clearApiGetCache();
+    const res = await API.auth.me();
+    setState((s) => ({ ...s, workspace: res.workspace || null, user: res.user || s.user, loading: false }));
+  }, []);
+
   const value = useMemo<AuthContextValue>(
     () => ({
       ...state,
@@ -148,8 +158,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       register,
       logout,
       refreshMe,
+      switchWorkspace,
     }),
-    [state, login, register, logout, refreshMe]
+    [state, login, register, logout, refreshMe, switchWorkspace]
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

@@ -188,6 +188,15 @@ export const API: {
   workspaces: {
     list(): Promise<any>;
     create(payload: any): Promise<any>;
+    overview(workspaceId: string): Promise<any>;
+    update(workspaceId: string, payload: any): Promise<any>;
+    members(workspaceId: string): Promise<any>;
+    inviteMember(workspaceId: string, payload: any): Promise<any>;
+    updateMember(workspaceId: string, memberId: string, payload: any): Promise<any>;
+    usage(workspaceId: string): Promise<any>;
+    activity(workspaceId: string): Promise<any>;
+    billingCurrent(workspaceId: string): Promise<any>;
+    wallet(workspaceId: string): Promise<any>;
   };
   credentials: {
     getWhatsApp(): Promise<any>;

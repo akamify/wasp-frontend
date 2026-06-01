@@ -30,7 +30,11 @@ export default function LoginPage() {
     const normalized = normalizeRole(role);
     if (normalized === "super_admin") return "/super-admin";
     if (normalized === "admin") return "/admin";
-    return "/app";
+    return "/workspaces";
+  }
+
+  function loginTarget(role?: string | null) {
+    return normalizeRole(role) === "user" ? "/workspaces" : from || defaultTargetByRole(role);
   }
 
   async function onSubmit(e: React.FormEvent) {
@@ -46,7 +50,7 @@ export default function LoginPage() {
         setError(null);
         return;
       }
-      const target = from || defaultTargetByRole(res?.user?.role);
+      const target = loginTarget(res?.user?.role);
       navigate(target, { replace: true });
     } catch (err: any) {
       const timeout = String(err?.code || "").toUpperCase() === "ECONNABORTED";
@@ -70,7 +74,7 @@ export default function LoginPage() {
       if (!token) throw new Error("Missing token");
       setToken(token);
       if (res?.workspace?.id) setWorkspaceId(res.workspace.id);
-      const target = from || defaultTargetByRole(res?.user?.role);
+      const target = loginTarget(res?.user?.role);
       window.location.replace(target);
     } catch (err: any) {
       setError(err?.response?.data?.message || "OTP verification failed");

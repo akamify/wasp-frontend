@@ -132,8 +132,13 @@ export function getWorkspaceId() {
 }
 
 export function setWorkspaceId(workspaceId) {
+  const previous = localStorage.getItem(WORKSPACE_KEY) || "";
   if (!workspaceId) localStorage.removeItem(WORKSPACE_KEY);
   else localStorage.setItem(WORKSPACE_KEY, String(workspaceId));
+  if (previous !== String(workspaceId || "")) {
+    __getCache.clear();
+    __getInflight.clear();
+  }
 }
 
 export function setToken(token) {

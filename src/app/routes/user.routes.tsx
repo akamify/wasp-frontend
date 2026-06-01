@@ -28,6 +28,7 @@ import PricingPage from "@pages/user/pages/Pricing";
 import WalletPage from "@pages/user/pages/Wallet";
 import FlowsPage from "@pages/user/pages/Flows";
 import FlowsCreatePage from "@pages/user/pages/FlowsCreate";
+import WorkspacesPage from "@pages/user/pages/Workspaces";
 
 function inApp(page: ReactNode) {
   return <AppShell>{page}</AppShell>;
@@ -63,6 +64,7 @@ export function userRoutes() {
       <Route path="/app/pricing" element={inApp(<PricingPage />)} />
       <Route path="/app/flows" element={inApp(<FlowsPage />)} />
       <Route path="/app/flows/create" element={inApp(<FlowsCreatePage />)} />
+      <Route path="/workspaces" element={<WorkspacesPage />} />
     </Route>
   );
 }

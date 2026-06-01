@@ -22,6 +22,15 @@ export function buildApiGroupSecondary(api, unwrap, API_BASE_URL) {
     workspaces: {
       list: () => api.get("/workspaces").then(unwrap),
       create: (payload) => api.post("/workspaces", payload).then(unwrap),
+      overview: (workspaceId) => api.get(`/workspaces/${encodeURIComponent(workspaceId)}/overview`).then(unwrap),
+      update: (workspaceId, payload) => api.patch(`/workspaces/${encodeURIComponent(workspaceId)}`, payload).then(unwrap),
+      members: (workspaceId) => api.get(`/workspaces/${encodeURIComponent(workspaceId)}/members`).then(unwrap),
+      inviteMember: (workspaceId, payload) => api.post(`/workspaces/${encodeURIComponent(workspaceId)}/members`, payload).then(unwrap),
+      updateMember: (workspaceId, memberId, payload) => api.patch(`/workspaces/${encodeURIComponent(workspaceId)}/members/${encodeURIComponent(memberId)}`, payload).then(unwrap),
+      usage: (workspaceId) => api.get(`/workspaces/${encodeURIComponent(workspaceId)}/usage`).then(unwrap),
+      activity: (workspaceId) => api.get(`/workspaces/${encodeURIComponent(workspaceId)}/activity`).then(unwrap),
+      billingCurrent: (workspaceId) => api.get(`/workspaces/${encodeURIComponent(workspaceId)}/billing/current`).then(unwrap),
+      wallet: (workspaceId) => api.get(`/workspaces/${encodeURIComponent(workspaceId)}/wallet`).then(unwrap),
     },
     credentials: {
       getWhatsApp: () => api.get("/credentials/whatsapp").then(unwrap),
