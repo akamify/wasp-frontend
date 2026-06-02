@@ -1,12 +1,12 @@
-import { API } from "@api/api";
+import { api } from "@api/api";
 
 export const adminChatAccessService = {
-  sendOtp: (userId: string) => API.admin.sendChatAccessOtp(userId),
-  verifyOtp: (userId: string, otp: string) => API.admin.verifyChatAccessOtp(userId, { otp }),
-  enable: (userId: string) => API.admin.enableChatAccess(userId),
-  disable: (userId: string) => API.admin.disableChatAccess(userId),
-  enableCampaignSend: (userId: string) => API.admin.enableCampaignSendAccess(userId),
-  disableCampaignSend: (userId: string) => API.admin.disableCampaignSendAccess(userId),
-  blockUser: (userId: string) => API.admin.blockUser(userId),
-  unblockUser: (userId: string) => API.admin.unblockUser(userId),
+  sendOtp: (userId: string) => api.post(`/admin/users/${userId}/chat-access/send-otp`),
+  verifyOtp: (userId: string, otp: string) => api.post(`/admin/users/${userId}/chat-access/verify-otp`, { otp }),
+  enable: (workspaceId: string) => api.patch(`/admin/workspaces/${workspaceId}/chat-access/enable`),
+  disable: (workspaceId: string) => api.patch(`/admin/workspaces/${workspaceId}/chat-access/disable`),
+  enableCampaignSend: (workspaceId: string) => api.patch(`/admin/workspaces/${workspaceId}/api-permissions/campaign-send/enable`),
+  disableCampaignSend: (workspaceId: string) => api.patch(`/admin/workspaces/${workspaceId}/api-permissions/campaign-send/disable`),
+  blockUser: (userId: string) => api.patch(`/admin/users/${userId}/block`),
+  unblockUser: (userId: string) => api.patch(`/admin/users/${userId}/unblock`),
 };

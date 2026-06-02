@@ -49,6 +49,7 @@ export default function AdminUsersPage() {
   const chatAccess = useChatAccess();
 
   const selectedId = selected?.id;
+  const selectedWorkspaceId = String(selected?.workspace?.id || "").trim();
 
   function pick(u: any) {
     setSelected(u);
@@ -80,10 +81,10 @@ export default function AdminUsersPage() {
   }
 
   async function toggleCampaignSend(enabled: boolean) {
-    if (!selectedId) return;
+    if (!selectedWorkspaceId) return;
     try {
-      if (enabled) await chatAccess.enableCampaignSend(selectedId);
-      else await chatAccess.disableCampaignSend(selectedId);
+      if (enabled) await chatAccess.enableCampaignSend(selectedWorkspaceId);
+      else await chatAccess.disableCampaignSend(selectedWorkspaceId);
       await refreshAccess();
       toast(`Campaign send ${enabled ? "enabled" : "disabled"}`, "success");
     } catch (e: any) {
@@ -92,10 +93,10 @@ export default function AdminUsersPage() {
   }
 
   async function toggleChatAccess(enabled: boolean) {
-    if (!selectedId) return;
+    if (!selectedWorkspaceId) return;
     try {
-      if (enabled) await chatAccess.enableChat(selectedId);
-      else await chatAccess.disableChat(selectedId);
+      if (enabled) await chatAccess.enableChat(selectedWorkspaceId);
+      else await chatAccess.disableChat(selectedWorkspaceId);
       await refreshAccess();
       toast(`Chat access ${enabled ? "enabled" : "disabled"}`, "success");
     } catch (e: any) {

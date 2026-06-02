@@ -22,37 +22,37 @@ export function useChatAccess() {
     }
   }
 
-  async function enableChat(userId: string) {
+  async function enableChat(workspaceId: string) {
     setBusy(true);
     try {
-      return await adminChatAccessService.enable(userId);
+      return await adminChatAccessService.enable(workspaceId);
     } finally {
       setBusy(false);
     }
   }
 
-  async function disableChat(userId: string) {
+  async function disableChat(workspaceId: string) {
     setBusy(true);
     try {
-      return await adminChatAccessService.disable(userId);
+      return await adminChatAccessService.disable(workspaceId);
     } finally {
       setBusy(false);
     }
   }
 
-  async function enableCampaignSend(userId: string) {
+  async function enableCampaignSend(workspaceId: string) {
     setBusy(true);
     try {
-      return await adminChatAccessService.enableCampaignSend(userId);
+      return await adminChatAccessService.enableCampaignSend(workspaceId);
     } finally {
       setBusy(false);
     }
   }
 
-  async function disableCampaignSend(userId: string) {
+  async function disableCampaignSend(workspaceId: string) {
     setBusy(true);
     try {
-      return await adminChatAccessService.disableCampaignSend(userId);
+      return await adminChatAccessService.disableCampaignSend(workspaceId);
     } finally {
       setBusy(false);
     }

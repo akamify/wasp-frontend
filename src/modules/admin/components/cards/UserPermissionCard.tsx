@@ -21,9 +21,9 @@ export function UserPermissionCard({
 }: Props) {
   return (
     <div className="rounded-[5px] border border-slate-200 p-3 text-[11px] space-y-3">
-      <div className="font-black text-slate-700 mb-1">User API Permissions</div>
+      <div className="font-black text-slate-700 mb-1">Workspace API Permissions</div>
       <PermissionRow
-        label="Campaign API Access"
+        label="Campaign API Access (Workspace)"
         enabled={campaignSend}
         busy={busy}
         onEnable={onEnableCampaignSend}
@@ -31,7 +31,7 @@ export function UserPermissionCard({
         readOnly={readOnly}
       />
       <PermissionRow
-        label="Chat API Access (User)"
+        label="Chat API Access (Workspace)"
         enabled={chatAccess}
         busy={busy}
         onEnable={onEnableChat}

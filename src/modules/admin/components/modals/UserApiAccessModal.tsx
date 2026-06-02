@@ -1,8 +1,10 @@
+import { useEffect, useState } from "react";
+import { API } from "@api/api";
 import { Modal } from "@components/ui/Modal";
 import { UserSecuritySection } from "@modules/admin/components/sections/UserSecuritySection";
 import { UserCrmCard } from "@modules/admin/components/cards/UserCrmCard";
 import { UserExternalApiCard } from "@modules/admin/components/cards/UserExternalApiCard";
-import { UserCampaignApiCard } from "@modules/admin/components/cards/UserCampaignApiCard";
+import { UserPermissionCard } from "@modules/admin/components/cards/UserPermissionCard";
 import { ApiKeyListSection } from "@modules/admin/components/sections/ApiKeyListSection";
 import { useWorkspaceExternalChatFeature } from "@modules/admin/hooks/useWorkspaceExternalChatFeature";
 import type { UserApiKeyListResponse } from "@modules/admin/types/api-key.types";
@@ -45,6 +47,30 @@ export function UserApiAccessModal(props: Props) {
   } = props;
 
   const workspaceFeature = useWorkspaceExternalChatFeature(workspaceId || null);
+  const [workspace, setWorkspace] = useState<any>(null);
+  const campaignSendEnabled = Boolean(workspace?.allowedApiPermissions?.campaignSend);
+  const chatAccessEnabled = workspaceFeature.enabled === null ? Boolean(workspace?.allowedApiPermissions?.chatAccess) : workspaceFeature.enabled;
+
+  useEffect(() => {
+    if (!isOpen || !workspaceId) {
+      setWorkspace(null);
+      return;
+    }
+    let active = true;
+    API.workspaces
+      .overview(workspaceId)
+      .then((res: any) => {
+        if (!active) return;
+        setWorkspace(res?.workspace || null);
+      })
+      .catch(() => {
+        if (!active) return;
+        setWorkspace(null);
+      });
+    return () => {
+      active = false;
+    };
+  }, [isOpen, workspaceId]);
 
   async function toggleExternalChat(next: boolean) {
     if (!workspaceId) return;
@@ -58,14 +84,17 @@ export function UserApiAccessModal(props: Props) {
   }
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose} title="User API Access">
+    <Modal isOpen={isOpen} onClose={onClose} title="Workspace Access">
       <div className="space-y-3">
         <UserSecuritySection blocked={Boolean(data?.accountBlocked)} busy={busy} onBlock={onBlock} onUnblock={onUnblock} />
-        <UserCampaignApiCard
-          enabled={Boolean(data?.allowedApiPermissions?.campaignSend)}
-          busy={busy}
-          onEnable={onEnableCampaignSend}
-          onDisable={onDisableCampaignSend}
+        <UserPermissionCard
+          campaignSend={campaignSendEnabled}
+          chatAccess={chatAccessEnabled}
+          busy={busy || workspaceFeature.busy}
+          onEnableCampaignSend={onEnableCampaignSend}
+          onDisableCampaignSend={onDisableCampaignSend}
+          onEnableChat={onEnableChat}
+          onDisableChat={onDisableChat}
         />
         {workspaceId ? (
           <UserExternalApiCard
