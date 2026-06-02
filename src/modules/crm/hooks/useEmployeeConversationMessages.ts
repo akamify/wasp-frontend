@@ -3,6 +3,8 @@ import type { NavigateFunction } from "react-router-dom";
 import type { ChatMessage } from "@modules/conversations/types/conversations.types";
 import { crmEmployeeInboxService } from "@modules/crm/services/crmEmployeeInbox.service";
 
+const FINAL_MESSAGE_STATUSES = new Set(["read", "delivered", "failed", "timeout_unknown"]);
+
 type Args = {
   navigate: NavigateFunction;
   refreshListSilently: () => Promise<void>;
@@ -19,6 +21,62 @@ export function useEmployeeConversationMessages({ refreshListSilently, search, s
   const isInitialLoad = useRef(true);
   const scrollRef = useRef<HTMLDivElement>(null);
 
+  const mergeStatusSnapshot = useCallback((snapshot: any) => {
+    const waId = String(snapshot?.waId || snapshot?.message?.whatsappMessageId || "").trim();
+    const status = String(snapshot?.status || snapshot?.message?.status || "").toLowerCase();
+    const statusTimestamps = snapshot?.statusTimestamps || snapshot?.message?.statusTimestamps || null;
+    if (!waId || !status) return false;
+
+    let applied = false;
+    setMessages((prev) =>
+      prev.map((message) => {
+        if (String((message as any).whatsappMessageId || "") !== waId) return message;
+        if (message.direction !== "outbound") return message;
+        applied = true;
+        return {
+          ...message,
+          status: status || message.status,
+          ...(statusTimestamps ? { statusTimestamps: { ...((message as any).statusTimestamps || {}), ...statusTimestamps } } : {}),
+        } as ChatMessage;
+      })
+    );
+
+    return applied;
+  }, []);
+
+  const hydrateOutboundStatuses = useCallback(async (messageList: ChatMessage[]) => {
+    const waIds = Array.from(
+      new Set(
+        (messageList || [])
+          .filter(
+            (message) =>
+              message.direction === "outbound" &&
+              String((message as any).whatsappMessageId || "").trim() &&
+              !FINAL_MESSAGE_STATUSES.has(String(message.status || "").toLowerCase())
+          )
+          .map((message) => String((message as any).whatsappMessageId || "").trim())
+          .filter(Boolean)
+      )
+    );
+
+    if (!waIds.length) return;
+
+    const snapshots = await Promise.allSettled(waIds.map((waId) => crmEmployeeInboxService.messages.status(waId)));
+    snapshots.forEach((result, index) => {
+      if (result.status !== "fulfilled") return;
+      const payload = result.value;
+      const waId = waIds[index];
+      const status = String(payload?.status || payload?.message?.status || "").toLowerCase();
+      if (!waId || !status) return;
+      mergeStatusSnapshot({
+        waId,
+        status,
+        statusTimestamps: payload?.statusTimestamps || payload?.message?.statusTimestamps || null,
+        message: payload?.message || null,
+      });
+    });
+  }, [mergeStatusSnapshot]);
+
   const loadChat = useCallback(async (phone: string) => {
     if (!phone) return;
     setLoadingChat(true);
@@ -27,25 +85,29 @@ export function useEmployeeConversationMessages({ refreshListSilently, search, s
         crmEmployeeInboxService.messages.byPhone(phone),
         crmEmployeeInboxService.conversations.get(phone),
       ]);
-      setMessages(res.messages || []);
+      const nextMessages = res.messages || [];
+      setMessages(nextMessages);
       setContactDetail(convo?.contact || null);
       await crmEmployeeInboxService.conversations.read(phone);
+      void hydrateOutboundStatuses(nextMessages);
     } catch {
       setError("Chat load failed");
     } finally {
       setLoadingChat(false);
     }
-  }, [setError]);
+  }, [hydrateOutboundStatuses, setError]);
 
   const refreshChatSilently = useCallback(async (phone: string) => {
     if (!phone) return;
     try {
       const res = await crmEmployeeInboxService.messages.byPhone(phone);
-      setMessages(res.messages || []);
+      const nextMessages = res.messages || [];
+      setMessages(nextMessages);
+      void hydrateOutboundStatuses(nextMessages);
     } catch {
       // silent
     }
-  }, []);
+  }, [hydrateOutboundStatuses]);
 
   const applyRealtimeMessageUpdate = useCallback((payload: any) => {
     const nextMessageId = String(payload?.messageId || payload?.message?._id || "");

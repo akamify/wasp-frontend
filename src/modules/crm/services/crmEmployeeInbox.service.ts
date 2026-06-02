@@ -14,6 +14,7 @@ export const crmEmployeeInboxService = {
   },
   messages: {
     byPhone: (phone: string) => employeeApi.get(`/crm/employee/messages/${encodeURIComponent(phone)}`).then(unwrap),
+    status: (waId: string) => employeeApi.get(`/crm/employee/messages/status/${encodeURIComponent(waId)}`).then(unwrap),
     sendText: (payload: { to: string; text: string }) => employeeApi.post("/crm/employee/messages/send-text", payload).then(unwrap),
     sendMedia: (payload: { to: string; type: string; mediaId?: string; link?: string; caption?: string; filename?: string }) =>
       employeeApi.post("/crm/employee/messages/send-media", payload).then(unwrap),
