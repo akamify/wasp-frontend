@@ -83,9 +83,17 @@ export function useEmployeeConversationMessages({ refreshListSilently, search, s
       }
     };
     source.addEventListener("message", onRealtimeMessage as EventListener);
+    source.addEventListener("message.created", onRealtimeMessage as EventListener);
+    source.addEventListener("message.status_updated", onRealtimeMessage as EventListener);
+    source.addEventListener("conversation.updated", onRealtimeMessage as EventListener);
+    source.addEventListener("assignment_changed", onRealtimeMessage as EventListener);
     source.onerror = () => setRealtimeConnected(false);
     return () => {
       source.removeEventListener("message", onRealtimeMessage as EventListener);
+      source.removeEventListener("message.created", onRealtimeMessage as EventListener);
+      source.removeEventListener("message.status_updated", onRealtimeMessage as EventListener);
+      source.removeEventListener("conversation.updated", onRealtimeMessage as EventListener);
+      source.removeEventListener("assignment_changed", onRealtimeMessage as EventListener);
       source.close();
       setRealtimeConnected(false);
     };
@@ -104,4 +112,3 @@ export function useEmployeeConversationMessages({ refreshListSilently, search, s
 
   return { contactDetail, loadChat, loadingChat, messages, refreshChatSilently, scrollRef, setContactDetail };
 }
-
