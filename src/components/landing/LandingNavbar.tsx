@@ -35,7 +35,7 @@ export function LandingNavbar() {
       <div className="max-w-7xl mx-auto px-6 lg:px-8 flex items-center justify-between h-18">
         {/* Logo */}
         <a href="#" className="flex items-center gap-2 group">
-          <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-[#25D366] to-[#06b77e] flex items-center justify-center shadow-lg shadow-[#25D366]/30 group-hover:scale-110 transition-transform">
+          <div className="w-8 h-8 flex items-center justify-center group-hover:scale-110 transition-transform">
             <img src="logo.png" alt={BRAND_NAME} className="w-5 h-5" />
           </div>
           <span className="font-bold text-lg text-ink-900 tracking-tight">

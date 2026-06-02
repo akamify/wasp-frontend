@@ -60,7 +60,7 @@ export function LandingFooter() {
         <div className="mb-16 grid grid-cols-2 gap-10 md:grid-cols-5">
           <div className="col-span-2 flex flex-col gap-5">
             <a href="#" className="group flex w-fit items-center gap-2">
-              <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-[#25D366] to-[#06b77e] shadow-lg shadow-[#25D366]/30">
+              <div className="flex h-9 w-9 items-center justify-center">
                 <img src="logo.png" alt={BRAND_NAME} />
               </div>
               <span className="text-lg font-bold text-ink-900">{BRAND_NAME}</span>
