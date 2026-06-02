@@ -190,10 +190,10 @@ export function TemplatesList(props: Props) {
               <table className="w-full text-left border-collapse min-w-[800px]">
                 <thead className="bg-slate-50/50">
                   <tr>
+                    <th className="px-8 py-2 md:px-8 md:py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest">Template Details</th>
                     <th className="px-2 py-2 md:px-8 md:py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest">Category</th>
                     <th className="px-2 py-2 md:px-8 md:py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest">Status</th>
                     <th className="px-10 py-2 md:px-8 md:py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest text-right">Actions</th>
-                    <th className="px-8 py-2 md:px-8 md:py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest">Template Details</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-50">
