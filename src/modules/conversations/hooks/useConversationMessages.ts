@@ -5,6 +5,16 @@ import { useInboundMessageTone } from "@modules/conversations/hooks/useInboundMe
 import type { ChatMessage } from "@modules/conversations/types/conversations.types";
 
 const FINAL_MESSAGE_STATUSES = new Set(["read", "delivered", "failed", "timeout_unknown"]);
+const STATUS_RANK: Record<string, number> = {
+  queued: 0,
+  accepted: 1,
+  sent: 2,
+  delivered: 3,
+  read: 4,
+  received: 4,
+  failed: 5,
+  timeout_unknown: 5,
+};
 
 type Args = {
   navigate: NavigateFunction;
@@ -43,6 +53,38 @@ export function useConversationMessages({ navigate, refreshListSilently, search,
     );
 
     return applied;
+  }, []);
+
+  const mergeMessages = useCallback((nextMessages: ChatMessage[]) => {
+    setMessages((prev) => {
+      const prevByKey = new Map<string, ChatMessage>();
+      prev.forEach((message) => {
+        const key = String(message.whatsappMessageId || message._id || "");
+        if (key) prevByKey.set(key, message);
+      });
+
+      return (nextMessages || []).map((message) => {
+        const key = String(message.whatsappMessageId || message._id || "");
+        const previous = key ? prevByKey.get(key) : null;
+        if (!previous) return message;
+
+        const incomingStatus = String(message.status || "").toLowerCase();
+        const previousStatus = String(previous.status || "").toLowerCase();
+        const mergedStatus =
+          (STATUS_RANK[previousStatus] || 0) > (STATUS_RANK[incomingStatus] || 0) ? previousStatus : incomingStatus || previousStatus;
+        const mergedTimestamps = {
+          ...((previous as any).statusTimestamps || {}),
+          ...((message as any).statusTimestamps || {}),
+        };
+
+        return {
+          ...previous,
+          ...message,
+          status: mergedStatus || message.status,
+          ...(Object.keys(mergedTimestamps).length ? { statusTimestamps: mergedTimestamps } : {}),
+        } as ChatMessage;
+      });
+    });
   }, []);
 
   const hydrateOutboundStatuses = useCallback(async (messageList: ChatMessage[]) => {
@@ -84,7 +126,7 @@ export function useConversationMessages({ navigate, refreshListSilently, search,
     try {
       const [res, convo] = await Promise.all([API.messages.byPhone(phone), API.conversations.get(phone)]);
       const nextMessages = res.messages || [];
-      setMessages(nextMessages);
+      mergeMessages(nextMessages);
       setContactDetail(convo?.contact || null);
       await API.conversations.read(phone);
       void hydrateOutboundStatuses(nextMessages);
@@ -93,19 +135,19 @@ export function useConversationMessages({ navigate, refreshListSilently, search,
     } finally {
       setLoadingChat(false);
     }
-  }, [hydrateOutboundStatuses, setError]);
+  }, [hydrateOutboundStatuses, mergeMessages, setError]);
 
   const refreshChatSilently = useCallback(async (phone: string) => {
     if (!phone) return;
     try {
       const res = await API.messages.byPhone(phone);
       const nextMessages = res.messages || [];
-      setMessages(nextMessages);
+      mergeMessages(nextMessages);
       void hydrateOutboundStatuses(nextMessages);
     } catch {
       // silent refresh
     }
-  }, [hydrateOutboundStatuses]);
+  }, [hydrateOutboundStatuses, mergeMessages]);
 
   const applyRealtimeMessageUpdate = useCallback((payload: any) => {
     const nextMessageId = String(payload?.messageId || payload?.message?._id || "");
