@@ -39,16 +39,11 @@ export function startApiReachabilityCheck() {
         await checkHostResolvable(baseUrl, controller.signal);
         (window as any).__waspakamifyApiReachable = true;
         (window as any).__waspakamifyApiHealth = "reachable_but_blocked";
-        console.warn(
-          `[API] Host is reachable (${baseUrl}) but browser access is blocked (CORS/ORB or wrong service URL). Verify VITE_API_BASE_URL points to backend service and backend CORS allows this frontend origin.`
-        );
+        void baseUrl;
       } catch (secondaryErr) {
         (window as any).__waspakamifyApiReachable = false;
         (window as any).__waspakamifyApiHealth = "unreachable";
-        console.error(
-          `[API] Backend host is unreachable (${baseUrl}). Likely DNS/network issue (ERR_NAME_NOT_RESOLVED / NXDOMAIN) or invalid Railway domain.`,
-          secondaryErr || err
-        );
+        void secondaryErr;
       }
     })
     .finally(() => {

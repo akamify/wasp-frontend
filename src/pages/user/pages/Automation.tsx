@@ -45,8 +45,7 @@ export default function AutomationPage() {
       const data = await API.templates.list();
       setTemplates(data.templates || []);
       if (!isFirst) toast("Templates refreshed", "success");
-    } catch (e) {
-      console.error("Failed to load templates", e);
+    } catch {
     } finally {
       setLoading(false);
       setSyncing(false);

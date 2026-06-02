@@ -37,9 +37,8 @@ export default function MetaConnectPage() {
   const { toast } = useToast();
 
   const debug = (label: string, data: Record<string, unknown>) => {
-    // safe temporary diagnostics; no secrets logged
-    // eslint-disable-next-line no-console
-    console.info(`[embedded-signup] ${label}`, data);
+    void label;
+    void data;
   };
 
   const clearMessageListener = useCallback(() => {

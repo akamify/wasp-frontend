@@ -50,8 +50,7 @@ export default function ActivityPage() {
         setLogs(Array.isArray(res.items) ? res.items : []);
         setPage(1);
         setHasMore((res.items?.length || 0) === 20);
-      } catch (e) {
-        console.error("Failed to refresh logs", e);
+      } catch {
       } finally {
         setSyncing(false);
       }
@@ -64,8 +63,7 @@ export default function ActivityPage() {
       const newLogs = Array.isArray(res.items) ? res.items : [];
       setLogs(prev => page === 1 ? newLogs : [...prev, ...newLogs]);
       setHasMore(newLogs.length === 20);
-    } catch (e) {
-      console.error("Failed to load logs", e);
+    } catch {
       setHasMore(false);
     } finally {
       setBusy(false);
