@@ -156,6 +156,24 @@ export function useEmployeeConversationMessages({ refreshListSilently, search, s
   }, [urlPhone, search, realtimeConnected, refreshListSilently, refreshChatSilently]);
 
   useEffect(() => {
+    if (!urlPhone) return;
+    const hasPendingOutbound = messages.some(
+      (message) =>
+        message.direction === "outbound" &&
+        !FINAL_MESSAGE_STATUSES.has(String(message.status || "").toLowerCase()) &&
+        Boolean((message as any).whatsappMessageId)
+    );
+    if (!hasPendingOutbound) return;
+
+    const id = window.setInterval(() => {
+      if (document.hidden) return;
+      void refreshChatSilently(urlPhone);
+    }, 12000);
+
+    return () => window.clearInterval(id);
+  }, [messages, refreshChatSilently, urlPhone]);
+
+  useEffect(() => {
     const streamUrl = crmEmployeeInboxService.realtime.streamUrl();
     if (!streamUrl) return;
     const source = new EventSource(streamUrl);

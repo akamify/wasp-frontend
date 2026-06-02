@@ -254,8 +254,11 @@ function renderMetaBillingGuidance(err: any) {
 function statusMark(message: ChatMessage) {
   if (message.direction !== "outbound") return null;
   const status = String(message.status || "").toLowerCase();
+  const timestamps = (message as any).statusTimestamps || {};
+  const isRead = status === "read" || Boolean(timestamps?.readAt);
+  const isDelivered = status === "delivered" || Boolean(timestamps?.deliveredAt);
   if (status === "failed" || status === "timeout_unknown") return <span className="ml-1 text-[10px] font-black text-rose-600">!</span>;
-  if (status === "read") return <CheckCheck className="ml-1 inline-block text-blue-600" size={14} strokeWidth={3} />;
-  if (status === "delivered") return <CheckCheck className="ml-1 inline-block text-ink-900/55" size={14} strokeWidth={3} />;
+  if (isRead) return <CheckCheck className="ml-1 inline-block text-blue-600" size={14} strokeWidth={3} />;
+  if (isDelivered) return <CheckCheck className="ml-1 inline-block text-ink-900/55" size={14} strokeWidth={3} />;
   return <Check className="ml-1 inline-block text-ink-900/55" size={14} strokeWidth={3} />;
 }

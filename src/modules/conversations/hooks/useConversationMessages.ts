@@ -153,6 +153,24 @@ export function useConversationMessages({ navigate, refreshListSilently, search,
   }, [urlPhone, search, realtimeConnected, refreshListSilently, refreshChatSilently]);
 
   useEffect(() => {
+    if (!urlPhone) return;
+    const hasPendingOutbound = messages.some(
+      (message) =>
+        message.direction === "outbound" &&
+        !FINAL_MESSAGE_STATUSES.has(String(message.status || "").toLowerCase()) &&
+        Boolean(message.whatsappMessageId)
+    );
+    if (!hasPendingOutbound) return;
+
+    const id = window.setInterval(() => {
+      if (document.hidden) return;
+      void refreshChatSilently(urlPhone);
+    }, 12000);
+
+    return () => window.clearInterval(id);
+  }, [messages, refreshChatSilently, urlPhone]);
+
+  useEffect(() => {
     const token = String(getToken() || "").trim();
     const workspaceId = String(getWorkspaceId() || "").trim();
     if (!token || !workspaceId) return;
