@@ -45,6 +45,30 @@ export function useConversationMessages({ navigate, refreshListSilently, search,
     }
   }, []);
 
+  const applyRealtimeMessageUpdate = useCallback((payload: any) => {
+    const nextMessageId = String(payload?.messageId || payload?.message?._id || "");
+    const nextWaId = String(payload?.whatsappMessageId || payload?.message?.whatsappMessageId || "");
+    const nextStatus = String(payload?.status || payload?.message?.status || "").toLowerCase();
+    const nextPhone = String(payload?.phone || payload?.message?.phone || "");
+    const nextTimestamps = payload?.statusTimestamps || payload?.message?.statusTimestamps || null;
+    if (!nextMessageId && !nextWaId && !nextStatus) return false;
+
+    let applied = false;
+    setMessages((prev) =>
+      prev.map((message) => {
+        const matches = (nextMessageId && String(message._id) === nextMessageId) || (nextWaId && String(message.whatsappMessageId || "") === nextWaId) || (nextPhone && String(message.phone || "") === nextPhone && message.direction === "outbound");
+        if (!matches) return message;
+        applied = true;
+        return {
+          ...message,
+          status: nextStatus || message.status,
+          ...(nextTimestamps ? { statusTimestamps: { ...(message as any).statusTimestamps, ...nextTimestamps } } : {}),
+        } as ChatMessage;
+      })
+    );
+    return applied;
+  }, []);
+
   useInboundMessageTone(messages, urlPhone, loadingChat, navigate);
 
   useEffect(() => {
@@ -80,8 +104,9 @@ export function useConversationMessages({ navigate, refreshListSilently, search,
       try {
         const payload = JSON.parse(String(evt.data || "{}"));
         const eventPhone = String(payload?.phone || "");
+        const applied = String(payload?.type || "") === "message_status" ? applyRealtimeMessageUpdate(payload) : false;
         void refreshListSilently();
-        if (urlPhone && (!eventPhone || eventPhone === String(urlPhone))) void refreshChatSilently(urlPhone);
+        if (urlPhone && (!eventPhone || eventPhone === String(urlPhone) || applied)) void refreshChatSilently(urlPhone);
       } catch {
         void refreshListSilently();
         if (urlPhone) void refreshChatSilently(urlPhone);

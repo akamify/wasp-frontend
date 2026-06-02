@@ -13,6 +13,7 @@ export type ChatMessage = {
   phone?: string;
   direction: "outbound" | "inbound";
   status: string;
+  whatsappMessageId?: string | null;
   createdAt: string;
   text?: string;
   payload?: {
@@ -25,4 +26,3 @@ export type ChatMessage = {
   error?: any;
   display?: any;
 };
-
