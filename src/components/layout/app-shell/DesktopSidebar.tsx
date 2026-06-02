@@ -23,7 +23,7 @@ export function DesktopSidebar({
       <div className="h-16 flex items-center justify-between px-6 border-b border-slate-100 shrink-0">
         {!isCollapsed ? (
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex items-center gap-2">
-            <div className="w-8 h-8 bg-brand-600 rounded-[5px] flex items-center justify-center text-white font-black text-xs shadow-lg shadow-brand-500/20">
+            <div className="w-8 h-8 flex items-center justify-center text-white font-black text-xs shadow-lg shadow-brand-500/20">
             <img src="logo.png" alt={BRAND_NAME} />
             </div>
             <span className="font-black text-xl tracking-tighter text-slate-900">{resolvedBrandName}</span>
