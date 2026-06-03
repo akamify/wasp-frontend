@@ -2,7 +2,7 @@ import { AnimatePresence, motion } from "framer-motion";
 import { createPortal } from "react-dom";
 import { Button } from "@components/ui/Button";
 import { X } from "lucide-react";
-import { buildErrorViewModel, fmtDate } from "./apiReports.utils";
+import { extractErrorMessage, fmtDate } from "./apiReports.utils";
 
 type Props = {
   open: boolean;
@@ -65,30 +65,11 @@ export function ApiReportDetailModal({ open, detailBusy, detail, onClose }: Prop
 
                   {detail.error ? (
                     (() => {
-                      const errorView = buildErrorViewModel(detail.error);
+                      const errorMessage = extractErrorMessage(detail.error) || "Message delivery failed.";
                       return (
-                        <div className="rounded-[5px] bg-rose-50 p-4 ring-1 ring-rose-200 space-y-3">
+                        <div className="rounded-[5px] bg-rose-50 p-4 ring-1 ring-rose-200">
                           <div className="text-[10px] font-black uppercase tracking-widest text-rose-700">Delivery Error</div>
-                          <div>
-                            <div className="text-xs font-black uppercase tracking-widest text-rose-600">What happened</div>
-                            <div className="mt-1 text-sm font-semibold text-rose-900">{errorView.message}</div>
-                          </div>
-                          {errorView.code ? (
-                            <div>
-                              <div className="text-xs font-black uppercase tracking-widest text-rose-600">Provider Code</div>
-                              <div className="mt-1 text-sm font-semibold text-rose-900">{errorView.code}</div>
-                            </div>
-                          ) : null}
-                          {errorView.traceId ? (
-                            <div>
-                              <div className="text-xs font-black uppercase tracking-widest text-rose-600">Trace ID</div>
-                              <div className="mt-1 text-sm font-mono text-rose-900 break-all">{errorView.traceId}</div>
-                            </div>
-                          ) : null}
-                          <div>
-                            <div className="text-xs font-black uppercase tracking-widest text-rose-600">What to check</div>
-                            <div className="mt-1 text-sm font-semibold text-rose-900">{errorView.guidance}</div>
-                          </div>
+                          <div className="mt-2 text-sm font-semibold text-rose-900">{errorMessage}</div>
                         </div>
                       );
                     })()

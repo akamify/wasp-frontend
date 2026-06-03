@@ -94,12 +94,18 @@ export default function ApiReportsPage() {
   return (
     <div className="max-w-6xl mx-auto space-y-6 p-4 md:p-8">
       <div className="bg-white rounded-[5px] p-8 border border-slate-100 shadow-sm relative overflow-hidden">
-        <div className="relative z-10">
-          <div className="text-xs font-bold text-brand-600 uppercase tracking-widest">Developer</div>
-          <h1 className="mt-2 text-4xl font-black tracking-tight text-slate-900">API Report</h1>
-          <p className="mt-2 text-slate-500 font-medium max-w-2xl leading-relaxed">
-            Monitor API-triggered campaigns and delivery status. Click a row to view full details.
-          </p>
+        <div className="relative z-10 flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+          <div>
+            <div className="text-xs font-bold text-brand-600 uppercase tracking-widest">Developer</div>
+            <h1 className="mt-2 text-4xl font-black tracking-tight text-slate-900">API Report</h1>
+            <p className="mt-2 text-slate-500 font-medium max-w-2xl leading-relaxed">
+              Monitor API-triggered campaigns and delivery status. Click a row to view full details.
+            </p>
+          </div>
+          <Button variant="outline" disabled={busy} onClick={() => void load()} className="gap-2 self-start">
+            <RefreshCcw size={14} className={busy ? "animate-spin" : ""} />
+            {busy ? "Refreshing..." : "Refresh"}
+          </Button>
         </div>
       </div>
 
