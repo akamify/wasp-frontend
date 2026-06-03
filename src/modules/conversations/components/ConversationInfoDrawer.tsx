@@ -1,4 +1,5 @@
 import { AnimatePresence, motion } from "framer-motion";
+import { createPortal } from "react-dom";
 import { Edit3, Languages, Mail, StickyNote, Tag, X, ListFilter } from "lucide-react";
 import type { Conversation } from "@modules/conversations/types/conversations.types";
 import { formatDurationShort } from "@modules/conversations/utils/timeFormat";
@@ -16,6 +17,40 @@ type Props = {
 };
 
 export function ConversationInfoDrawer({ activeConversation, contactDetail, customerServiceWindowOpen, phone, showMobile, windowRemainingMs, onCloseMobile, onEdit }: Props) {
+  const mobileDrawer = createPortal(
+    <AnimatePresence>
+      {showMobile && activeConversation ? (
+        <motion.div className="md:hidden fixed inset-0 z-[999]" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+          <button type="button" className="absolute inset-0 bg-slate-900/25 backdrop-blur-[1px]" aria-label="Close profile" onClick={onCloseMobile} />
+          <motion.div
+            initial={{ x: "100%" }}
+            animate={{ x: 0 }}
+            exit={{ x: "100%" }}
+            transition={{ type: "spring", stiffness: 380, damping: 35 }}
+            className="absolute right-0 top-0 bottom-0 w-full max-w-none bg-white shadow-2xl border-l border-slate-200 flex flex-col"
+          >
+            <div className="h-16 px-4 flex items-center justify-between border-b border-slate-100">
+              <div className="text-sm font-black text-slate-900 tracking-tight">Contact info</div>
+              <button type="button" onClick={onCloseMobile} className="p-2 hover:bg-slate-50 rounded-[5px] text-slate-500 hover:text-slate-900 transition-all" aria-label="Close">
+                <X size={18} />
+              </button>
+            </div>
+            <ContactInfoBody
+              activeConversation={activeConversation}
+              contactDetail={contactDetail}
+              customerServiceWindowOpen={customerServiceWindowOpen}
+              phone={phone}
+              windowRemainingMs={windowRemainingMs}
+              onEdit={onEdit}
+              mobile
+            />
+          </motion.div>
+        </motion.div>
+      ) : null}
+    </AnimatePresence>,
+    document.body
+  );
+
   return (
     <>
       {phone ? (
@@ -31,36 +66,7 @@ export function ConversationInfoDrawer({ activeConversation, contactDetail, cust
         </div>
       ) : null}
 
-      <AnimatePresence>
-        {showMobile && activeConversation && (
-          <motion.div className="md:hidden fixed inset-0 z-[80]" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
-            <button type="button" className="absolute inset-0 bg-slate-900/25 backdrop-blur-[1px]" aria-label="Close profile" onClick={onCloseMobile} />
-            <motion.div
-              initial={{ x: "100%" }}
-              animate={{ x: 0 }}
-              exit={{ x: "100%" }}
-              transition={{ type: "spring", stiffness: 380, damping: 35 }}
-              className="absolute right-0 top-0 bottom-0 w-full max-w-none bg-white shadow-2xl border-l border-slate-200 flex flex-col"
-            >
-              <div className="h-16 px-4 flex items-center justify-between border-b border-slate-100">
-                <div className="text-sm font-black text-slate-900 tracking-tight">Contact info</div>
-                <button type="button" onClick={onCloseMobile} className="p-2 hover:bg-slate-50 rounded-[5px] text-slate-500 hover:text-slate-900 transition-all" aria-label="Close">
-                  <X size={18} />
-                </button>
-              </div>
-              <ContactInfoBody
-                activeConversation={activeConversation}
-                contactDetail={contactDetail}
-                customerServiceWindowOpen={customerServiceWindowOpen}
-                phone={phone}
-                windowRemainingMs={windowRemainingMs}
-                onEdit={onEdit}
-                mobile
-              />
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+      {mobileDrawer}
     </>
   );
 }

@@ -1,4 +1,5 @@
 import { AnimatePresence, motion } from "framer-motion";
+import { createPortal } from "react-dom";
 import { Button } from "@components/ui/Button";
 import { X } from "lucide-react";
 import { buildErrorViewModel, fmtDate } from "./apiReports.utils";
@@ -11,7 +12,7 @@ type Props = {
 };
 
 export function ApiReportDetailModal({ open, detailBusy, detail, onClose }: Props) {
-  return (
+  return createPortal(
     <AnimatePresence>
       {open ? (
         <motion.div
@@ -100,6 +101,7 @@ export function ApiReportDetailModal({ open, detailBusy, detail, onClose }: Prop
           </motion.div>
         </motion.div>
       ) : null}
-    </AnimatePresence>
+    </AnimatePresence>,
+    document.body
   );
 }

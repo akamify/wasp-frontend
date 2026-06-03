@@ -1,3 +1,4 @@
+import { createPortal } from "react-dom";
 import { X } from "lucide-react";
 
 type Props = {
@@ -12,7 +13,7 @@ type Props = {
 export function EditContactModal({ busy, form, open, onClose, onFormChange, onSave }: Props) {
   if (!open) return null;
 
-  return (
+  return createPortal(
     <div className="fixed inset-0 z-[999] bg-slate-900/40 backdrop-blur-sm p-4 flex items-center justify-center overflow-y-auto" onMouseDown={(e) => { if (e.target === e.currentTarget) onClose(); }}>
       <div className="mx-auto my-auto w-full max-w-xl overflow-hidden rounded-[5px] bg-white shadow-2xl ring-1 ring-black/10">
         <div className="flex items-center justify-between border-b border-slate-100 px-5 py-4">
@@ -48,7 +49,8 @@ export function EditContactModal({ busy, form, open, onClose, onFormChange, onSa
           </div>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }
 
