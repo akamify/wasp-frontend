@@ -164,6 +164,11 @@ function roleFromToken(token) {
   }
 }
 
+function isAuthMeRequest(config) {
+  const url = String(config?.url || "");
+  return /(^|\/)auth\/me(?:$|[?#])/.test(url);
+}
+
 async function resolveWorkspaceIdFromApi(token) {
   if (!token) return "";
   if (__workspaceResolvePromise) return __workspaceResolvePromise;
@@ -239,7 +244,7 @@ api.interceptors.response.use(
       ? backendMessage || err?.message || "Request failed"
       : backendMessage || fallbackByStatus[status] || "Request failed. Please try again.";
 
-    if (status === 401) {
+    if (status === 401 && isAuthMeRequest(err?.config)) {
       // If the token is invalid/expired, clear it so the UI can re-auth cleanly.
       setToken("");
     }

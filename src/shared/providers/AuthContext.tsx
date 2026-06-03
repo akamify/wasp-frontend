@@ -39,6 +39,11 @@ type AuthContextValue = AuthState & {
 
 const AuthContext = createContext<AuthContextValue | null>(null);
 
+function isConfirmedAuthFailure(error: any) {
+  const status = Number(error?.response?.status || 0);
+  return status === 401 || status === 403;
+}
+
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [state, setState] = useState<AuthState>(() => ({
     token: getToken(),
@@ -69,9 +74,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const res = await API.auth.me();
       if (res?.workspace?.id) setWorkspaceId(res.workspace.id);
       setState((s) => ({ ...s, token, user: res.user, workspace: res.workspace || null, loading: false }));
-    } catch {
-      setToken("");
-      setState((s) => ({ ...s, token: "", user: null, workspace: null, loading: false }));
+    } catch (error: any) {
+      if (isConfirmedAuthFailure(error)) {
+        setToken("");
+        setState((s) => ({ ...s, token: "", user: null, workspace: null, loading: false }));
+        return;
+      }
+      setState((s) => ({ ...s, token, loading: false }));
     } finally {
       refreshingRef.current = false;
     }
