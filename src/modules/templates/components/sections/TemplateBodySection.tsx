@@ -7,6 +7,7 @@ import { Textarea } from "@components/ui/Textarea";
 type Props = {
   bodyRef: RefObject<HTMLTextAreaElement | null>;
   bodyText: string;
+  bodyVariablesSequential: boolean;
   insertAtSelection: (value: string) => void;
   nextVariableIndex: number;
   runNativeUndoRedo: (command: "undo" | "redo") => void;
@@ -17,7 +18,7 @@ type Props = {
   wrapSelection: (prefix: string, suffix?: string) => void;
 };
 
-export function TemplateBodySection({ bodyRef, bodyText, insertAtSelection, nextVariableIndex, runNativeUndoRedo, setBodyText, setVariableValues, variableIndexes, variableValues, wrapSelection }: Props) {
+export function TemplateBodySection({ bodyRef, bodyText, bodyVariablesSequential, insertAtSelection, nextVariableIndex, runNativeUndoRedo, setBodyText, setVariableValues, variableIndexes, variableValues, wrapSelection }: Props) {
   return (
     <div className="rounded-[5px] border border-ink-900/10 bg-slate-50/50 p-5 shadow-none">
       <div className="mb-4 flex items-center gap-2 text-sm font-bold text-ink-900">
@@ -67,6 +68,12 @@ export function TemplateBodySection({ bodyRef, bodyText, insertAtSelection, next
           ))}
         </div>
       )}
+
+      {!bodyVariablesSequential ? (
+        <div className="mb-4 rounded-[5px] border border-rose-200 bg-rose-50 px-3 py-2 text-xs font-semibold text-rose-800">
+          Body variables must start from {"{{1}}"} and continue without gaps. Header variables use separate numbering, so body should still start at {"{{1}}"}.
+        </div>
+      ) : null}
 
       {variableIndexes.length > 0 ? (
         <div className="mt-4 rounded-[5px] border border-ink-900/10 bg-white p-4 shadow-none">

@@ -12,6 +12,7 @@ type Props = {
   headerTextRef: RefObject<HTMLInputElement | null>;
   headerType: HeaderType;
   headerVariableIndexes: number[];
+  headerVariablesSequential: boolean;
   headerVariableValues: Record<number, string>;
   locationAddress: string;
   locationLatitude: string;
@@ -97,6 +98,7 @@ function HeaderTextFields(props: Props) {
         </Button>
       </div>
       {props.headerVariableIndexes.length > 1 ? <div className="rounded-[5px] border border-rose-200 bg-rose-50 px-3 py-2 text-xs font-semibold text-rose-800">Header text can contain maximum 1 variable. Remove extra placeholders to continue.</div> : null}
+      {!props.headerVariablesSequential ? <div className="rounded-[5px] border border-rose-200 bg-rose-50 px-3 py-2 text-xs font-semibold text-rose-800">Header variable must start from {"{{1}}"}. Header and body numbering are separate.</div> : null}
       {props.headerVariableIndexes.length > 0 ? (
         <div className="rounded-[5px] border border-ink-900/10 bg-white p-4 shadow-none">
           <div className="mb-3 text-xs font-semibold uppercase tracking-[0.16em] text-ink-800/60">Header Variable Values (Preview)</div>

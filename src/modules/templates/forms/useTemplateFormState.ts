@@ -15,6 +15,10 @@ import type { AuthSupportedApp, CtaButton, HeaderType, TemplateCategory } from "
 
 const TEMPLATE_DRAFT_KEY = "template_form_draft_v1";
 
+function hasSequentialIndexes(indexes: number[]) {
+  return indexes.every((idx, i) => idx === i + 1);
+}
+
 export function useTemplateFormState({
   open,
   mode,
@@ -61,6 +65,8 @@ export function useTemplateFormState({
   const nextVariableIndex = useMemo(() => (variableIndexes.length ? Math.max(...variableIndexes) + 1 : 1), [variableIndexes]);
   const headerVariableIndexes = useMemo(() => extractVariableIndexes(headerText), [headerText]);
   const nextHeaderVariableIndex = useMemo(() => (headerVariableIndexes.length ? Math.max(...headerVariableIndexes) + 1 : 1), [headerVariableIndexes]);
+  const bodyVariablesSequential = useMemo(() => hasSequentialIndexes(variableIndexes), [variableIndexes]);
+  const headerVariablesSequential = useMemo(() => hasSequentialIndexes(headerVariableIndexes), [headerVariableIndexes]);
   const ctaLimit = 10;
   const canAddCta = category !== "authentication" && ctaButtons.length < ctaLimit;
   const ctaOptions = useMemo(() => ctaOptionsForCategory(category), [category]);
@@ -98,7 +104,11 @@ export function useTemplateFormState({
     if (category === "authentication" && !authAppsValid) return false;
     if (category !== "authentication" && headerType === "TEXT") {
       if (headerVariableIndexes.length > 1) return false;
+      if (!headerVariablesSequential) return false;
       if (headerVariableIndexes.length === 1 && !String(headerVariableValues[headerVariableIndexes[0]] || "").trim()) return false;
+    }
+    if (category !== "authentication") {
+      if (!bodyVariablesSequential) return false;
       if (variableIndexes.some((idx) => !String(variableValues[idx] || "").trim())) return false;
     }
     return !ctaButtons.some((button) => {
@@ -119,7 +129,7 @@ export function useTemplateFormState({
       }
       return false;
     });
-  }, [name, mode, category, bodyText, headerType, headerText, mediaHandle, locationLatitude, locationLongitude, authAddExpiration, authExpiresMinutes, authAppsValid, headerVariableIndexes, headerVariableValues, variableIndexes, variableValues, ctaButtons]);
+  }, [name, mode, category, bodyText, headerType, headerText, mediaHandle, locationLatitude, locationLongitude, authAddExpiration, authExpiresMinutes, authAppsValid, headerVariableIndexes, headerVariablesSequential, headerVariableValues, bodyVariablesSequential, variableIndexes, variableValues, ctaButtons]);
 
   const clearDraft = () => typeof window !== "undefined" && window.localStorage.removeItem(TEMPLATE_DRAFT_KEY);
   const reset = () => {
@@ -232,9 +242,8 @@ export function useTemplateFormState({
   return {
     state: { name, language, category, bodyText, headerType, headerText, mediaHandle, mediaPreviewUrl, mediaMeta, mediaUploadPct, mediaUploading, mediaUploadError, headerVariableValues, locationName, locationAddress, locationLatitude, locationLongitude, footerText, ctaButtons, ctaError, authOtpType, authAddSecurity, authAddExpiration, authExpiresMinutes, authSupportedApps, flows, flowsLoading, flowsError, variableValues },
     refs: { mediaInputRef, headerTextRef, bodyRef },
-    derived: { variableIndexes, nextVariableIndex, headerVariableIndexes, nextHeaderVariableIndex, ctaLimit, canAddCta, ctaOptions, authRequiresAppSetup, authAppsValid, voiceCallDayOptions, buttonTypeCounts, buttonTypeLimit, canCreate },
+    derived: { variableIndexes, nextVariableIndex, headerVariableIndexes, nextHeaderVariableIndex, bodyVariablesSequential, headerVariablesSequential, ctaLimit, canAddCta, ctaOptions, authRequiresAppSetup, authAppsValid, voiceCallDayOptions, buttonTypeCounts, buttonTypeLimit, canCreate },
     setters: { setName, setLanguage, setCategory, setBodyText, setHeaderType, setHeaderText, setHeaderVariableValues, setLocationName, setLocationAddress, setLocationLatitude, setLocationLongitude, setFooterText, setCtaButtons, setCtaError, setAuthOtpType, setAuthAddSecurity, setAuthAddExpiration, setAuthExpiresMinutes, setAuthSupportedApps, setVariableValues },
     actions: { wouldExceedLimit, refreshFlows, insertAtSelection, wrapSelection, runNativeUndoRedo, clearHeaderMedia, uploadHeaderMedia, submitTemplate },
   };
 }
-

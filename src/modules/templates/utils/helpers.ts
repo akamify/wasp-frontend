@@ -155,7 +155,7 @@ export function buildTemplateComponents(
 
   const bodyExampleRow =
     bodyIndexes.length > 0
-      ? Array.from({ length: Math.max(...bodyIndexes, 0) }, (_, i) => String((variableValues || {})[i + 1] || "").trim())
+      ? bodyIndexes.map((idx) => String((variableValues || {})[idx] || "").trim()).filter(Boolean)
       : [];
 
   const components: any[] = [
