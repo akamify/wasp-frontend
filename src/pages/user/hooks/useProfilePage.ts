@@ -3,7 +3,7 @@ import { API } from "@api/api";
 import { useAuth } from "@shared/providers/AuthContext";
 import { useToast } from "@shared/providers/ToastContext";
 
-type OtpPurpose = "" | "change_email" | "change_name";
+type OtpPurpose = "" | "change_email";
 
 export function useProfilePage() {
   const { user, workspace, refreshMe } = useAuth();
@@ -49,15 +49,11 @@ export function useProfilePage() {
 
     const currentEmail = String(user?.email || "").trim().toLowerCase();
     const nextEmail = String(editForm.email || "").trim().toLowerCase();
-    const currentName = String(user?.name || "").trim();
     const nextName = String(editForm.name || "").trim();
+    const nextPhone = String(editForm.phone || "").replace(/[^\d]/g, "").slice(0, 15);
 
     if (nextEmail && nextEmail !== currentEmail) {
       toast("Please verify OTP to change email.", "warning");
-      return;
-    }
-    if (nextName && currentName && nextName !== currentName) {
-      toast("Please verify OTP to change name.", "warning");
       return;
     }
 
@@ -65,7 +61,7 @@ export function useProfilePage() {
     try {
       await API.auth.updateProfile({
         name: nextName,
-        phone: editForm.phone,
+        phone: nextPhone,
       });
       await refreshMe();
       toast("Profile updated successfully", "success");
@@ -80,21 +76,16 @@ export function useProfilePage() {
   async function requestOtp(purpose: Exclude<OtpPurpose, "">) {
     setProfileOtpBusy(true);
     try {
-      if (purpose === "change_email") {
-        const nextEmail = String(editForm.email || "").trim().toLowerCase();
-        if (!nextEmail) {
-          toast("New email is required", "warning");
-          return;
-        }
-        await API.auth.requestProfileOtp({ purpose, email: nextEmail });
-      } else {
-        const nextName = String(editForm.name || "").trim();
-        if (!nextName) {
-          toast("New name is required", "warning");
-          return;
-        }
-        await API.auth.requestProfileOtp({ purpose, name: nextName });
+      const nextEmail = String(editForm.email || "").trim().toLowerCase();
+      if (!nextEmail) {
+        toast("New email is required", "warning");
+        return;
       }
+      if (nextEmail === String(user?.email || "").trim().toLowerCase()) {
+        toast("Change email before requesting OTP.", "warning");
+        return;
+      }
+      await API.auth.requestProfileOtp({ purpose, email: nextEmail });
       setProfileOtpPurpose(purpose);
       setOtpSent(true);
       toast("OTP sent to your registered email", "success");

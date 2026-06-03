@@ -1,5 +1,6 @@
 import { AnimatePresence, motion } from "framer-motion";
 import { X } from "lucide-react";
+import { createPortal } from "react-dom";
 import type { Dispatch, SetStateAction } from "react";
 import { Button } from "@components/ui/Button";
 import { Input } from "@components/ui/Input";
@@ -12,9 +13,9 @@ type Props = {
   profileOtp: string;
   setProfileOtp: Dispatch<SetStateAction<string>>;
   profileOtpBusy: boolean;
-  profileOtpPurpose: "" | "change_email" | "change_name";
+  profileOtpPurpose: "" | "change_email";
   otpSent: boolean;
-  onRequestOtp: (purpose: "change_email" | "change_name") => Promise<void>;
+  onRequestOtp: (purpose: "change_email") => Promise<void>;
   onVerifyOtp: () => Promise<void>;
   onSave: () => Promise<void>;
   editBusy: boolean;
@@ -35,7 +36,7 @@ export function EditProfileModal({
   onSave,
   editBusy,
 }: Props) {
-  return (
+  return createPortal(
     <AnimatePresence>
       {open && (
         <motion.div
@@ -74,9 +75,6 @@ export function EditProfileModal({
                 <Button type="button" variant="outline" disabled={profileOtpBusy} onClick={() => void onRequestOtp("change_email")} className="text-xs sm:text-sm w-full sm:w-auto">
                   {profileOtpBusy && profileOtpPurpose === "change_email" ? "Sending..." : "Send Email OTP"}
                 </Button>
-                <Button type="button" variant="outline" disabled={profileOtpBusy} onClick={() => void onRequestOtp("change_name")} className="text-xs sm:text-sm w-full sm:w-auto">
-                  {profileOtpBusy && profileOtpPurpose === "change_name" ? "Sending..." : "Send Name OTP"}
-                </Button>
               </div>
 
               {otpSent ? (
@@ -103,8 +101,9 @@ export function EditProfileModal({
               <Input
                 label="Phone Number"
                 value={editForm.phone}
-                onChange={(e) => setEditForm((prev) => ({ ...prev, phone: e.target.value }))}
+                onChange={(e) => setEditForm((prev) => ({ ...prev, phone: e.target.value.replace(/[^\d]/g, "").slice(0, 15) }))}
                 placeholder="Your phone number"
+                inputMode="numeric"
               />
 
               <div className="flex flex-col-reverse sm:flex-row items-stretch sm:items-center justify-end gap-2 sm:gap-3 pt-3 sm:pt-4 border-t border-slate-100">
@@ -119,6 +118,7 @@ export function EditProfileModal({
           </motion.div>
         </motion.div>
       )}
-    </AnimatePresence>
+    </AnimatePresence>,
+    document.body
   );
 }
