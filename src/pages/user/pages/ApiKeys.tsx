@@ -270,7 +270,7 @@ export default function ApiKeysPage() {
   ${API.baseUrl}/integrations/campaigns/send \\
   -H "X-API-KEY: YOUR_KEY" \\
   -H "Content-Type: application/json" \\
-  -d '{"to":"91XXXXXXXXXX","templateId":"TEMPLATE_ID","variables":["John"]}'`}</pre>
+  -d '{"campaignName":"Order Confirmation API","recipients":[{"to":"91XXXXXXXXXX","variables":["John"]}]}'`}</pre>
               </div>
               <p className="text-xs text-slate-500">
                 Tip: Keep keys secret.
