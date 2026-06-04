@@ -3,7 +3,7 @@ import { API } from "@api/api";
 import { getErrorMessage } from "./actions";
 
 export function useCampaignFormEffects(ctx: any) {
-  const { isOpen, setLimitsLoading, setMessagingTierRaw, setRemainingQuotaRaw, setWalletBalance, initialType, initialName, initialSelectedPhones, setType, setName, setContactQuery, setSelectedPhones, setMessageType, setTemplateId, setScheduledAt, setHeaderVars, setBodyVars, setOtpCode, setButtonValues, setButtonValueByIndex, setButtonTtlMinutes, setFlowTokens, setFlowActionDataJson, setCsvBusy, setCsvFileName, setCsvText, setCsvPhoneColumn, setCsvBodyMap, setCsvHeaderMap, setCsvButtonMap, setDemoTo, setDemoBusy, selectedTemplate, summary, buttonTtlMinutes, buttonsNeedingValue, csvColumns, type, autoMapCsvIfEmpty, buttonValues, setEstimate, buildRecipientsForCurrentState, templateId, setEstimateLoading, toast, headerMediaOverride, csvText, selectedPhones, csvPhoneColumn, csvBodyMap, csvHeaderMap, csvButtonMap, headerVars, bodyVars, resolvedButtonValues, otpCode, flowActionDataJson, flowTokens, setWalletBalance: setWalletFromEstimate } = ctx;
+  const { isOpen, setLimitsLoading, setMessagingTierRaw, setRemainingQuotaRaw, setWalletBalance, initialType, initialName, initialSelectedPhones, setType, setName, setContactQuery, setSelectedPhones, setMessageType, setTemplateId, setScheduledAt, setScheduleFrequency, setHeaderVars, setBodyVars, setOtpCode, setButtonValues, setButtonValueByIndex, setButtonTtlMinutes, setFlowTokens, setFlowActionDataJson, setCsvBusy, setCsvFileName, setCsvText, setCsvPhoneColumn, setCsvBodyMap, setCsvHeaderMap, setCsvButtonMap, setDemoTo, setDemoBusy, selectedTemplate, summary, buttonTtlMinutes, buttonsNeedingValue, csvColumns, type, autoMapCsvIfEmpty, buttonValues, setEstimate, buildRecipientsForCurrentState, templateId, setEstimateLoading, toast, headerMediaOverride, csvText, selectedPhones, csvPhoneColumn, csvBodyMap, csvHeaderMap, csvButtonMap, headerVars, bodyVars, resolvedButtonValues, otpCode, flowActionDataJson, flowTokens, setWalletBalance: setWalletFromEstimate } = ctx;
 
   useEffect(() => {
     if (!isOpen) return;
@@ -37,13 +37,14 @@ export function useCampaignFormEffects(ctx: any) {
     }
     setTemplateId("");
     setScheduledAt("");
+    setScheduleFrequency("once");
   }, [isOpen, initialType, initialName, initialSelectedPhones]);
 
   useEffect(() => {
     if (!isOpen) return;
     const hasSeed = initialType !== undefined || initialName !== undefined || (Array.isArray(initialSelectedPhones) && initialSelectedPhones.length > 0);
     if (!hasSeed) { setType(null); setName(""); setContactQuery(""); setSelectedPhones({}); }
-    setMessageType("template"); setTemplateId(""); setScheduledAt(""); setHeaderVars([]); setBodyVars([]); setOtpCode(""); setButtonValues([]); setButtonValueByIndex({}); setButtonTtlMinutes([]); setFlowTokens([]); setFlowActionDataJson("{}"); setCsvBusy(false); setCsvFileName(""); setCsvText(""); setCsvPhoneColumn(""); setCsvBodyMap([]); setCsvHeaderMap([]); setCsvButtonMap([]); setDemoTo(""); setDemoBusy(false);
+    setMessageType("template"); setTemplateId(""); setScheduledAt(""); setScheduleFrequency("once"); setHeaderVars([]); setBodyVars([]); setOtpCode(""); setButtonValues([]); setButtonValueByIndex({}); setButtonTtlMinutes([]); setFlowTokens([]); setFlowActionDataJson("{}"); setCsvBusy(false); setCsvFileName(""); setCsvText(""); setCsvPhoneColumn(""); setCsvBodyMap([]); setCsvHeaderMap([]); setCsvButtonMap([]); setDemoTo(""); setDemoBusy(false);
   }, [isOpen, initialType, initialName, initialSelectedPhones]);
 
   useEffect(() => {

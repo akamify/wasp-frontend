@@ -1,6 +1,7 @@
 import type { Dispatch, SetStateAction } from "react";
 
 export type CampaignType = "broadcast" | "csv" | "api";
+export type CampaignScheduleFrequency = "once" | "daily" | "weekly";
 
 export type CampaignContact = {
   _id: string;
@@ -50,6 +51,9 @@ export type CampaignCreatePayload = {
   type?: CampaignType;
   templateId: string;
   scheduledAt?: string;
+  schedule?: {
+    frequency: CampaignScheduleFrequency;
+  };
   recipients?: CampaignRecipient[];
 };
 

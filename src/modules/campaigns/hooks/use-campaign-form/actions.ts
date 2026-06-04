@@ -9,7 +9,7 @@ export function getErrorMessage(error: unknown, fallback: string) {
 
 export function createCampaignFormActions(ctx: any) {
   const {
-    toast, type, selectedTemplate, summary, headerVars, bodyVars, buttonsNeedingValue, buttonValueByIndex, otpCode, csvPhoneColumn, setCsvPhoneColumn, setCsvBodyMap, setCsvHeaderMap, setSelectedPhones, headerMediaOverride, resolvedButtonValues, flowActionDataJson, csvParsed, csvHeaderMap, csvButtonMap, buttonTtlMinutes, flowTokens, csvBodyMap, setHeaderMediaUploading, setHeaderMediaOverride, setHeaderVars, setBusy, messageType, name, templateId, scheduledAt, onSuccess, onClose, estimate,
+    toast, type, selectedTemplate, summary, headerVars, bodyVars, buttonsNeedingValue, buttonValueByIndex, otpCode, csvPhoneColumn, setCsvPhoneColumn, setCsvBodyMap, setCsvHeaderMap, setSelectedPhones, headerMediaOverride, resolvedButtonValues, flowActionDataJson, csvParsed, csvHeaderMap, csvButtonMap, buttonTtlMinutes, flowTokens, csvBodyMap, setHeaderMediaUploading, setHeaderMediaOverride, setHeaderVars, setBusy, messageType, name, templateId, scheduledAt, scheduleFrequency, onSuccess, onClose, estimate,
   } = ctx;
 
   const missingBroadcastInputs = () => {
@@ -122,12 +122,15 @@ export function createCampaignFormActions(ctx: any) {
       if (!campaignName) throw new Error("Campaign name is required");
       if (!templateId) throw new Error("Select a template");
       const scheduled = scheduledAt.trim() ? new Date(scheduledAt).toISOString() : undefined;
+      const schedule = scheduleFrequency && scheduleFrequency !== "once" ? { frequency: scheduleFrequency } : undefined;
+      if (schedule && !scheduled) throw new Error("Select date and time for recurring campaign");
+      if (type === "api" && schedule) throw new Error("Recurring schedule is only available for broadcast and CSV campaigns");
       if (type === "api") { await API.campaigns.create({ name: campaignName, type, templateId, scheduledAt: scheduled }); toast("API campaign created. Your integration will provide contacts at send time.", "success"); onSuccess(); onClose(); return; }
       const recipients = buildRecipientsForCurrentState();
       if (!recipients.length) throw new Error("Select at least one valid recipient");
       if (type === "broadcast") { const missing = missingBroadcastInputs(); if (missing.length) throw new Error(`Broadcast template needs values for: ${missing.slice(0, 6).join(", ")}${missing.length > 6 ? "..." : ""} (Use CSV for per-contact variables)`); }
       if (estimate?.insufficientBalance) throw new Error(`Insufficient balance: need ${formatCurrency(estimate.estimatedCredits, estimate.currency)}, available ${formatCurrency(estimate.walletBalance, estimate.currency)}`);
-      await API.campaigns.create({ name: campaignName, type, templateId, scheduledAt: scheduled, recipients });
+      await API.campaigns.create({ name: campaignName, type, templateId, scheduledAt: scheduled, schedule, recipients });
       toast("Campaign created successfully", "success"); onSuccess(); onClose();
     } catch (error) { toast(getErrorMessage(error, "Failed to create campaign"), "error"); } finally { setBusy(false); }
   };

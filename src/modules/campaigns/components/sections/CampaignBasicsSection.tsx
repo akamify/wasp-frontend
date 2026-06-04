@@ -2,7 +2,7 @@ import { Badge } from "@components/ui/Badge";
 import { Card } from "@components/ui/Card";
 import { Input } from "@components/ui/Input";
 import { Select } from "@components/ui/Select";
-import type { CampaignType } from "@modules/campaigns/types/campaign-form.types";
+import type { CampaignScheduleFrequency, CampaignType } from "@modules/campaigns/types/campaign-form.types";
 import type { TemplateRecord } from "@shared/utils/templateRuntime";
 import { truncateTemplateName } from "@modules/templates/utils/helpers";
 
@@ -10,11 +10,13 @@ type CampaignBasicsSectionProps = {
   type: CampaignType;
   name: string;
   scheduledAt: string;
+  scheduleFrequency: CampaignScheduleFrequency;
   templateId: string;
   approvedTemplates: TemplateRecord[];
   onTypeReset: () => void;
   onNameChange: (value: string) => void;
   onScheduledAtChange: (value: string) => void;
+  onScheduleFrequencyChange: (value: CampaignScheduleFrequency) => void;
   onTemplateIdChange: (value: string) => void;
 };
 
@@ -22,11 +24,13 @@ export function CampaignBasicsSection({
   type,
   name,
   scheduledAt,
+  scheduleFrequency,
   templateId,
   approvedTemplates,
   onTypeReset,
   onNameChange,
   onScheduledAtChange,
+  onScheduleFrequencyChange,
   onTemplateIdChange,
 }: CampaignBasicsSectionProps) {
   return (
@@ -41,7 +45,18 @@ export function CampaignBasicsSection({
       <div className="mt-6 grid gap-6 md:grid-row-2">
         <div className="space-y-4">
           <Input label="Campaign Name" placeholder="e.g. Summer Sale 2026" value={name} onChange={(event) => onNameChange(event.target.value)} required />
-          <Input label="Schedule (optional)" type="datetime-local" value={scheduledAt} onChange={(event) => onScheduledAtChange(event.target.value)} />
+          <div className="grid gap-3 md:grid-cols-[minmax(0,1fr)_160px]">
+            <Input label="Schedule (optional)" type="datetime-local" value={scheduledAt} onChange={(event) => onScheduledAtChange(event.target.value)} />
+            <Select
+              label="Repeat"
+              value={scheduleFrequency}
+              onChange={(event) => onScheduleFrequencyChange(event.target.value as CampaignScheduleFrequency)}
+            >
+              <option value="once">Once</option>
+              <option value="daily">Daily</option>
+              <option value="weekly">Weekly</option>
+            </Select>
+          </div>
         </div>
       </div>
       <div className="space-y-4">

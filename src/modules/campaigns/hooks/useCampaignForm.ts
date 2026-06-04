@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 
-import type { CampaignContact, CampaignEstimate, CampaignType, CampaignWalletBalance } from "@modules/campaigns/types/campaign-form.types";
+import type { CampaignContact, CampaignEstimate, CampaignScheduleFrequency, CampaignType, CampaignWalletBalance } from "@modules/campaigns/types/campaign-form.types";
 import { digitsOnly, parseCsvText } from "@modules/campaigns/utils/campaignFormatters";
 import { createCampaignFormActions } from "@modules/campaigns/hooks/use-campaign-form/actions";
 import { useCampaignFormEffects } from "@modules/campaigns/hooks/use-campaign-form/effects";
@@ -33,6 +33,7 @@ export function useCampaignForm(props: CampaignCreateModalProps) {
   const [name, setName] = useState("");
   const [templateId, setTemplateId] = useState("");
   const [scheduledAt, setScheduledAt] = useState("");
+  const [scheduleFrequency, setScheduleFrequency] = useState<CampaignScheduleFrequency>("once");
   const [busy, setBusy] = useState(false);
   const [walletBalance, setWalletBalance] = useState<CampaignWalletBalance | null>(null);
   const [estimateLoading, setEstimateLoading] = useState(false);
@@ -155,12 +156,13 @@ export function useCampaignForm(props: CampaignCreateModalProps) {
     csvPhoneColumn, setCsvPhoneColumn, setCsvBodyMap, setCsvHeaderMap, selectedPhones, setSelectedPhones,
     headerMediaOverride, resolvedButtonValues, flowActionDataJson, csvParsed, csvHeaderMap, csvButtonMap, buttonTtlMinutes,
     flowTokens, csvBodyMap, setHeaderMediaUploading, setHeaderMediaOverride, setHeaderVars, setBusy, messageType,
-    name, templateId, scheduledAt, onSuccess, onClose, estimate, demoTo, csvPreviewData, csvFirstRow,
+    name, templateId, scheduledAt, scheduleFrequency, onSuccess, onClose, estimate, demoTo, csvPreviewData, csvFirstRow,
   });
 
   useCampaignFormEffects({
     isOpen, setLimitsLoading, setMessagingTierRaw, setRemainingQuotaRaw, setWalletBalance, initialType, initialName,
     initialSelectedPhones, setType, setName, setContactQuery, setSelectedPhones, setMessageType, setTemplateId,
+    setScheduleFrequency,
     setScheduledAt, setHeaderVars, setBodyVars, setOtpCode, setButtonValues, setButtonValueByIndex, setButtonTtlMinutes,
     setFlowTokens, setFlowActionDataJson, setCsvBusy, setCsvFileName, setCsvText, setCsvPhoneColumn, setCsvBodyMap,
     setCsvHeaderMap, setCsvButtonMap, setDemoTo, setDemoBusy, selectedTemplate, summary, buttonTtlMinutes,
@@ -172,7 +174,7 @@ export function useCampaignForm(props: CampaignCreateModalProps) {
 
   return {
     busy, type, setType, limitsLoading, tierInfo, audienceCount, estimateLoading, estimate, walletBalance,
-    name, setName, scheduledAt, setScheduledAt, templateId, setTemplateId, approvedTemplates, selectedPhones,
+    name, setName, scheduledAt, setScheduledAt, scheduleFrequency, setScheduleFrequency, templateId, setTemplateId, approvedTemplates, selectedPhones,
     contactQuery, setContactQuery, filteredContacts, toggleSelectedPhone: actions.toggleSelectedPhone, summary,
     headerVars, setHeaderVars, bodyVars, setBodyVars, otpCode, setOtpCode, buttonsNeedingValue, buttonValueByIndex,
     setButtonValueByIndex, buttonTtlMinutes, setButtonTtlMinutes, flowTokens, setFlowTokens, flowActionDataJson,

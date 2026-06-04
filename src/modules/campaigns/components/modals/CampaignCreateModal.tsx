@@ -28,6 +28,8 @@ export default function CampaignCreateModal(props: CampaignCreateModalProps) {
     setName,
     scheduledAt,
     setScheduledAt,
+    scheduleFrequency,
+    setScheduleFrequency,
     templateId,
     setTemplateId,
     approvedTemplates,
@@ -109,11 +111,13 @@ export default function CampaignCreateModal(props: CampaignCreateModalProps) {
                     type={type}
                     name={name}
                     scheduledAt={scheduledAt}
+                    scheduleFrequency={scheduleFrequency}
                     templateId={templateId}
                     approvedTemplates={approvedTemplates}
                     onTypeReset={() => setType(null)}
                     onNameChange={setName}
                     onScheduledAtChange={setScheduledAt}
+                    onScheduleFrequencyChange={setScheduleFrequency}
                     onTemplateIdChange={setTemplateId}
                   />
 
