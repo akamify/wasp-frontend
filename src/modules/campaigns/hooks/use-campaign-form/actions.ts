@@ -10,6 +10,7 @@ export function getErrorMessage(error: unknown, fallback: string) {
 export function createCampaignFormActions(ctx: any) {
   const {
     toast, type, selectedTemplate, summary, headerVars, bodyVars, buttonsNeedingValue, buttonValueByIndex, otpCode, csvPhoneColumn, setCsvPhoneColumn, setCsvBodyMap, setCsvHeaderMap, setSelectedPhones, headerMediaOverride, resolvedButtonValues, flowActionDataJson, csvParsed, csvHeaderMap, csvButtonMap, buttonTtlMinutes, flowTokens, csvBodyMap, setHeaderMediaUploading, setHeaderMediaOverride, setHeaderVars, setBusy, messageType, name, templateId, scheduledAt, scheduleFrequency, onSuccess, onClose, estimate,
+    audienceMode, selectedTagList, tagMatchedContacts,
   } = ctx;
 
   const missingBroadcastInputs = () => {
@@ -70,9 +71,11 @@ export function createCampaignFormActions(ctx: any) {
   const buildRecipientsForCurrentState = (): CampaignRecipient[] => {
     if (!type || type === "api" || !templateId) return [];
     if (type === "broadcast") {
-      const phones = Object.keys(ctx.selectedPhones || {});
+      const phones = audienceMode === "tags"
+        ? (tagMatchedContacts || []).map((contact: any) => String(contact.phone || "")).filter(Boolean)
+        : Object.keys(ctx.selectedPhones || {});
       const effectiveHeaderVariables = summary.headerFormat !== "TEXT" && headerMediaOverride ? [headerMediaOverride, ...headerVars.slice(1)] : headerVars;
-      return phones.map((to) => ({ to, variables: bodyVars, headerVariables: effectiveHeaderVariables, otpCode: String(otpCode || "").trim() || undefined, buttonValues: resolvedButtonValues, buttonTtlMinutes, flowTokens, flowActionData: (() => { try { const parsed = JSON.parse(flowActionDataJson || "{}"); return Array.isArray(parsed) ? parsed : [parsed]; } catch { return []; } })() }));
+      return phones.map((to: string) => ({ to, variables: bodyVars, headerVariables: effectiveHeaderVariables, otpCode: String(otpCode || "").trim() || undefined, buttonValues: resolvedButtonValues, buttonTtlMinutes, flowTokens, flowActionData: (() => { try { const parsed = JSON.parse(flowActionDataJson || "{}"); return Array.isArray(parsed) ? parsed : [parsed]; } catch { return []; } })() }));
     }
     if (!csvParsed.rows.length || !csvPhoneColumn) return [];
     const csvFlowActionData = (() => { try { const parsed = JSON.parse(flowActionDataJson || "{}"); return Array.isArray(parsed) ? parsed : [parsed]; } catch { return []; } })();
@@ -112,6 +115,7 @@ export function createCampaignFormActions(ctx: any) {
   };
 
   const toggleSelectedPhone = (phone: string) => setSelectedPhones((prev: Record<string, true>) => { const next = { ...prev }; if (next[phone]) delete next[phone]; else next[phone] = true; return next; });
+  const toggleSelectedTag = (tag: string) => ctx.setSelectedTags((prev: Record<string, true>) => { const next = { ...prev }; if (next[tag]) delete next[tag]; else next[tag] = true; return next; });
 
   const createCampaign = async () => {
     setBusy(true);
@@ -123,17 +127,29 @@ export function createCampaignFormActions(ctx: any) {
       if (!templateId) throw new Error("Select a template");
       const scheduled = scheduledAt.trim() ? new Date(scheduledAt).toISOString() : undefined;
       const schedule = scheduleFrequency && scheduleFrequency !== "once" ? { frequency: scheduleFrequency } : undefined;
+      const audienceRuntime = {
+        variables: bodyVars,
+        headerVariables: summary.headerFormat !== "TEXT" && headerMediaOverride ? [headerMediaOverride, ...headerVars.slice(1)] : headerVars,
+        otpCode: String(otpCode || "").trim() || undefined,
+        buttonValues: resolvedButtonValues,
+        buttonTtlMinutes,
+        flowTokens,
+        flowActionData: (() => { try { const parsed = JSON.parse(flowActionDataJson || "{}"); return Array.isArray(parsed) ? parsed : [parsed]; } catch { return []; } })(),
+      };
+      const audience = audienceMode === "tags" ? { mode: "tags", tags: selectedTagList, tagMatch: "all", runtime: audienceRuntime } : { mode: "manual" };
       if (schedule && !scheduled) throw new Error("Select date and time for recurring campaign");
       if (type === "api" && schedule) throw new Error("Recurring schedule is only available for broadcast and CSV campaigns");
       if (type === "api") { await API.campaigns.create({ name: campaignName, type, templateId, scheduledAt: scheduled }); toast("API campaign created. Your integration will provide contacts at send time.", "success"); onSuccess(); onClose(); return; }
-      const recipients = buildRecipientsForCurrentState();
-      if (!recipients.length) throw new Error("Select at least one valid recipient");
+      if (type !== "broadcast" && audienceMode === "tags") throw new Error("Tag audience is only available for broadcast campaigns");
+      if (audienceMode === "tags" && !selectedTagList.length) throw new Error("Select at least one tag");
+      const recipients = audienceMode === "tags" ? [] : buildRecipientsForCurrentState();
+      if (audienceMode !== "tags" && !recipients.length) throw new Error("Select at least one valid recipient");
       if (type === "broadcast") { const missing = missingBroadcastInputs(); if (missing.length) throw new Error(`Broadcast template needs values for: ${missing.slice(0, 6).join(", ")}${missing.length > 6 ? "..." : ""} (Use CSV for per-contact variables)`); }
       if (estimate?.insufficientBalance) throw new Error(`Insufficient balance: need ${formatCurrency(estimate.estimatedCredits, estimate.currency)}, available ${formatCurrency(estimate.walletBalance, estimate.currency)}`);
-      await API.campaigns.create({ name: campaignName, type, templateId, scheduledAt: scheduled, schedule, recipients });
+      await API.campaigns.create({ name: campaignName, type, templateId, scheduledAt: scheduled, schedule, audience, recipients });
       toast("Campaign created successfully", "success"); onSuccess(); onClose();
     } catch (error) { toast(getErrorMessage(error, "Failed to create campaign"), "error"); } finally { setBusy(false); }
   };
 
-  return { missingBroadcastInputs, autoMapCsvIfEmpty, buildRecipientsForCurrentState, demoSend, handleDemoError, uploadHeaderMedia, toggleSelectedPhone, createCampaign };
+  return { missingBroadcastInputs, autoMapCsvIfEmpty, buildRecipientsForCurrentState, demoSend, handleDemoError, uploadHeaderMedia, toggleSelectedPhone, toggleSelectedTag, createCampaign };
 }

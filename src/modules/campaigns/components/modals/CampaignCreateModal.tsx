@@ -34,10 +34,16 @@ export default function CampaignCreateModal(props: CampaignCreateModalProps) {
     setTemplateId,
     approvedTemplates,
     selectedPhones,
+    audienceMode,
+    setAudienceMode,
+    availableTags,
+    selectedTags,
+    tagMatchedContacts,
     contactQuery,
     setContactQuery,
     filteredContacts,
     toggleSelectedPhone,
+    toggleSelectedTag,
     summary,
     headerVars,
     setHeaderVars,
@@ -125,10 +131,16 @@ export default function CampaignCreateModal(props: CampaignCreateModalProps) {
                     <CampaignAudienceSection
                       lockRecipients={lockRecipients}
                       selectedPhones={selectedPhones}
+                      audienceMode={audienceMode}
+                      availableTags={availableTags}
+                      selectedTags={selectedTags}
+                      tagMatchedCount={audienceMode === "tags" && estimate?.totalRecipients !== undefined ? estimate.totalRecipients : tagMatchedContacts.length}
                       contactQuery={contactQuery}
                       filteredContacts={filteredContacts}
+                      onAudienceModeChange={setAudienceMode}
                       onContactQueryChange={setContactQuery}
                       onTogglePhone={toggleSelectedPhone}
+                      onToggleTag={toggleSelectedTag}
                     />
                   ) : null}
 

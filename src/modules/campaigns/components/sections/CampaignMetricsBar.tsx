@@ -24,13 +24,13 @@ export function CampaignMetricsBar({
   return (
     <div className="rounded-[5px] border border-ink-900/5 bg-slate-50/50 px-6 py-5">
       <div className="grid gap-6 sm:grid-cols-5">
-        <Metric label="Messaging Tier" value={limitsLoading ? <span className="animate-pulse opacity-50">...</span> : tierInfo?.tierLabel || "â€”"} hint={tierInfo?.limitPer24h ? `(${tierInfo.limitPer24h.toLocaleString()} / 24h)` : "Limit unknown"} />
-        <Metric label="Remaining" value={limitsLoading ? "â€”" : tierInfo?.remainingQuota ? tierInfo.remainingQuota.toLocaleString() : "â€”"} hint="approx. quota" />
+        <Metric label="Messaging Tier" value={limitsLoading ? <span className="animate-pulse opacity-50">...</span> : tierInfo?.tierLabel || "-"} hint={tierInfo?.limitPer24h ? `(${tierInfo.limitPer24h.toLocaleString()} / 24h)` : "Limit unknown"} />
+        <Metric label="Remaining" value={limitsLoading ? "-" : tierInfo?.remainingQuota ? tierInfo.remainingQuota.toLocaleString() : "-"} hint="approx. quota" />
         <Metric label="Audience" value={audienceCount.toLocaleString()} hint="recipients" />
-        <Metric label="Est. Credits" value={estimateLoading ? <span className="animate-pulse opacity-50">...</span> : estimate ? formatCurrency(estimate.estimatedCredits, estimate.currency) : "â€”"} hint={estimate ? `${estimate.billableRecipients} billable` : ""} />
+        <Metric label="Est. Credits" value={estimateLoading ? <span className="animate-pulse opacity-50">...</span> : estimate ? formatCurrency(estimate.estimatedCredits, estimate.currency) : "-"} hint={estimate ? `${estimate.billableRecipients} billable` : ""} />
         <Metric
           label="Your Balance"
-          value={walletBalance ? formatCurrency(walletBalance.amount, walletBalance.currency) : "â€”"}
+          value={walletBalance ? formatCurrency(walletBalance.amount, walletBalance.currency) : "-"}
           hint={estimate?.insufficientBalance ? "Insufficient Funds" : walletBalance ? "" : ""}
           hintClassName={estimate?.insufficientBalance ? "text-rose-600" : "text-emerald-600"}
         />

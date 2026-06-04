@@ -9,7 +9,7 @@ import CampaignCreateModal from "@components/campaigns/CampaignCreateModal";
 import type { TemplateRecord } from "@shared/utils/templateRuntime";
 import { SendCampaignsTable } from "@pages/user/pages/send/SendCampaignsTable";
 
-type Contact = { _id: string; name?: string; phone: string; company?: string };
+type Contact = { _id: string; name?: string; phone: string; company?: string; tags?: string[] };
 
 type Campaign = {
   _id: string;
@@ -36,6 +36,7 @@ export default function SendPage() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [templates, setTemplates] = useState<TemplateRecord[]>([]);
   const [contacts, setContacts] = useState<Contact[]>([]);
+  const [contactTags, setContactTags] = useState<string[]>([]);
   const [actioningId, setActioningId] = useState("");
   const [retrySeed, setRetrySeed] = useState<{ name: string; phones: string[] } | null>(null);
   const isInitialLoad = useRef(true);
@@ -90,7 +91,7 @@ export default function SendPage() {
       const [campRes, tempRes, contRes] = await Promise.allSettled([
         API.campaigns.list({ limit: 100 }),
         API.templates.list(),
-        API.contacts.list({ limit: 100 })
+        Promise.all([API.contacts.list({ limit: 100 }), API.contacts.tags()])
       ]);
 
       if (campRes.status === "fulfilled") {
@@ -100,7 +101,9 @@ export default function SendPage() {
         setTemplates(tempRes.value?.templates || []);
       }
       if (contRes.status === "fulfilled") {
-        setContacts(contRes.value?.contacts || []);
+        const [contactsRes, tagsRes] = contRes.value;
+        setContacts(contactsRes?.contacts || []);
+        setContactTags(Array.isArray(tagsRes?.tags) ? tagsRes.tags.map((item: any) => String(item?.tag || "").trim()).filter(Boolean) : []);
       }
 
       const failed = [campRes, tempRes, contRes].filter((result) => result.status === "rejected");
@@ -273,6 +276,7 @@ export default function SendPage() {
         onSuccess={loadData}
         templates={templates}
         contacts={contacts}
+        availableTags={contactTags}
         initialType={retrySeed ? "broadcast" : undefined}
         initialSelectedPhones={retrySeed ? retrySeed.phones : undefined}
         initialName={retrySeed ? retrySeed.name : undefined}

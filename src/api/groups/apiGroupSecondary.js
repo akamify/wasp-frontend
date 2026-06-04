@@ -157,6 +157,7 @@ export function buildApiGroupSecondary(api, unwrap, API_BASE_URL) {
     },
     contacts: {
       list: (params) => api.get("/contacts", { params }).then(unwrap),
+      tags: () => api.get("/contacts/tags").then(unwrap),
       get: (id) => api.get(`/contacts/${id}`).then(unwrap),
       lookupByPhone: (phone) => api.get(`/contacts/lookup/${phone}`).then(unwrap),
       create: (payload) => api.post("/contacts", payload).then(unwrap),

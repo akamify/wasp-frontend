@@ -295,6 +295,7 @@ export const API: {
   };
   contacts: {
     list(params?: any): Promise<any>;
+    tags(): Promise<any>;
     get(id: string): Promise<any>;
     lookupByPhone(phone: string): Promise<any>;
     create(payload: any): Promise<any>;

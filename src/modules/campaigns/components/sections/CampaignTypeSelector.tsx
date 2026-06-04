@@ -1,4 +1,4 @@
-import { Cloud, FileSpreadsheet, Megaphone } from "lucide-react";
+import { ArrowRight, Cloud, FileSpreadsheet, Megaphone } from "lucide-react";
 
 import type { CampaignType } from "@modules/campaigns/types/campaign-form.types";
 
@@ -29,7 +29,7 @@ export function CampaignTypeSelector({ onSelect }: CampaignTypeSelectorProps) {
             <div className="text-base font-black text-ink-900 group-hover:text-brand-600 transition-colors">{type.title}</div>
             <div className="mt-2 text-xs font-medium leading-relaxed text-ink-800/60">{type.desc}</div>
             <div className="mt-6 flex items-center text-[10px] font-black uppercase tracking-widest text-brand-600 opacity-0 group-hover:opacity-100 transition-all">
-              Select Type â†’
+              Select Type <ArrowRight size={12} className="ml-1" />
             </div>
           </button>
         ))}

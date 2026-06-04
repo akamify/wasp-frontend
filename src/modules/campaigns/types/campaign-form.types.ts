@@ -2,12 +2,14 @@ import type { Dispatch, SetStateAction } from "react";
 
 export type CampaignType = "broadcast" | "csv" | "api";
 export type CampaignScheduleFrequency = "once" | "daily" | "weekly";
+export type CampaignAudienceMode = "manual" | "tags";
 
 export type CampaignContact = {
   _id: string;
   name?: string;
   phone: string;
   company?: string;
+  tags?: string[];
 };
 
 export type CsvParsed = { headers: string[]; rows: Record<string, string>[] };
@@ -53,6 +55,12 @@ export type CampaignCreatePayload = {
   scheduledAt?: string;
   schedule?: {
     frequency: CampaignScheduleFrequency;
+  };
+  audience?: {
+    mode: CampaignAudienceMode;
+    tags?: string[];
+    tagMatch?: "all" | "any";
+    runtime?: Omit<CampaignRecipient, "to">;
   };
   recipients?: CampaignRecipient[];
 };
