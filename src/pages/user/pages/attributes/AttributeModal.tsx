@@ -97,11 +97,7 @@ export function AttributeModal({ editing, form, open, saving, onChange, onClose,
                   onChange({ ...form, key: event.target.value.toLowerCase() });
                 }}
               />
-              <div className="ml-1 mt-1.5 flex flex-wrap items-center justify-between gap-2">
-                <span className="text-xs text-slate-500">{editing ? "The key is locked after creation." : "Lowercase snake_case, up to 50 characters."}</span>
-                <span className="font-mono text-xs font-bold text-brand-700">${form.key || "attribute_key"}</span>
-              </div>
-              {keyError ? <p className="ml-1 mt-1.5 text-xs font-semibold text-rose-600">{keyError}</p> : null}
+              {keyError ? <p className="ml-1 mt-1.5 text-xs font-semibold text-rose-600">{keyError}</p> : <p className="ml-1 mt-1.5 text-xs font-semibold text-slate-500">Lowercase snake_case, up to 50 characters.</p>}
             </div>
             <Input
               label="Optional Default Value"
@@ -119,10 +115,6 @@ export function AttributeModal({ editing, form, open, saving, onChange, onClose,
                 <PreviewValue label="Default" value={form.defaultValue.trim() || "Not set"} />
               </div>
             </div>
-
-            <p className="rounded-[10px] bg-brand-50 px-4 py-3 text-xs font-semibold leading-5 text-brand-800">
-              Example: City creates <span className="font-mono">$city</span>, which can be used in contact profiles and campaign personalization.
-            </p>
           </div>
         </div>
 

@@ -120,13 +120,6 @@ export default function AttributesPage() {
         <Button onClick={startCreate} className="h-11 gap-2"><Plus size={17} /> Create Attribute</Button>
       </div>
 
-      <div className="flex items-start gap-4 rounded-[12px] border border-brand-100 bg-brand-50/70 p-4 text-brand-900">
-        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-white text-brand-600 shadow-sm"><Braces size={19} /></div>
-        <p className="pt-1 text-sm font-semibold leading-6">
-          Attributes are contact fields like <span className="font-mono">$city</span> or <span className="font-mono">$last_order_id</span>. Assign values in contact profiles and use them in campaigns.
-        </p>
-      </div>
-
       {loadError ? (
         <div className="rounded-[12px] border border-rose-200 bg-rose-50 p-8 text-center">
           <div className="font-black text-rose-900">Attributes could not be loaded</div>

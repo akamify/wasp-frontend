@@ -207,11 +207,6 @@ export default function ContactsPage() {
 
       {error ? <Alert>{error}</Alert> : null}
 
-      <div className="flex items-start gap-3 rounded-[10px] border border-brand-100 bg-brand-50/70 px-4 py-3 text-sm font-semibold leading-6 text-brand-900">
-        <Braces size={18} className="mt-0.5 shrink-0 text-brand-600" />
-        <span>Use contact fields like <span className="font-mono">$name</span> and attributes like <span className="font-mono">${definitions.find((definition) => definition.active && definition.visible)?.key || "city"}</span> for campaign personalization.</span>
-      </div>
-
       <ContactsTableCard
         loading={loading}
         syncing={syncing}
