@@ -1,77 +1,156 @@
 import { motion } from "framer-motion";
+import {
+  CheckCheck,
+  ChevronLeft,
+  Image,
+  Mic,
+  MoreVertical,
+  Paperclip,
+  Phone,
+  Search,
+  Send,
+  ShieldCheck,
+  ShoppingBag,
+  Smile,
+  Video,
+} from "lucide-react";
 
-function HeroIllustration() {
-  // Lightweight SVG hero (replaces the heavy 3D canvas).
+function BusinessChatPreview() {
   return (
-    <svg
-      viewBox="0 0 720 720"
-      className="h-full w-full"
-      role="img"
-      aria-label="Product preview illustration"
-    >
-      <defs>
-        <linearGradient id="g1" x1="0" y1="0" x2="1" y2="1">
-          <stop offset="0" stopColor="#25D366" stopOpacity="0.95" />
-          <stop offset="0.55" stopColor="#11d593" stopOpacity="0.95" />
-          <stop offset="1" stopColor="#06b6d4" stopOpacity="0.95" />
-        </linearGradient>
-        <linearGradient id="g2" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0" stopColor="#ffffff" stopOpacity="0.92" />
-          <stop offset="1" stopColor="#ffffff" stopOpacity="0.65" />
-        </linearGradient>
-        <filter id="shadow" x="-30%" y="-30%" width="160%" height="160%">
-          <feDropShadow dx="0" dy="16" stdDeviation="18" floodColor="#0b1222" floodOpacity="0.16" />
-        </filter>
-        <pattern id="grid" width="28" height="28" patternUnits="userSpaceOnUse">
-          <path d="M 28 0 L 0 0 0 28" fill="none" stroke="rgba(11,16,32,0.06)" strokeWidth="1" />
-        </pattern>
-      </defs>
+    <div className="relative mx-auto flex h-full w-full max-w-[560px] items-center justify-center">
+      <div className="absolute left-0 top-[18%] h-36 w-36 rounded-full bg-[#25D366]/20 blur-3xl" />
+      <div className="absolute bottom-[12%] right-0 h-44 w-44 rounded-full bg-cyan-400/20 blur-3xl" />
 
-      <rect x="0" y="0" width="720" height="720" fill="url(#grid)" />
+      <motion.div
+        initial={{ opacity: 0, y: 24, rotate: 1 }}
+        animate={{ opacity: 1, y: 0, rotate: 0 }}
+        transition={{ duration: 0.65, ease: [0.22, 1, 0.36, 1] }}
+        className="relative w-full overflow-hidden rounded-[28px] border border-slate-200/80 bg-white shadow-[0_35px_90px_-28px_rgba(15,23,42,0.38)]"
+      >
+        <div className="flex h-9 items-center justify-between border-b border-slate-200 bg-slate-50 px-4">
+          <div className="flex gap-1.5">
+            <span className="h-2.5 w-2.5 rounded-full bg-rose-400" />
+            <span className="h-2.5 w-2.5 rounded-full bg-amber-400" />
+            <span className="h-2.5 w-2.5 rounded-full bg-emerald-400" />
+          </div>
+          <div className="flex items-center gap-1.5 text-[10px] font-bold text-slate-400">
+            <ShieldCheck size={12} className="text-emerald-500" />
+            Secure business conversation
+          </div>
+          <div className="w-11" />
+        </div>
 
-      {/* Glow blobs */}
-      <circle cx="520" cy="170" r="150" fill="#25D366" opacity="0.10" />
-      <circle cx="210" cy="520" r="170" fill="#06b6d4" opacity="0.10" />
+        <div className="flex items-center gap-3 border-b border-slate-200 bg-[#f0f2f5] px-3 py-3 sm:px-4">
+          <button type="button" aria-label="Back" className="text-slate-500 sm:hidden"><ChevronLeft size={20} /></button>
+          <div className="relative shrink-0">
+            <div className="flex h-11 w-11 items-center justify-center rounded-full bg-gradient-to-br from-[#111827] to-[#374151] text-sm font-black text-white ring-2 ring-white">
+              AM
+            </div>
+            <span className="absolute bottom-0 right-0 h-3 w-3 rounded-full border-2 border-[#f0f2f5] bg-[#25D366]" />
+          </div>
+          <div className="min-w-0 flex-1">
+            <div className="flex items-center gap-1.5">
+              <div className="truncate text-sm font-black text-slate-900">Akamify Store</div>
+              <ShieldCheck size={14} className="shrink-0 fill-[#1d9bf0] text-white" />
+            </div>
+            <div className="text-[11px] font-medium text-slate-500">Business account · typically replies instantly</div>
+          </div>
+          <div className="flex items-center gap-0.5 text-slate-600">
+            <HeaderAction label="Video call"><Video size={17} /></HeaderAction>
+            <HeaderAction label="Call"><Phone size={16} /></HeaderAction>
+            <HeaderAction label="Search"><Search size={16} /></HeaderAction>
+            <HeaderAction label="More options"><MoreVertical size={18} /></HeaderAction>
+          </div>
+        </div>
 
+        <div className="relative h-[390px] overflow-hidden bg-[#efeae2] sm:h-[430px]">
+          <div className="absolute inset-0 opacity-[0.055] [background-image:radial-gradient(#0f172a_1px,transparent_1px)] [background-size:16px_16px]" />
+          <div className="relative flex h-full flex-col px-3 py-4 sm:px-5">
+            <div className="mx-auto rounded-[7px] bg-white/80 px-3 py-1 text-[9px] font-black uppercase tracking-wider text-slate-500 shadow-sm">
+              Today
+            </div>
 
-      {/* Phone */}
-      <g filter="url(#shadow)" transform="translate(220 90)">
-        <rect x="0" y="0" width="280" height="540" rx="46" fill="#d7dbe0" />
-        <rect x="16" y="16" width="248" height="508" rx="40" fill="#c7cbd0" />
-        <rect x="34" y="54" width="212" height="434" rx="30" fill="#0b1222" />
+            <div className="mt-4 max-w-[78%] self-start rounded-[10px] rounded-tl-[3px] bg-white px-3 py-2.5 shadow-sm">
+              <p className="text-[12px] font-medium leading-5 text-slate-800 sm:text-[13px]">
+                Hi! I saw the summer collection. Is the blue linen shirt available in size M?
+              </p>
+              <MessageMeta time="10:24 AM" />
+            </div>
 
-        {/* Screen */}
-        <rect x="44" y="66" width="192" height="410" rx="24" fill="#efe8df" />
-        <rect x="44" y="66" width="192" height="70" rx="24" fill="#075e54" />
-        <circle cx="76" cy="100" r="16" fill="#ffffff" opacity="0.92" />
-        <rect x="104" y="92" width="110" height="12" rx="6" fill="#ffffff" opacity="0.92" />
-        <rect x="104" y="110" width="84" height="9" rx="4.5" fill="#ffffff" opacity="0.72" />
+            <div className="mt-2 max-w-[82%] self-end rounded-[10px] rounded-tr-[3px] bg-[#d9fdd3] px-3 py-2.5 shadow-sm">
+              <p className="text-[12px] font-medium leading-5 text-slate-800 sm:text-[13px]">
+                Hi Riya! Yes, it is available. I have shared the product below.
+              </p>
+              <MessageMeta time="10:24 AM" outbound />
+            </div>
 
-        {/* Message bubbles */}
-        <g>
-          <rect x="62" y="170" width="150" height="56" rx="16" fill="url(#g2)" />
-          <rect x="70" y="188" width="130" height="10" rx="5" fill="#4b5f82" opacity="0.55" />
-          <rect x="70" y="205" width="104" height="10" rx="5" fill="#4b5f82" opacity="0.35" />
-        </g>
-        <g>
-          <rect x="86" y="246" width="150" height="56" rx="16" fill="url(#g2)" />
-          <rect x="94" y="264" width="130" height="10" rx="5" fill="#4b5f82" opacity="0.55" />
-          <rect x="94" y="281" width="98" height="10" rx="5" fill="#4b5f82" opacity="0.35" />
-        </g>
-        <g>
-          <rect x="62" y="322" width="150" height="56" rx="16" fill="url(#g2)" />
-          <rect x="70" y="340" width="130" height="10" rx="5" fill="#4b5f82" opacity="0.55" />
-          <rect x="70" y="357" width="112" height="10" rx="5" fill="#4b5f82" opacity="0.35" />
-        </g>
+            <div className="mt-2 w-[82%] self-end overflow-hidden rounded-[10px] rounded-tr-[3px] bg-[#d9fdd3] shadow-sm">
+              <div className="flex items-center gap-3 bg-white/70 p-2.5">
+                <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-[7px] bg-gradient-to-br from-sky-100 to-blue-200 text-blue-700">
+                  <ShoppingBag size={23} />
+                </div>
+                <div className="min-w-0 flex-1">
+                  <div className="truncate text-[12px] font-black text-slate-900">Premium Linen Shirt</div>
+                  <div className="mt-0.5 text-[10px] font-semibold text-slate-500">Sky Blue · Size M</div>
+                  <div className="mt-1 text-[12px] font-black text-emerald-700">₹1,499</div>
+                </div>
+              </div>
+              <button type="button" className="flex w-full items-center justify-center border-t border-emerald-900/10 py-2 text-[11px] font-black text-[#008069]">
+                View product
+              </button>
+              <div className="px-2.5 pb-1.5"><MessageMeta time="10:25 AM" outbound /></div>
+            </div>
 
-        {/* CTA buttons */}
-        <rect x="62" y="408" width="174" height="18" rx="9" fill="url(#g1)" opacity="0.85" />
-        <rect x="62" y="434" width="174" height="18" rx="9" fill="url(#g1)" opacity="0.60" />
-      </g>
+            <div className="mt-2 max-w-[72%] self-start rounded-[10px] rounded-tl-[3px] bg-white px-3 py-2.5 shadow-sm">
+              <p className="text-[12px] font-medium leading-5 text-slate-800 sm:text-[13px]">Perfect. Can you deliver it by Friday?</p>
+              <MessageMeta time="10:26 AM" />
+            </div>
 
-      {/* Accent ring */}
-      <circle cx="520" cy="560" r="74" fill="none" stroke="url(#g1)" strokeWidth="10" opacity="0.35" />
-    </svg>
+            <div className="mt-2 flex items-center gap-1.5 self-start rounded-full bg-white/75 px-3 py-2 shadow-sm">
+              <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-slate-400 [animation-delay:-0.3s]" />
+              <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-slate-400 [animation-delay:-0.15s]" />
+              <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-slate-400" />
+              <span className="ml-1 text-[9px] font-bold text-slate-400">Akamify Store is typing</span>
+            </div>
+          </div>
+        </div>
+
+        <div className="flex items-end gap-2 border-t border-slate-200 bg-[#f0f2f5] px-3 py-3">
+          <div className="flex min-h-11 flex-1 items-center gap-2 rounded-[22px] bg-white px-3 shadow-sm">
+            <Smile size={19} className="shrink-0 text-slate-500" />
+            <div className="min-w-0 flex-1 truncate text-[12px] font-medium text-slate-400 sm:text-[13px]">Type a message</div>
+            <button type="button" aria-label="Attach file" className="text-slate-500"><Paperclip size={18} /></button>
+            <button type="button" aria-label="Add image" className="hidden text-slate-500 sm:block"><Image size={18} /></button>
+          </div>
+          <button type="button" aria-label="Voice message" className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-[#00a884] text-white shadow-md shadow-emerald-700/20">
+            <Mic size={18} />
+          </button>
+        </div>
+      </motion.div>
+
+      <motion.div
+        initial={{ opacity: 0, x: -12 }}
+        animate={{ opacity: 1, x: 0 }}
+        transition={{ delay: 0.65, duration: 0.45 }}
+        className="absolute -left-5 bottom-20 hidden items-center gap-2 rounded-xl border border-emerald-100 bg-white px-3 py-2 shadow-xl sm:flex"
+      >
+        <div className="flex h-8 w-8 items-center justify-center rounded-full bg-emerald-50 text-emerald-600"><Send size={14} /></div>
+        <div><div className="text-[10px] font-black text-slate-900">Reply sent</div><div className="text-[9px] font-semibold text-slate-400">in 8 seconds</div></div>
+      </motion.div>
+    </div>
+  );
+}
+
+function HeaderAction({ children, label }: { children: React.ReactNode; label: string }) {
+  return <button type="button" aria-label={label} className="rounded-full p-2 transition-colors hover:bg-slate-200">{children}</button>;
+}
+
+function MessageMeta({ outbound, time }: { outbound?: boolean; time: string }) {
+  return (
+    <div className="mt-1 flex items-center justify-end gap-1 text-[8px] font-semibold text-slate-500">
+      <span>{time}</span>
+      {outbound ? <CheckCheck size={13} className="text-[#53bdeb]" /> : null}
+    </div>
   );
 }
 
@@ -79,57 +158,42 @@ function Stat({ val, label }: { val: string; label: string }) {
   return (
     <div className="flex flex-col">
       <span className="text-2xl font-extrabold text-ink-900">{val}</span>
-      <span className="text-xs text-ink-900/55 font-medium">{label}</span>
+      <span className="text-xs font-medium text-ink-900/55">{label}</span>
     </div>
   );
 }
 
 export function HeroSection() {
   return (
-    <section className="relative pt-15 lg:pt-20">
-      <div className="absolute inset-0 pointer-events-none">
+    <section className="relative overflow-hidden pt-15 lg:pt-20">
+      <div className="pointer-events-none absolute inset-0">
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_14%_18%,rgba(37,211,102,0.16),transparent_45%)]" />
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_78%_30%,rgba(6,182,212,0.12),transparent_48%)]" />
       </div>
 
-      <div className="relative mx-auto max-w-7xl px-6 lg:px-8 bg-white/60 backdrop-blur">
-        <div className="grid items-center gap-12 lg:grid-cols-2">
-          {/* Left */}
+      <div className="relative mx-auto max-w-7xl bg-white/60 px-6 backdrop-blur lg:px-8">
+        <div className="grid items-center gap-12 lg:grid-cols-[0.92fr_1.08fr]">
           <div>
+            <h1 className="mt-6 text-4xl font-black tracking-tight text-ink-900 sm:text-5xl lg:text-6xl">
+              <span className="block">Send Smarter.</span>
+              <span className="block bg-gradient-to-r from-[#25D366] via-[#11d593] to-[#06b6d4] bg-clip-text text-transparent">
+                Convert Faster.
+              </span>
+              <span className="block text-ink-900/70">Scale Bigger.</span>
+            </h1>
 
-            <div className="mt-6">
-              <h1 className="text-4xl font-black tracking-tight text-ink-900 sm:text-5xl lg:text-6xl">
-                <span className="block">Send Smarter.</span>
-                <span className="block bg-gradient-to-r from-[#25D366] via-[#11d593] to-[#06b6d4] bg-clip-text text-transparent">
-                  Convert Faster.
-                </span>
-                <span className="block text-ink-900/70">Scale Bigger.</span>
-              </h1>
-            </div>
-
-            <p className="mt-6 text-lg text-ink-900/70 leading-relaxed max-w-md">
-              The all-in-one WhatsApp Business API platform. Automate campaigns, manage contacts, and drive real revenue
-              — all from one beautiful dashboard.
+            <p className="mt-6 max-w-md text-lg leading-relaxed text-ink-900/70">
+              The all-in-one WhatsApp Business API platform. Automate campaigns, manage contacts, and turn every customer conversation into real revenue.
             </p>
 
             <div className="mt-8 flex flex-wrap items-center gap-4">
-              <a
-                href="/register"
-                className="group relative flex items-center gap-2 bg-gradient-to-r from-[#25D366] to-[#06b77e] text-white font-bold px-8 py-4 rounded-2xl text-base shadow-2xl shadow-[#25D366]/30 hover:shadow-[#25D366]/50 hover:scale-105 transition-all duration-300"
-              >
+              <a href="/register" className="group relative flex items-center gap-2 rounded-2xl bg-gradient-to-r from-[#25D366] to-[#06b77e] px-8 py-4 text-base font-bold text-white shadow-2xl shadow-[#25D366]/30 transition-all duration-300 hover:scale-105 hover:shadow-[#25D366]/50">
                 Start Free Trial
-                <svg className="w-4 h-4 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg className="h-4 w-4 transition-transform group-hover:translate-x-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
                 </svg>
               </a>
-              <a
-                href="#how-it-works"
-                className="flex items-center gap-2 border border-ink-900/12 text-ink-900/80 hover:text-ink-900 hover:border-ink-900/18 font-semibold px-8 py-4 rounded-2xl text-base transition-all duration-300 hover:bg-white/60"
-              >
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
+              <a href="#how-it-works" className="flex items-center gap-2 rounded-2xl border border-ink-900/12 px-8 py-4 text-base font-semibold text-ink-900/80 transition-all duration-300 hover:border-ink-900/18 hover:bg-white/60 hover:text-ink-900">
                 Watch Demo
               </a>
             </div>
@@ -141,16 +205,15 @@ export function HeroSection() {
             </div>
           </div>
 
-          {/* Right illustration */}
           <motion.div
             initial={{ opacity: 0, y: 14 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.55, ease: "easeOut", delay: 0.05 }}
-            className="relative h-[420px] sm:h-[520px] lg:h-[620px]"
+            className="relative h-[570px] sm:h-[640px] lg:h-[680px]"
           >
-            <div className="absolute inset-0 rounded-3xl bg-[radial-gradient(circle_at_50%_50%,rgba(37,211,102,0.08),transparent_70%)]" />
-            <div className="relative h-full p-2">
-              <HeroIllustration />
+            <div className="absolute inset-0 rounded-3xl bg-[radial-gradient(circle_at_50%_50%,rgba(37,211,102,0.09),transparent_70%)]" />
+            <div className="relative h-full py-5 lg:py-8">
+              <BusinessChatPreview />
             </div>
           </motion.div>
         </div>
