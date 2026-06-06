@@ -149,9 +149,10 @@ export function useCampaignForm(props: CampaignCreateModalProps) {
   const audienceCount = useMemo(() => {
     if (type === "csv") return csvParsed.rows.length;
     if (type === "broadcast" && audienceMode === "tags") return tagMatchedContacts.length;
+    if (type === "broadcast" && audienceMode === "attributes") return estimate?.totalRecipients || 0;
     if (type === "broadcast") return Object.keys(selectedPhones).length;
     return 0;
-  }, [type, audienceMode, csvParsed.rows.length, selectedPhones, tagMatchedContacts.length]);
+  }, [type, audienceMode, csvParsed.rows.length, selectedPhones, tagMatchedContacts.length, estimate?.totalRecipients]);
 
   const csvPreviewData = useMemo(() => {
     if (!csvFirstRow) return { to: "", variables: [] as string[], headerVariables: [] as string[] };
@@ -204,6 +205,7 @@ export function useCampaignForm(props: CampaignCreateModalProps) {
   useCampaignFormEffects({
     isOpen, setLimitsLoading, setMessagingTierRaw, setRemainingQuotaRaw, setWalletBalance, initialType, initialName,
     initialSelectedPhones, setType, setName, setContactQuery, setSelectedPhones, setAudienceMode, setSelectedTags, setMessageType, setTemplateId,
+    setAttributeFilters, setBodyVariableMappings,
     setScheduleFrequency,
     setScheduledAt, setHeaderVars, setBodyVars, setOtpCode, setButtonValues, setButtonValueByIndex, setButtonTtlMinutes,
     setFlowTokens, setFlowActionDataJson, setCsvBusy, setCsvFileName, setCsvText, setCsvPhoneColumn, setCsvBodyMap,
@@ -212,6 +214,7 @@ export function useCampaignForm(props: CampaignCreateModalProps) {
     buildRecipientsForCurrentState: actions.buildRecipientsForCurrentState, templateId, setEstimateLoading, toast,
     headerMediaOverride, csvText, selectedPhones, selectedTagList, csvPhoneColumn, csvBodyMap, csvHeaderMap, csvButtonMap, headerVars,
     bodyVars, resolvedButtonValues, otpCode, flowActionDataJson, flowTokens,
+    attributeFilters,
   });
 
   return {

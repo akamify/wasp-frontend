@@ -3,6 +3,7 @@ import { X } from "lucide-react";
 
 type Props = {
   busy: boolean;
+  definitions: any[];
   form: any;
   open: boolean;
   onClose: () => void;
@@ -10,7 +11,7 @@ type Props = {
   onSave: () => void;
 };
 
-export function EditContactModal({ busy, form, open, onClose, onFormChange, onSave }: Props) {
+export function EditContactModal({ busy, definitions, form, open, onClose, onFormChange, onSave }: Props) {
   if (!open) return null;
 
   return createPortal(
@@ -27,16 +28,12 @@ export function EditContactModal({ busy, form, open, onClose, onFormChange, onSa
           </div>
           <EditInput label="Language" value={form.language} placeholder="e.g. en, hi" onChange={(value) => onFormChange((previous) => ({ ...previous, language: value }))} />
           <EditInput label="Tags (comma separated)" value={form.tags} placeholder="vip, lead, returning" onChange={(value) => onFormChange((previous) => ({ ...previous, tags: value }))} />
-          <div>
+          <div className="space-y-3 rounded-[5px] border border-slate-100 p-4">
             <div className="text-xs font-black uppercase tracking-widest text-slate-400">Attributes</div>
-            <textarea
-              className="mt-2 w-full min-h-[90px] rounded-[5px] border border-slate-200 px-3 py-2 text-sm font-semibold"
-              value={form.attributes || ""}
-              placeholder={"city: Delhi\nplan: premium\nsource: website"}
-              onChange={(e) => onFormChange((previous) => ({ ...previous, attributes: e.target.value }))}
-            />
-            <div className="mt-1 text-[10px] font-bold uppercase tracking-wider text-slate-400">Use key:value per line</div>
+            {definitions.map((definition) => <ManagedAttributeInput key={definition.key} definition={definition} value={form.attributes?.[definition.key]} onChange={(value) => onFormChange((previous) => ({ ...previous, attributes: { ...(previous.attributes || {}), [definition.key]: value } }))} />)}
+            {!definitions.length ? <div className="text-sm font-semibold text-slate-500">No active attributes are available.</div> : null}
           </div>
+          {Object.keys(form.legacyAttributes || {}).length ? <details className="rounded-[5px] border border-amber-200 bg-amber-50 p-4"><summary className="cursor-pointer text-xs font-black uppercase tracking-widest text-amber-800">Legacy attributes</summary><div className="mt-3 space-y-2">{Object.entries(form.legacyAttributes).map(([key, value]) => <div key={key} className="flex justify-between gap-3 text-xs"><span className="font-black">{key}</span><span>{String(value)}</span></div>)}</div></details> : null}
           <div>
             <div className="text-xs font-black uppercase tracking-widest text-slate-400">Notes</div>
             <textarea className="mt-2 w-full min-h-[110px] rounded-[5px] border border-slate-200 px-3 py-2 text-sm font-semibold" value={form.notes} onChange={(e) => onFormChange((previous) => ({ ...previous, notes: e.target.value }))} />
@@ -54,11 +51,18 @@ export function EditContactModal({ busy, form, open, onClose, onFormChange, onSa
   );
 }
 
-function EditInput({ label, onChange, placeholder, value }: { label: string; onChange: (value: string) => void; placeholder?: string; value: string }) {
+function ManagedAttributeInput({ definition, value, onChange }: { definition: any; value: unknown; onChange: (value: unknown) => void }) {
+  if (definition.type === "boolean") {
+    return <label className="block text-xs font-black uppercase tracking-widest text-slate-400">{definition.label}{definition.required ? " *" : ""}<select className="mt-2 w-full rounded-[5px] border border-slate-200 px-3 py-2 text-sm font-semibold" value={value === true ? "true" : value === false ? "false" : ""} disabled={!definition.editable} onChange={(event) => onChange(event.target.value === "" ? null : event.target.value === "true")}><option value="">Not set</option><option value="true">Yes</option><option value="false">No</option></select></label>;
+  }
+  return <EditInput label={`${definition.label}${definition.required ? " *" : ""}`} value={String(value ?? "")} type={definition.type === "text" ? "text" : definition.type} disabled={!definition.editable} placeholder={definition.defaultValue !== undefined ? `Default: ${String(definition.defaultValue)}` : undefined} onChange={(next) => onChange(next || null)} />;
+}
+
+function EditInput({ label, onChange, placeholder, value, disabled, type = "text" }: { label: string; onChange: (value: string) => void; placeholder?: string; value: string; disabled?: boolean; type?: string }) {
   return (
     <div>
       <div className="text-xs font-black uppercase tracking-widest text-slate-400">{label}</div>
-      <input className="mt-2 w-full rounded-[5px] border border-slate-200 px-3 py-2 text-sm font-semibold" value={value} onChange={(e) => onChange(e.target.value)} placeholder={placeholder} />
+      <input type={type} disabled={disabled} className="mt-2 w-full rounded-[5px] border border-slate-200 px-3 py-2 text-sm font-semibold disabled:bg-slate-50" value={value} onChange={(e) => onChange(e.target.value)} placeholder={placeholder} />
     </div>
   );
 }

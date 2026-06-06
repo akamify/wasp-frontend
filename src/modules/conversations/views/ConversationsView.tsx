@@ -56,7 +56,7 @@ export function ConversationsView() {
 
   const { customerServiceWindowOpen, windowRemainingMs } = useCustomerServiceWindow(activeConversation, messages);
   const { ensureMediaUrl, mediaErrors, mediaLoading, mediaUrls, selectedImage, setSelectedImage } = useMessageActions(messages);
-  const { editBusy, editForm, editOpen, openEdit, saveEdit, setEditForm, setEditOpen } = useContactEditor({
+  const { definitions, editBusy, editForm, editOpen, openEdit, saveEdit, setEditForm, setEditOpen } = useContactEditor({
     contactDetail,
     refreshListSilently,
     setContactDetail,
@@ -183,6 +183,7 @@ export function ConversationsView() {
 
       <EditContactModal
         busy={editBusy}
+        definitions={definitions.filter((definition: any) => definition.active && definition.visible)}
         form={editForm}
         open={editOpen}
         onClose={() => setEditOpen(false)}

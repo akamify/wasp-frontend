@@ -13,41 +13,28 @@ type Args = {
 export function useContactEditor({ contactDetail, refreshListSilently, setContactDetail, setError, setOk, urlPhone }: Args) {
   const [editOpen, setEditOpen] = useState(false);
   const [editBusy, setEditBusy] = useState(false);
-  const [editForm, setEditForm] = useState<any>({ name: "", email: "", language: "", tags: "", attributes: "", notes: "" });
+  const [definitions, setDefinitions] = useState<any[]>([]);
+  const [editForm, setEditForm] = useState<any>({ name: "", email: "", language: "", tags: "", attributes: {}, legacyAttributes: {}, notes: "" });
 
-  const formatAttributes = (attributes: any) => {
-    if (!attributes || typeof attributes !== "object") return "";
-    return Object.entries(attributes)
-      .filter(([key]) => String(key || "").trim())
-      .map(([key, value]) => `${String(key).trim()}:${String(value ?? "").trim()}`)
-      .join("\n");
-  };
-
-  const parseAttributes = (raw: string) => {
-    const out: Record<string, string> = {};
-    const lines = String(raw || "")
-      .split(/\n+/)
-      .map((line) => line.trim())
-      .filter(Boolean);
-    for (const line of lines) {
-      const splitAt = line.indexOf(":");
-      if (splitAt <= 0) continue;
-      const key = line.slice(0, splitAt).trim();
-      const value = line.slice(splitAt + 1).trim();
-      if (!key || !value) continue;
-      out[key] = value;
-    }
-    return out;
-  };
-
-  const openEdit = () => {
+  const openEdit = async () => {
     const contact = contactDetail || {};
+    let activeDefinitions: any[] = [];
+    try {
+      const result = await API.contacts.attributes({ includeInactive: true });
+      setDefinitions(result.definitions || []);
+      activeDefinitions = (result.definitions || []).filter((definition: any) => definition.active);
+    } catch {
+      setDefinitions([]);
+    }
+    const activeKeys = new Set(activeDefinitions.map((definition: any) => definition.key));
+    const attributes = contact?.attributes && typeof contact.attributes === "object" ? contact.attributes : {};
     setEditForm({
       name: contact?.name || "",
       email: contact?.email || "",
       language: contact?.language || "",
       tags: Array.isArray(contact?.tags) ? contact.tags.join(", ") : "",
-      attributes: formatAttributes(contact?.attributes),
+      attributes: Object.fromEntries(Object.entries(attributes).filter(([key]) => activeKeys.has(key))),
+      legacyAttributes: Object.fromEntries(Object.entries(attributes).filter(([key]) => !activeKeys.has(key))),
       notes: contact?.notes || "",
     });
     setEditOpen(true);
@@ -64,7 +51,7 @@ export function useContactEditor({ contactDetail, refreshListSilently, setContac
         language: String(editForm.language || "").trim(),
         notes: String(editForm.notes || "").trim(),
         tags: String(editForm.tags || "").split(",").map((tag: string) => tag.trim()).filter(Boolean),
-        attributes: parseAttributes(String(editForm.attributes || "")),
+        attributes: editForm.attributes || {},
       };
       const res = contactDetail?._id ? await API.contacts.update(String(contactDetail._id), payload) : await API.contacts.create(payload);
       setContactDetail(res?.contact || null);
@@ -79,5 +66,5 @@ export function useContactEditor({ contactDetail, refreshListSilently, setContac
     }
   };
 
-  return { editBusy, editForm, editOpen, openEdit, saveEdit, setEditForm, setEditOpen };
+  return { definitions, editBusy, editForm, editOpen, openEdit, saveEdit, setEditForm, setEditOpen };
 }
