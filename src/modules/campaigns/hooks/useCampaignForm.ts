@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { API } from "@api/api";
 
-import type { CampaignAttributeDefinition, CampaignAttributeFilter, CampaignAudienceMode, CampaignContact, CampaignEstimate, CampaignScheduleFrequency, CampaignType, CampaignVariableMapping, CampaignWalletBalance } from "@modules/campaigns/types/campaign-form.types";
+import type { CampaignAttributeDefinition, CampaignAttributeFilter, CampaignAudienceMode, CampaignContact, CampaignEstimate, CampaignScheduleType, CampaignType, CampaignVariableMapping, CampaignWalletBalance } from "@modules/campaigns/types/campaign-form.types";
 import { digitsOnly, parseCsvText } from "@modules/campaigns/utils/campaignFormatters";
 import { createCampaignFormActions } from "@modules/campaigns/hooks/use-campaign-form/actions";
 import { useCampaignFormEffects } from "@modules/campaigns/hooks/use-campaign-form/effects";
@@ -34,8 +34,10 @@ export function useCampaignForm(props: CampaignCreateModalProps) {
   const [messageType, setMessageType] = useState<"template" | "regular">("template");
   const [name, setName] = useState("");
   const [templateId, setTemplateId] = useState("");
-  const [scheduledAt, setScheduledAt] = useState("");
-  const [scheduleFrequency, setScheduleFrequency] = useState<CampaignScheduleFrequency>("once");
+  const [scheduleType, setScheduleType] = useState<CampaignScheduleType>("immediate");
+  const [scheduleDate, setScheduleDate] = useState("");
+  const [scheduleTime, setScheduleTime] = useState("");
+  const [scheduleWeekdays, setScheduleWeekdays] = useState<number[]>([]);
   const [busy, setBusy] = useState(false);
   const [walletBalance, setWalletBalance] = useState<CampaignWalletBalance | null>(null);
   const [estimateLoading, setEstimateLoading] = useState(false);
@@ -44,6 +46,7 @@ export function useCampaignForm(props: CampaignCreateModalProps) {
   const [selectedPhones, setSelectedPhones] = useState<Record<string, true>>({});
   const [audienceMode, setAudienceMode] = useState<CampaignAudienceMode>("manual");
   const [selectedTags, setSelectedTags] = useState<Record<string, true>>({});
+  const [tagMatchMode, setTagMatchMode] = useState<"any" | "all">("all");
   const [attributeDefinitions, setAttributeDefinitions] = useState<CampaignAttributeDefinition[]>([]);
   const [attributeFilters, setAttributeFilters] = useState<CampaignAttributeFilter[]>([]);
 
@@ -142,9 +145,11 @@ export function useCampaignForm(props: CampaignCreateModalProps) {
     if (!selectedTagList.length) return [];
     return contacts.filter((contact) => {
       const tags = new Set((contact.tags || []).map((tag) => String(tag || "").trim()).filter(Boolean));
-      return selectedTagList.every((tag) => tags.has(tag));
+      return tagMatchMode === "any"
+        ? selectedTagList.some((tag) => tags.has(tag))
+        : selectedTagList.every((tag) => tags.has(tag));
     });
-  }, [contacts, selectedTagList]);
+  }, [contacts, selectedTagList, tagMatchMode]);
 
   const audienceCount = useMemo(() => {
     if (type === "csv") return csvParsed.rows.length;
@@ -199,15 +204,16 @@ export function useCampaignForm(props: CampaignCreateModalProps) {
     audienceMode, selectedTagList, tagMatchedContacts, setSelectedTags, attributeFilters, bodyVariableMappings,
     headerMediaOverride, resolvedButtonValues, flowActionDataJson, csvParsed, csvHeaderMap, csvButtonMap, buttonTtlMinutes,
     flowTokens, csvBodyMap, setHeaderMediaUploading, setHeaderMediaOverride, setHeaderVars, setBusy, messageType,
-    name, templateId, scheduledAt, scheduleFrequency, onSuccess, onClose, estimate, demoTo, csvPreviewData, csvFirstRow,
+    name, templateId, scheduleType, scheduleDate, scheduleTime, scheduleWeekdays, onSuccess, onClose, estimate, demoTo, csvPreviewData, csvFirstRow,
+    tagMatchMode,
   });
 
   useCampaignFormEffects({
     isOpen, setLimitsLoading, setMessagingTierRaw, setRemainingQuotaRaw, setWalletBalance, initialType, initialName,
     initialSelectedPhones, setType, setName, setContactQuery, setSelectedPhones, setAudienceMode, setSelectedTags, setMessageType, setTemplateId,
     setAttributeFilters, setBodyVariableMappings,
-    setScheduleFrequency,
-    setScheduledAt, setHeaderVars, setBodyVars, setOtpCode, setButtonValues, setButtonValueByIndex, setButtonTtlMinutes,
+    setScheduleType, setScheduleDate, setScheduleTime, setScheduleWeekdays, setTagMatchMode,
+    setHeaderVars, setBodyVars, setOtpCode, setButtonValues, setButtonValueByIndex, setButtonTtlMinutes,
     setFlowTokens, setFlowActionDataJson, setCsvBusy, setCsvFileName, setCsvText, setCsvPhoneColumn, setCsvBodyMap,
     setCsvHeaderMap, setCsvButtonMap, setDemoTo, setDemoBusy, selectedTemplate, summary, buttonTtlMinutes,
     buttonsNeedingValue, csvColumns, type, audienceMode, autoMapCsvIfEmpty: actions.autoMapCsvIfEmpty, buttonValues, setEstimate,
@@ -219,8 +225,22 @@ export function useCampaignForm(props: CampaignCreateModalProps) {
 
   return {
     busy, type, setType, limitsLoading, tierInfo, audienceCount, estimateLoading, estimate, walletBalance,
-    name, setName, scheduledAt, setScheduledAt, scheduleFrequency, setScheduleFrequency, templateId, setTemplateId, approvedTemplates, selectedPhones,
+    name, setName, scheduleType,
+    changeScheduleType: (nextType: CampaignScheduleType) => {
+      setScheduleType(nextType);
+      if (nextType !== "once") setScheduleDate("");
+      if (nextType !== "weekly") setScheduleWeekdays([]);
+      if (nextType === "immediate") setScheduleTime("");
+    },
+    scheduleDate, setScheduleDate, scheduleTime, setScheduleTime, scheduleWeekdays,
+    toggleScheduleWeekday: (weekday: number) => setScheduleWeekdays((current) =>
+      current.includes(weekday)
+        ? current.filter((value) => value !== weekday)
+        : [...current, weekday].sort((a, b) => a - b)
+    ),
+    templateId, setTemplateId, approvedTemplates, selectedPhones,
     audienceMode, setAudienceMode, availableTags, selectedTags, setSelectedTags, selectedTagList, tagMatchedContacts,
+    tagMatchMode, setTagMatchMode,
     attributeDefinitions, attributeFilters, setAttributeFilters, bodyVariableMappings, setBodyVariableMappings,
     contactQuery, setContactQuery, filteredContacts, toggleSelectedPhone: actions.toggleSelectedPhone, toggleSelectedTag: actions.toggleSelectedTag, summary,
     headerVars, setHeaderVars, bodyVars, setBodyVars, otpCode, setOtpCode, buttonsNeedingValue, buttonValueByIndex,

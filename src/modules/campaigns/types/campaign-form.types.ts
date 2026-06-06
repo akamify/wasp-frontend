@@ -2,6 +2,7 @@ import type { Dispatch, SetStateAction } from "react";
 
 export type CampaignType = "broadcast" | "csv" | "api";
 export type CampaignScheduleFrequency = "once" | "daily" | "weekly";
+export type CampaignScheduleType = "immediate" | CampaignScheduleFrequency;
 export type CampaignAudienceMode = "manual" | "tags" | "attributes";
 
 export type CampaignAttributeDefinition = {
@@ -74,9 +75,12 @@ export type CampaignCreatePayload = {
   name?: string;
   type?: CampaignType;
   templateId: string;
-  scheduledAt?: string;
   schedule?: {
-    frequency: CampaignScheduleFrequency;
+    type: CampaignScheduleFrequency;
+    timezone: string;
+    runAt?: string;
+    timeOfDay?: string;
+    weekdays?: number[];
   };
   audience?: {
     mode: CampaignAudienceMode;

@@ -9,6 +9,7 @@ type CampaignAudienceSectionProps = {
   audienceMode: CampaignAudienceMode;
   availableTags: string[];
   selectedTags: Record<string, true>;
+  tagMatchMode: "any" | "all";
   tagMatchedCount: number;
   contactQuery: string;
   filteredContacts: CampaignContact[];
@@ -16,6 +17,7 @@ type CampaignAudienceSectionProps = {
   onContactQueryChange: (value: string) => void;
   onTogglePhone: (phone: string) => void;
   onToggleTag: (tag: string) => void;
+  onTagMatchModeChange: (value: "any" | "all") => void;
   attributeDefinitions: CampaignAttributeDefinition[];
   attributeFilters: CampaignAttributeFilter[];
   onAttributeFiltersChange: (filters: CampaignAttributeFilter[]) => void;
@@ -27,6 +29,7 @@ export function CampaignAudienceSection({
   audienceMode,
   availableTags,
   selectedTags,
+  tagMatchMode,
   tagMatchedCount,
   contactQuery,
   filteredContacts,
@@ -34,6 +37,7 @@ export function CampaignAudienceSection({
   onContactQueryChange,
   onTogglePhone,
   onToggleTag,
+  onTagMatchModeChange,
   attributeDefinitions,
   attributeFilters,
   onAttributeFiltersChange,
@@ -114,6 +118,16 @@ export function CampaignAudienceSection({
 
       {!lockRecipients && audienceMode === "tags" ? (
         <div className="mt-4 max-h-64 overflow-auto rounded-[5px] border border-ink-900/10 bg-white p-3">
+          <div className="mb-3 max-w-56">
+            <Select
+              label="Tag matching"
+              value={tagMatchMode}
+              onChange={(event) => onTagMatchModeChange(event.target.value as "any" | "all")}
+            >
+              <option value="all">Match all tags</option>
+              <option value="any">Match any tag</option>
+            </Select>
+          </div>
           <div className="flex flex-wrap gap-2">
             {availableTags.map((tag) => {
               const checked = !!selectedTags[tag];
@@ -132,7 +146,9 @@ export function CampaignAudienceSection({
           </div>
           {!availableTags.length ? <div className="px-1 py-3 text-sm text-ink-800/70">No contact tags found.</div> : null}
           <div className="mt-3 text-xs font-semibold text-ink-800/55">
-            When multiple tags are selected, only contacts with all selected tags are included.
+            {tagMatchMode === "all"
+              ? "Contacts must have every selected tag."
+              : "Contacts can have any one of the selected tags."}
           </div>
         </div>
       ) : null}

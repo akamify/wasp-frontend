@@ -26,10 +26,14 @@ export default function CampaignCreateModal(props: CampaignCreateModalProps) {
     walletBalance,
     name,
     setName,
-    scheduledAt,
-    setScheduledAt,
-    scheduleFrequency,
-    setScheduleFrequency,
+    scheduleType,
+    changeScheduleType,
+    scheduleDate,
+    setScheduleDate,
+    scheduleTime,
+    setScheduleTime,
+    scheduleWeekdays,
+    toggleScheduleWeekday,
     templateId,
     setTemplateId,
     approvedTemplates,
@@ -39,6 +43,8 @@ export default function CampaignCreateModal(props: CampaignCreateModalProps) {
     availableTags,
     selectedTags,
     tagMatchedContacts,
+    tagMatchMode,
+    setTagMatchMode,
     attributeDefinitions,
     attributeFilters,
     setAttributeFilters,
@@ -121,14 +127,18 @@ export default function CampaignCreateModal(props: CampaignCreateModalProps) {
                   <CampaignBasicsSection
                     type={type}
                     name={name}
-                    scheduledAt={scheduledAt}
-                    scheduleFrequency={scheduleFrequency}
+                    scheduleType={scheduleType}
+                    scheduleDate={scheduleDate}
+                    scheduleTime={scheduleTime}
+                    scheduleWeekdays={scheduleWeekdays}
                     templateId={templateId}
                     approvedTemplates={approvedTemplates}
                     onTypeReset={() => setType(null)}
                     onNameChange={setName}
-                    onScheduledAtChange={setScheduledAt}
-                    onScheduleFrequencyChange={setScheduleFrequency}
+                    onScheduleTypeChange={changeScheduleType}
+                    onScheduleDateChange={setScheduleDate}
+                    onScheduleTimeChange={setScheduleTime}
+                    onToggleScheduleWeekday={toggleScheduleWeekday}
                     onTemplateIdChange={setTemplateId}
                   />
 
@@ -139,6 +149,7 @@ export default function CampaignCreateModal(props: CampaignCreateModalProps) {
                       audienceMode={audienceMode}
                       availableTags={availableTags}
                       selectedTags={selectedTags}
+                      tagMatchMode={tagMatchMode}
                       tagMatchedCount={audienceMode === "tags" && estimate?.totalRecipients !== undefined ? estimate.totalRecipients : tagMatchedContacts.length}
                       contactQuery={contactQuery}
                       filteredContacts={filteredContacts}
@@ -146,6 +157,7 @@ export default function CampaignCreateModal(props: CampaignCreateModalProps) {
                       onContactQueryChange={setContactQuery}
                       onTogglePhone={toggleSelectedPhone}
                       onToggleTag={toggleSelectedTag}
+                      onTagMatchModeChange={setTagMatchMode}
                       attributeDefinitions={attributeDefinitions}
                       attributeFilters={attributeFilters}
                       onAttributeFiltersChange={setAttributeFilters}
