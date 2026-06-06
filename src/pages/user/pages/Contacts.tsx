@@ -2,7 +2,7 @@
 import { API } from "@api/api";
 import { Button } from "@components/ui/Button";
 import { Alert } from "@components/ui/Alert";
-import { RefreshCcw, Plus } from "lucide-react";
+import { Braces, RefreshCcw, Plus } from "lucide-react";
 import { cn } from "@shared/utils/cn";
 import { useToast } from "@shared/providers/ToastContext";
 import { ContactFormModal } from "./contacts/ContactFormModal";
@@ -207,6 +207,11 @@ export default function ContactsPage() {
 
       {error ? <Alert>{error}</Alert> : null}
 
+      <div className="flex items-start gap-3 rounded-[10px] border border-brand-100 bg-brand-50/70 px-4 py-3 text-sm font-semibold leading-6 text-brand-900">
+        <Braces size={18} className="mt-0.5 shrink-0 text-brand-600" />
+        <span>Use contact fields like <span className="font-mono">$name</span> and attributes like <span className="font-mono">${definitions.find((definition) => definition.active && definition.visible)?.key || "city"}</span> for campaign personalization.</span>
+      </div>
+
       <ContactsTableCard
         loading={loading}
         syncing={syncing}
@@ -215,6 +220,7 @@ export default function ContactsPage() {
         filter={filter}
         sort={sort}
         contacts={contacts}
+        definitions={definitions.filter((definition) => definition.active && definition.visible)}
         processedContacts={processedContacts}
         page={page}
         totalPages={totalPages}

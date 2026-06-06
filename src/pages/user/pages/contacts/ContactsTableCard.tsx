@@ -5,6 +5,7 @@ import { Card } from "@components/ui/Card";
 import { ContactsListSkeleton } from "@components/ui/Skeletons";
 import { Download, Pencil, Search, Trash2, User } from "lucide-react";
 import { formatDate, type Contact } from "./contacts.utils";
+import type { AttributeDefinition } from "../Attributes";
 
 type Props = {
   loading: boolean;
@@ -14,6 +15,7 @@ type Props = {
   filter: "all" | "has-tags" | "has-company" | "recent-activity";
   sort: "name" | "company" | "tags" | "recent" | "oldest";
   contacts: Contact[];
+  definitions: AttributeDefinition[];
   processedContacts: Contact[];
   page: number;
   totalPages: number;
@@ -40,7 +42,7 @@ type Props = {
 export function ContactsTableCard(props: Props) {
   const navigate = useNavigate();
   const {
-    loading, syncing, saving, search, filter, sort, contacts, processedContacts, page, totalPages, total,
+    loading, syncing, saving, search, filter, sort, contacts, definitions, processedContacts, page, totalPages, total,
     allSelected, someSelected, selectedCount, multiSelected, tableRef,
     onSearchChange, onSearchSubmit, onFilterChange, onSortChange,
     onToggleAll, onToggleOne, onEdit, onExportSelected, onBulkDelete, onClearSelected, onPagePrev, onPageNext,
@@ -166,7 +168,7 @@ export function ContactsTableCard(props: Props) {
                   <td className="px-6 py-4">
                     {contact.attributes && Object.keys(contact.attributes).length ? (
                       <div className="flex max-w-[320px] flex-wrap gap-1.5">
-                        {Object.entries(contact.attributes).slice(0, 3).map(([key, value]) => <Badge key={key} tone="neutral" className="border border-ink-900/5 bg-white px-2 py-0.5 text-[10px]">{key}:{String(value)}</Badge>)}
+                        {getDisplayAttributes(contact, definitions).slice(0, 3).map(({ key, label, value }) => <Badge key={key} tone="neutral" className="border border-ink-900/5 bg-white px-2 py-0.5 text-[10px]">{label}: {String(value)}</Badge>)}
                         {Object.keys(contact.attributes).length > 3 ? <span className="text-[10px] font-bold text-ink-800/30">+{Object.keys(contact.attributes).length - 3}</span> : null}
                       </div>
                     ) : (
@@ -197,5 +199,17 @@ export function ContactsTableCard(props: Props) {
       </div>
     </Card>
   );
+}
+
+function getDisplayAttributes(contact: Contact, definitions: AttributeDefinition[]) {
+  const values = contact.attributes || {};
+  const definitionMap = new Map(definitions.map((definition) => [definition.key, definition]));
+  const managed = definitions
+    .filter((definition) => values[definition.key] !== undefined)
+    .map((definition) => ({ key: definition.key, label: definition.label, value: values[definition.key] }));
+  const legacy = Object.entries(values)
+    .filter(([key]) => !definitionMap.has(key))
+    .map(([key, value]) => ({ key, label: key, value }));
+  return [...managed, ...legacy];
 }
 
