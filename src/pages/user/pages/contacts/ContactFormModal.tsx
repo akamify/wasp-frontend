@@ -4,6 +4,7 @@ import { X } from "lucide-react";
 import { Input } from "@components/ui/Input";
 import { Textarea } from "@components/ui/Textarea";
 import { Button } from "@components/ui/Button";
+import type { AttributeDefinition } from "../Attributes";
 
 export type ContactForm = {
   name: string;
@@ -11,7 +12,8 @@ export type ContactForm = {
   email: string;
   company: string;
   tags: string;
-  attributes: string;
+  attributes: Record<string, string | number | boolean | null>;
+  legacyAttributes: Record<string, string | number | boolean>;
   notes: string;
 };
 
@@ -20,12 +22,13 @@ type Props = {
   selectedId: string | null;
   form: ContactForm;
   saving: boolean;
+  definitions: AttributeDefinition[];
   onClose: () => void;
   onSubmit: (e: React.FormEvent) => void;
   onChange: (updater: (current: ContactForm) => ContactForm) => void;
 };
 
-export function ContactFormModal({ open, selectedId, form, saving, onClose, onSubmit, onChange }: Props) {
+export function ContactFormModal({ open, selectedId, form, saving, definitions, onClose, onSubmit, onChange }: Props) {
   return createPortal(
     <AnimatePresence>
       {open ? (
@@ -61,14 +64,14 @@ export function ContactFormModal({ open, selectedId, form, saving, onClose, onSu
                 <Input label="Company" value={form.company} onChange={(e) => onChange((c) => ({ ...c, company: e.target.value }))} placeholder="Acme Corp" />
               </div>
               <Input label="Tags" value={form.tags} onChange={(e) => onChange((c) => ({ ...c, tags: e.target.value }))} placeholder="vip, new-lead, search-campaign" hint="Comma separated tags" />
-              <Textarea
-                label="Attributes"
-                value={form.attributes}
-                onChange={(e) => onChange((c) => ({ ...c, attributes: e.target.value }))}
-                placeholder={"city: Delhi\nplan: premium\nsource: website"}
-                hint="One per line in key:value format"
-                className="min-h-[90px]"
-              />
+              {definitions.length ? <div className="space-y-3 rounded-[5px] border border-slate-100 p-4">
+                <div><div className="text-xs font-black uppercase tracking-widest text-slate-500">Attributes</div><div className="mt-1 text-xs text-slate-400">Structured contact data managed from the Attributes page.</div></div>
+                {definitions.map((definition) => <AttributeInput key={definition.key} definition={definition} value={form.attributes[definition.key]} onChange={(value) => onChange((current) => ({ ...current, attributes: { ...current.attributes, [definition.key]: value } }))} />)}
+              </div> : <div className="rounded-[5px] border border-dashed border-slate-200 p-4 text-sm font-semibold text-slate-500">No active attributes. Create them from the Attributes page.</div>}
+              {Object.keys(form.legacyAttributes).length ? <details className="rounded-[5px] border border-amber-200 bg-amber-50 p-4">
+                <summary className="cursor-pointer text-xs font-black uppercase tracking-widest text-amber-800">Legacy attributes ({Object.keys(form.legacyAttributes).length})</summary>
+                <div className="mt-3 space-y-2">{Object.entries(form.legacyAttributes).map(([key, value]) => <div key={key} className="flex justify-between gap-3 text-xs"><span className="font-black">{key}</span><span>{String(value)}</span></div>)}</div>
+              </details> : null}
               <Textarea
                 label="Private Notes"
                 value={form.notes}
@@ -88,5 +91,14 @@ export function ContactFormModal({ open, selectedId, form, saving, onClose, onSu
     </AnimatePresence>,
     document.body
   );
+}
+
+function AttributeInput({ definition, value, onChange }: { definition: AttributeDefinition; value: string | number | boolean | null | undefined; onChange: (value: string | number | boolean | null) => void }) {
+  const label = `${definition.label}${definition.required ? " *" : ""}`;
+  const hint = definition.defaultValue !== undefined ? `Default: ${String(definition.defaultValue)}` : undefined;
+  if (definition.type === "boolean") {
+    return <label className="block text-xs font-black uppercase tracking-widest text-slate-500">{label}<select className="mt-2 w-full rounded-[5px] border border-slate-200 px-3 py-2.5 text-sm font-semibold" value={value === true ? "true" : value === false ? "false" : ""} disabled={!definition.editable} onChange={(event) => onChange(event.target.value === "" ? null : event.target.value === "true")}><option value="">Not set</option><option value="true">Yes</option><option value="false">No</option></select>{hint ? <span className="mt-1 block text-[10px] text-slate-400">{hint}</span> : null}</label>;
+  }
+  return <Input label={label} type={definition.type === "text" ? "text" : definition.type} value={String(value ?? "")} disabled={!definition.editable} required={definition.required} hint={hint} onChange={(event) => onChange(event.target.value || null)} />;
 }
 

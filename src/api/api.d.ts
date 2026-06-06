@@ -296,10 +296,18 @@ export const API: {
   contacts: {
     list(params?: any): Promise<any>;
     tags(): Promise<any>;
+    attributes(params?: any): Promise<any>;
+    attribute(key: string): Promise<any>;
+    createAttribute(payload: any): Promise<any>;
+    updateAttribute(key: string, payload: any): Promise<any>;
+    archiveAttribute(key: string): Promise<any>;
     get(id: string): Promise<any>;
     lookupByPhone(phone: string): Promise<any>;
     create(payload: any): Promise<any>;
     update(id: string, payload: any): Promise<any>;
+    patchAttributes(id: string, attributes: Record<string, unknown>): Promise<any>;
+    replaceAttributes(id: string, attributes: Record<string, unknown>, preserveLegacy?: boolean): Promise<any>;
+    removeAttributeValue(id: string, key: string): Promise<any>;
     remove(id: string): Promise<any>;
     exportCsv(contactIds: string[]): Promise<any>;
   };

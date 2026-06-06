@@ -2,7 +2,29 @@ import type { Dispatch, SetStateAction } from "react";
 
 export type CampaignType = "broadcast" | "csv" | "api";
 export type CampaignScheduleFrequency = "once" | "daily" | "weekly";
-export type CampaignAudienceMode = "manual" | "tags";
+export type CampaignAudienceMode = "manual" | "tags" | "attributes";
+
+export type CampaignAttributeDefinition = {
+  key: string;
+  label: string;
+  type: "text" | "number" | "boolean" | "date" | "url";
+  visible: boolean;
+  active: boolean;
+};
+
+export type CampaignAttributeFilter = {
+  key: string;
+  operator: "equals" | "not_equals" | "exists" | "not_exists" | "contains";
+  value?: string | number | boolean;
+};
+
+export type CampaignVariableMapping = {
+  position: number;
+  sourceType: "static" | "contact_field" | "contact_attribute";
+  sourceKey?: string;
+  value?: string;
+  fallback?: string;
+};
 
 export type CampaignContact = {
   _id: string;
@@ -60,9 +82,11 @@ export type CampaignCreatePayload = {
     mode: CampaignAudienceMode;
     tags?: string[];
     tagMatch?: "all" | "any";
+    attributeFilters?: CampaignAttributeFilter[];
     runtime?: Omit<CampaignRecipient, "to">;
   };
   recipients?: CampaignRecipient[];
+  templateVariableMappings?: CampaignVariableMapping[];
 };
 
 export type CampaignDemoPayload = {

@@ -9,12 +9,11 @@ import { ContactFormModal } from "./contacts/ContactFormModal";
 import { ContactsTableCard } from "./contacts/ContactsTableCard";
 import {
   EMPTY_FORM,
-  formatAttributes,
   joinTags,
-  parseAttributes,
   parseTags,
   type Contact,
 } from "./contacts/contacts.utils";
+import type { AttributeDefinition } from "./Attributes";
 
 export default function ContactsPage() {
   const { toast } = useToast();
@@ -22,6 +21,7 @@ export default function ContactsPage() {
   const isInitialLoad = useRef(true);
 
   const [contacts, setContacts] = useState<Contact[]>([]);
+  const [definitions, setDefinitions] = useState<AttributeDefinition[]>([]);
   const [loading, setLoading] = useState(true);
   const [syncing, setSyncing] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -47,8 +47,12 @@ export default function ContactsPage() {
     if (isFirst) setLoading(true);
     setSyncing(true);
     try {
-      const res = await API.contacts.list({ page, limit: pageSize, search: search || undefined });
+      const [res, attributesResult] = await Promise.all([
+        API.contacts.list({ page, limit: pageSize, search: search || undefined }),
+        API.contacts.attributes({ includeInactive: true }),
+      ]);
       setContacts(res.contacts || []);
+      setDefinitions(attributesResult.definitions || []);
       setTotal(Number(res.total || 0));
       if (!isFirst) toast("Contacts refreshed", "success");
     } catch (e: any) {
@@ -91,6 +95,8 @@ export default function ContactsPage() {
   }
 
   function fillForm(contact: Contact) {
+    const activeKeys = new Set(definitions.filter((definition) => definition.active).map((definition) => definition.key));
+    const allAttributes = contact.attributes || {};
     setSelectedId(contact._id);
     setForm({
       name: contact.name || "",
@@ -98,7 +104,8 @@ export default function ContactsPage() {
       email: contact.email || "",
       company: contact.company || "",
       tags: joinTags(contact.tags),
-      attributes: formatAttributes(contact.attributes),
+      attributes: Object.fromEntries(Object.entries(allAttributes).filter(([key]) => activeKeys.has(key))),
+      legacyAttributes: Object.fromEntries(Object.entries(allAttributes).filter(([key]) => !activeKeys.has(key))),
       notes: contact.notes || "",
     });
     setIsModalOpen(true);
@@ -115,7 +122,7 @@ export default function ContactsPage() {
       email: form.email,
       company: form.company,
       tags: parseTags(form.tags),
-      attributes: parseAttributes(form.attributes),
+      attributes: form.attributes,
       notes: form.notes,
     };
 
@@ -240,6 +247,7 @@ export default function ContactsPage() {
         selectedId={selectedId}
         form={form}
         saving={saving}
+        definitions={definitions.filter((definition) => definition.active && definition.visible)}
         onClose={() => setIsModalOpen(false)}
         onSubmit={saveContact}
         onChange={(updater) => setForm((curr) => updater(curr))}

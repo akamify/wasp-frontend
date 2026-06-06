@@ -14,6 +14,7 @@ import TemplatesPage from "@pages/user/pages/Templates";
 import SendPage from "@pages/user/pages/Send";
 import CampaignDetailPage from "@pages/user/pages/CampaignDetail";
 import ContactsPage from "@pages/user/pages/Contacts";
+import AttributesPage from "@pages/user/pages/Attributes";
 import ConversationsPage from "@pages/user/pages/Conversations";
 import LinksPage from "@pages/user/pages/Links";
 import AutomationPage from "@pages/user/pages/Automation";
@@ -43,6 +44,7 @@ export function userRoutes() {
       <Route path="/app/send" element={inApp(<SendPage />)} />
       <Route path="/app/send/:id" element={inApp(<CampaignDetailPage />)} />
       <Route path="/app/contacts" element={inApp(<ContactsPage />)} />
+      <Route path="/app/attributes" element={inApp(<AttributesPage />)} />
       <Route path="/app/conversations/:phone?" element={inApp(<ConversationsPage />)} />
       <Route element={<RequireCrm />}>
         <Route path="/app/crm" element={inApp(<CrmDashboardPage />)} />

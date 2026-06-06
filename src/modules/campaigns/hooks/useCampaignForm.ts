@@ -1,6 +1,7 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { API } from "@api/api";
 
-import type { CampaignAudienceMode, CampaignContact, CampaignEstimate, CampaignScheduleFrequency, CampaignType, CampaignWalletBalance } from "@modules/campaigns/types/campaign-form.types";
+import type { CampaignAttributeDefinition, CampaignAttributeFilter, CampaignAudienceMode, CampaignContact, CampaignEstimate, CampaignScheduleFrequency, CampaignType, CampaignVariableMapping, CampaignWalletBalance } from "@modules/campaigns/types/campaign-form.types";
 import { digitsOnly, parseCsvText } from "@modules/campaigns/utils/campaignFormatters";
 import { createCampaignFormActions } from "@modules/campaigns/hooks/use-campaign-form/actions";
 import { useCampaignFormEffects } from "@modules/campaigns/hooks/use-campaign-form/effects";
@@ -43,9 +44,12 @@ export function useCampaignForm(props: CampaignCreateModalProps) {
   const [selectedPhones, setSelectedPhones] = useState<Record<string, true>>({});
   const [audienceMode, setAudienceMode] = useState<CampaignAudienceMode>("manual");
   const [selectedTags, setSelectedTags] = useState<Record<string, true>>({});
+  const [attributeDefinitions, setAttributeDefinitions] = useState<CampaignAttributeDefinition[]>([]);
+  const [attributeFilters, setAttributeFilters] = useState<CampaignAttributeFilter[]>([]);
 
   const [headerVars, setHeaderVars] = useState<string[]>([]);
   const [bodyVars, setBodyVars] = useState<string[]>([]);
+  const [bodyVariableMappings, setBodyVariableMappings] = useState<CampaignVariableMapping[]>([]);
   const [otpCode, setOtpCode] = useState("");
   const [buttonValues, setButtonValues] = useState<string[]>([]);
   const [buttonValueByIndex, setButtonValueByIndex] = useState<Record<number, string>>({});
@@ -69,6 +73,20 @@ export function useCampaignForm(props: CampaignCreateModalProps) {
   const approvedTemplates = useMemo(() => templates.filter((t) => t.status === "approved"), [templates]);
   const selectedTemplate = useMemo(() => approvedTemplates.find((t) => t._id === templateId), [approvedTemplates, templateId]);
   const summary = useMemo(() => inspectTemplate(selectedTemplate), [selectedTemplate]);
+
+  useEffect(() => {
+    if (!isOpen) return;
+    API.contacts.attributes().then((result) => setAttributeDefinitions((result.definitions || []).filter((definition: CampaignAttributeDefinition) => definition.active && definition.visible))).catch(() => setAttributeDefinitions([]));
+  }, [isOpen]);
+
+  useEffect(() => {
+    setBodyVariableMappings((current) => Array.from({ length: summary.bodyVariableCount }, (_, index) => current[index] || {
+      position: index + 1,
+      sourceType: "static",
+      value: bodyVars[index] || "",
+      fallback: "",
+    }));
+  }, [summary.bodyVariableCount]);
 
   const tierInfo = useMemo(() => {
     const raw = String(messagingTierRaw || "").trim();
@@ -177,7 +195,7 @@ export function useCampaignForm(props: CampaignCreateModalProps) {
   const actions = createCampaignFormActions({
     toast, type, selectedTemplate, summary, headerVars, bodyVars, buttonsNeedingValue, buttonValueByIndex, otpCode,
     csvPhoneColumn, setCsvPhoneColumn, setCsvBodyMap, setCsvHeaderMap, selectedPhones, setSelectedPhones,
-    audienceMode, selectedTagList, tagMatchedContacts, setSelectedTags,
+    audienceMode, selectedTagList, tagMatchedContacts, setSelectedTags, attributeFilters, bodyVariableMappings,
     headerMediaOverride, resolvedButtonValues, flowActionDataJson, csvParsed, csvHeaderMap, csvButtonMap, buttonTtlMinutes,
     flowTokens, csvBodyMap, setHeaderMediaUploading, setHeaderMediaOverride, setHeaderVars, setBusy, messageType,
     name, templateId, scheduledAt, scheduleFrequency, onSuccess, onClose, estimate, demoTo, csvPreviewData, csvFirstRow,
@@ -200,6 +218,7 @@ export function useCampaignForm(props: CampaignCreateModalProps) {
     busy, type, setType, limitsLoading, tierInfo, audienceCount, estimateLoading, estimate, walletBalance,
     name, setName, scheduledAt, setScheduledAt, scheduleFrequency, setScheduleFrequency, templateId, setTemplateId, approvedTemplates, selectedPhones,
     audienceMode, setAudienceMode, availableTags, selectedTags, setSelectedTags, selectedTagList, tagMatchedContacts,
+    attributeDefinitions, attributeFilters, setAttributeFilters, bodyVariableMappings, setBodyVariableMappings,
     contactQuery, setContactQuery, filteredContacts, toggleSelectedPhone: actions.toggleSelectedPhone, toggleSelectedTag: actions.toggleSelectedTag, summary,
     headerVars, setHeaderVars, bodyVars, setBodyVars, otpCode, setOtpCode, buttonsNeedingValue, buttonValueByIndex,
     setButtonValueByIndex, buttonTtlMinutes, setButtonTtlMinutes, flowTokens, setFlowTokens, flowActionDataJson,

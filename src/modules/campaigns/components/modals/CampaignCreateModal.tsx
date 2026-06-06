@@ -39,6 +39,9 @@ export default function CampaignCreateModal(props: CampaignCreateModalProps) {
     availableTags,
     selectedTags,
     tagMatchedContacts,
+    attributeDefinitions,
+    attributeFilters,
+    setAttributeFilters,
     contactQuery,
     setContactQuery,
     filteredContacts,
@@ -49,6 +52,8 @@ export default function CampaignCreateModal(props: CampaignCreateModalProps) {
     setHeaderVars,
     bodyVars,
     setBodyVars,
+    bodyVariableMappings,
+    setBodyVariableMappings,
     otpCode,
     setOtpCode,
     buttonsNeedingValue,
@@ -141,6 +146,9 @@ export default function CampaignCreateModal(props: CampaignCreateModalProps) {
                       onContactQueryChange={setContactQuery}
                       onTogglePhone={toggleSelectedPhone}
                       onToggleTag={toggleSelectedTag}
+                      attributeDefinitions={attributeDefinitions}
+                      attributeFilters={attributeFilters}
+                      onAttributeFiltersChange={setAttributeFilters}
                     />
                   ) : null}
 
@@ -158,6 +166,9 @@ export default function CampaignCreateModal(props: CampaignCreateModalProps) {
                       headerMediaUploading={headerMediaUploading}
                       onHeaderVarsChange={setHeaderVars}
                       onBodyVarsChange={setBodyVars}
+                      attributeDefinitions={attributeDefinitions}
+                      bodyVariableMappings={bodyVariableMappings}
+                      onBodyVariableMappingsChange={setBodyVariableMappings}
                       onOtpCodeChange={setOtpCode}
                       onButtonValueByIndexChange={setButtonValueByIndex}
                       onButtonTtlMinutesChange={setButtonTtlMinutes}

@@ -20,7 +20,8 @@ export const EMPTY_FORM = {
   email: "",
   company: "",
   tags: "",
-  attributes: "",
+  attributes: {} as Record<string, string | number | boolean | null>,
+  legacyAttributes: {} as Record<string, string | number | boolean>,
   notes: "",
 };
 
@@ -50,31 +51,5 @@ export function parseTags(raw: string) {
 
 export function formatDate(value?: string) {
   return value ? new Date(value).toLocaleString() : "-";
-}
-
-export function formatAttributes(attributes?: Record<string, string | number | boolean>) {
-  if (!attributes || typeof attributes !== "object") return "";
-  return Object.entries(attributes)
-    .filter(([key]) => String(key || "").trim())
-    .map(([key, value]) => `${key}:${String(value ?? "").trim()}`)
-    .join("\n");
-}
-
-export function parseAttributes(raw: string) {
-  const out: Record<string, string> = {};
-  const lines = String(raw || "")
-    .split(/\n+/)
-    .map((line) => line.trim())
-    .filter(Boolean);
-
-  for (const line of lines) {
-    const splitAt = line.indexOf(":");
-    if (splitAt <= 0) continue;
-    const key = line.slice(0, splitAt).trim();
-    const value = line.slice(splitAt + 1).trim();
-    if (!key || !value) continue;
-    out[key] = value;
-  }
-  return out;
 }
 

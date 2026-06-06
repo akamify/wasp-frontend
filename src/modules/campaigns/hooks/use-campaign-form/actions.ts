@@ -10,7 +10,7 @@ export function getErrorMessage(error: unknown, fallback: string) {
 export function createCampaignFormActions(ctx: any) {
   const {
     toast, type, selectedTemplate, summary, headerVars, bodyVars, buttonsNeedingValue, buttonValueByIndex, otpCode, csvPhoneColumn, setCsvPhoneColumn, setCsvBodyMap, setCsvHeaderMap, setSelectedPhones, headerMediaOverride, resolvedButtonValues, flowActionDataJson, csvParsed, csvHeaderMap, csvButtonMap, buttonTtlMinutes, flowTokens, csvBodyMap, setHeaderMediaUploading, setHeaderMediaOverride, setHeaderVars, setBusy, messageType, name, templateId, scheduledAt, scheduleFrequency, onSuccess, onClose, estimate,
-    audienceMode, selectedTagList, tagMatchedContacts,
+    audienceMode, selectedTagList, tagMatchedContacts, attributeFilters, bodyVariableMappings,
   } = ctx;
 
   const missingBroadcastInputs = () => {
@@ -21,7 +21,10 @@ export function createCampaignFormActions(ctx: any) {
       for (let i = 0; i < required; i += 1) if (!String(headerVars[i] || "").trim()) missing.push(`Header {{${i + 1}}}`);
     }
     if (summary.bodyVariableCount > 0) {
-      for (let i = 0; i < summary.bodyVariableCount; i += 1) if (!String(bodyVars[i] || "").trim()) missing.push(`Body {{${i + 1}}}`);
+      for (let i = 0; i < summary.bodyVariableCount; i += 1) {
+        const mapping = bodyVariableMappings[i];
+        if (!mapping || (mapping.sourceType === "static" && !String(mapping.value || bodyVars[i] || "").trim() && !String(mapping.fallback || "").trim()) || (mapping.sourceType !== "static" && !mapping.sourceKey && !String(mapping.fallback || "").trim())) missing.push(`Body {{${i + 1}}}`);
+      }
     }
     if (buttonsNeedingValue.length > 0) {
       for (const btn of buttonsNeedingValue) if (!String(buttonValueByIndex[btn.index] ?? "").trim()) missing.push(`${btn.label} (Button ${btn.index + 1})`);
@@ -136,17 +139,22 @@ export function createCampaignFormActions(ctx: any) {
         flowTokens,
         flowActionData: (() => { try { const parsed = JSON.parse(flowActionDataJson || "{}"); return Array.isArray(parsed) ? parsed : [parsed]; } catch { return []; } })(),
       };
-      const audience = audienceMode === "tags" ? { mode: "tags", tags: selectedTagList, tagMatch: "all", runtime: audienceRuntime } : { mode: "manual" };
+      const audience = audienceMode === "tags"
+        ? { mode: "tags", tags: selectedTagList, tagMatch: "all", runtime: audienceRuntime }
+        : audienceMode === "attributes"
+          ? { mode: "attributes", attributeFilters, runtime: audienceRuntime }
+          : { mode: "manual" };
       if (schedule && !scheduled) throw new Error("Select date and time for recurring campaign");
       if (type === "api" && schedule) throw new Error("Recurring schedule is only available for broadcast and CSV campaigns");
       if (type === "api") { await API.campaigns.create({ name: campaignName, type, templateId, scheduledAt: scheduled }); toast("API campaign created. Your integration will provide contacts at send time.", "success"); onSuccess(); onClose(); return; }
-      if (type !== "broadcast" && audienceMode === "tags") throw new Error("Tag audience is only available for broadcast campaigns");
+      if (type !== "broadcast" && audienceMode !== "manual") throw new Error("Tag and attribute audiences are only available for broadcast campaigns");
       if (audienceMode === "tags" && !selectedTagList.length) throw new Error("Select at least one tag");
-      const recipients = audienceMode === "tags" ? [] : buildRecipientsForCurrentState();
-      if (audienceMode !== "tags" && !recipients.length) throw new Error("Select at least one valid recipient");
+      if (audienceMode === "attributes" && !attributeFilters.length) throw new Error("Add at least one attribute filter");
+      const recipients = audienceMode === "manual" ? buildRecipientsForCurrentState() : [];
+      if (audienceMode === "manual" && !recipients.length) throw new Error("Select at least one valid recipient");
       if (type === "broadcast") { const missing = missingBroadcastInputs(); if (missing.length) throw new Error(`Broadcast template needs values for: ${missing.slice(0, 6).join(", ")}${missing.length > 6 ? "..." : ""} (Use CSV for per-contact variables)`); }
       if (estimate?.insufficientBalance) throw new Error(`Insufficient balance: need ${formatCurrency(estimate.estimatedCredits, estimate.currency)}, available ${formatCurrency(estimate.walletBalance, estimate.currency)}`);
-      await API.campaigns.create({ name: campaignName, type, templateId, scheduledAt: scheduled, schedule, audience, recipients });
+      await API.campaigns.create({ name: campaignName, type, templateId, scheduledAt: scheduled, schedule, audience, recipients, templateVariableMappings: bodyVariableMappings.map((mapping: any, index: number) => ({ ...mapping, position: index + 1, value: mapping.sourceType === "static" ? String(mapping.value ?? bodyVars[index] ?? "") : undefined })) });
       toast("Campaign created successfully", "success"); onSuccess(); onClose();
     } catch (error) { toast(getErrorMessage(error, "Failed to create campaign"), "error"); } finally { setBusy(false); }
   };

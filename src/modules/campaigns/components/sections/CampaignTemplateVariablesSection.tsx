@@ -2,7 +2,7 @@ import { Button } from "@components/ui/Button";
 import { Card } from "@components/ui/Card";
 import { Input } from "@components/ui/Input";
 import { Textarea } from "@components/ui/Textarea";
-import type { CampaignButtonValueTarget } from "@modules/campaigns/types/campaign-form.types";
+import type { CampaignAttributeDefinition, CampaignButtonValueTarget, CampaignVariableMapping } from "@modules/campaigns/types/campaign-form.types";
 import { parseCommaList, inspectTemplate } from "@shared/utils/templateRuntime";
 
 type CampaignTemplateVariablesSectionProps = {
@@ -24,6 +24,9 @@ type CampaignTemplateVariablesSectionProps = {
   onFlowTokensChange: (values: string[]) => void;
   onFlowActionDataJsonChange: (value: string) => void;
   onHeaderMediaUpload: (file: File) => Promise<void>;
+  attributeDefinitions: CampaignAttributeDefinition[];
+  bodyVariableMappings: CampaignVariableMapping[];
+  onBodyVariableMappingsChange: (values: CampaignVariableMapping[]) => void;
 };
 
 export function CampaignTemplateVariablesSection({
@@ -45,6 +48,9 @@ export function CampaignTemplateVariablesSection({
   onFlowTokensChange,
   onFlowActionDataJsonChange,
   onHeaderMediaUpload,
+  attributeDefinitions,
+  bodyVariableMappings,
+  onBodyVariableMappingsChange,
 }: CampaignTemplateVariablesSectionProps) {
   return (
     <Card className="p-6">
@@ -59,7 +65,7 @@ export function CampaignTemplateVariablesSection({
           onHeaderMediaUpload={onHeaderMediaUpload}
         />
       ) : null}
-      {summary.bodyVariableCount > 0 ? <BodyVariables bodyVars={bodyVars} onBodyVarsChange={onBodyVarsChange} /> : null}
+      {summary.bodyVariableCount > 0 ? <BodyVariables bodyVars={bodyVars} onBodyVarsChange={onBodyVarsChange} attributeDefinitions={attributeDefinitions} bodyVariableMappings={bodyVariableMappings} onBodyVariableMappingsChange={onBodyVariableMappingsChange} /> : null}
       {summary.otpButtons > 0 ? (
         <div className="mt-5">
           <Input label="OTP code" value={otpCode} onChange={(event) => onOtpCodeChange(event.target.value)} placeholder="123456" required />
@@ -142,18 +148,23 @@ function HeaderVariables({
   );
 }
 
-function BodyVariables({ bodyVars, onBodyVarsChange }: Pick<CampaignTemplateVariablesSectionProps, "bodyVars" | "onBodyVarsChange">) {
+function BodyVariables({ bodyVars, onBodyVarsChange, attributeDefinitions, bodyVariableMappings, onBodyVariableMappingsChange }: Pick<CampaignTemplateVariablesSectionProps, "bodyVars" | "onBodyVarsChange" | "attributeDefinitions" | "bodyVariableMappings" | "onBodyVariableMappingsChange">) {
   return (
     <div className="mt-5 rounded-[5px] border border-ink-900/10 bg-white p-4">
       <div className="text-[11px] font-semibold uppercase tracking-wider text-ink-800/55">Body variables</div>
       <div className="mt-1 text-xs text-ink-800/65">These values fill Body {"{{1}}"}, {"{{2}}"}, ... in your message.</div>
       <div className="mt-3 rounded-[5px] border border-amber-200 bg-amber-50 px-3 py-2 text-[11px] font-semibold text-amber-900/80">
-        Broadcast sends the same variables to everyone. For personalized variables per contact, use CSV Upload.
+        Map placeholders to static values, contact fields, or saved attributes. Recipients missing values without fallback will be skipped.
       </div>
       <div className="mt-3 grid gap-3">
-        {bodyVars.map((value, index) => (
-          <Input key={index} label={`Body {{${index + 1}}}`} value={value} onChange={(event) => onBodyVarsChange(bodyVars.map((item, itemIndex) => (itemIndex === index ? event.target.value : item)))} required />
-        ))}
+        {bodyVars.map((value, index) => {
+          const mapping = bodyVariableMappings[index] || { position: index + 1, sourceType: "static", value };
+          return <div key={index} className="grid gap-2 rounded-[5px] border border-slate-100 p-3 md:grid-cols-3">
+            <select className="rounded-[5px] border border-slate-200 px-3 py-2 text-sm" value={mapping.sourceType} onChange={(event) => onBodyVariableMappingsChange(bodyVariableMappings.map((item, itemIndex) => itemIndex === index ? { ...item, sourceType: event.target.value as CampaignVariableMapping["sourceType"], sourceKey: "", value: "" } : item))}><option value="static">Static value</option><option value="contact_field">Contact field</option><option value="contact_attribute">Contact attribute</option></select>
+            {mapping.sourceType === "static" ? <Input label={`Body {{${index + 1}}}`} value={String(mapping.value ?? value)} onChange={(event) => { onBodyVarsChange(bodyVars.map((item, itemIndex) => itemIndex === index ? event.target.value : item)); onBodyVariableMappingsChange(bodyVariableMappings.map((item, itemIndex) => itemIndex === index ? { ...item, value: event.target.value } : item)); }} /> : <select className="rounded-[5px] border border-slate-200 px-3 py-2 text-sm" value={mapping.sourceKey || ""} onChange={(event) => onBodyVariableMappingsChange(bodyVariableMappings.map((item, itemIndex) => itemIndex === index ? { ...item, sourceKey: event.target.value } : item))}><option value="">Select source</option>{mapping.sourceType === "contact_field" ? ["name", "phone", "email", "company", "language"].map((field) => <option key={field} value={field}>{field}</option>) : attributeDefinitions.map((definition) => <option key={definition.key} value={definition.key}>{definition.label}</option>)}</select>}
+            <Input label="Fallback" value={mapping.fallback || ""} placeholder="Used when value is missing" onChange={(event) => onBodyVariableMappingsChange(bodyVariableMappings.map((item, itemIndex) => itemIndex === index ? { ...item, fallback: event.target.value } : item))} />
+          </div>;
+        })}
       </div>
     </div>
   );

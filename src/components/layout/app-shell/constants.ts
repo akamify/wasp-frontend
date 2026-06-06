@@ -1,4 +1,4 @@
-import { BriefcaseBusiness, FileSearch, FileText, History, Key, LayoutDashboard, Link2, MessageSquare, Send, Terminal, Users, Wallet, Workflow, Zap } from "lucide-react";
+import { BriefcaseBusiness, FileSearch, FileText, History, Key, LayoutDashboard, Link2, ListFilter, MessageSquare, Send, Terminal, Users, Wallet, Workflow, Zap } from "lucide-react";
 
 export const NAV_ITEMS = [
   { to: "/app", label: "Dashboard", kicker: "overview", icon: LayoutDashboard },
@@ -6,6 +6,7 @@ export const NAV_ITEMS = [
   { to: "/app/templates", label: "Templates", kicker: "library", icon: FileText },
   { to: "/app/send", label: "Campaigns", kicker: "broadcast", icon: Send },
   { to: "/app/contacts", label: "Contacts", kicker: "audience", icon: Users },
+  { to: "/app/attributes", label: "Attributes", kicker: "contact data", icon: ListFilter },
   { to: "/app/conversations", label: "Inbox", kicker: "chatroom", icon: MessageSquare },
   { to: "/app/crm", label: "CRM", kicker: "leads", icon: BriefcaseBusiness },
   { to: "/app/flows", label: "Flows", kicker: "forms", icon: Workflow },
