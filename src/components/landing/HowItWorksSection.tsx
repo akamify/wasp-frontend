@@ -15,7 +15,18 @@ const steps = [
   },
   {
     num: "02",
-    title: "Import Your Contacts",
+    title: "Create Template",
+    desc: "Create you first template. Our intuitive editor makes it easy to design rich messages with images, buttons, and dynamic variables.",
+    icon: (
+      <svg className="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+      </svg>
+    ),
+    color: "#b1cc13",
+  },
+  {
+    num: "03",
+    title: "Add Your Contacts",
     desc: "Upload CSV files, sync from your CRM, or capture leads via forms. Smart deduplication keeps your list clean.",
     icon: (
       <svg className="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -25,7 +36,18 @@ const steps = [
     color: "#7c3aed",
   },
   {
-    num: "03",
+    num: "04",
+    title: "Add Wallet Balance",
+    desc: "Recharge your wallet with our secure payment gateway. We support multiple currencies and offer transparent pricing with no hidden fees.",
+    icon: (
+      <svg className="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M3 5C3 3.89543 3.89543 3 5 3H17C18.1046 3 19 3.89543 19 5V7H20C21.1046 7 22 7.89543 22 9V17C22 18.1046 21.1046 19 20 19H5C3.89543 19 3 18.1046 3 17V5ZM17 5H5V17H17V15H15C13.8954 15 13 14.1046 13 13V11C13 9.89543 13.8954 9 15 9H17V5ZM19 9H15V13H19V9ZM17 11H16V12H17V11Z" />
+      </svg>
+    ),
+    color: "#06b6d4",
+  },
+  {
+    num: "05",
     title: "Build Your Campaign",
     desc: "Design rich message templates with images, buttons, and CTAs. Our visual editor makes it drag-and-drop simple.",
     icon: (
@@ -33,10 +55,10 @@ const steps = [
         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
       </svg>
     ),
-    color: "#06b6d4",
+    color: "#d01433",
   },
   {
-    num: "04",
+    num: "06",
     title: "Launch & Watch It Convert",
     desc: "Schedule or send instantly. Track real-time delivery, open rates, and replies from your live analytics dashboard.",
     icon: (

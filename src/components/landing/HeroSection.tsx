@@ -1,5 +1,7 @@
 import { motion } from "framer-motion";
 import {
+  ArrowLeft,
+  BadgeCheck,
   CheckCheck,
   ChevronLeft,
   Image,
@@ -43,7 +45,8 @@ function BusinessChatPreview() {
         <div className="flex items-center gap-3 border-b border-slate-200 bg-[#f0f2f5] px-3 py-3 sm:px-4">
           <button type="button" aria-label="Back" className="text-slate-500 sm:hidden"><ChevronLeft size={20} /></button>
           <div className="relative shrink-0">
-            <div className="flex h-11 w-11 items-center justify-center rounded-full bg-gradient-to-br from-[#111827] to-[#374151] text-sm font-black text-white ring-2 ring-white">
+            <ArrowLeft size={20} className="absolute left-0 top-1/2 -translate-y-1/2 text-black" />
+            <div className="flex h-11 w-11 items-center justify-center rounded-full bg-gradient-to-br from-[#111827] to-[#374151] ml-8 text-sm font-black text-white ring-2 ring-white">
               AM
             </div>
             <span className="absolute bottom-0 right-0 h-3 w-3 rounded-full border-2 border-[#f0f2f5] bg-[#25D366]" />
@@ -51,21 +54,20 @@ function BusinessChatPreview() {
           <div className="min-w-0 flex-1">
             <div className="flex items-center gap-1.5">
               <div className="truncate text-sm font-black text-slate-900">Akamify Store</div>
-              <ShieldCheck size={14} className="shrink-0 fill-[#1d9bf0] text-white" />
+              <BadgeCheck size={14} className="shrink-0 fill-[#1d9bf0] text-white" />
             </div>
-            <div className="text-[11px] font-medium text-slate-500">Business account · typically replies instantly</div>
+            <div className="text-[11px] font-medium text-slate-500">Business account · typing...</div>
           </div>
           <div className="flex items-center gap-0.5 text-slate-600">
             <HeaderAction label="Video call"><Video size={17} /></HeaderAction>
             <HeaderAction label="Call"><Phone size={16} /></HeaderAction>
-            <HeaderAction label="Search"><Search size={16} /></HeaderAction>
             <HeaderAction label="More options"><MoreVertical size={18} /></HeaderAction>
           </div>
         </div>
 
         <div className="relative h-[390px] overflow-hidden bg-[#efeae2] sm:h-[430px]">
           <div className="absolute inset-0 opacity-[0.055] [background-image:radial-gradient(#0f172a_1px,transparent_1px)] [background-size:16px_16px]" />
-          <div className="relative flex h-full flex-col px-3 py-4 sm:px-5">
+          <div className="relative flex h-full flex-col px-3 py-3 sm:px-5">
             <div className="mx-auto rounded-[7px] bg-white/80 px-3 py-1 text-[9px] font-black uppercase tracking-wider text-slate-500 shadow-sm">
               Today
             </div>
@@ -106,11 +108,11 @@ function BusinessChatPreview() {
               <MessageMeta time="10:26 AM" />
             </div>
 
-            <div className="mt-2 flex items-center gap-1.5 self-start rounded-full bg-white/75 px-3 py-2 shadow-sm">
-              <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-slate-400 [animation-delay:-0.3s]" />
-              <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-slate-400 [animation-delay:-0.15s]" />
-              <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-slate-400" />
-              <span className="ml-1 text-[9px] font-bold text-slate-400">Akamify Store is typing</span>
+            <div className="mt-2 flex items-center gap-1.5 self-start rounded-full bg-white/75 px-2 py-2 shadow-sm">
+              <span className="h-1 w-1 animate-bounce rounded-full bg-slate-400 [animation-delay:-0.3s]" />
+              <span className="h-1 w-1 animate-bounce rounded-full bg-slate-400 [animation-delay:-0.15s]" />
+              <span className="h-1 w-1 animate-bounce rounded-full bg-slate-400" />
+              {/* <span className="ml-1 text-[9px] font-bold text-slate-400">Akamify Store is typing</span> */}
             </div>
           </div>
         </div>
@@ -132,7 +134,7 @@ function BusinessChatPreview() {
         initial={{ opacity: 0, x: -12 }}
         animate={{ opacity: 1, x: 0 }}
         transition={{ delay: 0.65, duration: 0.45 }}
-        className="absolute -left-5 bottom-20 hidden items-center gap-2 rounded-xl border border-emerald-100 bg-white px-3 py-2 shadow-xl sm:flex"
+        className="absolute -right-5 bottom-20 hidden items-center gap-2 rounded-xl border border-emerald-100 bg-white px-3 py-2 shadow-xl sm:flex"
       >
         <div className="flex h-8 w-8 items-center justify-center rounded-full bg-emerald-50 text-emerald-600"><Send size={14} /></div>
         <div><div className="text-[10px] font-black text-slate-900">Reply sent</div><div className="text-[9px] font-semibold text-slate-400">in 8 seconds</div></div>
