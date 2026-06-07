@@ -7,9 +7,10 @@ import { Input } from "@components/ui/Input";
 import { Button } from "@components/ui/Button";
 import { Alert } from "@components/ui/Alert";
 import { useOtpGuard } from "@shared/hooks/useOtpGuard";
+import { authenticatedHome } from "@shared/utils/authNavigation";
 
 export default function RegisterPage() {
-  const { register } = useAuth();
+  const { loading, register, token, user } = useAuth();
   const navigate = useNavigate();
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
@@ -20,6 +21,12 @@ export default function RegisterPage() {
   const otpGuard = useOtpGuard({ cooldownSeconds: 60, maxAttempts: 5 });
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  React.useEffect(() => {
+    if (!loading && token && user) {
+      navigate(authenticatedHome(user.role, token), { replace: true });
+    }
+  }, [loading, navigate, token, user]);
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();

@@ -16,6 +16,8 @@ import {
   Smile,
   Video,
 } from "lucide-react";
+import { useAuth } from "@shared/providers/AuthContext";
+import { authAwareHref } from "@shared/utils/authNavigation";
 
 function BusinessChatPreview() {
   return (
@@ -166,6 +168,9 @@ function Stat({ val, label }: { val: string; label: string }) {
 }
 
 export function HeroSection() {
+  const { token, user } = useAuth();
+  const startHref = authAwareHref({ token, role: user?.role, guestHref: "/register" });
+
   return (
     <section className="relative overflow-hidden pt-15 lg:pt-20">
       <div className="pointer-events-none absolute inset-0">
@@ -188,15 +193,12 @@ export function HeroSection() {
               The all-in-one WhatsApp Business API platform. Automate campaigns, manage contacts, and turn every customer conversation into real revenue.
             </p>
 
-            <div className="mt-8 flex flex-wrap items-center gap-4">
-              <a href="/register" className="group relative flex items-center gap-2 rounded-2xl bg-gradient-to-r from-[#25D366] to-[#06b77e] px-8 py-4 text-base font-bold text-white shadow-2xl shadow-[#25D366]/30 transition-all duration-300 hover:scale-105 hover:shadow-[#25D366]/50">
+            <div className="mt-8 flex items-center gap-4">
+              <a href={startHref} className="group relative flex items-center gap-2 rounded-2xl bg-gradient-to-r from-[#25D366] to-[#06b77e] px-8 py-4 text-base font-bold text-white shadow-2xl shadow-[#25D366]/30 transition-all duration-300 hover:scale-105 hover:shadow-[#25D366]/50">
                 Start Free Trial
                 <svg className="h-4 w-4 transition-transform group-hover:translate-x-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
                 </svg>
-              </a>
-              <a href="#how-it-works" className="flex items-center gap-2 rounded-2xl border border-ink-900/12 px-8 py-4 text-base font-semibold text-ink-900/80 transition-all duration-300 hover:border-ink-900/18 hover:bg-white/60 hover:text-ink-900">
-                Watch Demo
               </a>
             </div>
 

@@ -1,5 +1,7 @@
 import { useRef } from "react";
 import { motion, useInView } from "framer-motion";
+import { useAuth } from "@shared/providers/AuthContext";
+import { authAwareHref } from "@shared/utils/authNavigation";
 
 const steps = [
   {
@@ -71,6 +73,8 @@ const steps = [
 ];
 
 export function HowItWorksSection() {
+  const { token, user } = useAuth();
+  const startHref = authAwareHref({ token, role: user?.role, guestHref: "/register" });
   const ref = useRef<HTMLDivElement>(null);
   const inView = useInView(ref, { once: true, margin: "-60px" });
 
@@ -165,7 +169,7 @@ export function HowItWorksSection() {
             <p className="text-sm text-[#25D366] font-semibold mb-1">🎉 No credit card required</p>
             <p className="text-xl font-extrabold text-ink-900">Start your free trial today</p>
           </div>
-          <a href="/register"
+          <a href={startHref}
             className="shrink-0 bg-gradient-to-r from-[#25D366] to-[#06b77e] text-white font-bold px-8 py-3.5 rounded-xl hover:scale-105 hover:shadow-lg hover:shadow-[#25D366]/30 transition-all duration-200">
             Get Started Free →
           </a>

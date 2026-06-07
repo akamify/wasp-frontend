@@ -6,6 +6,9 @@ export function getWorkspaceId(): string;
 export function setWorkspaceId(workspaceId: string): void;
 export function setToken(token: string): void;
 export function clearApiGetCache(): void;
+export const TOKEN_KEY: string;
+export const WORKSPACE_KEY: string;
+export const AUTH_STORAGE_EVENT: string;
 
 // Keep responses loosely typed; the UI can narrow as needed.
 export const API: {

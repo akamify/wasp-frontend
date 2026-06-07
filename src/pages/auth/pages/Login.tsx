@@ -8,10 +8,11 @@ import { Button } from "@components/ui/Button";
 import { Alert } from "@components/ui/Alert";
 import { BRAND_NAME } from "../../../config/brand";
 import { normalizeRole } from "@shared/utils/authRole";
+import { authenticatedHome } from "@shared/utils/authNavigation";
 import { Eye, EyeOff } from "lucide-react";
 
 export default function LoginPage() {
-  const { login } = useAuth();
+  const { loading, login, token, user } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   const [email, setEmail] = useState("");
@@ -27,10 +28,7 @@ export default function LoginPage() {
   const from = (location.state as any)?.from || null;
 
   function defaultTargetByRole(role?: string | null) {
-    const normalized = normalizeRole(role);
-    if (normalized === "super_admin") return "/super-admin";
-    if (normalized === "admin") return "/admin";
-    return "/workspaces";
+    return authenticatedHome(role, token);
   }
 
   function loginTarget(role?: string | null) {
@@ -90,6 +88,12 @@ export default function LoginPage() {
     }, 1000);
     return () => window.clearInterval(timer);
   }, [resendCooldown]);
+
+  React.useEffect(() => {
+    if (!loading && token && user) {
+      navigate(authenticatedHome(user.role, token), { replace: true });
+    }
+  }, [loading, navigate, token, user]);
 
   async function resendOtp() {
     if (!challengeToken) return;

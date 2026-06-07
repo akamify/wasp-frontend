@@ -24,8 +24,9 @@ export const api = axios.create({
   timeout: 20000,
 });
 
-const TOKEN_KEY = "waspakamify_token";
-const WORKSPACE_KEY = "waspakamify_workspace_id";
+export const TOKEN_KEY = "waspakamify_token";
+export const WORKSPACE_KEY = "waspakamify_workspace_id";
+export const AUTH_STORAGE_EVENT = "waspakamify:auth-storage";
 let __workspaceResolvePromise = null;
 
 // Coalesce duplicate GET requests and add a tiny cache window to prevent
@@ -133,23 +134,37 @@ export function getWorkspaceId() {
 
 export function setWorkspaceId(workspaceId) {
   const previous = localStorage.getItem(WORKSPACE_KEY) || "";
-  if (!workspaceId) localStorage.removeItem(WORKSPACE_KEY);
-  else localStorage.setItem(WORKSPACE_KEY, String(workspaceId));
-  if (previous !== String(workspaceId || "")) {
+  const next = String(workspaceId || "");
+  if (!next) localStorage.removeItem(WORKSPACE_KEY);
+  else localStorage.setItem(WORKSPACE_KEY, next);
+  if (previous !== next) {
     __getCache.clear();
     __getInflight.clear();
+    window.dispatchEvent(new CustomEvent(AUTH_STORAGE_EVENT, { detail: { key: WORKSPACE_KEY } }));
   }
 }
 
 export function setToken(token) {
+  const previous = localStorage.getItem(TOKEN_KEY) || "";
+  const next = String(token || "");
   if (!token) {
     localStorage.removeItem(TOKEN_KEY);
     localStorage.removeItem(WORKSPACE_KEY);
+    __getCache.clear();
+    __getInflight.clear();
+    if (previous) {
+      window.dispatchEvent(new CustomEvent(AUTH_STORAGE_EVENT, { detail: { key: TOKEN_KEY } }));
+    }
     return;
   }
-  localStorage.setItem(TOKEN_KEY, token);
-  const workspaceId = workspaceFromToken(token);
+  localStorage.setItem(TOKEN_KEY, next);
+  const workspaceId = workspaceFromToken(next);
   if (workspaceId) setWorkspaceId(workspaceId);
+  if (previous !== next) {
+    __getCache.clear();
+    __getInflight.clear();
+    window.dispatchEvent(new CustomEvent(AUTH_STORAGE_EVENT, { detail: { key: TOKEN_KEY } }));
+  }
 }
 
 function roleFromToken(token) {

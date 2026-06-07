@@ -1,5 +1,14 @@
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
-import { API, clearApiGetCache, getToken, setToken, setWorkspaceId } from "@api/api";
+import {
+  API,
+  AUTH_STORAGE_EVENT,
+  clearApiGetCache,
+  getToken,
+  setToken,
+  setWorkspaceId,
+  TOKEN_KEY,
+  WORKSPACE_KEY,
+} from "@api/api";
 
 type User = {
   id: string;
@@ -52,12 +61,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     loading: true,
   }));
   const refreshingRef = React.useRef(false);
+  const refreshQueuedRef = React.useRef(false);
+  const refreshMeRef = React.useRef<(options?: { silent?: boolean }) => Promise<void>>(async () => {});
   const lastRefreshAtRef = React.useRef(0);
 
   const refreshMe = useCallback(async (options?: { silent?: boolean }) => {
     const silent = !!options?.silent;
     const now = Date.now();
-    if (refreshingRef.current) return;
+    if (refreshingRef.current) {
+      refreshQueuedRef.current = true;
+      return;
+    }
     if (now - lastRefreshAtRef.current < 1500) return;
     refreshingRef.current = true;
     lastRefreshAtRef.current = now;
@@ -72,9 +86,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setState((s) => ({ ...s, token, loading: silent ? s.loading : true }));
     try {
       const res = await API.auth.me();
+      if (getToken() !== token) return;
       if (res?.workspace?.id) setWorkspaceId(res.workspace.id);
       setState((s) => ({ ...s, token, user: res.user, workspace: res.workspace || null, loading: false }));
     } catch (error: any) {
+      if (getToken() !== token) return;
       if (isConfirmedAuthFailure(error)) {
         setToken("");
         setState((s) => ({ ...s, token: "", user: null, workspace: null, loading: false }));
@@ -83,11 +99,43 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setState((s) => ({ ...s, token, loading: false }));
     } finally {
       refreshingRef.current = false;
+      if (refreshQueuedRef.current) {
+        refreshQueuedRef.current = false;
+        lastRefreshAtRef.current = 0;
+        window.setTimeout(() => void refreshMeRef.current({ silent: true }), 0);
+      }
     }
   }, []);
+  refreshMeRef.current = refreshMe;
 
   useEffect(() => {
     refreshMe();
+  }, [refreshMe]);
+
+  useEffect(() => {
+    const syncSession = () => {
+      lastRefreshAtRef.current = 0;
+      const token = getToken();
+      if (!token) {
+        clearApiGetCache();
+        setState({ token: "", user: null, workspace: null, loading: false });
+        return;
+      }
+      setState((current) => ({ ...current, token, loading: true }));
+      void refreshMe();
+    };
+    const onStorage = (event: StorageEvent) => {
+      if (event.key === TOKEN_KEY || event.key === WORKSPACE_KEY || event.key === null) {
+        syncSession();
+      }
+    };
+
+    window.addEventListener("storage", onStorage);
+    window.addEventListener(AUTH_STORAGE_EVENT, syncSession);
+    return () => {
+      window.removeEventListener("storage", onStorage);
+      window.removeEventListener(AUTH_STORAGE_EVENT, syncSession);
+    };
   }, [refreshMe]);
 
   useEffect(() => {

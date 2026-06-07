@@ -3,6 +3,8 @@ import { motion, useInView } from "framer-motion";
 
 import { BRAND_NAME } from "@shared/config/brand";
 import { usePlans } from "@modules/billing/hooks/usePlans";
+import { useAuth } from "@shared/providers/AuthContext";
+import { authAwareHref, authenticatedHome } from "@shared/utils/authNavigation";
 
 function formatPlanPrice(plan: any) {
   const paise = plan?.pricing?.discountedPricePaise;
@@ -13,6 +15,10 @@ function formatPlanPrice(plan: any) {
 const logos = ["Digital Adbird", "Maxify Global", "Think Sync", "Mahabali Education"];
 
 export function CTASection() {
+  const { token, user } = useAuth();
+  const authenticatedHref = authenticatedHome(user?.role, token);
+  const startHref = authAwareHref({ token, role: user?.role, guestHref: "/register" });
+  const signInHref = authAwareHref({ token, role: user?.role, guestHref: "/login" });
   const { items } = usePlans();
   const ref = useRef<HTMLDivElement>(null);
   const inView = useInView(ref, { once: true, margin: "-80px" });
@@ -91,7 +97,7 @@ export function CTASection() {
                 ))}
               </ul>
               <a
-                href="/app/plan"
+                href={token ? authenticatedHref : "/login"}
                 className={`mt-auto text-center font-bold py-3.5 rounded-xl text-sm transition-all duration-200 ${plan.featured
                     ? "bg-gradient-to-r from-[#25D366] to-[#06b77e] text-white hover:shadow-lg hover:shadow-[#25D366]/30 hover:scale-105"
                     : "border border-ink-900/12 text-ink-900 hover:bg-brand-50/60"
@@ -103,7 +109,7 @@ export function CTASection() {
           ))}
         </div>
         <p className="text-xs text-center font-semibold text-ink-900/60 -mt-16 mb-16">
-          WhatsApp/message charges are billed separately from wallet balance where applicable.
+          WhatsApp template messages charge are billed separately from wallet balance where applicable.
         </p>
 
         <motion.div
@@ -138,13 +144,13 @@ export function CTASection() {
               Join modern businesses using {BRAND_NAME} to send smarter messages and convert more customers.
             </p>
             <div className="flex flex-wrap justify-center gap-4">
-              <a href="/register"
+              <a href={startHref}
                 className="bg-white text-[#059267] font-extrabold px-8 py-4 rounded-2xl hover:scale-105 hover:shadow-2xl transition-all duration-200">
                 Start Free - No Credit Card
               </a>
-              <a href="/login"
+              <a href={signInHref}
                 className="border-2 border-white/40 text-white font-bold px-8 py-4 rounded-2xl hover:bg-white/10 transition-all duration-200">
-                Sign In
+                {token ? "Open Dashboard" : "Sign In"}
               </a>
             </div>
           </div>

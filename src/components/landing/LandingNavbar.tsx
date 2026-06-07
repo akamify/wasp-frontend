@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { BRAND_NAME } from "@shared/config/brand";
 import { useAuth } from "@shared/providers/AuthContext";
+import { authenticatedHome } from "@shared/utils/authNavigation";
 
 const navLinks = [
   { label: "Features", href: "#features" },
@@ -11,7 +12,8 @@ const navLinks = [
 ];
 
 export function LandingNavbar() {
-  const { token } = useAuth();
+  const { token, user } = useAuth();
+  const authenticatedHref = authenticatedHome(user?.role, token);
   const [scrolled, setScrolled] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
 
@@ -61,7 +63,7 @@ export function LandingNavbar() {
         <div className="hidden md:flex items-center gap-3">
           {token ? (
             <a
-              href="/app"
+              href={authenticatedHref}
               className="text-sm font-semibold bg-gradient-to-r from-[#25D366] to-[#06b77e] text-white px-5 py-2 rounded-xl hover:shadow-lg hover:shadow-[#25D366]/25 hover:scale-105 transition-all duration-200"
             >
               Dashboard
@@ -113,7 +115,7 @@ export function LandingNavbar() {
               ))}
               <div className="flex gap-3 pt-2 border-t border-ink-900/10">
                 {token ? (
-                  <a href="/app" className="flex-1 text-center text-sm font-semibold bg-gradient-to-r from-[#25D366] to-[#06b77e] text-white py-2 rounded-lg">
+                  <a href={authenticatedHref} className="flex-1 text-center text-sm font-semibold bg-gradient-to-r from-[#25D366] to-[#06b77e] text-white py-2 rounded-lg">
                     Dashboard
                   </a>
                 ) : (
