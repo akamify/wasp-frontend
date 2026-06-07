@@ -314,7 +314,11 @@ export default function MetaConnectPage() {
       const result = await API.meta.refreshConnectionMetadata();
       clearApiGetCache();
       setEmbeddedConnection(result?.connection || null);
-      toast("WhatsApp account metadata refreshed", "success");
+      if (result?.connection?.authorizationRequired) {
+        toast("Meta authorization is no longer valid. Reconnect WhatsApp to refresh live metadata.", "warning");
+      } else {
+        toast("WhatsApp account metadata refreshed", "success");
+      }
       await loadStatus();
     } catch (e: any) {
       const message = e?.response?.data?.message || "Failed to refresh WhatsApp account metadata";
@@ -326,7 +330,9 @@ export default function MetaConnectPage() {
   }, [loadStatus, toast]);
 
   const connectionStatusMessage =
-    embeddedConnection?.connectionStatus === "pending_verification"
+    embeddedConnection?.connectionStatus === "reauthorization_required"
+      ? "Meta authorization expired or was revoked. Reconnect WhatsApp to restore live phone and profile metadata."
+      : embeddedConnection?.connectionStatus === "pending_verification"
       ? "Phone connected, verification pending"
       : embeddedConnection?.connectionStatus === "pending_display_name_review"
         ? "Display name review pending"
@@ -341,6 +347,9 @@ export default function MetaConnectPage() {
       ? "Cloud API registration may still be required before sending messages"
       : null;
   const businessProfile = embeddedConnection?.businessProfile || {};
+  const authorizationRequired =
+    embeddedConnection?.authorizationRequired === true ||
+    embeddedConnection?.connectionStatus === "reauthorization_required";
 
   return (
     <div className="space-y-8 pb-12 p-4 md:p-8">
@@ -400,10 +409,17 @@ export default function MetaConnectPage() {
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div className="text-xs font-black uppercase tracking-widest text-slate-500">Current WhatsApp Account</div>
           {embeddedConnection?.maskedWabaId ? (
-            <Button variant="outline" size="sm" className="rounded-[5px]" onClick={() => void refreshConnectionMetadata()} disabled={syncing}>
-              <RefreshCw size={14} className={cn("mr-2", syncing && "animate-spin")} />
-              Refresh Metadata
-            </Button>
+            <div className="flex flex-wrap items-center gap-2">
+              {authorizationRequired ? (
+                <Button size="sm" className="rounded-[5px]" onClick={() => void connectWhatsApp()} disabled={isStatusLoading}>
+                  Reconnect WhatsApp
+                </Button>
+              ) : null}
+              <Button variant="outline" size="sm" className="rounded-[5px]" onClick={() => void refreshConnectionMetadata()} disabled={syncing}>
+                <RefreshCw size={14} className={cn("mr-2", syncing && "animate-spin")} />
+                Refresh Metadata
+              </Button>
+            </div>
           ) : null}
         </div>
         <div className="mt-3 grid gap-2 text-xs font-semibold text-slate-700 md:grid-cols-4">

@@ -9,6 +9,7 @@ import { Textarea } from "@components/ui/Textarea";
 import { Select } from "@components/ui/Select";
 import { useToast } from "@shared/providers/ToastContext";
 import { cn } from "@shared/utils/cn";
+import { whatsappProfilePictureUrl } from "@shared/utils/whatsappProfile";
 
 const VERTICAL_OPTIONS = [
   "AUTO", "BEAUTY", "CLOTHING", "EDU", "ENTERTAIN", "EVENT_PLAN",
@@ -65,7 +66,7 @@ export function WhatsAppManagerProfileModal({
     setVertical(businessProfile?.vertical || "OTHER");
     const ws = Array.isArray(businessProfile?.websites) ? businessProfile.websites : [];
     setWebsites(ws.length ? ws : [""]);
-    setProfilePictureUrl(businessProfile?.profile_picture_url || "");
+    setProfilePictureUrl(whatsappProfilePictureUrl(businessProfile));
     setProfilePictureHandle("");
   }, [open, businessProfile]);
   useEffect(() => () => clearLocalPreview(), []);
@@ -95,7 +96,7 @@ export function WhatsAppManagerProfileModal({
       toast("Profile picture uploaded. Click Save to apply it.", "success");
     } catch (e: any) {
       clearLocalPreview();
-      setProfilePictureUrl(businessProfile?.profile_picture_url || "");
+      setProfilePictureUrl(whatsappProfilePictureUrl(businessProfile));
       toast(e?.response?.data?.message || e?.message || "Upload failed", "error");
     } finally {
       setUploadBusy(false);

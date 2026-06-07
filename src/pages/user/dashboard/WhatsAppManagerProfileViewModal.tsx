@@ -1,6 +1,7 @@
 import { AnimatePresence, motion } from "framer-motion";
 import { createPortal } from "react-dom";
 import { X, Mail, Globe, Info, Edit2, Edit, LocationEdit } from "lucide-react";
+import { whatsappProfilePictureUrl } from "@shared/utils/whatsappProfile";
 
 export function WhatsAppManagerProfileViewModal({
   open,
@@ -14,7 +15,7 @@ export function WhatsAppManagerProfileViewModal({
   businessProfile: any;
 }) {
   const websites = Array.isArray(businessProfile?.websites) ? businessProfile.websites : [];
-  const avatarUrl = businessProfile?.profile_picture_url || "";
+  const avatarUrl = whatsappProfilePictureUrl(businessProfile);
 
   return createPortal(
     <AnimatePresence>
