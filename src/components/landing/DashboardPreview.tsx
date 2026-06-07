@@ -1,292 +1,292 @@
 import { useRef } from "react";
 import { motion, useInView } from "framer-motion";
+import {
+  Check,
+  Eye,
+  FileText,
+  Megaphone,
+  MessageCircle,
+  Plus,
+  RefreshCw,
+  Send,
+  TrendingUp,
+  Users,
+  Wallet,
+} from "lucide-react";
 
-import { formatCurrencySafe } from "@shared/config/currency";
+const metrics = [
+  { label: "Contacts", value: "12,840", trend: "+18.4%", icon: Users, color: "text-blue-600", bg: "bg-blue-50" },
+  { label: "Messages", value: "48,290", trend: "+24.8%", icon: MessageCircle, color: "text-orange-600", bg: "bg-orange-50" },
+  { label: "Sent", value: "46,870", trend: "Total", icon: Send, color: "text-cyan-600", bg: "bg-cyan-50" },
+  { label: "Delivered", value: "44,216", trend: "Good", icon: TrendingUp, color: "text-violet-600", bg: "bg-violet-50" },
+] as const;
 
-const stats = [
-  {
-    label: "Messages Delivered",
-    value: import.meta.env.VITE_STAT_MESSAGES_DELIVERED || "2.4B+",
-    delta: import.meta.env.VITE_STAT_MESSAGES_DELIVERED_DELTA || "All time",
-    color: "text-emerald-600"
-  },
-  {
-    label: "Active Campaigns",
-    value: import.meta.env.VITE_STAT_ACTIVE_CAMPAIGNS || "12,840",
-    delta: import.meta.env.VITE_STAT_ACTIVE_CAMPAIGNS_DELTA || "Currently running",
-    color: "text-blue-600"
-  },
-  {
-    label: "Avg. Open Rate",
-    value: import.meta.env.VITE_STAT_AVG_OPEN_RATE || "94.7%",
-    delta: import.meta.env.VITE_STAT_AVG_OPEN_RATE_DELTA || "Last 30 days",
-    color: "text-purple-600"
-  },
-  {
-    label: "Revenue Attributed",
-    value: (() => {
-      const n = import.meta.env.VITE_STAT_REVENUE;
-      const disp = import.meta.env.VITE_STAT_REVENUE_DISPLAY;
-      if (n !== undefined && n !== null && String(n).trim() !== "") {
-        const num = Number(n);
-        if (!Number.isNaN(num)) return formatCurrencySafe(num);
-      }
-      return disp || "₹48M+";
-    })(),
-    delta: import.meta.env.VITE_STAT_REVENUE_DELTA || "Last 30 days",
-    color: "text-brand-600"
-  },
-];
+const graphData = [
+  { label: "Mon", sent: 4200, delivered: 3780 },
+  { label: "Tue", sent: 5800, delivered: 5340 },
+  { label: "Wed", sent: 4700, delivered: 4380 },
+  { label: "Thu", sent: 7200, delivered: 6710 },
+  { label: "Fri", sent: 6500, delivered: 6120 },
+  { label: "Sat", sent: 8100, delivered: 7620 },
+  { label: "Sun", sent: 7600, delivered: 7240 },
+] as const;
 
-const activities = [
-  { type: "sent", text: "Campaign \"Black Friday Flash\" sent to 45,000 contacts", time: "2m ago", color: "#25D366" },
-  { type: "reply", text: "New reply from +91 98765 43210 - \"I'm interested!\"", time: "5m ago", color: "#06b6d4" },
-  { type: "bot", text: "Chatbot qualified 340 leads from Webinar follow-up", time: "12m ago", color: "#7c3aed" },
-  { type: "link", text: "Smart link 'product-launch' hit 1,200 clicks", time: "28m ago", color: "#f59e0b" },
-  { type: "sent", text: "Drip sequence step 3 sent to 8,920 users", time: "1h ago", color: "#25D366" },
-];
+function getChartPath(key: "sent" | "delivered") {
+  const width = 800;
+  const height = 250;
+  const maxValue = Math.max(...graphData.map((point) => point[key]), 1);
+  const points = graphData.map((point, index) => ({
+    x: (index / (graphData.length - 1)) * width,
+    y: height - (point[key] / maxValue) * (height * 0.82),
+  }));
 
-function renderQuotedActivityText(text: string) {
-  const raw = String(text || "");
-  const parts: Array<{ value: string; highlight: boolean }> = [];
-  let last = 0;
-  const re = /"([^"]+)"|'([^']+)'/g;
-  for (let match = re.exec(raw); match; match = re.exec(raw)) {
-    const start = match.index;
-    const end = start + match[0].length;
-    if (start > last) parts.push({ value: raw.slice(last, start), highlight: false });
-    parts.push({ value: match[0], highlight: true });
-    last = end;
-  }
-  if (last < raw.length) parts.push({ value: raw.slice(last), highlight: false });
+  return points.reduce((path, point, index) => {
+    if (index === 0) return `M ${point.x},${point.y}`;
+    const previous = points[index - 1];
+    const controlX = previous.x + (point.x - previous.x) / 2;
+    return `${path} C ${controlX},${previous.y} ${controlX},${point.y} ${point.x},${point.y}`;
+  }, "");
+}
 
+function MetricCard({ metric, index, inView }: {
+  metric: (typeof metrics)[number];
+  index: number;
+  inView: boolean;
+}) {
+  const Icon = metric.icon;
   return (
-    <>
-      {parts.map((p, idx) =>
-        p.highlight ? (
-          <span key={idx} className="text-ink-800/80">
-            {p.value}
-          </span>
-        ) : (
-          <span key={idx}>{p.value}</span>
-        )
-      )}
-    </>
+    <motion.div
+      initial={{ opacity: 0, y: 12 }}
+      animate={inView ? { opacity: 1, y: 0 } : {}}
+      transition={{ delay: 0.32 + index * 0.07, duration: 0.4 }}
+      className="flex items-center justify-between rounded-[5px] border border-slate-200 bg-white p-3 shadow-sm md:p-4"
+    >
+      <div className="min-w-0">
+        <div className="truncate text-[9px] font-bold uppercase tracking-wider text-slate-500 md:text-[10px]">{metric.label}</div>
+        <div className="mt-1 text-lg font-black tracking-tight text-slate-900 md:text-2xl">{metric.value}</div>
+        <div className={`mt-1 inline-flex rounded-[4px] px-1.5 py-0.5 text-[9px] font-black ${metric.bg} ${metric.color}`}>
+          {metric.trend}
+        </div>
+      </div>
+      <div className={`ml-2 rounded-[5px] p-2.5 ${metric.bg} ${metric.color}`}>
+        <Icon size={19} />
+      </div>
+    </motion.div>
   );
 }
 
-// Parse per-day message volume from env (comma-separated numbers). Fallback to defaults.
-const volumeValues: number[] = (() => {
-  const raw = String(import.meta.env.VITE_STAT_VOLUME_DAYS || "60,80,45,95,70,88,100");
-  const parsed = raw
-    .split(",")
-    .map((s) => Number(s.trim()))
-    .filter((n) => !Number.isNaN(n));
-  return parsed.length ? parsed : [60, 80, 45, 95, 70, 88, 100];
-})();
+function CampaignChart({ inView }: { inView: boolean }) {
+  const sentPath = getChartPath("sent");
+  const deliveredPath = getChartPath("delivered");
 
-// Optional labels for each day (comma-separated). Pads or truncates to match `volumeValues` length.
-const volumeLabels: string[] = (() => {
-  const raw = String(import.meta.env.VITE_STAT_VOLUME_LABELS || "Mon,Tue,Wed,Thu,Fri,Sat,Sun");
-  const parts = raw.split(",").map((s) => s.trim());
-  if (parts.length >= volumeValues.length) return parts.slice(0, volumeValues.length);
-  return [
-    ...parts,
-    ...Array.from({ length: Math.max(0, volumeValues.length - parts.length) }, (_, i) => `Day ${parts.length + i + 1}`),
-  ];
-})();
+  return (
+    <div className="rounded-[5px] border border-slate-200 bg-white p-4 shadow-sm md:p-6">
+      <div className="mb-6 flex flex-col justify-between gap-3 sm:flex-row sm:items-center">
+        <div>
+          <h3 className="text-sm font-black text-slate-900 md:text-lg">Campaign Activity</h3>
+          <p className="mt-0.5 text-[10px] font-medium text-slate-500 md:text-xs">Real-time message delivery tracking</p>
+        </div>
+        <div className="flex self-start rounded-[5px] bg-slate-100 p-1">
+          {["Today", "Last 7 Days", "30 Days"].map((filter) => (
+            <span
+              key={filter}
+              className={`rounded-[5px] px-2.5 py-1 text-[9px] font-bold md:px-3 md:text-[10px] ${
+                filter === "Last 7 Days" ? "bg-white text-slate-900 shadow-sm" : "text-slate-500"
+              }`}
+            >
+              {filter}
+            </span>
+          ))}
+        </div>
+      </div>
+
+      <div className="relative h-[170px] md:h-[220px]">
+        <div className="pointer-events-none absolute inset-0 flex flex-col justify-between opacity-30">
+          {[0, 1, 2, 3, 4].map((line) => <div key={line} className="border-t border-slate-300" />)}
+        </div>
+        <svg viewBox="0 0 800 250" preserveAspectRatio="none" className="relative z-10 h-full w-full overflow-visible">
+          <path d={`${deliveredPath} L 800,250 L 0,250 Z`} className="fill-brand-500/10" />
+          <motion.path
+            initial={{ pathLength: 0, opacity: 0 }}
+            animate={inView ? { pathLength: 1, opacity: 1 } : {}}
+            transition={{ delay: 0.45, duration: 1 }}
+            d={sentPath}
+            fill="none"
+            stroke="#cbd5e1"
+            strokeWidth="2.5"
+            strokeLinecap="round"
+          />
+          <motion.path
+            initial={{ pathLength: 0, opacity: 0 }}
+            animate={inView ? { pathLength: 1, opacity: 1 } : {}}
+            transition={{ delay: 0.55, duration: 1.1 }}
+            d={deliveredPath}
+            fill="none"
+            stroke="#16a34a"
+            strokeWidth="4"
+            strokeLinecap="round"
+          />
+        </svg>
+      </div>
+      <div className="mt-4 grid grid-cols-7 text-center text-[9px] font-bold uppercase tracking-widest text-slate-400">
+        {graphData.map((point) => <span key={point.label}>{point.label}</span>)}
+      </div>
+      <div className="mt-4 flex items-center justify-end gap-4 text-[9px] font-bold uppercase tracking-wider">
+        <span className="flex items-center gap-1.5 text-slate-500"><i className="h-2 w-2 rounded-full bg-slate-300" /> Sent</span>
+        <span className="flex items-center gap-1.5 text-brand-700"><i className="h-2 w-2 rounded-full bg-brand-600" /> Delivered</span>
+      </div>
+    </div>
+  );
+}
+
+function AccountSidebar() {
+  return (
+    <div className="flex flex-col gap-4">
+      <div className="rounded-[5px] border border-slate-200 bg-white p-4 shadow-sm">
+        <div className="flex items-center justify-between">
+          <div className="text-[10px] font-bold uppercase tracking-wider text-slate-500">WhatsApp Account</div>
+          <span className="flex items-center gap-1 text-[9px] font-black text-emerald-600">
+            <i className="h-2 w-2 rounded-full bg-emerald-500" /> Connected
+          </span>
+        </div>
+        <div className="mt-4 flex items-center gap-3">
+          <div className="flex h-11 w-11 items-center justify-center rounded-[5px] bg-gradient-to-br from-brand-500 to-emerald-700 text-sm font-black text-white">AS</div>
+          <div className="min-w-0">
+            <div className="truncate text-sm font-black text-slate-900">Akamify Store</div>
+            <div className="mt-0.5 text-[10px] font-medium text-slate-500">+91 98765 43210</div>
+          </div>
+        </div>
+        <div className="mt-4 grid grid-cols-2 gap-2">
+          <div className="rounded-[5px] bg-slate-50 p-2.5">
+            <div className="text-[9px] font-bold uppercase text-slate-400">Quality</div>
+            <div className="mt-1 text-xs font-black text-emerald-600">High</div>
+          </div>
+          <div className="rounded-[5px] bg-slate-50 p-2.5">
+            <div className="text-[9px] font-bold uppercase text-slate-400">Tier</div>
+            <div className="mt-1 text-xs font-black text-slate-800">10K / day</div>
+          </div>
+        </div>
+      </div>
+
+      <div className="rounded-[5px] border border-slate-200 bg-white p-4 shadow-sm">
+        <div className="flex items-center justify-between">
+          <div>
+            <div className="text-[10px] font-bold uppercase tracking-wider text-slate-500">Wallet Balance</div>
+            <div className="mt-1 text-2xl font-black text-slate-900">₹8,420.50</div>
+          </div>
+          <div className="rounded-[5px] bg-brand-50 p-2.5 text-brand-700"><Wallet size={20} /></div>
+        </div>
+        <div className="mt-4 h-1.5 overflow-hidden rounded-full bg-slate-100">
+          <div className="h-full w-[68%] rounded-full bg-brand-600" />
+        </div>
+        <div className="mt-2 text-[9px] font-semibold text-slate-400">Enough for approximately 32,000 messages</div>
+      </div>
+    </div>
+  );
+}
 
 export function DashboardPreview() {
   const ref = useRef<HTMLDivElement>(null);
   const inView = useInView(ref, { once: true, margin: "-80px" });
 
   return (
-    <section
-      id="dashboard"
-      className="relative py-12 md:py-10 overflow-hidden"
-      style={{ background: "linear-gradient(180deg, #ffffff 0%, #f7f6f2 100%)" }}
-    >
-      <div className="absolute -top-60 right-0 w-[500px] h-[500px] rounded-full bg-[#25D366]/8 blur-3xl pointer-events-none" />
-
-      <div className="max-w-7xl mx-auto px-6 lg:px-8">
-        {/* Header */}
+    <section id="dashboard" className="relative overflow-hidden bg-gradient-to-b from-white to-[#f7f6f2] py-12 md:py-16">
+      <div className="pointer-events-none absolute -right-40 -top-60 h-[500px] w-[500px] rounded-full bg-[#25D366]/10 blur-3xl" />
+      <div className="relative mx-auto max-w-7xl px-6 lg:px-8">
         <motion.div
           ref={ref}
-          initial={{ opacity: 0, y: 30 }}
+          initial={{ opacity: 0, y: 24 }}
           animate={inView ? { opacity: 1, y: 0 } : {}}
-          transition={{ duration: 0.7 }}
-          className="text-center mb-16"
+          transition={{ duration: 0.65 }}
+          className="mb-12 text-center"
         >
-          {/* <span className="inline-block text-xs font-bold tracking-widest uppercase text-[#06b6d4] bg-[#06b6d4]/10 border border-[#06b6d4]/20 rounded-full px-4 py-1.5 mb-4">
-            Dashboard
-          </span> */}
-          <h2 className="text-4xl lg:text-5xl font-extrabold text-ink-900 mb-4">
+          <h2 className="text-4xl font-extrabold text-ink-900 lg:text-5xl">
             Your command center for{" "}
-            <span className="bg-gradient-to-r from-[#06b6d4] to-[#25D366] bg-clip-text text-transparent">
-              WhatsApp growth
-            </span>
+            <span className="bg-gradient-to-r from-[#06b6d4] to-[#25D366] bg-clip-text text-transparent">WhatsApp growth</span>
           </h2>
-          <p className="text-lg text-ink-900/65 max-w-xl mx-auto">
-            A real-time overview of every metric that matters - campaigns, contacts, revenue and more.
+          <p className="mx-auto mt-4 max-w-xl text-lg text-ink-900/65">
+            A real dashboard-style preview of campaigns, contacts, delivery performance and account health.
           </p>
         </motion.div>
 
-        {/* Dashboard mockup */}
         <motion.div
-          initial={{ opacity: 0, y: 50 }}
+          initial={{ opacity: 0, y: 44 }}
           animate={inView ? { opacity: 1, y: 0 } : {}}
-          transition={{ delay: 0.2, duration: 0.8, ease: [0.22, 1, 0.36, 1] }}
-          className="rounded-3xl border border-ink-900/10 bg-white shadow-2xl shadow-black/10 overflow-hidden"
+          transition={{ delay: 0.15, duration: 0.75, ease: [0.22, 1, 0.36, 1] }}
+          className="overflow-hidden rounded-[12px] border border-slate-200 bg-slate-50 shadow-2xl shadow-slate-900/10"
         >
-          {/* Top bar */}
-          <div className="flex items-center justify-between px-6 py-4 border-b border-ink-900/10 bg-slate-50">
+          <div className="flex items-center justify-between border-b border-slate-200 bg-white px-4 py-3 md:px-6">
             <div className="flex items-center gap-3">
-              <div className="flex gap-1.5">
-                <div className="w-3 h-3 rounded-full bg-red-500/70" />
-                <div className="w-3 h-3 rounded-full bg-yellow-500/70" />
-                <div className="w-3 h-3 rounded-full bg-green-500/70" />
+              <div className="hidden gap-1.5 sm:flex">
+                <i className="h-2.5 w-2.5 rounded-full bg-rose-400" />
+                <i className="h-2.5 w-2.5 rounded-full bg-amber-400" />
+                <i className="h-2.5 w-2.5 rounded-full bg-emerald-400" />
               </div>
-              <span className="text-xs text-ink-900/45 font-mono">{`whasp.akamify.com/app`}</span>
+              <span className="text-[10px] font-semibold text-slate-400 md:text-xs">app.akamify.com/dashboard</span>
             </div>
-            <div className="flex items-center gap-2">
-              <div className="w-2 h-2 rounded-full bg-[#25D366] animate-pulse" />
-              <span className="text-xs text-[#25D366]">Live</span>
+            <div className="flex items-center gap-3">
+              <span className="hidden items-center gap-1.5 text-[10px] font-black text-emerald-600 sm:flex"><i className="h-2 w-2 rounded-full bg-emerald-500" /> WABA Live</span>
+              <span className="rounded-[5px] bg-slate-100 p-1.5 text-slate-500"><RefreshCw size={13} /></span>
+              <span className="flex items-center gap-1.5 rounded-[5px] bg-brand-600 px-2.5 py-1.5 text-[10px] font-black text-white"><Plus size={12} /> New Campaign</span>
             </div>
           </div>
 
-          <div className="p-6 grid lg:grid-cols-3 gap-6">
-            {/* Left: Stats */}
-            <div className="lg:col-span-2 flex flex-col gap-4">
-              {/* Stat cards */}
-              <div className="grid grid-cols-2 gap-4">
-                {stats.map((stat, i) => (
-                  <motion.div
-                    key={stat.label}
-                    initial={{ opacity: 0, scale: 0.9 }}
-                    animate={inView ? { opacity: 1, scale: 1 } : {}}
-                    transition={{ delay: 0.3 + i * 0.08, duration: 0.5 }}
-                    className="p-6 border border-ink-900/5 bg-[#fbfcfc] shadow-none rounded-[12px] hover:border-brand-300/30 transition-colors group"
-                  >
-                    <div className="text-[11px] font-bold uppercase tracking-wider text-ink-800/50">{stat.label}</div>
-                    <div className="mt-2 text-3xl font-black text-ink-900 tracking-tight">{stat.value}</div>
-                    <div className={`text-[11px] font-medium ${stat.color} mt-2`}>{stat.delta}</div>
-                  </motion.div>
-                ))}
+          <div className="p-3 md:p-6">
+            <div className="mb-4 flex flex-col gap-3 rounded-[5px] border border-slate-200 bg-white p-4 shadow-sm md:flex-row md:items-center md:justify-between">
+              <div>
+                <div className="text-xs font-black text-slate-900 md:text-sm">Complete your account setup</div>
+                <div className="mt-1 text-[10px] font-medium text-slate-500">4 of 5 steps completed</div>
               </div>
-
-              {/* Line Chart mockup */}
-              <div className="p-6 border border-ink-900/5 bg-[#fbfcfc] shadow-none rounded-[12px] flex flex-col min-h-[340px] w-full">
-                <div className="flex items-center justify-between mb-8">
-                  <h3 className="font-bold text-[15px] text-ink-900 tracking-tight">Message Volume</h3>
-                  <div className="flex bg-white ring-1 ring-ink-900/10 rounded-[5px] p-0.5">
-                    {["Weekly", "Monthly", "Yearly"].map(f => (
-                      <div 
-                        key={f}
-                        className={`px-3 py-1 text-[11px] font-bold rounded-[3px] transition-colors ${f === "Weekly" ? "bg-ink-900 text-white shadow-sm" : "text-ink-800/60"}`}
-                      >
-                        {f}
-                      </div>
-                    ))}
-                  </div>
-                </div>
-
-                {/* CSS Line Chart with Multi-lines */}
-                <div className="flex-1 flex flex-col justify-end relative mt-2 pb-6">
-                  {/* Legend */}
-                  <div className="absolute top-0 right-0 flex gap-4 text-[10px] font-bold uppercase tracking-wider">
-                    <div className="flex items-center gap-1.5 text-[#0ea5e9]"><span className="w-2 h-2 rounded-full bg-[#0ea5e9]" /> Sent</div>
-                    <div className="flex items-center gap-1.5 text-[#22c55e]"><span className="w-2 h-2 rounded-full bg-[#22c55e]" /> Delivered</div>
-                    <div className="flex items-center gap-1.5 text-[#8b5cf6]"><span className="w-2 h-2 rounded-full bg-[#8b5cf6]" /> Read</div>
-                  </div>
-
-                  <div className="relative w-full h-[200px] mt-8 mb-6">
-                    <svg className="w-full h-full overflow-visible" preserveAspectRatio="none" viewBox="0 0 100 100">
-                      {/* Grid lines */}
-                      <line x1="0" y1="0" x2="100" y2="0" stroke="#e2e8f0" strokeWidth="0.5" strokeDasharray="2 2" />
-                      <line x1="0" y1="50" x2="100" y2="50" stroke="#e2e8f0" strokeWidth="0.5" strokeDasharray="2 2" />
-                      <line x1="0" y1="100" x2="100" y2="100" stroke="#e2e8f0" strokeWidth="0.5" strokeDasharray="2 2" />
-
-                      {(() => {
-                        const sentData = volumeValues;
-                        const delData = volumeValues.map(v => v * 0.92);
-                        const readData = volumeValues.map(v => v * 0.85);
-                        
-                        const maxVal = Math.max(...sentData, 1);
-                        
-                        const getPath = (dataArr: number[]) => {
-                          return dataArr.map((v, i) => {
-                            const x = (i / (volumeValues.length - 1)) * 100;
-                            const y = 100 - (v / maxVal) * 100;
-                            return `${x},${y}`;
-                          }).join(" ");
-                        };
-
-                        return (
-                          <>
-                            <motion.polyline 
-                              initial={{ pathLength: 0 }} animate={inView ? { pathLength: 1 } : {}} transition={{ duration: 1.5, ease: "easeOut" }} 
-                              fill="none" stroke="#0ea5e9" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" points={getPath(sentData)} vectorEffect="non-scaling-stroke" 
-                            />
-                            <motion.polyline 
-                              initial={{ pathLength: 0 }} animate={inView ? { pathLength: 1 } : {}} transition={{ duration: 1.5, ease: "easeOut", delay: 0.2 }} 
-                              fill="none" stroke="#22c55e" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" points={getPath(delData)} vectorEffect="non-scaling-stroke" 
-                            />
-                            <motion.polyline 
-                              initial={{ pathLength: 0 }} animate={inView ? { pathLength: 1 } : {}} transition={{ duration: 1.5, ease: "easeOut", delay: 0.4 }} 
-                              fill="none" stroke="#8b5cf6" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" points={getPath(readData)} vectorEffect="non-scaling-stroke" 
-                            />
-                          </>
-                        );
-                      })()}
-                    </svg>
-                    
-                    {/* Overlay labels */}
-                    <div className="absolute -bottom-8 left-0 right-0 h-4">
-                      {volumeLabels.map((lbl, i) => {
-                        const leftPos = (i / (volumeLabels.length - 1)) * 100;
-                        let translate = "-translate-x-1/2";
-                        if (i === 0) translate = "translate-x-0";
-                        if (i === volumeLabels.length - 1) translate = "-translate-x-full";
-                        
-                        return (
-                          <div 
-                            key={lbl} 
-                            className={`absolute text-[10px] font-bold text-ink-800/40 uppercase tracking-wider ${translate}`}
-                            style={{ left: `${leftPos}%` }}
-                          >
-                            {lbl}
-                          </div>
-                        );
-                      })}
-                    </div>
-                  </div>
-                </div>
+              <div className="flex flex-wrap gap-2">
+                {["Meta Account", "Template", "Contacts", "Wallet"].map((step) => (
+                  <span key={step} className="flex items-center gap-1 rounded-[5px] bg-emerald-50 px-2 py-1 text-[9px] font-bold text-emerald-700">
+                    <Check size={10} /> {step}
+                  </span>
+                ))}
+                <span className="rounded-[5px] bg-amber-50 px-2 py-1 text-[9px] font-bold text-amber-700">Create Campaign</span>
               </div>
             </div>
 
-            {/* Right: Activity feed */}
-            <div className="rounded-[12px] bg-[#fbfcfc] border border-ink-900/5 p-6 flex flex-col gap-6">
-              <div className="flex items-center justify-between">
-                <h3 className="font-bold text-[15px] text-ink-900 tracking-tight">Live Activity</h3>
-                <div className="w-2 h-2 rounded-full bg-[#25D366] animate-ping" />
-              </div>
-              <div className="flex flex-col gap-6">
-                {activities.map((a, i) => (
-                  <motion.div
-                    key={i}
-                    initial={{ opacity: 0, x: 20 }}
-                    animate={inView ? { opacity: 1, x: 0 } : {}}
-                    transition={{ delay: 0.6 + i * 0.08, duration: 0.4 }}
-                    className="flex gap-4 items-start"
-                  >
-                    <div className="mt-1.5 w-[6px] h-[6px] rounded-full shrink-0" style={{ background: a.color }} />
-                    <div>
-                      <p className="text-[13px] font-medium text-ink-900 leading-snug">{renderQuotedActivityText(a.text)}</p>
-                      <p className="text-[11px] text-ink-800/40 mt-1">{a.time}</p>
+            <div className="grid gap-4 lg:grid-cols-3">
+              <div className="space-y-4 lg:col-span-2">
+                <div className="grid grid-cols-2 gap-3">
+                  {metrics.map((metric, index) => <MetricCard key={metric.label} metric={metric} index={index} inView={inView} />)}
+                </div>
+                <div className="grid grid-cols-3 gap-3">
+                  {[
+                    { label: "Delivery Rate", value: "94.3%", icon: Send, tone: "text-emerald-700 bg-emerald-50" },
+                    { label: "Read Rate", value: "82.7%", icon: Eye, tone: "text-violet-700 bg-violet-50" },
+                    { label: "Campaigns", value: "28", icon: Megaphone, tone: "text-fuchsia-700 bg-fuchsia-50" },
+                  ].map((item) => (
+                    <div key={item.label} className="rounded-[5px] border border-slate-200 bg-white p-3 shadow-sm">
+                      <div className={`inline-flex rounded-[5px] p-2 ${item.tone}`}><item.icon size={16} /></div>
+                      <div className="mt-3 text-lg font-black text-slate-900 md:text-2xl">{item.value}</div>
+                      <div className="mt-0.5 truncate text-[9px] font-bold uppercase tracking-wider text-slate-500">{item.label}</div>
                     </div>
-                  </motion.div>
-                ))}
+                  ))}
+                </div>
               </div>
+              <AccountSidebar />
+            </div>
+
+            <div className="mt-4">
+              <CampaignChart inView={inView} />
+            </div>
+
+            <div className="mt-4 grid gap-3 sm:grid-cols-3">
+              {[
+                { text: "Summer Sale campaign sent to 4,820 contacts", time: "2 min ago", icon: Megaphone },
+                { text: "Order update template approved by Meta", time: "18 min ago", icon: FileText },
+                { text: "1,240 contacts imported successfully", time: "42 min ago", icon: Users },
+              ].map((activity) => (
+                <div key={activity.text} className="flex items-start gap-3 rounded-[5px] border border-slate-200 bg-white p-3 shadow-sm">
+                  <div className="rounded-[5px] bg-brand-50 p-2 text-brand-700"><activity.icon size={14} /></div>
+                  <div>
+                    <div className="text-[10px] font-bold leading-relaxed text-slate-700">{activity.text}</div>
+                    <div className="mt-1 text-[9px] font-medium text-slate-400">{activity.time}</div>
+                  </div>
+                </div>
+              ))}
             </div>
           </div>
         </motion.div>

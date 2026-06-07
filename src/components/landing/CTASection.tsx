@@ -10,7 +10,7 @@ function formatPlanPrice(plan: any) {
   return `?${Math.round(Number(paise) / 100).toLocaleString("en-IN")}`;
 }
 
-const logos = ["Shopify", "HubSpot", "Zapier", "Salesforce", "Stripe", "Notion"];
+const logos = ["Digital Adbird", "Maxify Global", "Think Sync", "Mahabali Education"];
 
 export function CTASection() {
   const { items } = usePlans();
