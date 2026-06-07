@@ -85,8 +85,8 @@ export default function RegisterPage() {
   }
 
   return (
-    <div className="flex flex-row items-center justify-center min-h-screen bg-gray-50 gap-12 lg:px-2 lg:py-10">
-      <div className="hidden lg:block">
+    <div className="flex flex-row items-center lg:items-start justify-center min-h-screen bg-gray-50 gap-12">
+      <div className="hidden lg:sticky lg:top-10 lg:self-start lg:block">
         <AuthIllustration />
       </div>
       <div className="flex min-h-dvh items-center justify-center px-4 py-10">

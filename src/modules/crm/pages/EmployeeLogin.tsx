@@ -6,6 +6,7 @@ import { Button } from "@components/ui/Button";
 import { Alert } from "@components/ui/Alert";
 import { useEmployeeAuth } from "@modules/crm/providers/EmployeeAuthContext";
 import { Eye, EyeOff } from "lucide-react";
+import { EmployeeIllustration } from "@components/auth/EmployeeIllustration";
 
 export default function EmployeeLoginPage() {
   const { login } = useEmployeeAuth();
@@ -35,31 +36,36 @@ export default function EmployeeLoginPage() {
   }
 
   return (
-    <div className="flex min-h-dvh items-center justify-center px-4 py-10 bg-slate-50">
-      <Card className="w-full max-w-md p-6">
-        <div className="text-xs font-semibold text-ink-800/60">CRM Employee</div>
-        <h1 className="mt-1 text-2xl font-black tracking-tight">Sign in</h1>
-        <p className="mt-2 text-sm text-ink-800/70">Login with your assigned workspace ID, email and password.</p>
+    <div className="flex flex-row items-center justify-center min-h-dvh gap-12">
+      <div className="hidden lg:sticky lg:top-10 lg:self-start lg:block">
+        <EmployeeIllustration />
+      </div>
+      <div className="w-full max-w-md">
+        <Card className="w-full p-6">
+          <div className="text-xs font-semibold text-ink-800/60">CRM Employee</div>
+          <h1 className="mt-1 text-2xl font-black tracking-tight">Sign in</h1>
+          <p className="mt-2 text-sm text-ink-800/70">Login with your assigned workspace ID, email and password.</p>
 
-        <form className="mt-6 grid gap-3" onSubmit={onSubmit}>
-          {error ? <Alert>{error}</Alert> : null}
-          <Input label="Workspace ID" value={workspaceId} onChange={(e) => setWorkspaceId(e.target.value)} required />
-          <Input label="Email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} required />
-          <Input
-            label="Password"
-            type={showPassword ? "text" : "password"}
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            required
-            rightIcon={showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
-            rightIconLabel={showPassword ? "Hide password" : "Show password"}
-            onRightIconClick={() => setShowPassword((v) => !v)}
-          />
-          <Button type="submit" disabled={busy}>
-            {busy ? "Please wait..." : "Sign in"}
-          </Button>
-        </form>
-      </Card>
+          <form className="mt-6 grid gap-3" onSubmit={onSubmit}>
+            {error ? <Alert>{error}</Alert> : null}
+            <Input label="Workspace ID" value={workspaceId} onChange={(e) => setWorkspaceId(e.target.value)} required />
+            <Input label="Email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} required />
+            <Input
+              label="Password"
+              type={showPassword ? "text" : "password"}
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              required
+              rightIcon={showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+              rightIconLabel={showPassword ? "Hide password" : "Show password"}
+              onRightIconClick={() => setShowPassword((v) => !v)}
+            />
+            <Button type="submit" disabled={busy}>
+              {busy ? "Please wait..." : "Sign in"}
+            </Button>
+          </form>
+        </Card>
+      </div>
     </div>
   );
 }
