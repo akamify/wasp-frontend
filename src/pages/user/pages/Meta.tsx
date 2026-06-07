@@ -266,9 +266,10 @@ export default function MetaConnectPage() {
             config_id: configId,
             response_type: "code",
             override_default_response_type: true,
-            return_scopes: true,
-            auth_type: "rerequest",
-            extras: { sessionInfoVersion: "3" },
+            extras: {
+              version: "v3",
+              setup: {},
+            },
           }
         );
       });
