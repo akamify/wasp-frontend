@@ -255,7 +255,9 @@ export default function MetaConnectPage() {
                 response?.error_message ||
                 (response?.status === "not_authorized"
                   ? "Meta authorization was not completed. Please allow the requested WhatsApp permissions."
-                  : "Meta authorization code missing. Please close the popup and try again.");
+                  : !response?.authResponse
+                    ? "Meta did not authorize this app. The Meta app may be inactive, disabled, or unavailable to this Facebook account. Reactivate the app in Meta App Dashboard before connecting WhatsApp."
+                    : "Meta authorization code missing. Please close the popup and try again.");
               return reject(new Error(reason));
             }
             authCodeRef.current = code;
