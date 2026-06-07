@@ -241,13 +241,23 @@ export default function MetaConnectPage() {
       await new Promise<void>((resolve, reject) => {
         fb.login(
           (response: any) => {
-            const code = String(response?.authResponse?.code || "").trim();
+            const code = String(response?.authResponse?.code || response?.code || "").trim();
             const hasCode = !!code;
             debug("fb login callback", {
-              hasCode: Boolean(response?.authResponse?.code),
+              hasCode,
+              status: response?.status || null,
+              hasAuthResponse: Boolean(response?.authResponse),
               grantedScopes: response?.authResponse?.grantedScopes || null,
             });
-            if (!hasCode) return reject(new Error("Meta authorization code missing. Please try again."));
+            if (!hasCode) {
+              const reason =
+                response?.error?.message ||
+                response?.error_message ||
+                (response?.status === "not_authorized"
+                  ? "Meta authorization was not completed. Please allow the requested WhatsApp permissions."
+                  : "Meta authorization code missing. Please close the popup and try again.");
+              return reject(new Error(reason));
+            }
             authCodeRef.current = code;
             void maybeCompleteSignup().catch((err) => reject(err));
             return resolve();
@@ -258,10 +268,7 @@ export default function MetaConnectPage() {
             override_default_response_type: true,
             return_scopes: true,
             auth_type: "rerequest",
-            extras: {
-              feature: "whatsapp_embedded_signup",
-              sessionInfoVersion: "3",
-            },
+            extras: { sessionInfoVersion: "3" },
           }
         );
       });
