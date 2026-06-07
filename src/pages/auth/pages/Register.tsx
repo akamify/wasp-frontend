@@ -9,6 +9,7 @@ import { Alert } from "@components/ui/Alert";
 import { AuthIllustration } from "@components/auth/AuthIllustration";
 import { useOtpGuard } from "@shared/hooks/useOtpGuard";
 import { authenticatedHome } from "@shared/utils/authNavigation";
+import { Eye, EyeOff } from "lucide-react";
 
 export default function RegisterPage() {
   const { loading, register, token, user } = useAuth();
@@ -16,6 +17,7 @@ export default function RegisterPage() {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [otp, setOtp] = useState("");
   const [challengeToken, setChallengeToken] = useState("");
   const [requiresOtp, setRequiresOtp] = useState(false);
@@ -120,10 +122,13 @@ export default function RegisterPage() {
                 />
                 <Input
                   label="Password"
-                  type="password"
+                  type={showPassword ? "text" : "password"}
                   autoComplete="new-password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
+                  rightIcon={showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                  onRightIconClick={() => setShowPassword((v) => !v)}
+                  rightIconLabel={showPassword ? "Hide password" : "Show password"}
                   hint="Minimum 8 characters."
                   required
                 />
