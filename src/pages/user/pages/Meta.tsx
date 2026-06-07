@@ -258,7 +258,10 @@ export default function MetaConnectPage() {
             override_default_response_type: true,
             return_scopes: true,
             auth_type: "rerequest",
-            extras: { sessionInfoVersion: "3" },
+            extras: {
+              feature: "whatsapp_embedded_signup",
+              sessionInfoVersion: "3",
+            },
           }
         );
       });
