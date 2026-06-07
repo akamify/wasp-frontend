@@ -143,12 +143,6 @@ function AccountSidebar() {
   return (
     <div className="flex flex-col gap-4">
       <div className="rounded-[5px] border border-slate-200 bg-white p-4 shadow-sm">
-        <div className="flex items-center justify-between">
-          <div className="text-[10px] font-bold uppercase tracking-wider text-slate-500">WhatsApp Account</div>
-          <span className="flex items-center gap-1 text-[9px] font-black text-emerald-600">
-            <i className="h-2 w-2 rounded-full bg-emerald-500" /> Connected
-          </span>
-        </div>
         <div className="mt-4 flex items-center gap-3">
           <div className="flex h-11 w-11 items-center justify-center rounded-[5px] bg-gradient-to-br from-brand-500 to-emerald-700 text-sm font-black text-white">AS</div>
           <div className="min-w-0">
@@ -156,14 +150,14 @@ function AccountSidebar() {
             <div className="mt-0.5 text-[10px] font-medium text-slate-500">+91 98765 43210</div>
           </div>
         </div>
-        <div className="mt-4 grid grid-cols-2 gap-2">
+        <div className="mt-4 grid grid-rows-2 gap-2">
           <div className="rounded-[5px] bg-slate-50 p-2.5">
-            <div className="text-[9px] font-bold uppercase text-slate-400">Quality</div>
-            <div className="mt-1 text-xs font-black text-emerald-600">High</div>
+            <div className="text-[9px] font-bold uppercase text-slate-400">Phone Number</div>
+            <div className="mt-1 text-xs font-black text-slate-800">+91 12345 67891</div>
           </div>
           <div className="rounded-[5px] bg-slate-50 p-2.5">
-            <div className="text-[9px] font-bold uppercase text-slate-400">Tier</div>
-            <div className="mt-1 text-xs font-black text-slate-800">10K / day</div>
+            <div className="text-[9px] font-bold uppercase text-slate-400">Category</div>
+            <div className="mt-1 text-xs font-black text-slate-800">Others</div>
           </div>
         </div>
       </div>
@@ -222,11 +216,10 @@ export function DashboardPreview() {
                 <i className="h-2.5 w-2.5 rounded-full bg-amber-400" />
                 <i className="h-2.5 w-2.5 rounded-full bg-emerald-400" />
               </div>
-              <span className="text-[10px] font-semibold text-slate-400 md:text-xs">app.akamify.com/dashboard</span>
+              <span className="text-[10px] font-semibold text-slate-400 md:text-xs">wasp.akamify.com/app</span>
             </div>
             <div className="flex items-center gap-3">
-              <span className="hidden items-center gap-1.5 text-[10px] font-black text-emerald-600 sm:flex"><i className="h-2 w-2 rounded-full bg-emerald-500" /> WABA Live</span>
-              <span className="rounded-[5px] bg-slate-100 p-1.5 text-slate-500"><RefreshCw size={13} /></span>
+              <span className="hidden items-center gap-1.5 text-[10px] font-black text-emerald-600 sm:flex"><i className="h-2 w-2 rounded-full bg-emerald-500" /> WABA Status</span>
               <span className="flex items-center gap-1.5 rounded-[5px] bg-brand-600 px-2.5 py-1.5 text-[10px] font-black text-white"><Plus size={12} /> New Campaign</span>
             </div>
           </div>

@@ -1,9 +1,10 @@
 import { useRef } from "react";
 import { motion, useInView } from "framer-motion";
+import { BarChart, Link, Lock, Megaphone, MessageCircle, Bot } from "lucide-react";
 
 const features = [
   {
-    icon: "📡",
+    icon: <Megaphone className="w-7 h-7" />,
     title: "Bulk Broadcasting",
     desc: "Send personalized messages to thousands of contacts in seconds. Segment by behavior, demographics, or custom tags.",
     gradient: "from-[#25D366]/20 to-[#06b77e]/5",
@@ -11,7 +12,7 @@ const features = [
     glow: "shadow-[#25D366]/10",
   },
   {
-    icon: "🤖",
+    icon: <Bot className="w-7 h-7" />,
     title: "Smart Automation",
     desc: "Build no-code chatbots and drip sequences that respond, qualify, and convert leads 24/7 without human intervention.",
     gradient: "from-[#7c3aed]/20 to-[#6d28d9]/5",
@@ -19,7 +20,7 @@ const features = [
     glow: "shadow-[#7c3aed]/10",
   },
   {
-    icon: "📊",
+    icon: <BarChart className="w-7 h-7" />,
     title: "Real-time Analytics",
     desc: "Track opens, clicks, replies, and conversions per campaign. Beautiful dashboards that tell the full story.",
     gradient: "from-[#06b6d4]/20 to-[#0891b2]/5",
@@ -27,7 +28,7 @@ const features = [
     glow: "shadow-[#06b6d4]/10",
   },
   {
-    icon: "💬",
+    icon: <MessageCircle className="w-7 h-7" />,
     title: "Shared Team Inbox",
     desc: "Collaborate on customer conversations with your whole team. Assign, tag, and resolve chats at lightning speed.",
     gradient: "from-[#f59e0b]/20 to-[#d97706]/5",
@@ -35,7 +36,7 @@ const features = [
     glow: "shadow-[#f59e0b]/10",
   },
   {
-    icon: "🔗",
+    icon: <Link className="w-7 h-7" />,
     title: "Smart Link Tracking",
     desc: "Create trackable short links with UTM auto-injection. Know exactly which messages drive your highest revenue.",
     gradient: "from-[#ef4444]/20 to-[#dc2626]/5",
@@ -43,7 +44,7 @@ const features = [
     glow: "shadow-[#ef4444]/10",
   },
   {
-    icon: "🔒",
+    icon: <Lock className="w-7 h-7" />,
     title: "Enterprise Security",
     desc: "End-to-end encryption, GDPR compliance, role-based access and audit logs — security built for scale.",
     gradient: "from-[#25D366]/20 to-[#7c3aed]/5",

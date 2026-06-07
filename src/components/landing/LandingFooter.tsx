@@ -9,7 +9,7 @@ const footerLinks: Record<string, { label: string; to: string; external?: boolea
   Company: [
     { label: "About", to: "/about" },
     { label: "Features", to: "/#features" },
-    { label: "Pricing", to: "/#pricing" },
+    { label: "Pricing", to: "/app/plan" },
   ],
   Legal: [
     { label: "Privacy Policy", to: "/privacy-policy" },
