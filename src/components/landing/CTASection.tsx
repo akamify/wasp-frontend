@@ -69,8 +69,8 @@ export function CTASection() {
               transition={{ delay: i * 0.15, duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
               whileHover={{ y: -4 }}
               className={`relative rounded-3xl border p-8 flex flex-col gap-6 transition-all duration-300 ${plan.featured
-                  ? "border-[#25D366]/30 bg-gradient-to-b from-[#25D366]/10 to-white shadow-2xl shadow-[#25D366]/12"
-                  : "border-ink-900/10 bg-white hover:border-ink-900/16"
+                ? "border-[#25D366]/30 bg-gradient-to-b from-[#25D366]/10 to-white shadow-2xl shadow-[#25D366]/12"
+                : "border-ink-900/10 bg-white hover:border-ink-900/16"
                 }`}
             >
               {plan.featured && (
@@ -102,8 +102,8 @@ export function CTASection() {
                 whileTap={{ scale: 0.98 }}
                 transition={{ type: "spring", stiffness: 280, damping: 22 }}
                 className={`mt-auto text-center font-bold py-3.5 rounded-xl text-sm transition-all duration-300 ease-out ${plan.featured
-                    ? "bg-gradient-to-r from-[#25D366] to-[#06b77e] text-white shadow-2xl shadow-[#25D366]/20 hover:shadow-[#25D366]/50 hover:shadow-2xl"
-                    : "border border-ink-900/12 text-ink-900 hover:bg-brand-50/60 hover:shadow-lg hover:shadow-ink-900/10"
+                  ? "bg-gradient-to-r from-[#25D366] to-[#06b77e] text-white shadow-2xl shadow-[#25D366]/20 hover:shadow-[#25D366]/50 hover:shadow-2xl"
+                  : "border border-ink-900/12 text-ink-900 hover:bg-brand-50/60 hover:shadow-lg hover:shadow-ink-900/10"
                   }`}
               >
                 {plan.cta}
@@ -147,7 +147,7 @@ export function CTASection() {
               Join modern businesses using {BRAND_NAME} to send smarter messages and convert more customers.
             </p>
             <div className="flex flex-wrap justify-center gap-4">
-                <motion.a
+              <motion.a
                 href={startHref}
                 whileHover={{ scale: 1.03 }}
                 whileTap={{ scale: 0.98 }}
