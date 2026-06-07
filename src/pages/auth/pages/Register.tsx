@@ -90,7 +90,7 @@ export default function RegisterPage() {
         <AuthIllustration />
       </div>
       <div className="flex min-h-dvh items-center justify-center px-4 py-10">
-        <Card className="w-full max-w-md p-6">
+        <Card className="w-full max-w-md p-5">
           <div className="text-xs font-semibold text-ink-800/60">{requiresOtp ? "Verify email" : ""}</div>
           <h1 className="mt-1 text-2xl font-black tracking-tight">{requiresOtp ? "Enter OTP" : "Create account"}</h1>
           <p className="mt-2 text-sm text-ink-800/70">
