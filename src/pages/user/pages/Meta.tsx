@@ -54,22 +54,61 @@ export default function MetaConnectPage() {
     if (metaStatus.status === "pending") return "Pending";
     return "Disconnected";
   }, [metaStatus.status]);
-  const isDisconnected = metaStatus.status === "disconnected" || !embeddedConnection?.connected;
+  const isConnected =
+    embeddedConnection?.connected === true ||
+    metaStatus.status === "active" ||
+    metaStatus.status === "pending";
+  const isDisconnected = metaStatus.status === "disconnected" && !isConnected;
   const isStatusLoading = syncing || embeddedBusy;
 
   const loadStatus = useCallback(async () => {
     if (!isInitialLoad.current) setSyncing(true);
     try {
-      const [statusRes, connectionRes] = await Promise.all([API.meta.status(), API.meta.connection()]);
-      const status = String(statusRes?.status || "disconnected");
-      if (status === "active") setMetaStatus({ status: "active", credentials: statusRes.credentials || null });
-      else if (status === "pending") setMetaStatus({ status: "pending", credentials: statusRes.credentials || null });
-      else setMetaStatus({ status: "disconnected", credentials: null });
-      setEmbeddedConnection(connectionRes || null);
+      const [statusResult, connectionResult] = await Promise.allSettled([
+        API.meta.status(),
+        API.meta.connection(),
+      ]);
+      const statusRes = statusResult.status === "fulfilled" ? statusResult.value : null;
+      const connectionRes = connectionResult.status === "fulfilled" ? connectionResult.value : null;
+
+      if (!statusRes && !connectionRes) {
+        const error =
+          statusResult.status === "rejected"
+            ? statusResult.reason
+            : connectionResult.status === "rejected"
+              ? connectionResult.reason
+              : null;
+        throw error || new Error("Failed to fetch WhatsApp connection status");
+      }
+
+      if (connectionRes) {
+        setEmbeddedConnection(connectionRes);
+      }
+
+      const statusFromApi = String(statusRes?.status || "").toLowerCase();
+      const statusFromConnection = String(connectionRes?.status || "").toLowerCase();
+      const connectionConfirmed = connectionRes?.connected === true;
+      const disconnectConfirmed =
+        connectionResult.status === "fulfilled" && connectionRes?.connected === false;
+
+      if (connectionResult.status === "fulfilled") {
+        if (connectionConfirmed || statusFromConnection === "active") {
+          setMetaStatus({ status: "active", credentials: statusRes?.credentials || null });
+        } else if (statusFromConnection === "pending") {
+          setMetaStatus({ status: "pending", credentials: statusRes?.credentials || null });
+        } else if (disconnectConfirmed) {
+          setMetaStatus({ status: "disconnected", credentials: null });
+        }
+      } else if (statusFromApi === "active") {
+        setMetaStatus({ status: "active", credentials: statusRes?.credentials || null });
+      } else if (statusFromApi === "pending") {
+        setMetaStatus({ status: "pending", credentials: statusRes?.credentials || null });
+      } else if (statusFromApi === "disconnected") {
+        setMetaStatus({ status: "disconnected", credentials: null });
+      }
+
       if (!isInitialLoad.current) toast("Connection status updated", "success");
     } catch (e: any) {
-      setMetaStatus({ status: "disconnected", credentials: null });
-      setEmbeddedConnection(null);
       toast(e?.response?.data?.message || "Failed to fetch WhatsApp connection status", "error");
     } finally {
       setSyncing(false);
@@ -256,6 +295,7 @@ export default function MetaConnectPage() {
     setEmbeddedError("");
     try {
       await API.meta.disconnect();
+      clearApiGetCache();
       toast("WhatsApp disconnected", "success");
       await loadStatus();
     } catch (e: any) {
@@ -320,13 +360,13 @@ export default function MetaConnectPage() {
           </div>
           <div className="flex items-center gap-2">
             <Button
-              variant={embeddedConnection?.connected ? "outline" : "primary"}
+              variant={isConnected ? "outline" : "primary"}
               size="sm"
               className="rounded-[5px]"
-              onClick={embeddedConnection?.connected ? disconnectWhatsApp : connectWhatsApp}
+              onClick={isConnected ? disconnectWhatsApp : connectWhatsApp}
               disabled={isStatusLoading}
             >
-              {isStatusLoading ? "Connecting..." : embeddedConnection?.connected ? "Disconnect WhatsApp" : "Connect WhatsApp"}
+              {isStatusLoading ? "Connecting..." : isConnected ? "Disconnect WhatsApp" : "Connect WhatsApp"}
             </Button>
             {!isDisconnected ? (
               <Button
