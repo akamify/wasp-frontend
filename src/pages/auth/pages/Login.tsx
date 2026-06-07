@@ -10,6 +10,7 @@ import { BRAND_NAME } from "../../../config/brand";
 import { normalizeRole } from "@shared/utils/authRole";
 import { authenticatedHome } from "@shared/utils/authNavigation";
 import { Eye, EyeOff } from "lucide-react";
+import { AuthIllustration } from "@components/auth/AuthIllustration";
 
 export default function LoginPage() {
   const { loading, login, token, user } = useAuth();
@@ -110,100 +111,105 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="flex flex-col min-h-dvh items-center justify-center px-4 py-10">
-      <Card className="w-full max-w-md p-6">
-        <div className="text-xs font-semibold text-ink-800/60">{requiresOtp ? "Security verification" : "Welcome back"}</div>
-        <h1 className="mt-1 text-2xl font-black tracking-tight">{requiresOtp ? "Enter OTP" : "Sign in"}</h1>
-        <p className="mt-2 text-sm text-ink-800/70">
-          {requiresOtp
-            ? "We sent a 6-digit OTP to your registered email address."
-            : `Use your ${BRAND_NAME} account to manage your dashboard.`}
-        </p>
+    <div className="flex flex-row items-center justify-center min-h-screen bg-gray-50 gap-12 lg:px-2 lg:py-10">
+      <div className="hidden lg:block" >
+        <AuthIllustration />
+      </div>
+      <div className="flex flex-col min-h-dvh items-center justify-center px-4 py-10">
+        <Card className="w-full max-w-md p-6">
+          <div className="text-xs font-semibold text-ink-800/60">{requiresOtp ? "Security verification" : "Welcome back"}</div>
+          <h1 className="mt-1 text-2xl font-black tracking-tight">{requiresOtp ? "Enter OTP" : "Sign in"}</h1>
+          <p className="mt-2 text-sm text-ink-800/70">
+            {requiresOtp
+              ? "We sent a 6-digit OTP to your registered email address."
+              : `Use your ${BRAND_NAME} account to manage your dashboard.`}
+          </p>
 
-        <form className="mt-6 grid gap-3" onSubmit={requiresOtp ? onVerifyOtp : onSubmit}>
-          {error ? <Alert>{error}</Alert> : null}
+          <form className="mt-6 grid gap-3" onSubmit={requiresOtp ? onVerifyOtp : onSubmit}>
+            {error ? <Alert>{error}</Alert> : null}
 
-          {!requiresOtp ? (
-            <>
+            {!requiresOtp ? (
+              <>
+                <Input
+                  label="Email"
+                  type="email"
+                  autoComplete="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  required
+                />
+                <Input
+                  label="Password"
+                  type={showPassword ? "text" : "password"}
+                  autoComplete="current-password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  rightIcon={showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                  onRightIconClick={() => setShowPassword((v) => !v)}
+                  rightIconLabel={showPassword ? "Hide password" : "Show password"}
+                  required
+                />
+                <div className="text-right">
+                  <Link className="text-sm font-semibold text-ink-900 underline" to="/forgot-password">
+                    Forgot password?
+                  </Link>
+                </div>
+              </>
+            ) : (
               <Input
-                label="Email"
-                type="email"
-                autoComplete="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
+                label="OTP Code"
+                value={otp}
+                onChange={(e) => setOtp(e.target.value.replace(/[^\d]/g, "").slice(0, 6))}
+                placeholder="123456"
                 required
               />
-              <Input
-                label="Password"
-                type={showPassword ? "text" : "password"}
-                autoComplete="current-password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                rightIcon={showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
-                onRightIconClick={() => setShowPassword((v) => !v)}
-                rightIconLabel={showPassword ? "Hide password" : "Show password"}
-                required
-              />
-              <div className="text-right">
-                <Link className="text-sm font-semibold text-ink-900 underline" to="/forgot-password">
-                  Forgot password?
-                </Link>
-              </div>
-            </>
-          ) : (
-            <Input
-              label="OTP Code"
-              value={otp}
-              onChange={(e) => setOtp(e.target.value.replace(/[^\d]/g, "").slice(0, 6))}
-              placeholder="123456"
-              required
-            />
-          )}
-          <Button type="submit" disabled={busy}>
-            {busy ? "Please wait..." : requiresOtp ? "Verify OTP" : "Sign in"}
-          </Button>
-          {requiresOtp ? (
-            <Button
-              type="button"
-              variant="ghost"
-              disabled={busy || resendCooldown > 0}
-              onClick={resendOtp}
-            >
-              {resendCooldown > 0 ? `Resend in ${resendCooldown}s` : "Resend OTP"}
+            )}
+            <Button type="submit" disabled={busy}>
+              {busy ? "Please wait..." : requiresOtp ? "Verify OTP" : "Sign in"}
             </Button>
-          ) : null}
-          {requiresOtp ? (
-            <Button
-              type="button"
-              variant="ghost"
-              onClick={() => {
-                setRequiresOtp(false);
-                setOtp("");
-                setChallengeToken("");
-              }}
-            >
-              Back
-            </Button>
-          ) : null}
-        </form>
+            {requiresOtp ? (
+              <Button
+                type="button"
+                variant="ghost"
+                disabled={busy || resendCooldown > 0}
+                onClick={resendOtp}
+              >
+                {resendCooldown > 0 ? `Resend in ${resendCooldown}s` : "Resend OTP"}
+              </Button>
+            ) : null}
+            {requiresOtp ? (
+              <Button
+                type="button"
+                variant="ghost"
+                onClick={() => {
+                  setRequiresOtp(false);
+                  setOtp("");
+                  setChallengeToken("");
+                }}
+              >
+                Back
+              </Button>
+            ) : null}
+          </form>
 
-        <div className="mt-4 text-sm text-ink-800/70">
-          No account?{" "}
-          <Link className="font-semibold text-ink-900 underline" to="/register">
-            Create one
-          </Link>
-          .
-        </div>
-      </Card>
-      <Card className="flex items-center justify-center w-full max-w-md mt-4 p-4">
-        <div className="text-sm text-ink-800/70">
-          CRM employee?{" "}
-          <Link className="font-semibold text-ink-900 underline" to="/employee/login">
-            Employee login
-          </Link>
-          .
-        </div>
-      </Card>
+          <div className="mt-4 text-sm text-ink-800/70">
+            No account?{" "}
+            <Link className="font-semibold text-ink-900 underline" to="/register">
+              Create one
+            </Link>
+            .
+          </div>
+        </Card>
+        <Card className="flex items-center justify-center w-full max-w-md mt-4 p-4">
+          <div className="text-sm text-ink-800/70">
+            CRM employee?{" "}
+            <Link className="font-semibold text-ink-900 underline" to="/employee/login">
+              Employee login
+            </Link>
+            .
+          </div>
+        </Card>
+      </div>
     </div>
   );
 }

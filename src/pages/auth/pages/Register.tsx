@@ -6,6 +6,7 @@ import { Card } from "@components/ui/Card";
 import { Input } from "@components/ui/Input";
 import { Button } from "@components/ui/Button";
 import { Alert } from "@components/ui/Alert";
+import { AuthIllustration } from "@components/auth/AuthIllustration";
 import { useOtpGuard } from "@shared/hooks/useOtpGuard";
 import { authenticatedHome } from "@shared/utils/authNavigation";
 
@@ -84,87 +85,92 @@ export default function RegisterPage() {
   }
 
   return (
-    <div className="flex min-h-dvh items-center justify-center px-4 py-10">
-      <Card className="w-full max-w-md p-6">
-        <div className="text-xs font-semibold text-ink-800/60">{requiresOtp ? "Verify email" : ""}</div>
-        <h1 className="mt-1 text-2xl font-black tracking-tight">{requiresOtp ? "Enter OTP" : "Create account"}</h1>
-        <p className="mt-2 text-sm text-ink-800/70">
-          {requiresOtp
-            ? "We sent a 6-digit OTP to your email address."
-            : "This creates your workspace. Generate your API key later from the API Keys page after Meta setup."}
-        </p>
+    <div className="flex flex-row items-center justify-center min-h-screen bg-gray-50 gap-12 lg:px-2 lg:py-10">
+      <div className="hidden lg:block">
+        <AuthIllustration />
+      </div>
+      <div className="flex min-h-dvh items-center justify-center px-4 py-10">
+        <Card className="w-full max-w-md p-6">
+          <div className="text-xs font-semibold text-ink-800/60">{requiresOtp ? "Verify email" : ""}</div>
+          <h1 className="mt-1 text-2xl font-black tracking-tight">{requiresOtp ? "Enter OTP" : "Create account"}</h1>
+          <p className="mt-2 text-sm text-ink-800/70">
+            {requiresOtp
+              ? "We sent a 6-digit OTP to your email address."
+              : "This creates your workspace. Generate your API key later from the API Keys page after Meta setup."}
+          </p>
 
-        <form className="mt-6 grid gap-3" onSubmit={requiresOtp ? onVerifyOtp : onSubmit}>
-          {error ? <Alert>{error}</Alert> : null}
+          <form className="mt-6 grid gap-3" onSubmit={requiresOtp ? onVerifyOtp : onSubmit}>
+            {error ? <Alert>{error}</Alert> : null}
 
-          {!requiresOtp ? (
-            <>
-              <Input
-                label="Name"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                placeholder="Team / brand name"
-              />
-              <Input
-                label="Email"
-                type="email"
-                autoComplete="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                required
-              />
-              <Input
-                label="Password"
-                type="password"
-                autoComplete="new-password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                hint="Minimum 8 characters."
-                required
-              />
-              <Button type="submit" disabled={busy}>
-                {busy ? "Creating..." : "Create account"}
-              </Button>
-            </>
-          ) : (
-            <>
-              <Input
-                label="OTP Code"
-                value={otp}
-                onChange={(e) => setOtp(e.target.value.replace(/[^\d]/g, "").slice(0, 6))}
-                placeholder="123456"
-                required
-              />
-              <Button type="submit" disabled={busy}>
-                {busy ? "Verifying..." : "Verify OTP"}
-              </Button>
-              <Button
-                type="button"
-                variant="ghost"
-                disabled={busy || !otpGuard.canSend}
-                onClick={resendOtp}
-              >
-                {!otpGuard.canSend
-                  ? otpGuard.cooldown > 0
-                    ? `Resend in ${otpGuard.cooldown}s`
-                    : "Resend limit reached"
-                  : "Resend OTP"}
-              </Button>
-              <div className="text-center text-[11px] font-semibold text-slate-500">
-                OTP tries left: {otpGuard.remainingAttempts}/{otpGuard.maxAttempts}
-              </div>
-            </>
-          )}
-        </form>
+            {!requiresOtp ? (
+              <>
+                <Input
+                  label="Name"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  placeholder="Team / brand name"
+                />
+                <Input
+                  label="Email"
+                  type="email"
+                  autoComplete="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  required
+                />
+                <Input
+                  label="Password"
+                  type="password"
+                  autoComplete="new-password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  hint="Minimum 8 characters."
+                  required
+                />
+                <Button type="submit" disabled={busy}>
+                  {busy ? "Creating..." : "Create account"}
+                </Button>
+              </>
+            ) : (
+              <>
+                <Input
+                  label="OTP Code"
+                  value={otp}
+                  onChange={(e) => setOtp(e.target.value.replace(/[^\d]/g, "").slice(0, 6))}
+                  placeholder="123456"
+                  required
+                />
+                <Button type="submit" disabled={busy}>
+                  {busy ? "Verifying..." : "Verify OTP"}
+                </Button>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  disabled={busy || !otpGuard.canSend}
+                  onClick={resendOtp}
+                >
+                  {!otpGuard.canSend
+                    ? otpGuard.cooldown > 0
+                      ? `Resend in ${otpGuard.cooldown}s`
+                      : "Resend limit reached"
+                    : "Resend OTP"}
+                </Button>
+                <div className="text-center text-[11px] font-semibold text-slate-500">
+                  OTP tries left: {otpGuard.remainingAttempts}/{otpGuard.maxAttempts}
+                </div>
+              </>
+            )}
+          </form>
 
-        <div className="mt-4 text-sm text-ink-800/70">
-          Already have an account?{" "}
-          <Link className="font-semibold text-ink-900 underline" to="/login">
-            Sign in
-          </Link>
-          .
-        </div>
-      </Card>
+          <div className="mt-4 text-sm text-ink-800/70">
+            Already have an account?{" "}
+            <Link className="font-semibold text-ink-900 underline" to="/login">
+              Sign in
+            </Link>
+            .
+          </div>
+        </Card>
+      </div>
     </div>
   );
 }
