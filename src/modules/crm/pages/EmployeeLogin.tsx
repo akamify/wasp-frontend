@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useLocation, useNavigate } from "react-router-dom";
+import { useLocation, useNavigate, Link } from "react-router-dom";
 import { Card } from "@components/ui/Card";
 import { Input } from "@components/ui/Input";
 import { Button } from "@components/ui/Button";
@@ -36,8 +36,8 @@ export default function EmployeeLoginPage() {
   }
 
   return (
-    <div className="flex flex-row items-center justify-center min-h-dvh gap-12">
-      <div className="hidden lg:sticky lg:top-10 lg:self-start lg:block">
+    <div className="flex flex-row items-center justify-center min-h-dvh gap-20">
+      <div className="hidden lg:sticky lg:top-5 lg:self-start lg:block">
         <EmployeeIllustration />
       </div>
       <div className="w-full max-w-md">
@@ -64,6 +64,13 @@ export default function EmployeeLoginPage() {
               {busy ? "Please wait..." : "Sign in"}
             </Button>
           </form>
+          <div className="mt-4 text-sm text-ink-800/70">
+            Login as User?{" "}
+            <Link className="font-semibold text-ink-900 underline" to="/login">
+              Sign in
+            </Link>
+            .
+          </div>
         </Card>
       </div>
     </div>
