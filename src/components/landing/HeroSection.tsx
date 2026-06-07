@@ -21,7 +21,7 @@ import { authAwareHref } from "@shared/utils/authNavigation";
 
 function BusinessChatPreview() {
   return (
-    <div className="relative mx-auto flex h-full w-full max-w-[560px] items-center justify-center">
+    <div className="relative mx-auto flex h-full w-full max-w-[460px] items-center justify-center">
       <div className="absolute left-0 top-[18%] h-36 w-36 rounded-full bg-[#25D366]/20 blur-3xl" />
       <div className="absolute bottom-[12%] right-0 h-44 w-44 rounded-full bg-cyan-400/20 blur-3xl" />
 
@@ -194,12 +194,18 @@ export function HeroSection() {
             </p>
 
             <div className="mt-8 flex items-center gap-4">
-              <a href={startHref} className="group relative flex items-center gap-2 rounded-2xl bg-gradient-to-r from-[#25D366] to-[#06b77e] px-8 py-4 text-base font-bold text-white shadow-2xl shadow-[#25D366]/30 transition-all duration-300 hover:scale-105 hover:shadow-[#25D366]/50">
+              <motion.a
+                href={startHref}
+                whileHover={{ scale: 1.03 }}
+                whileTap={{ scale: 0.98 }}
+                transition={{ type: "spring", stiffness: 320, damping: 24 }}
+                className="group relative flex items-center gap-2 rounded-2xl bg-gradient-to-r from-[#25D366] to-[#06b77e] px-8 py-4 text-base font-bold text-white shadow-2xl shadow-[#25D366]/30 transition-all duration-300 ease-out hover:shadow-[#25D366]/50 hover:shadow-2xl hover:brightness-105"
+              >
                 Start Free Trial
-                <svg className="h-4 w-4 transition-transform group-hover:translate-x-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg className="h-4 w-4 transition-transform duration-300 ease-out group-hover:translate-x-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
                 </svg>
-              </a>
+              </motion.a>
             </div>
 
             <div className="mt-10 flex items-center gap-8">

@@ -96,15 +96,18 @@ export function CTASection() {
                   </li>
                 ))}
               </ul>
-              <a
+              <motion.a
                 href={token ? authenticatedHref : "/login"}
-                className={`mt-auto text-center font-bold py-3.5 rounded-xl text-sm transition-all duration-200 ${plan.featured
-                    ? "bg-gradient-to-r from-[#25D366] to-[#06b77e] text-white hover:shadow-lg hover:shadow-[#25D366]/30 hover:scale-105"
-                    : "border border-ink-900/12 text-ink-900 hover:bg-brand-50/60"
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+                transition={{ type: "spring", stiffness: 280, damping: 22 }}
+                className={`mt-auto text-center font-bold py-3.5 rounded-xl text-sm transition-all duration-300 ease-out ${plan.featured
+                    ? "bg-gradient-to-r from-[#25D366] to-[#06b77e] text-white shadow-2xl shadow-[#25D366]/20 hover:shadow-[#25D366]/50 hover:shadow-2xl"
+                    : "border border-ink-900/12 text-ink-900 hover:bg-brand-50/60 hover:shadow-lg hover:shadow-ink-900/10"
                   }`}
               >
                 {plan.cta}
-              </a>
+              </motion.a>
             </motion.div>
           ))}
         </div>
@@ -144,14 +147,24 @@ export function CTASection() {
               Join modern businesses using {BRAND_NAME} to send smarter messages and convert more customers.
             </p>
             <div className="flex flex-wrap justify-center gap-4">
-              <a href={startHref}
-                className="bg-white text-[#059267] font-extrabold px-8 py-4 rounded-2xl hover:scale-105 hover:shadow-2xl transition-all duration-200">
+                <motion.a
+                href={startHref}
+                whileHover={{ scale: 1.03 }}
+                whileTap={{ scale: 0.98 }}
+                transition={{ type: "spring", stiffness: 300, damping: 24 }}
+                className="bg-white text-[#059267] font-extrabold px-8 py-4 rounded-2xl transition-all duration-300 ease-out hover:shadow-2xl hover:brightness-110"
+              >
                 Start Free - No Credit Card
-              </a>
-              <a href={signInHref}
-                className="border-2 border-white/40 text-white font-bold px-8 py-4 rounded-2xl hover:bg-white/10 transition-all duration-200">
+              </motion.a>
+              <motion.a
+                href={signInHref}
+                whileHover={{ scale: 1.03 }}
+                whileTap={{ scale: 0.98 }}
+                transition={{ type: "spring", stiffness: 300, damping: 24 }}
+                className="border-2 border-white/40 text-white font-bold px-8 py-4 rounded-2xl transition-all duration-300 ease-out hover:bg-white/10 hover:shadow-lg"
+              >
                 {token ? "Open Dashboard" : "Sign In"}
-              </a>
+              </motion.a>
             </div>
           </div>
         </motion.div>

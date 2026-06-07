@@ -62,23 +62,29 @@ export function LandingNavbar() {
         {/* Actions */}
         <div className="hidden md:flex items-center gap-3">
           {token ? (
-            <a
+            <motion.a
               href={authenticatedHref}
-              className="text-sm font-semibold bg-gradient-to-r from-[#25D366] to-[#06b77e] text-white px-5 py-2 rounded-xl hover:shadow-lg hover:shadow-[#25D366]/25 hover:scale-105 transition-all duration-200"
+              whileHover={{ scale: 1.03 }}
+              whileTap={{ scale: 0.98 }}
+              transition={{ type: "spring", stiffness: 300, damping: 24 }}
+              className="text-sm font-semibold bg-gradient-to-r from-[#25D366] to-[#06b77e] text-white px-5 py-2 rounded-xl transition-all duration-300 ease-out shadow-lg hover:shadow-2xl hover:shadow-[#25D366]/25"
             >
               Dashboard
-            </a>
+            </motion.a>
           ) : (
             <>
               <a href="/login" className="text-sm text-ink-900/70 hover:text-ink-900 transition-colors px-4 py-2">
                 Sign in
               </a>
-              <a
+              <motion.a
                 href="/register"
-                className="text-sm font-semibold bg-gradient-to-r from-[#25D366] to-[#06b77e] text-white px-5 py-2 rounded-xl hover:shadow-lg hover:shadow-[#25D366]/25 hover:scale-105 transition-all duration-200"
+                whileHover={{ scale: 1.03 }}
+                whileTap={{ scale: 0.98 }}
+                transition={{ type: "spring", stiffness: 300, damping: 24 }}
+                className="text-sm font-semibold bg-gradient-to-r from-[#25D366] to-[#06b77e] text-white px-5 py-2 rounded-xl transition-all duration-300 ease-out shadow-lg hover:shadow-2xl hover:shadow-[#25D366]/25"
               >
                 Get Started Free
-              </a>
+              </motion.a>
             </>
           )}
         </div>
