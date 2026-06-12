@@ -31,9 +31,15 @@ export function DashboardSidebar({ snapshot, onView, onEdit, onRecharge }: any) 
       <Card className="p-6 bg-slate-900 text-white overflow-hidden relative group rounded-[5px]">
         <div className="absolute bottom-0 right-0 w-24 h-24 bg-brand-500/20 blur-3xl rounded-full -mb-8 -mr-8" />
         <div className="relative z-10">
-          <div className="flex items-center justify-between mb-4"><div className="p-2 bg-brand-600 rounded-[5px] text-white"><Wallet size={18} /></div><Badge tone="brand" className="bg-brand-500/20 text-brand-50 border-none tracking-normal">WhatsApp Credits</Badge></div>
-          <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-1">Total Balance</p>
-          <h3 className="text-3xl font-black text-black mb-6">{formatCurrencySafe(Number(snapshot?.wallet?.balance ?? 0), String(snapshot?.wallet?.currency || "INR"))}</h3>
+          <div className="flex items-start justify-between">
+            <div>
+              <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-1">Total Balance</p>
+              <h3 className="text-3xl font-black text-black mb-6">{formatCurrencySafe(Number(snapshot?.wallet?.balance ?? 0), String(snapshot?.wallet?.currency || "INR"))}</h3>
+            </div>
+            <div className="p-2 bg-brand-600 rounded-[5px] text-white">
+              <Wallet size={18} />
+            </div>
+          </div>
           <Button variant="primary" className="w-full bg-brand-500 hover:bg-brand-400 text-white font-black rounded-[5px]" onClick={onRecharge}><Plus size={20} /> Buy Credits</Button>
         </div>
       </Card>
