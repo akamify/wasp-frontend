@@ -32,6 +32,8 @@ export type SessionExpiryAction = "none" | "text" | "template";
 export interface FlowRuntimeSettings {
   sessionTimeoutMinutes: number;
   allowKeywordRestartWhenWaiting: boolean;
+  maxInvalidReplies?: number;
+  invalidReplyMessage?: string;
   onSessionExpired: {
     action: SessionExpiryAction;
     textMessage: string;

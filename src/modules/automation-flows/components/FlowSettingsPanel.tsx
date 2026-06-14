@@ -188,6 +188,37 @@ export function FlowSettingsPanel({
           </span>
         </span>
       </label>
+      <div className="grid grid-cols-[120px_1fr] gap-2">
+        <Input
+          label="Invalid replies"
+          type="number"
+          min={1}
+          max={10}
+          value={runtimeSettings.maxInvalidReplies || 2}
+          onChange={(event) =>
+            onRuntimeSettingsChange({
+              ...runtimeSettings,
+              maxInvalidReplies: Math.min(
+                10,
+                Math.max(1, Number(event.target.value) || 1)
+              ),
+            })
+          }
+        />
+        <Input
+          label="Invalid reply message"
+          value={
+            runtimeSettings.invalidReplyMessage ||
+            "Please choose one of the available options."
+          }
+          onChange={(event) =>
+            onRuntimeSettingsChange({
+              ...runtimeSettings,
+              invalidReplyMessage: event.target.value,
+            })
+          }
+        />
+      </div>
       <Select
         label="On session expired"
         value={runtimeSettings.onSessionExpired.action}

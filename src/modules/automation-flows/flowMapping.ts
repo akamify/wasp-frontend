@@ -68,6 +68,8 @@ export function toDraftPayload(
 export const DEFAULT_RUNTIME_SETTINGS: FlowRuntimeSettings = {
   sessionTimeoutMinutes: 5,
   allowKeywordRestartWhenWaiting: true,
+  maxInvalidReplies: 2,
+  invalidReplyMessage: "Please choose one of the available options.",
   onSessionExpired: {
     action: "none",
     textMessage: "Your previous session has expired. Please send Hi to start again.",

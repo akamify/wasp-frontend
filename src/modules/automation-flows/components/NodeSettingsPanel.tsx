@@ -22,6 +22,50 @@ const MESSAGE_TYPES = new Set([
   "end",
 ]);
 
+const VARIABLE_TOKENS = [
+  ["Contact", ["{{contact.name}}", "{{contact.phone}}", "{{contact.email}}"]],
+  ["Attributes", ["{{attributes.city}}", "{{attributes.orderId}}", "{{attributes.lastProduct}}"]],
+  ["Context", ["{{context.productName}}", "{{context.price}}", "{{context.productUrl}}", "{{context.orderStatus}}"]],
+  ["Workspace", ["{{workspace.name}}"]],
+  ["Flow", ["{{flow.name}}"]],
+] as const;
+
+function VariableHelper() {
+  async function copyToken(token: string) {
+    await navigator.clipboard?.writeText(token).catch(() => undefined);
+  }
+
+  return (
+    <div className="rounded-[5px] border border-slate-200 bg-slate-50 p-3">
+      <div className="text-xs font-black text-slate-700">Insert variables</div>
+      <p className="mt-1 text-[11px] leading-4 text-slate-500">
+        Click a token to copy it, then paste it into message text, button titles, template variables, API URL/body, or media captions.
+      </p>
+      <div className="mt-3 space-y-3">
+        {VARIABLE_TOKENS.map(([label, tokens]) => (
+          <div key={label}>
+            <div className="mb-1 text-[10px] font-black uppercase tracking-wider text-slate-400">
+              {label}
+            </div>
+            <div className="flex flex-wrap gap-1.5">
+              {tokens.map((token) => (
+                <button
+                  key={token}
+                  type="button"
+                  onClick={() => void copyToken(token)}
+                  className="rounded-full bg-white px-2 py-1 text-[10px] font-bold text-brand-700 ring-1 ring-brand-100 hover:bg-brand-50"
+                >
+                  {token}
+                </button>
+              ))}
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 export function NodeSettingsPanel({
   node,
   onConfigChange,
@@ -54,6 +98,7 @@ export function NodeSettingsPanel({
           This is the required entry point. Connect it to the first step in your flow.
         </div>
       ) : null}
+      {type !== "start" ? <VariableHelper /> : null}
       {MESSAGE_TYPES.has(type) ? (
         <MessageNodeSettings type={type} config={node.data.config} onChange={onConfigChange} onHandleRename={onHandleRename} />
       ) : null}
