@@ -5,6 +5,7 @@ import "reactflow/dist/style.css";
 import { Alert } from "@components/ui/Alert";
 import { Button } from "@components/ui/Button";
 import { BuilderCanvas } from "@modules/automation-flows/components/BuilderCanvas";
+import { AutomationBuilderSkeleton } from "@modules/automation-flows/components/AutomationBuilderSkeleton";
 import { BuilderTopBar } from "@modules/automation-flows/components/BuilderTopBar";
 import { FlowSettingsPanel } from "@modules/automation-flows/components/FlowSettingsPanel";
 import { NodePalette } from "@modules/automation-flows/components/NodePalette";
@@ -18,7 +19,7 @@ import type {
   FlowValidationResult,
 } from "@modules/automation-flows/types";
 import { useAutomationBuilder } from "@modules/automation-flows/useAutomationBuilder";
-import { useBuilderLayoutState } from "@modules/automation-flows/useBuilderLayoutState";
+import { useAutomationBuilderPreferences } from "@modules/automation-flows/useAutomationBuilderPreferences";
 import { useFlowPublishWorkflow } from "@modules/automation-flows/useFlowPublishWorkflow";
 import { useFlow } from "@modules/automation-flows/useFlows";
 import { useToast } from "@shared/providers/ToastContext";
@@ -33,7 +34,7 @@ export default function FlowBuilderPage() {
   const [validation, setValidation] = useState<FlowValidationResult | null>(null);
   const [validationOpen, setValidationOpen] = useState(false);
   const flowInstance = useRef<ReactFlowInstance | null>(null);
-  const layout = useBuilderLayoutState();
+  const layout = useAutomationBuilderPreferences();
 
   useEffect(() => {
     if (flow) setName(flow.name);
@@ -130,6 +131,12 @@ export default function FlowBuilderPage() {
     layout.rightSidebarOpen,
   ]);
 
+  useEffect(() => {
+    layout.updatePreference({
+      lastActivePanel: builder.selectedNode ? "node_settings" : "flow_settings",
+    });
+  }, [builder.selectedNode, layout.updatePreference]);
+
   function goBack() {
     if (dirty && !window.confirm("Leave without saving your flow changes?")) return;
     navigate("/app/automation");
@@ -154,16 +161,28 @@ export default function FlowBuilderPage() {
   }
 
   if (loading) {
-    return <div className="h-[calc(100dvh-4rem)] animate-pulse bg-slate-100" />;
+    return (
+      <AutomationBuilderSkeleton
+        leftCollapsed={layout.leftSidebarCollapsed}
+        rightOpen={layout.rightSidebarOpen}
+        leftWidth={layout.leftSidebarWidth}
+        rightWidth={layout.rightSettingsWidth}
+      />
+    );
   }
 
   if (error || !flow) {
     return (
       <div className="p-8">
         <Alert tone="error">
-          <div className="flex items-center justify-between gap-4">
+          <div className="flex flex-wrap items-center justify-between gap-4">
             <span>{error || "Flow not found."}</span>
-            <Button variant="outline" size="sm" onClick={() => void reload()}>Retry</Button>
+            <div className="flex gap-2">
+              <Button variant="outline" size="sm" onClick={() => navigate("/app/automation")}>
+                Back to automations
+              </Button>
+              <Button variant="outline" size="sm" onClick={() => void reload()}>Retry</Button>
+            </div>
           </div>
         </Alert>
       </div>
@@ -215,10 +234,15 @@ export default function FlowBuilderPage() {
         <NodePalette
           collapsed={layout.leftSidebarCollapsed}
           mobileOpen={layout.mobileBlocksOpen}
+          width={layout.leftSidebarWidth}
+          activeTab={layout.lastActiveLeftTab}
           onToggleCollapsed={() =>
             layout.setLeftSidebarCollapsed(!layout.leftSidebarCollapsed)
           }
           onCloseMobile={() => layout.setMobileBlocksOpen(false)}
+          onActiveTabChange={(lastActiveLeftTab) =>
+            layout.updatePreference({ lastActiveLeftTab })
+          }
           onAdd={(type) => {
             if (!editable) return;
             builder.addNode(type);
@@ -242,6 +266,7 @@ export default function FlowBuilderPage() {
         </ReactFlowProvider>
         <SettingsSidebar
           open={layout.rightSidebarOpen}
+          width={layout.rightSettingsWidth}
           title={builder.selectedNode ? "Node Settings" : "Flow Settings"}
           subtitle={
             builder.selectedNode

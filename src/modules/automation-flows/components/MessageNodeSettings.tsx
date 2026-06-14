@@ -22,6 +22,7 @@ import type {
   TemplateVariableMapping,
   TemplateVariableSourceType,
 } from "@modules/automation-flows/types";
+import { SkeletonBar } from "@shared/ui/Skeletons";
 
 interface MessageNodeSettingsProps {
   type: FlowNodeType;
@@ -397,7 +398,14 @@ export function TemplateSettings({
           </option>
         ))}
       </Select>
-      {loadingTemplates ? <p className="text-[11px] text-slate-400">Loading approved templates...</p> : null}
+      {loadingTemplates ? (
+        <div aria-label="Loading approved templates">
+          <SkeletonBar className="h-9 w-full rounded-[6px]" />
+          <p className="mt-1 text-[11px] text-slate-400">
+            Loading approved templates...
+          </p>
+        </div>
+      ) : null}
       {!loadingTemplates && !templateError && templates.length === 0 ? (
         <p className="text-[11px] font-semibold text-amber-700">No approved templates found.</p>
       ) : null}
@@ -409,7 +417,14 @@ export function TemplateSettings({
           </Button>
         </div>
       ) : null}
-      {loadingAttributes ? <p className="text-[11px] text-slate-400">Loading attributes...</p> : null}
+      {loadingAttributes ? (
+        <div aria-label="Loading attributes">
+          <SkeletonBar className="h-9 w-full rounded-[6px]" />
+          <p className="mt-1 text-[11px] text-slate-400">
+            Loading attributes...
+          </p>
+        </div>
+      ) : null}
       {!loadingAttributes && !attributesError && attributes.length === 0 ? (
         <p className="text-[11px] text-slate-400">No attributes created yet.</p>
       ) : null}

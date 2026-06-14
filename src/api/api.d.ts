@@ -339,4 +339,8 @@ export const API: {
     remove(flowId: string): Promise<unknown>;
     versions(flowId: string): Promise<unknown>;
   };
+  preferences: {
+    automationBuilder(): Promise<unknown>;
+    updateAutomationBuilder(payload: unknown): Promise<unknown>;
+  };
 };

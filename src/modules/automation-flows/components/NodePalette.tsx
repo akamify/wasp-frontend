@@ -6,17 +6,23 @@ import { cn } from "@shared/utils/cn";
 interface NodePaletteProps {
   collapsed: boolean;
   mobileOpen: boolean;
+  width: number;
+  activeTab: "messages" | "actions";
   onAdd: (type: FlowNodeType) => void;
   onCloseMobile: () => void;
   onToggleCollapsed: () => void;
+  onActiveTabChange: (tab: "messages" | "actions") => void;
 }
 
 export function NodePalette({
   collapsed,
   mobileOpen,
+  width,
+  activeTab,
   onAdd,
   onCloseMobile,
   onToggleCollapsed,
+  onActiveTabChange,
 }: Readonly<NodePaletteProps>) {
   function startDrag(event: React.DragEvent<HTMLButtonElement>, type: FlowNodeType) {
     event.dataTransfer.setData("application/reactflow", type);
@@ -26,10 +32,11 @@ export function NodePalette({
   return (
     <aside
       className={cn(
-        "absolute inset-y-0 left-0 z-40 flex w-[280px] shrink-0 flex-col overflow-hidden border-r border-slate-200 bg-white shadow-xl transition-[width,transform] duration-200 ease-out lg:relative lg:z-20 lg:translate-x-0 lg:shadow-none",
+        "absolute inset-y-0 left-0 z-40 flex w-[280px] shrink-0 flex-col overflow-hidden border-r border-slate-200 bg-white shadow-xl transition-[width,transform] duration-200 ease-out lg:relative lg:z-20 lg:w-[var(--palette-width)] lg:translate-x-0 lg:shadow-none",
         mobileOpen ? "translate-x-0" : "-translate-x-full pointer-events-none lg:pointer-events-auto",
-        collapsed ? "lg:w-[72px]" : "lg:w-[260px]"
+        collapsed && "lg:w-[72px]"
       )}
+      style={{ "--palette-width": `${width}px` } as React.CSSProperties}
     >
       <div className={cn("flex items-start border-b border-slate-100 p-4", collapsed && "lg:justify-center lg:px-2")}>
         <div className={cn("min-w-0 flex-1", collapsed && "lg:hidden")}>
@@ -57,9 +64,37 @@ export function NodePalette({
           <X size={17} />
         </button>
       </div>
+      {!collapsed ? (
+        <div className="hidden grid-cols-2 gap-1 border-b border-slate-100 p-2 lg:grid">
+          {(["messages", "actions"] as const).map((tab) => (
+            <button
+              key={tab}
+              type="button"
+              onClick={() => onActiveTabChange(tab)}
+              className={cn(
+                "rounded-[6px] px-3 py-2 text-xs font-black capitalize focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500",
+                activeTab === tab
+                  ? "bg-brand-50 text-brand-700"
+                  : "text-slate-500 hover:bg-slate-50"
+              )}
+            >
+              {tab}
+            </button>
+          ))}
+        </div>
+      ) : null}
       <div className={cn("flex-1 overflow-y-auto p-4 custom-scrollbar", collapsed && "lg:px-2")}>
         {(["content", "action"] as const).map((group) => (
-          <div key={group} className="mb-5">
+          <div
+            key={group}
+            className={cn(
+              "mb-5",
+              !collapsed &&
+                ((activeTab === "messages" && group === "action") ||
+                  (activeTab === "actions" && group === "content")) &&
+                "lg:hidden"
+            )}
+          >
             <div className={cn("mb-2 text-[10px] font-black uppercase tracking-[0.16em] text-slate-400", collapsed && "lg:text-center lg:text-[8px]")}>
               <span className="lg:hidden">{group === "content" ? "Messages" : "Actions"}</span>
               <span className="hidden lg:inline">

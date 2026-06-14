@@ -4,6 +4,7 @@ import { cn } from "@shared/utils/cn";
 
 interface SettingsSidebarProps {
   open: boolean;
+  width: number;
   title: string;
   subtitle?: string;
   onClose: () => void;
@@ -13,6 +14,7 @@ interface SettingsSidebarProps {
 
 export function SettingsSidebar({
   open,
+  width,
   title,
   subtitle,
   onClose,
@@ -33,13 +35,14 @@ export function SettingsSidebar({
       <aside
         className={cn(
           "absolute inset-y-0 right-0 z-40 flex w-[min(360px,92vw)] flex-col overflow-hidden border-l border-slate-200 bg-white shadow-xl transition-transform duration-200 ease-out lg:relative lg:z-20 lg:w-0 lg:shrink-0 lg:shadow-none lg:transition-[width]",
-          open ? "translate-x-0 lg:w-[360px]" : "translate-x-full lg:translate-x-0"
+          open ? "translate-x-0 lg:w-[var(--settings-width)]" : "translate-x-full lg:translate-x-0"
         )}
+        style={{ "--settings-width": `${width}px` } as React.CSSProperties}
         aria-hidden={!open}
       >
         {open ? (
           <>
-            <div className="flex h-14 w-[min(360px,92vw)] shrink-0 items-center gap-3 border-b border-slate-100 px-4 lg:w-[360px]">
+            <div className="flex h-14 w-[min(360px,92vw)] shrink-0 items-center gap-3 border-b border-slate-100 px-4 lg:w-[var(--settings-width)]">
               <div className="min-w-0 flex-1">
                 <div className="text-sm font-black text-slate-900">{title}</div>
                 {subtitle ? (
@@ -59,7 +62,7 @@ export function SettingsSidebar({
                 <X size={17} className="lg:hidden" />
               </button>
             </div>
-            <div className="w-[min(360px,92vw)] flex-1 overflow-y-auto p-5 custom-scrollbar lg:w-[360px]">
+            <div className="w-[min(360px,92vw)] flex-1 overflow-y-auto p-5 custom-scrollbar lg:w-[var(--settings-width)]">
               {children}
             </div>
           </>

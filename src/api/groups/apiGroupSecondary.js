@@ -211,5 +211,10 @@ export function buildApiGroupSecondary(api, unwrap, API_BASE_URL) {
       remove: (flowId) => api.delete(`/flows/${encodeURIComponent(flowId)}`).then(unwrap),
       versions: (flowId) => api.get(`/flows/${encodeURIComponent(flowId)}/versions`).then(unwrap),
     },
+    preferences: {
+      automationBuilder: () => api.get("/preferences/automation-builder").then(unwrap),
+      updateAutomationBuilder: (payload) =>
+        api.patch("/preferences/automation-builder", payload).then(unwrap),
+    },
   };
 }
