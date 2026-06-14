@@ -177,6 +177,11 @@ export default function FlowBuilderPage() {
     if (node) layout.setRightSidebarOpen(true);
   }
 
+  function selectNode(nodeId: string | null) {
+    builder.setSelectedNodeId(nodeId);
+    if (nodeId) layout.setRightSidebarOpen(true);
+  }
+
   if (loading) {
     return (
       <AutomationBuilderSkeleton
@@ -270,7 +275,7 @@ export default function FlowBuilderPage() {
             onNodesChange={builder.onNodesChange}
             onEdgesChange={builder.onEdgesChange}
             onConnect={builder.onConnect}
-            onNodeSelect={builder.setSelectedNodeId}
+            onNodeSelect={selectNode}
             onEdgeSelect={builder.setSelectedEdgeId}
             onClearSelection={builder.clearSelection}
             onDropNode={addNodeFromDrop}
