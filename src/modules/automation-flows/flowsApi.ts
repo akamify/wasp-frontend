@@ -58,6 +58,42 @@ export const flowsApi = {
     ),
   validate: (flowId: string) =>
     API.automationFlows.validate(flowId) as Promise<FlowValidationResult>,
+  testApiRequest: (payload: {
+    flowId?: string;
+    nodeId?: string;
+    config: unknown;
+    sampleContext?: Record<string, unknown>;
+    sampleContact?: Record<string, unknown>;
+    sampleAttributes?: Record<string, unknown>;
+  }) => API.automationFlows.testApiRequest(payload) as Promise<{
+    ok: boolean;
+    status?: number;
+    durationMs?: number;
+    responsePreview?: unknown;
+    mappedContext?: Record<string, unknown>;
+    errorCode?: string;
+    message?: string;
+  }>,
+  testMediaNode: (payload: {
+    flowId?: string;
+    nodeId?: string;
+    config: unknown;
+    sampleContext?: Record<string, unknown>;
+    sampleContact?: Record<string, unknown>;
+    sampleAttributes?: Record<string, unknown>;
+  }) => API.automationFlows.testMediaNode(payload) as Promise<{
+    ok: boolean;
+    mediaType?: string;
+    sourceType?: string;
+    resolvedUrl?: string;
+    fileInfo?: {
+      mimeType?: string | null;
+      sizeBytes?: number | null;
+      filename?: string | null;
+    };
+    code?: string;
+    message?: string;
+  }>,
   publish: (flowId: string) =>
     API.automationFlows.publish(flowId) as Promise<{
       success: boolean;

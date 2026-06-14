@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { ReactFlowProvider, type ReactFlowInstance } from "reactflow";
 import "reactflow/dist/style.css";
@@ -9,41 +9,19 @@ import { BuilderTopBar } from "@modules/automation-flows/components/BuilderTopBa
 import { FlowSettingsPanel } from "@modules/automation-flows/components/FlowSettingsPanel";
 import { NodePalette } from "@modules/automation-flows/components/NodePalette";
 import { NodeSettingsPanel } from "@modules/automation-flows/components/NodeSettingsPanel";
+import { SettingsSidebar } from "@modules/automation-flows/components/SettingsSidebar";
 import { ValidationModal } from "@modules/automation-flows/components/ValidationModal";
-import { flowsApi } from "@modules/automation-flows/flowsApi";
 import { toDraftPayload } from "@modules/automation-flows/flowMapping";
-import type { AutomationFlow, FlowValidationResult } from "@modules/automation-flows/types";
+import { NODE_META } from "@modules/automation-flows/nodeCatalog";
+import type {
+  FlowNodeType,
+  FlowValidationResult,
+} from "@modules/automation-flows/types";
 import { useAutomationBuilder } from "@modules/automation-flows/useAutomationBuilder";
+import { useBuilderLayoutState } from "@modules/automation-flows/useBuilderLayoutState";
+import { useFlowPublishWorkflow } from "@modules/automation-flows/useFlowPublishWorkflow";
 import { useFlow } from "@modules/automation-flows/useFlows";
 import { useToast } from "@shared/providers/ToastContext";
-
-function requestMessage(error: unknown, fallback: string) {
-  const errorLike = error as {
-    userMessage?: string;
-    message?: string;
-    response?: { data?: { message?: string } };
-  };
-  return errorLike.userMessage || errorLike.response?.data?.message || errorLike.message || fallback;
-}
-
-function validationFromError(error: unknown): FlowValidationResult | null {
-  const errorLike = error as {
-    response?: {
-      data?: {
-        valid?: boolean;
-        errors?: FlowValidationResult["errors"];
-        warnings?: FlowValidationResult["warnings"];
-        details?: FlowValidationResult;
-      };
-    };
-  };
-  const data = errorLike.response?.data;
-  if (data?.details?.errors) return data.details;
-  if (Array.isArray(data?.errors)) {
-    return { valid: Boolean(data.valid), errors: data.errors, warnings: data.warnings || [] };
-  }
-  return null;
-}
 
 export default function FlowBuilderPage() {
   const { flowId } = useParams();
@@ -52,10 +30,10 @@ export default function FlowBuilderPage() {
   const { flow, setFlow, loading, error, reload } = useFlow(flowId);
   const builder = useAutomationBuilder(flow);
   const [name, setName] = useState("");
-  const [busy, setBusy] = useState(false);
   const [validation, setValidation] = useState<FlowValidationResult | null>(null);
   const [validationOpen, setValidationOpen] = useState(false);
   const flowInstance = useRef<ReactFlowInstance | null>(null);
+  const layout = useBuilderLayoutState();
 
   useEffect(() => {
     if (flow) setName(flow.name);
@@ -64,6 +42,52 @@ export default function FlowBuilderPage() {
   const nameDirty = Boolean(flow && name.trim() !== flow.name);
   const dirty = builder.dirty || nameDirty;
   const editable = flow?.status !== "archived";
+  const draftPayload = useMemo(
+    () =>
+      toDraftPayload(
+        builder.trigger,
+        builder.nodes,
+        builder.edges,
+        builder.fallbackNodeId,
+        builder.handoverNodeId,
+        builder.runtimeSettings
+      ),
+    [
+      builder.edges,
+      builder.fallbackNodeId,
+      builder.handoverNodeId,
+      builder.nodes,
+      builder.runtimeSettings,
+      builder.trigger,
+    ]
+  );
+  const workflow = useFlowPublishWorkflow({
+    flowId,
+    flow,
+    name,
+    isDirty: dirty,
+    payload: draftPayload,
+    setFlow,
+    setName,
+    markSaved: () => builder.setDirty(false),
+    showValidation: (result) => {
+      setValidation(result);
+      setValidationOpen(true);
+      const firstNodeIssue = result.errors.find((issue) => issue.nodeId);
+      const invalidNode = firstNodeIssue?.nodeId
+        ? builder.nodes.find((node) => node.id === firstNodeIssue.nodeId)
+        : null;
+      if (invalidNode) {
+        builder.setSelectedNodeId(invalidNode.id);
+        void flowInstance.current?.setCenter(
+          invalidNode.position.x + 115,
+          invalidNode.position.y + 80,
+          { zoom: 1, duration: 400 }
+        );
+      }
+    },
+    toast,
+  });
 
   useEffect(() => {
     function warnBeforeUnload(event: BeforeUnloadEvent) {
@@ -92,81 +116,23 @@ export default function FlowBuilderPage() {
     return () => window.removeEventListener("keydown", handleDelete);
   }, [builder.deleteSelection]);
 
+  useEffect(() => {
+    const notifyResize = () => window.dispatchEvent(new Event("resize"));
+    const frame = window.requestAnimationFrame(notifyResize);
+    const timeout = window.setTimeout(notifyResize, 240);
+    return () => {
+      window.cancelAnimationFrame(frame);
+      window.clearTimeout(timeout);
+    };
+  }, [
+    layout.isDesktop,
+    layout.leftSidebarCollapsed,
+    layout.rightSidebarOpen,
+  ]);
+
   function goBack() {
     if (dirty && !window.confirm("Leave without saving your flow changes?")) return;
     navigate("/app/automation");
-  }
-
-  async function saveCurrentDraft(showToast = true): Promise<AutomationFlow | null> {
-    if (!flowId || !flow || !name.trim()) {
-      toast("Flow name is required.", "warning");
-      return null;
-    }
-    setBusy(true);
-    try {
-      let currentFlow = flow;
-      if (nameDirty) {
-        const metadata = await flowsApi.updateMetadata(flowId, { name: name.trim() });
-        currentFlow = metadata.flow;
-      }
-      const payload = toDraftPayload(
-        builder.trigger,
-        builder.nodes,
-        builder.edges,
-        builder.fallbackNodeId,
-        builder.handoverNodeId,
-        builder.runtimeSettings
-      );
-      const response = await flowsApi.saveDraft(flowId, payload);
-      const saved = { ...response.flow, name: currentFlow.name };
-      setFlow(saved);
-      setName(saved.name);
-      builder.setDirty(false);
-      if (showToast) toast("Flow draft saved.", "success");
-      return saved;
-    } catch (requestError: unknown) {
-      toast(requestMessage(requestError, "Unable to save flow draft."), "error");
-      return null;
-    } finally {
-      setBusy(false);
-    }
-  }
-
-  async function validateCurrentDraft() {
-    const saved = await saveCurrentDraft(false);
-    if (!saved || !flowId) return;
-    setBusy(true);
-    try {
-      const result = await flowsApi.validate(flowId);
-      setValidation(result);
-      setValidationOpen(true);
-      toast(result.valid ? "Flow validation passed." : "Flow needs attention.", result.valid ? "success" : "warning");
-    } catch (requestError: unknown) {
-      toast(requestMessage(requestError, "Unable to validate flow."), "error");
-    } finally {
-      setBusy(false);
-    }
-  }
-
-  async function publishCurrentDraft() {
-    const saved = await saveCurrentDraft(false);
-    if (!saved || !flowId) return;
-    setBusy(true);
-    try {
-      const result = await flowsApi.publish(flowId);
-      setValidation(result.validation);
-      setFlow({ ...saved, status: "active", activeVersionId: result.version._id });
-      toast(`Flow published as version ${result.version.versionNumber}.`, "success");
-    } catch (requestError: unknown) {
-      const result = validationFromError(requestError);
-      if (result) {
-        setValidation(result);
-        setValidationOpen(true);
-      }
-      toast(requestMessage(requestError, "Unable to publish flow."), "error");
-    } finally {
-      setBusy(false);
-    }
   }
 
   function focusValidationNode(nodeId: string) {
@@ -210,19 +176,55 @@ export default function FlowBuilderPage() {
         name={name}
         status={flow.status}
         dirty={dirty}
-        busy={busy}
         editable={editable}
+        isSaving={workflow.isSaving}
+        isValidating={workflow.isValidating}
+        isPublishing={workflow.isPublishing}
+        canSave={workflow.canSave}
+        canValidate={workflow.canValidate}
+        canPublish={workflow.canPublish}
+        validationStatus={workflow.validationStatus}
+        lastSavedAt={workflow.lastSavedAt}
+        blocksCollapsed={
+          layout.isDesktop
+            ? layout.leftSidebarCollapsed
+            : !layout.mobileBlocksOpen
+        }
+        settingsOpen={layout.rightSidebarOpen}
         onNameChange={setName}
         onBack={goBack}
-        onSave={() => void saveCurrentDraft()}
-        onValidate={() => void validateCurrentDraft()}
-        onPublish={() => void publishCurrentDraft()}
+        onSave={() => void workflow.save()}
+        onValidate={() => void workflow.validate()}
+        onPublish={() => void workflow.publish()}
+        onToggleBlocks={layout.toggleBlocks}
+        onToggleSettings={layout.toggleSettings}
       />
       {flow.status === "archived" ? (
         <Alert tone="warn" className="m-3">Archived flows are read-only.</Alert>
       ) : null}
-      <div className="flex h-full min-h-0 flex-1 overflow-hidden">
-        <NodePalette onAdd={(type) => editable && builder.addNode(type)} />
+      <div className="relative flex h-full min-h-0 flex-1 overflow-hidden">
+        {layout.mobileBlocksOpen ? (
+          <button
+            type="button"
+            className="absolute inset-0 z-30 bg-slate-950/20 backdrop-blur-[1px] focus-visible:outline-none lg:hidden"
+            onClick={() => layout.setMobileBlocksOpen(false)}
+            aria-label="Close content blocks"
+            title="Close content blocks"
+          />
+        ) : null}
+        <NodePalette
+          collapsed={layout.leftSidebarCollapsed}
+          mobileOpen={layout.mobileBlocksOpen}
+          onToggleCollapsed={() =>
+            layout.setLeftSidebarCollapsed(!layout.leftSidebarCollapsed)
+          }
+          onCloseMobile={() => layout.setMobileBlocksOpen(false)}
+          onAdd={(type) => {
+            if (!editable) return;
+            builder.addNode(type);
+            if (!layout.isDesktop) layout.setMobileBlocksOpen(false);
+          }}
+        />
         <ReactFlowProvider>
           <BuilderCanvas
             nodes={builder.nodes}
@@ -238,10 +240,24 @@ export default function FlowBuilderPage() {
             onInit={(instance) => { flowInstance.current = instance; }}
           />
         </ReactFlowProvider>
-        <aside className="relative z-20 hidden w-[320px] shrink-0 overflow-y-auto border-l border-slate-200 bg-white p-5 custom-scrollbar lg:block xl:w-[360px]">
+        <SettingsSidebar
+          open={layout.rightSidebarOpen}
+          title={builder.selectedNode ? "Node Settings" : "Flow Settings"}
+          subtitle={
+            builder.selectedNode
+              ? NODE_META[
+                  builder.selectedNode.data.nodeType as FlowNodeType
+                ].label
+              : "Trigger, fallback and session behavior"
+          }
+          onClose={() => layout.setRightSidebarOpen(false)}
+          onOpen={() => layout.setRightSidebarOpen(true)}
+        >
           {builder.selectedNode ? (
             <NodeSettingsPanel
               node={builder.selectedNode}
+              nodes={builder.nodes}
+              flowId={flowId}
               onConfigChange={builder.updateSelectedConfig}
               onHandleRename={builder.renameHandle}
               onDelete={deleteSelectedNode}
@@ -259,7 +275,7 @@ export default function FlowBuilderPage() {
               onRuntimeSettingsChange={builder.changeRuntimeSettings}
             />
           )}
-        </aside>
+        </SettingsSidebar>
       </div>
       <ValidationModal open={validationOpen} result={validation} onClose={() => setValidationOpen(false)} onSelectNode={focusValidationNode} />
     </div>

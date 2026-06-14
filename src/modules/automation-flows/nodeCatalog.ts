@@ -63,7 +63,13 @@ export function nodePreview(type: FlowNodeType, config: FlowNodeConfig) {
   if (type === "text" || type === "text_buttons") return textValue(config, "text") || "Message not configured";
   if (type === "ask_question") return textValue(config, "question") || "Question not configured";
   if (type === "list") return textValue(config, "text") || "List not configured";
-  if (type === "media") return textValue(config, "mediaUrl") || `${textValue(config, "mediaType") || "Media"} URL missing`;
+  if (type === "media") {
+    const sourceType = textValue(config, "sourceType") || (textValue(config, "mediaAssetId") ? "upload" : "url");
+    if (sourceType === "upload") return textValue(config, "mediaAssetName") || "Uploaded media";
+    if (sourceType === "api_context") return textValue(config, "sourceKey") ? `API media: ${textValue(config, "sourceKey")}` : "API media key missing";
+    if (sourceType === "contact_attribute") return textValue(config, "sourceKey") ? `Attribute media: ${textValue(config, "sourceKey")}` : "Attribute key missing";
+    return textValue(config, "url") || textValue(config, "mediaUrl") || `${textValue(config, "mediaType") || "Media"} URL missing`;
+  }
   if (type === "template") return textValue(config, "templateName") || "Template not selected";
   if (type === "set_tag") return `${textValue(config, "action") || "Add"} contact tags`;
   if (type === "set_attribute") return "Merge contact attributes";
@@ -77,7 +83,13 @@ export function nodeHasWarning(type: FlowNodeType, config: FlowNodeConfig) {
   if (type === "text_buttons") return !textValue(config, "text").trim() || !Array.isArray(config.buttons);
   if (type === "ask_question") return !textValue(config, "question").trim();
   if (type === "list") return !textValue(config, "text").trim() || !textValue(config, "buttonText").trim();
-  if (type === "media") return !textValue(config, "mediaUrl").trim();
+  if (type === "media") {
+    const sourceType = textValue(config, "sourceType") || (textValue(config, "mediaAssetId") ? "upload" : "url");
+    if (!textValue(config, "mediaType").trim()) return true;
+    if (sourceType === "upload") return !textValue(config, "mediaAssetId").trim();
+    if (sourceType === "api_context" || sourceType === "contact_attribute") return !textValue(config, "sourceKey").trim();
+    return !(textValue(config, "url") || textValue(config, "mediaUrl")).trim();
+  }
   if (type === "template") return !textValue(config, "templateName").trim() || !textValue(config, "languageCode").trim();
   if (type === "set_tag") return !Array.isArray(config.tags) || config.tags.length === 0;
   if (type === "set_attribute") return !config.attributes || typeof config.attributes !== "object";
@@ -106,6 +118,6 @@ export function outputHandles(type: FlowNodeType, config: FlowNodeConfig) {
       });
     });
   }
-  if (type === "api_request") return [{ id: "success", label: "Success" }, { id: "failure", label: "Failure" }];
+  if (type === "api_request" || type === "media" || type === "template") return [{ id: "success", label: "Success" }, { id: "failure", label: "Failure" }];
   return [{ id: "default", label: "Next" }];
 }

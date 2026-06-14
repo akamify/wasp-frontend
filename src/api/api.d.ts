@@ -208,6 +208,7 @@ export const API: {
   };
   templates: {
     list(params?: any): Promise<any>;
+    approved(): Promise<any>;
     create(payload: any): Promise<any>;
     get(id: string): Promise<any>;
     update(id: string, payload: any): Promise<any>;
@@ -229,6 +230,11 @@ export const API: {
     byPhone(phone: string, params?: any): Promise<any>;
     downloadMedia(id: string): Promise<any>;
     uploadMedia(file: any, onProgress?: (pct: number) => void): Promise<any>;
+  };
+  media: {
+    upload(file: any, mediaType: string, onProgress?: (pct: number) => void): Promise<any>;
+    list(params?: any): Promise<any>;
+    remove(id: string): Promise<any>;
   };
   analytics: {
     overview(params?: any): Promise<any>;
@@ -324,6 +330,8 @@ export const API: {
     updateMetadata(flowId: string, payload: unknown): Promise<unknown>;
     saveDraft(flowId: string, payload: unknown): Promise<unknown>;
     validate(flowId: string): Promise<unknown>;
+    testApiRequest(payload: unknown): Promise<unknown>;
+    testMediaNode(payload: unknown): Promise<unknown>;
     publish(flowId: string): Promise<unknown>;
     pause(flowId: string): Promise<unknown>;
     resume(flowId: string): Promise<unknown>;

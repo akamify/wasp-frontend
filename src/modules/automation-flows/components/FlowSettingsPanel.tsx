@@ -1,9 +1,12 @@
 import { CsvField } from "@modules/automation-flows/components/CsvField";
+import { KeyValueEditor } from "@modules/automation-flows/components/KeyValueEditor";
+import { TemplateSettings } from "@modules/automation-flows/components/MessageNodeSettings";
 import { Select } from "@components/ui/Select";
 import { Input } from "@components/ui/Input";
 import { NODE_META, nodePreview } from "@modules/automation-flows/nodeCatalog";
 import type {
   BuilderNode,
+  FlowNodeConfig,
   FlowRuntimeSettings,
   FlowTrigger,
   TriggerType,
@@ -67,6 +70,19 @@ export function FlowSettingsPanel({
     const title = NODE_META[node.data.nodeType].label;
     const preview = nodePreview(node.data.nodeType, node.data.config);
     return `${title} - ${preview.slice(0, 42)}`;
+  }
+
+  function apiContextKeys() {
+    const keys = new Set<string>();
+    for (const node of nodes) {
+      if (node.data.nodeType !== "api_request") continue;
+      const mapping = node.data.config.responseMapping;
+      if (!mapping || typeof mapping !== "object" || Array.isArray(mapping)) continue;
+      Object.keys(mapping).forEach((key) => {
+        if (key.trim()) keys.add(key.trim());
+      });
+    }
+    return Array.from(keys).sort();
   }
 
   return (
@@ -233,6 +249,21 @@ export function FlowSettingsPanel({
         <option value="text">Send text message</option>
         <option value="template">Send template message</option>
       </Select>
+      <KeyValueEditor
+        label="Static variables"
+        value={runtimeSettings.staticVariables || {}}
+        onChange={(staticVariables) =>
+          onRuntimeSettingsChange({
+            ...runtimeSettings,
+            staticVariables,
+          })
+        }
+        keyPlaceholder="companyName"
+        valuePlaceholder="Amila Gold"
+      />
+      <p className="text-[11px] leading-4 text-slate-500">
+        Avoid storing API secrets here. Values with token/key/secret/password in the key are masked in logs only; use a backend secret store when available.
+      </p>
       {runtimeSettings.onSessionExpired.action === "text" ? (
         <label className="block">
           <span className="mb-1 block text-xs font-semibold text-ink-800/80">
@@ -244,25 +275,26 @@ export function FlowSettingsPanel({
             onChange={(event) => updateExpiry({ textMessage: event.target.value })}
             className="w-full rounded-[5px] bg-white px-3 py-2.5 text-sm text-ink-900 ring-1 ring-ink-900/12 focus:outline-none focus:ring-2 focus:ring-brand-300"
           />
+          <span className="mt-1 block text-[11px] leading-4 text-slate-500">
+            Expiry text is static. Use template expiry action for dynamic WhatsApp variables.
+          </span>
         </label>
       ) : null}
       {runtimeSettings.onSessionExpired.action === "template" ? (
         <div className="space-y-3">
-          <Input
-            label="Template name"
-            value={runtimeSettings.onSessionExpired.templateName}
-            onChange={(event) => updateExpiry({ templateName: event.target.value })}
-          />
-          <Input
-            label="Language code"
-            value={runtimeSettings.onSessionExpired.languageCode}
-            onChange={(event) => updateExpiry({ languageCode: event.target.value })}
-          />
-          <CsvField
-            label="Template variables"
-            value={runtimeSettings.onSessionExpired.variables}
-            onChange={(variables) => updateExpiry({ variables })}
-            placeholder="{{contact.name}}, {{flow.name}}"
+          <TemplateSettings
+            config={runtimeSettings.onSessionExpired as unknown as FlowNodeConfig}
+            availableContextKeys={apiContextKeys()}
+            onChange={(config) =>
+              updateExpiry({
+                templateName: String(config.templateName || ""),
+                languageCode: String(config.languageCode || "en"),
+                variables: Array.isArray(config.variables)
+                  ? config.variables.map((value) => String(value))
+                  : [],
+                templateConfig: config.templateConfig as FlowRuntimeSettings["onSessionExpired"]["templateConfig"],
+              })
+            }
           />
           {!runtimeSettings.onSessionExpired.templateName.trim() ? (
             <p className="text-[11px] font-semibold text-amber-700">

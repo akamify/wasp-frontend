@@ -29,17 +29,48 @@ export interface FlowTrigger {
 
 export type SessionExpiryAction = "none" | "text" | "template";
 
+export type TemplateVariableSourceType =
+  | "static"
+  | "contact_field"
+  | "contact_attribute"
+  | "api_context"
+  | "workspace_field";
+
+export interface TemplateVariableMapping {
+  index: number;
+  sourceType: TemplateVariableSourceType;
+  sourceKey: string;
+  value?: string;
+  fallback: string;
+  buttonIndex?: number;
+}
+
+export interface TemplateComponentMapping {
+  type: "header" | "body" | "button";
+  label?: string;
+  buttonIndex?: number;
+  variables: TemplateVariableMapping[];
+}
+
+export interface FlowTemplateConfig {
+  templateName: string;
+  languageCode: string;
+  components: TemplateComponentMapping[];
+}
+
 export interface FlowRuntimeSettings {
   sessionTimeoutMinutes: number;
   allowKeywordRestartWhenWaiting: boolean;
   maxInvalidReplies?: number;
   invalidReplyMessage?: string;
+  staticVariables?: Record<string, string>;
   onSessionExpired: {
     action: SessionExpiryAction;
     textMessage: string;
     templateName: string;
     languageCode: string;
     variables: string[];
+    templateConfig?: FlowTemplateConfig;
   };
 }
 
@@ -78,6 +109,12 @@ export interface AutomationFlow {
   runtimeSettings?: FlowRuntimeSettings;
   draft: FlowDraft;
   activeVersionId?: string | null;
+  draftHash?: string | null;
+  lastValidatedDraftHash?: string | null;
+  lastValidationStatus?: "stale" | "passed" | "failed";
+  lastValidatedAt?: string | null;
+  lastValidationErrors?: ValidationIssue[];
+  lastValidationWarnings?: ValidationIssue[];
   createdAt: string;
   updatedAt: string;
 }

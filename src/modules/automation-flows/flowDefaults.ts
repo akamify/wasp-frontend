@@ -33,15 +33,24 @@ const DEFAULT_CONFIGS: Record<FlowNodeType, FlowNodeConfig> = {
   },
   media: {
     mediaType: "image",
+    sourceType: "url",
+    mediaAssetId: "",
+    url: "",
     mediaUrl: "",
+    sourceKey: "",
     caption: "",
     filename: "",
-    autoContinue: false,
+    autoContinue: true,
   },
   template: {
     templateName: "",
     languageCode: "en",
     variables: [],
+    templateConfig: {
+      templateName: "",
+      languageCode: "en",
+      components: [],
+    },
     autoContinue: false,
   },
   set_tag: { action: "add", tags: [] },
@@ -49,6 +58,7 @@ const DEFAULT_CONFIGS: Record<FlowNodeType, FlowNodeConfig> = {
   api_request: {
     method: "GET",
     url: "",
+    queryParams: {},
     headers: {},
     body: "",
     timeoutMs: 10000,

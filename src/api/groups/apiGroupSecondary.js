@@ -39,6 +39,7 @@ export function buildApiGroupSecondary(api, unwrap, API_BASE_URL) {
     },
     templates: {
       list: (params) => api.get("/templates", { params }).then(unwrap),
+      approved: () => api.get("/templates/approved").then(unwrap),
       create: (payload) => api.post("/templates", payload, { timeout: 180000 }).then(unwrap),
       get: (id) => api.get(`/templates/${id}`).then(unwrap),
       update: (id, payload) => api.put(`/templates/${id}`, payload).then(unwrap),
@@ -84,6 +85,24 @@ export function buildApiGroupSecondary(api, unwrap, API_BASE_URL) {
           },
         }).then(unwrap);
       },
+    },
+    media: {
+      upload: (file, mediaType, onProgress) => {
+        const data = new FormData();
+        data.append("file", file);
+        data.append("mediaType", mediaType);
+        return api.post("/media/upload", data, {
+          headers: { "Content-Type": "multipart/form-data" },
+          onUploadProgress: (e) => {
+            if (!onProgress) return;
+            const total = e.total || 0;
+            const loaded = e.loaded || 0;
+            onProgress(total ? Math.round((loaded / total) * 100) : 0);
+          },
+        }).then(unwrap);
+      },
+      list: (params) => api.get("/media", { params }).then(unwrap),
+      remove: (id) => api.delete(`/media/${encodeURIComponent(id)}`).then(unwrap),
     },
     analytics: {
       overview: (params) => api.get("/analytics/overview", { params }).then(unwrap),
@@ -183,6 +202,8 @@ export function buildApiGroupSecondary(api, unwrap, API_BASE_URL) {
       updateMetadata: (flowId, payload) => api.patch(`/flows/${encodeURIComponent(flowId)}`, payload).then(unwrap),
       saveDraft: (flowId, payload) => api.put(`/flows/${encodeURIComponent(flowId)}/draft`, payload).then(unwrap),
       validate: (flowId) => api.post(`/flows/${encodeURIComponent(flowId)}/validate`).then(unwrap),
+      testApiRequest: (payload) => api.post("/flows/test-api-request", payload).then(unwrap),
+      testMediaNode: (payload) => api.post("/flows/test-media-node", payload).then(unwrap),
       publish: (flowId) => api.post(`/flows/${encodeURIComponent(flowId)}/publish`).then(unwrap),
       pause: (flowId) => api.post(`/flows/${encodeURIComponent(flowId)}/pause`).then(unwrap),
       resume: (flowId) => api.post(`/flows/${encodeURIComponent(flowId)}/resume`).then(unwrap),

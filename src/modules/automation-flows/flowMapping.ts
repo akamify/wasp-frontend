@@ -70,12 +70,18 @@ export const DEFAULT_RUNTIME_SETTINGS: FlowRuntimeSettings = {
   allowKeywordRestartWhenWaiting: true,
   maxInvalidReplies: 2,
   invalidReplyMessage: "Please choose one of the available options.",
+  staticVariables: {},
   onSessionExpired: {
     action: "none",
     textMessage: "Your previous session has expired. Please send Hi to start again.",
     templateName: "",
     languageCode: "en",
     variables: [],
+    templateConfig: {
+      templateName: "",
+      languageCode: "en",
+      components: [],
+    },
   },
 };
 
@@ -88,6 +94,7 @@ export function normalizedRuntimeSettings(flow: AutomationFlow): FlowRuntimeSett
       ...DEFAULT_RUNTIME_SETTINGS.onSessionExpired,
       ...(settings?.onSessionExpired || {}),
       variables: settings?.onSessionExpired?.variables || [],
+      templateConfig: settings?.onSessionExpired?.templateConfig || DEFAULT_RUNTIME_SETTINGS.onSessionExpired.templateConfig,
     },
   };
 }

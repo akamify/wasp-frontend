@@ -8,6 +8,8 @@ import type { BuilderNode, FlowNodeConfig } from "@modules/automation-flows/type
 
 interface NodeSettingsPanelProps {
   node: BuilderNode;
+  nodes: BuilderNode[];
+  flowId?: string;
   onConfigChange: (config: FlowNodeConfig) => void;
   onHandleRename: (oldHandle: string, newHandle: string) => void;
   onDelete: () => void;
@@ -22,52 +24,23 @@ const MESSAGE_TYPES = new Set([
   "end",
 ]);
 
-const VARIABLE_TOKENS = [
-  ["Contact", ["{{contact.name}}", "{{contact.phone}}", "{{contact.email}}"]],
-  ["Attributes", ["{{attributes.city}}", "{{attributes.orderId}}", "{{attributes.lastProduct}}"]],
-  ["Context", ["{{context.productName}}", "{{context.price}}", "{{context.productUrl}}", "{{context.orderStatus}}"]],
-  ["Workspace", ["{{workspace.name}}"]],
-  ["Flow", ["{{flow.name}}"]],
-] as const;
-
-function VariableHelper() {
-  async function copyToken(token: string) {
-    await navigator.clipboard?.writeText(token).catch(() => undefined);
+function apiContextKeys(nodes: BuilderNode[]) {
+  const keys = new Set<string>();
+  for (const item of nodes) {
+    if (item.data.nodeType !== "api_request") continue;
+    const mapping = item.data.config.responseMapping;
+    if (!mapping || typeof mapping !== "object" || Array.isArray(mapping)) continue;
+    Object.keys(mapping).forEach((key) => {
+      if (key.trim()) keys.add(key.trim());
+    });
   }
-
-  return (
-    <div className="rounded-[5px] border border-slate-200 bg-slate-50 p-3">
-      <div className="text-xs font-black text-slate-700">Insert variables</div>
-      <p className="mt-1 text-[11px] leading-4 text-slate-500">
-        Click a token to copy it, then paste it into message text, button titles, template variables, API URL/body, or media captions.
-      </p>
-      <div className="mt-3 space-y-3">
-        {VARIABLE_TOKENS.map(([label, tokens]) => (
-          <div key={label}>
-            <div className="mb-1 text-[10px] font-black uppercase tracking-wider text-slate-400">
-              {label}
-            </div>
-            <div className="flex flex-wrap gap-1.5">
-              {tokens.map((token) => (
-                <button
-                  key={token}
-                  type="button"
-                  onClick={() => void copyToken(token)}
-                  className="rounded-full bg-white px-2 py-1 text-[10px] font-bold text-brand-700 ring-1 ring-brand-100 hover:bg-brand-50"
-                >
-                  {token}
-                </button>
-              ))}
-            </div>
-          </div>
-        ))}
-      </div>
-    </div>
-  );
+  return Array.from(keys).sort();
 }
 
 export function NodeSettingsPanel({
   node,
+  nodes,
+  flowId,
   onConfigChange,
   onHandleRename,
   onDelete,
@@ -98,15 +71,26 @@ export function NodeSettingsPanel({
           This is the required entry point. Connect it to the first step in your flow.
         </div>
       ) : null}
-      {type !== "start" ? <VariableHelper /> : null}
       {MESSAGE_TYPES.has(type) ? (
-        <MessageNodeSettings type={type} config={node.data.config} onChange={onConfigChange} onHandleRename={onHandleRename} />
+        <MessageNodeSettings
+          type={type}
+          config={node.data.config}
+          availableContextKeys={apiContextKeys(nodes)}
+          onChange={onConfigChange}
+          onHandleRename={onHandleRename}
+        />
       ) : null}
       {type === "list" ? (
         <ListNodeSettings config={node.data.config} onChange={onConfigChange} onHandleRename={onHandleRename} />
       ) : null}
       {["set_tag", "set_attribute", "api_request", "request_intervention"].includes(type) ? (
-        <ActionNodeSettings type={type} config={node.data.config} onChange={onConfigChange} />
+        <ActionNodeSettings
+          type={type}
+          config={node.data.config}
+          flowId={flowId}
+          nodeId={node.id}
+          onChange={onConfigChange}
+        />
       ) : null}
     </div>
   );
