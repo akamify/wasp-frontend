@@ -107,6 +107,16 @@ function MediaOrPlainMessage(props: Props) {
   const inboundAudioLink = payload?.audio?.link;
   const inboundDoc = payload?.document;
   const inboundContacts = payload?.contacts;
+  const interactiveButtons = Array.isArray(message.buttons)
+    ? message.buttons
+    : Array.isArray(payload?.interactive?.action?.buttons)
+      ? payload.interactive.action.buttons
+          .map((button: { reply?: { id?: string; title?: string } }) => ({
+            id: String(button?.reply?.id || ""),
+            title: String(button?.reply?.title || ""),
+          }))
+          .filter((button: { id: string; title: string }) => button.id && button.title)
+      : [];
 
   if (message.display?.kind === "media" && String(message.display.mediaType || "").toLowerCase() === "audio") {
     return <AudioBlock id={inboundAudioId} link={inboundAudioLink} mediaErrors={mediaErrors} mediaLoading={mediaLoading} mediaUrls={mediaUrls} ensureMediaUrl={ensureMediaUrl} />;
@@ -116,6 +126,29 @@ function MediaOrPlainMessage(props: Props) {
   if (inboundAudioId || inboundAudioLink) return <AudioBlock id={inboundAudioId} link={inboundAudioLink} mediaErrors={mediaErrors} mediaLoading={mediaLoading} mediaUrls={mediaUrls} ensureMediaUrl={ensureMediaUrl} />;
   if (inboundDoc?.id) return <DocumentBlock doc={inboundDoc} mediaErrors={mediaErrors} mediaLoading={mediaLoading} mediaUrls={mediaUrls} ensureMediaUrl={ensureMediaUrl} />;
   if (Array.isArray(inboundContacts) && inboundContacts.length) return <div className="text-[13px] font-semibold text-ink-900/70">Shared {inboundContacts.length} contact(s)</div>;
+  if (
+    message.type === "interactive_buttons" ||
+    (payload?.type === "interactive" && payload?.interactive?.type === "button")
+  ) {
+    return (
+      <div className="space-y-2 pb-1">
+        <div className="whitespace-pre-wrap break-words text-[15px] leading-relaxed tracking-tight [overflow-wrap:anywhere]">
+          {message.text || payload?.interactive?.body?.text || "[No Content]"}
+        </div>
+        <div className="overflow-hidden rounded-[8px] border border-ink-900/10 bg-white/90">
+          {interactiveButtons.map((button: { id: string; title: string }) => (
+            <div
+              key={button.id}
+              className="flex items-center justify-center gap-2 border-b border-ink-900/8 px-3 py-2 text-xs font-bold text-brand-600 last:border-b-0"
+            >
+              <MessageSquare size={13} />
+              <span className="truncate">{button.title}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  }
   if (message.payload?.image?.link) {
     return (
       <div className="cursor-pointer group relative overflow-hidden rounded-[8px] mb-1" onClick={() => setSelectedImage(message.payload?.image?.link || null)}>
