@@ -160,6 +160,23 @@ export default function FlowBuilderPage() {
     if (builder.handoverNodeId === deletedId) builder.changeHandover(null);
   }
 
+  function addNodeFromPalette(type: FlowNodeType) {
+    if (!editable) return;
+    const node = builder.addNode(type);
+    if (!node) return;
+    layout.setRightSidebarOpen(true);
+    if (!layout.isDesktop) layout.setMobileBlocksOpen(false);
+  }
+
+  function addNodeFromDrop(
+    type: FlowNodeType,
+    position: { x: number; y: number }
+  ) {
+    if (!editable) return;
+    const node = builder.addNodeAtPosition(type, position);
+    if (node) layout.setRightSidebarOpen(true);
+  }
+
   if (loading) {
     return (
       <AutomationBuilderSkeleton
@@ -243,11 +260,7 @@ export default function FlowBuilderPage() {
           onActiveTabChange={(lastActiveLeftTab) =>
             layout.updatePreference({ lastActiveLeftTab })
           }
-          onAdd={(type) => {
-            if (!editable) return;
-            builder.addNode(type);
-            if (!layout.isDesktop) layout.setMobileBlocksOpen(false);
-          }}
+          onAdd={addNodeFromPalette}
         />
         <ReactFlowProvider>
           <BuilderCanvas
@@ -260,7 +273,7 @@ export default function FlowBuilderPage() {
             onNodeSelect={builder.setSelectedNodeId}
             onEdgeSelect={builder.setSelectedEdgeId}
             onClearSelection={builder.clearSelection}
-            onDropNode={builder.addNodeAtPosition}
+            onDropNode={addNodeFromDrop}
             onInit={(instance) => { flowInstance.current = instance; }}
           />
         </ReactFlowProvider>
