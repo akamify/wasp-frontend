@@ -114,7 +114,8 @@ export default function FlowBuilderPage() {
         builder.nodes,
         builder.edges,
         builder.fallbackNodeId,
-        builder.handoverNodeId
+        builder.handoverNodeId,
+        builder.runtimeSettings
       );
       const response = await flowsApi.saveDraft(flowId, payload);
       const saved = { ...response.flow, name: currentFlow.name };
@@ -251,9 +252,11 @@ export default function FlowBuilderPage() {
               nodes={builder.nodes}
               fallbackNodeId={builder.fallbackNodeId}
               handoverNodeId={builder.handoverNodeId}
+              runtimeSettings={builder.runtimeSettings}
               onTriggerChange={builder.changeTrigger}
               onFallbackChange={builder.changeFallback}
               onHandoverChange={builder.changeHandover}
+              onRuntimeSettingsChange={builder.changeRuntimeSettings}
             />
           )}
         </aside>

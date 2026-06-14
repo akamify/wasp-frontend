@@ -5,6 +5,7 @@ import type {
   BuilderEdge,
   BuilderNode,
   FlowDraftPayload,
+  FlowRuntimeSettings,
   FlowTrigger,
 } from "@modules/automation-flows/types";
 import { createStartNode, DEFAULT_TRIGGER } from "@modules/automation-flows/flowDefaults";
@@ -41,7 +42,8 @@ export function toDraftPayload(
   nodes: BuilderNode[],
   edges: BuilderEdge[],
   fallbackNodeId: string | null,
-  handoverNodeId: string | null
+  handoverNodeId: string | null,
+  runtimeSettings: FlowRuntimeSettings
 ): FlowDraftPayload {
   return {
     trigger,
@@ -59,6 +61,32 @@ export function toDraftPayload(
     })),
     fallbackNodeId,
     handoverNodeId,
+    runtimeSettings,
+  };
+}
+
+export const DEFAULT_RUNTIME_SETTINGS: FlowRuntimeSettings = {
+  sessionTimeoutMinutes: 5,
+  allowKeywordRestartWhenWaiting: true,
+  onSessionExpired: {
+    action: "none",
+    textMessage: "Your previous session has expired. Please send Hi to start again.",
+    templateName: "",
+    languageCode: "en",
+    variables: [],
+  },
+};
+
+export function normalizedRuntimeSettings(flow: AutomationFlow): FlowRuntimeSettings {
+  const settings = flow.runtimeSettings;
+  return {
+    ...DEFAULT_RUNTIME_SETTINGS,
+    ...(settings || {}),
+    onSessionExpired: {
+      ...DEFAULT_RUNTIME_SETTINGS.onSessionExpired,
+      ...(settings?.onSessionExpired || {}),
+      variables: settings?.onSessionExpired?.variables || [],
+    },
   };
 }
 

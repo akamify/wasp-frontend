@@ -27,6 +27,8 @@ export type ChatMessage = {
     type?: string;
     interactive?: {
       type?: string;
+      button_reply?: { id?: string; title?: string };
+      list_reply?: { id?: string; title?: string; description?: string };
       body?: { text?: string };
       action?: {
         buttons?: Array<{

@@ -117,6 +117,17 @@ function MediaOrPlainMessage(props: Props) {
           }))
           .filter((button: { id: string; title: string }) => button.id && button.title)
       : [];
+  const buttonReply = payload?.interactive?.button_reply;
+  const listReply = payload?.interactive?.list_reply;
+
+  if (message.type === "button_reply" || buttonReply?.title) {
+    const title = String(buttonReply?.title || message.text || "").trim();
+    return <InteractiveReply label="Button reply" text={title || "Button reply"} />;
+  }
+  if (message.type === "list_reply" || listReply?.title) {
+    const title = String(listReply?.title || message.text || "").trim();
+    return <InteractiveReply label="List reply" text={title || "List reply"} />;
+  }
 
   if (message.display?.kind === "media" && String(message.display.mediaType || "").toLowerCase() === "audio") {
     return <AudioBlock id={inboundAudioId} link={inboundAudioLink} mediaErrors={mediaErrors} mediaLoading={mediaLoading} mediaUrls={mediaUrls} ensureMediaUrl={ensureMediaUrl} />;
@@ -133,7 +144,7 @@ function MediaOrPlainMessage(props: Props) {
     return (
       <div className="space-y-2 pb-1">
         <div className="whitespace-pre-wrap break-words text-[15px] leading-relaxed tracking-tight [overflow-wrap:anywhere]">
-          {message.text || payload?.interactive?.body?.text || "[No Content]"}
+          {renderWhatsAppText(message.text || payload?.interactive?.body?.text || "[No Content]")}
         </div>
         <div className="overflow-hidden rounded-[8px] border border-ink-900/10 bg-white/90">
           {interactiveButtons.map((button: { id: string; title: string }) => (
@@ -143,6 +154,36 @@ function MediaOrPlainMessage(props: Props) {
             >
               <MessageSquare size={13} />
               <span className="truncate">{button.title}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  }
+  if (
+    message.type === "interactive_list" ||
+    (payload?.type === "interactive" && payload?.interactive?.type === "list")
+  ) {
+    const sections = Array.isArray(payload?.interactive?.action?.sections)
+      ? payload.interactive.action.sections
+      : [];
+    return (
+      <div className="space-y-2 pb-1">
+        <div className="whitespace-pre-wrap break-words text-[15px] leading-relaxed tracking-tight [overflow-wrap:anywhere]">
+          {renderWhatsAppText(message.text || payload?.interactive?.body?.text || "[No Content]")}
+        </div>
+        <div className="rounded-[8px] border border-ink-900/10 bg-white/90 px-3 py-2 text-xs">
+          <div className="font-black text-brand-600">
+            {String(payload?.interactive?.action?.button || "View options")}
+          </div>
+          {sections.slice(0, 2).map((section: any, index: number) => (
+            <div key={`section-${index}`} className="mt-2 border-t border-ink-900/8 pt-2">
+              <div className="font-bold text-ink-900/70">{String(section?.title || "Options")}</div>
+              {(section?.rows || []).slice(0, 3).map((row: any) => (
+                <div key={String(row?.id || row?.title)} className="mt-1 text-ink-900/60">
+                  {String(row?.title || row?.id || "Option")}
+                </div>
+              ))}
             </div>
           ))}
         </div>
@@ -162,7 +203,20 @@ function MediaOrPlainMessage(props: Props) {
   if (normalizedPlain === "[audio]" || normalizedPlain === "[voice]") {
     return <AudioBlock id={inboundAudioId} link={inboundAudioLink} mediaErrors={mediaErrors} mediaLoading={mediaLoading} mediaUrls={mediaUrls} ensureMediaUrl={ensureMediaUrl} />;
   }
-  return <div className="whitespace-pre-wrap break-words pb-1 text-[15px] leading-relaxed tracking-tight [overflow-wrap:anywhere]">{plainText || "[No Content]"}</div>;
+  return <div className="whitespace-pre-wrap break-words pb-1 text-[15px] leading-relaxed tracking-tight [overflow-wrap:anywhere]">{renderWhatsAppText(plainText || "[No Content]")}</div>;
+}
+
+function InteractiveReply({ label, text }: { label: string; text: string }) {
+  return (
+    <div className="space-y-1 pb-1">
+      <div className="whitespace-pre-wrap break-words text-[15px] font-semibold leading-relaxed tracking-tight [overflow-wrap:anywhere]">
+        {renderWhatsAppText(text)}
+      </div>
+      <div className="inline-flex rounded-full bg-white/70 px-2 py-0.5 text-[10px] font-black uppercase tracking-wider text-ink-900/45 ring-1 ring-ink-900/10">
+        {label}
+      </div>
+    </div>
+  );
 }
 
 function MediaPreview({ ensureMediaUrl, id, mediaErrors, mediaLoading, mediaUrls, onImage, rounded = "rounded-[8px]", type }: Pick<Props, "ensureMediaUrl" | "mediaErrors" | "mediaLoading" | "mediaUrls"> & { id?: string; onImage?: (value: string) => void; rounded?: string; type: "Image" | "Video" }) {

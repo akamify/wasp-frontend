@@ -8,7 +8,13 @@ import {
 } from "reactflow";
 import { createBuilderNode } from "@modules/automation-flows/flowDefaults";
 import { DEFAULT_TRIGGER } from "@modules/automation-flows/flowDefaults";
-import { normalizedTrigger, toBuilderEdges, toBuilderNodes } from "@modules/automation-flows/flowMapping";
+import {
+  DEFAULT_RUNTIME_SETTINGS,
+  normalizedRuntimeSettings,
+  normalizedTrigger,
+  toBuilderEdges,
+  toBuilderNodes,
+} from "@modules/automation-flows/flowMapping";
 import { createBuilderEdge, refreshBuilderEdgeLabels } from "@modules/automation-flows/flowEdges";
 import { getFlowId } from "@modules/automation-flows/flowIdentity";
 import type {
@@ -17,6 +23,7 @@ import type {
   BuilderNode,
   FlowNodeConfig,
   FlowNodeType,
+  FlowRuntimeSettings,
   FlowTrigger,
 } from "@modules/automation-flows/types";
 
@@ -34,6 +41,7 @@ export function useAutomationBuilder(flow: AutomationFlow | null) {
   const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null);
   const [selectedEdgeId, setSelectedEdgeId] = useState<string | null>(null);
   const [trigger, setTrigger] = useState<FlowTrigger>(DEFAULT_TRIGGER);
+  const [runtimeSettings, setRuntimeSettings] = useState<FlowRuntimeSettings>(DEFAULT_RUNTIME_SETTINGS);
   const [fallbackNodeId, setFallbackNodeId] = useState<string | null>(null);
   const [handoverNodeId, setHandoverNodeId] = useState<string | null>(null);
   const [dirty, setDirty] = useState(false);
@@ -47,6 +55,7 @@ export function useAutomationBuilder(flow: AutomationFlow | null) {
     setNodes(loadedNodes);
     setEdges(toBuilderEdges(flow.draft?.edges, loadedNodes));
     setTrigger(normalizedTrigger(flow));
+    setRuntimeSettings(normalizedRuntimeSettings(flow));
     setFallbackNodeId(flow.draft?.fallbackNodeId || null);
     setHandoverNodeId(flow.draft?.handoverNodeId || null);
     setSelectedNodeId(null);
@@ -204,6 +213,11 @@ export function useAutomationBuilder(flow: AutomationFlow | null) {
     setDirty(true);
   }
 
+  function changeRuntimeSettings(next: FlowRuntimeSettings) {
+    setRuntimeSettings(next);
+    setDirty(true);
+  }
+
   return {
     nodes: nodes as BuilderNode[],
     edges: edges as BuilderEdge[],
@@ -211,6 +225,7 @@ export function useAutomationBuilder(flow: AutomationFlow | null) {
     selectedNodeId,
     selectedEdgeId,
     trigger,
+    runtimeSettings,
     fallbackNodeId,
     handoverNodeId,
     dirty,
@@ -230,5 +245,6 @@ export function useAutomationBuilder(flow: AutomationFlow | null) {
     changeTrigger,
     changeFallback,
     changeHandover,
+    changeRuntimeSettings,
   };
 }

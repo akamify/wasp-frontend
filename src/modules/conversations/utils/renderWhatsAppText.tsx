@@ -1,17 +1,20 @@
 import React from "react";
+import { linkifyTextNodes } from "@modules/conversations/components/LinkifiedText";
 
 function renderWhatsAppInline(text: string) {
-  const parts: any[] = [];
+  const parts: React.ReactNode[] = [];
   const regex = /(\*[^*]+\*|_[^_]+_|~[^~]+~|`[^`]+`)/g;
   let lastIndex = 0;
   let match: RegExpExecArray | null = null;
   while ((match = regex.exec(String(text || ""))) !== null) {
-    if (match.index > lastIndex) parts.push(text.slice(lastIndex, match.index));
+    if (match.index > lastIndex) {
+      parts.push(...linkifyTextNodes(text.slice(lastIndex, match.index), `t-${lastIndex}`));
+    }
     const token = match[0];
     const content = token.slice(1, -1);
-    if (token.startsWith("*")) parts.push(<strong key={`b-${parts.length}`}>{content}</strong>);
-    else if (token.startsWith("_")) parts.push(<em key={`i-${parts.length}`}>{content}</em>);
-    else if (token.startsWith("~")) parts.push(<del key={`s-${parts.length}`}>{content}</del>);
+    if (token.startsWith("*")) parts.push(<strong key={`b-${parts.length}`}>{linkifyTextNodes(content, `b-${parts.length}`)}</strong>);
+    else if (token.startsWith("_")) parts.push(<em key={`i-${parts.length}`}>{linkifyTextNodes(content, `i-${parts.length}`)}</em>);
+    else if (token.startsWith("~")) parts.push(<del key={`s-${parts.length}`}>{linkifyTextNodes(content, `s-${parts.length}`)}</del>);
     else if (token.startsWith("`")) {
       parts.push(
         <code key={`c-${parts.length}`} className="rounded bg-slate-100 px-1 text-[12px] text-slate-700">
@@ -21,7 +24,9 @@ function renderWhatsAppInline(text: string) {
     }
     lastIndex = match.index + token.length;
   }
-  if (lastIndex < text.length) parts.push(text.slice(lastIndex));
+  if (lastIndex < text.length) {
+    parts.push(...linkifyTextNodes(text.slice(lastIndex), `t-${lastIndex}`));
+  }
   return parts.length ? parts : text;
 }
 
@@ -38,4 +43,3 @@ export function renderWhatsAppText(text: string) {
     return <span key={`seg-${idx}`}>{renderWhatsAppInline(segment)}</span>;
   });
 }
-

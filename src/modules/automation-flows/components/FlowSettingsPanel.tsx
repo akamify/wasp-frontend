@@ -1,16 +1,24 @@
 import { CsvField } from "@modules/automation-flows/components/CsvField";
 import { Select } from "@components/ui/Select";
+import { Input } from "@components/ui/Input";
 import { NODE_META, nodePreview } from "@modules/automation-flows/nodeCatalog";
-import type { BuilderNode, FlowTrigger, TriggerType } from "@modules/automation-flows/types";
+import type {
+  BuilderNode,
+  FlowRuntimeSettings,
+  FlowTrigger,
+  TriggerType,
+} from "@modules/automation-flows/types";
 
 interface FlowSettingsPanelProps {
   trigger: FlowTrigger;
   nodes: BuilderNode[];
   fallbackNodeId: string | null;
   handoverNodeId: string | null;
+  runtimeSettings: FlowRuntimeSettings;
   onTriggerChange: (trigger: FlowTrigger) => void;
   onFallbackChange: (nodeId: string | null) => void;
   onHandoverChange: (nodeId: string | null) => void;
+  onRuntimeSettingsChange: (settings: FlowRuntimeSettings) => void;
 }
 
 const TRIGGER_HELP: Record<Exclude<TriggerType, null>, string> = {
@@ -25,10 +33,36 @@ export function FlowSettingsPanel({
   nodes,
   fallbackNodeId,
   handoverNodeId,
+  runtimeSettings,
   onTriggerChange,
   onFallbackChange,
   onHandoverChange,
+  onRuntimeSettingsChange,
 }: Readonly<FlowSettingsPanelProps>) {
+  const timeoutUnit =
+    runtimeSettings.sessionTimeoutMinutes >= 60 &&
+    runtimeSettings.sessionTimeoutMinutes % 60 === 0
+      ? "hours"
+      : "minutes";
+  const timeoutValue =
+    timeoutUnit === "hours"
+      ? runtimeSettings.sessionTimeoutMinutes / 60
+      : runtimeSettings.sessionTimeoutMinutes;
+  const timeoutHelp =
+    "Flow session timeout can be set up to 10 hours. WhatsApp's customer service window is 24 hours, so we keep a safety buffer for retries, delays, and expiry handling.";
+
+  function updateExpiry(
+    updates: Partial<FlowRuntimeSettings["onSessionExpired"]>
+  ) {
+    onRuntimeSettingsChange({
+      ...runtimeSettings,
+      onSessionExpired: {
+        ...runtimeSettings.onSessionExpired,
+        ...updates,
+      },
+    });
+  }
+
   function nodeLabel(node: BuilderNode) {
     const title = NODE_META[node.data.nodeType].label;
     const preview = nodePreview(node.data.nodeType, node.data.config);
@@ -85,6 +119,132 @@ export function FlowSettingsPanel({
           <option key={node.id} value={node.id}>{nodeLabel(node)}</option>
         ))}
       </Select>
+      <div className="border-t border-slate-200 pt-5">
+        <h3 className="text-xs font-black uppercase tracking-wider text-slate-500">
+          Session expiry
+        </h3>
+        <div className="mt-3 grid grid-cols-[1fr_110px] gap-2">
+          <Input
+            label="Session timeout"
+            type="number"
+            min={1}
+            max={timeoutUnit === "hours" ? 10 : 600}
+            value={timeoutValue}
+            onChange={(event) => {
+              const value = Math.max(1, Number(event.target.value) || 1);
+              const minutes = timeoutUnit === "hours" ? value * 60 : value;
+              onRuntimeSettingsChange({
+                ...runtimeSettings,
+                sessionTimeoutMinutes: Math.min(600, minutes),
+              });
+            }}
+          />
+          <Select
+            label="Unit"
+            value={timeoutUnit}
+            onChange={(event) => {
+              const unit = event.target.value;
+              onRuntimeSettingsChange({
+                ...runtimeSettings,
+                sessionTimeoutMinutes:
+                  unit === "hours"
+                    ? Math.min(600, Math.max(60, timeoutValue * 60))
+                    : Math.min(600, Math.max(1, timeoutValue)),
+              });
+            }}
+          >
+            <option value="minutes">Minutes</option>
+            <option value="hours">Hours</option>
+          </Select>
+        </div>
+        <p className="mt-2 text-[11px] leading-4 text-slate-500">
+          {timeoutHelp}
+        </p>
+        {runtimeSettings.sessionTimeoutMinutes < 1 ||
+        runtimeSettings.sessionTimeoutMinutes > 600 ? (
+          <p className="mt-1 text-[11px] font-semibold text-red-600">
+            Timeout must be between 1 minute and 10 hours.
+          </p>
+        ) : null}
+      </div>
+      <label className="flex items-start gap-3 rounded-[5px] border border-slate-200 p-3">
+        <input
+          type="checkbox"
+          className="mt-0.5 h-4 w-4 accent-brand-600"
+          checked={runtimeSettings.allowKeywordRestartWhenWaiting}
+          onChange={(event) =>
+            onRuntimeSettingsChange({
+              ...runtimeSettings,
+              allowKeywordRestartWhenWaiting: event.target.checked,
+            })
+          }
+        />
+        <span>
+          <span className="block text-xs font-bold text-slate-800">
+            Allow keyword restart while waiting
+          </span>
+          <span className="mt-1 block text-[11px] leading-4 text-slate-500">
+            If the user sends the trigger keyword again while waiting for a button or answer, restart the flow instead of showing fallback.
+          </span>
+        </span>
+      </label>
+      <Select
+        label="On session expired"
+        value={runtimeSettings.onSessionExpired.action}
+        onChange={(event) =>
+          updateExpiry({
+            action: event.target
+              .value as FlowRuntimeSettings["onSessionExpired"]["action"],
+          })
+        }
+      >
+        <option value="none">Do nothing</option>
+        <option value="text">Send text message</option>
+        <option value="template">Send template message</option>
+      </Select>
+      {runtimeSettings.onSessionExpired.action === "text" ? (
+        <label className="block">
+          <span className="mb-1 block text-xs font-semibold text-ink-800/80">
+            Expiry text message
+          </span>
+          <textarea
+            rows={4}
+            value={runtimeSettings.onSessionExpired.textMessage}
+            onChange={(event) => updateExpiry({ textMessage: event.target.value })}
+            className="w-full rounded-[5px] bg-white px-3 py-2.5 text-sm text-ink-900 ring-1 ring-ink-900/12 focus:outline-none focus:ring-2 focus:ring-brand-300"
+          />
+        </label>
+      ) : null}
+      {runtimeSettings.onSessionExpired.action === "template" ? (
+        <div className="space-y-3">
+          <Input
+            label="Template name"
+            value={runtimeSettings.onSessionExpired.templateName}
+            onChange={(event) => updateExpiry({ templateName: event.target.value })}
+          />
+          <Input
+            label="Language code"
+            value={runtimeSettings.onSessionExpired.languageCode}
+            onChange={(event) => updateExpiry({ languageCode: event.target.value })}
+          />
+          <CsvField
+            label="Template variables"
+            value={runtimeSettings.onSessionExpired.variables}
+            onChange={(variables) => updateExpiry({ variables })}
+            placeholder="{{contact.name}}, {{flow.name}}"
+          />
+          {!runtimeSettings.onSessionExpired.templateName.trim() ? (
+            <p className="text-[11px] font-semibold text-amber-700">
+              Select or enter an approved template before publishing.
+            </p>
+          ) : null}
+        </div>
+      ) : null}
+      {runtimeSettings.onSessionExpired.action !== "none" ? (
+        <p className="rounded-[5px] bg-amber-50 p-3 text-[11px] font-medium leading-5 text-amber-800">
+          Outside the 24-hour WhatsApp window, expiry notifications require an approved template.
+        </p>
+      ) : null}
     </div>
   );
 }

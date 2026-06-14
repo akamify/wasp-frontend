@@ -27,6 +27,20 @@ export interface FlowTrigger {
   ctwaPayloads: string[];
 }
 
+export type SessionExpiryAction = "none" | "text" | "template";
+
+export interface FlowRuntimeSettings {
+  sessionTimeoutMinutes: number;
+  allowKeywordRestartWhenWaiting: boolean;
+  onSessionExpired: {
+    action: SessionExpiryAction;
+    textMessage: string;
+    templateName: string;
+    languageCode: string;
+    variables: string[];
+  };
+}
+
 export interface FlowNodeConfig {
   [key: string]: unknown;
 }
@@ -59,6 +73,7 @@ export interface AutomationFlow {
   description?: string;
   status: FlowStatus;
   trigger: FlowTrigger;
+  runtimeSettings?: FlowRuntimeSettings;
   draft: FlowDraft;
   activeVersionId?: string | null;
   createdAt: string;
@@ -92,6 +107,7 @@ export interface FlowDraftPayload {
   edges: BackendFlowEdge[];
   fallbackNodeId: string | null;
   handoverNodeId: string | null;
+  runtimeSettings: FlowRuntimeSettings;
 }
 
 export interface FlowListParams {
