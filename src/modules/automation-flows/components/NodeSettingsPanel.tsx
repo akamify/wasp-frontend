@@ -76,6 +76,8 @@ export function NodeSettingsPanel({
           type={type}
           config={node.data.config}
           availableContextKeys={apiContextKeys(nodes)}
+          flowId={flowId}
+          nodeId={node.id}
           onChange={onConfigChange}
           onHandleRename={onHandleRename}
         />

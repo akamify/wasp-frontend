@@ -4,6 +4,7 @@ import { Button } from "@components/ui/Button";
 import { Input } from "@components/ui/Input";
 import { Select } from "@components/ui/Select";
 import { Textarea } from "@components/ui/Textarea";
+import { MediaNodeSettings } from "@modules/automation-flows/components/MediaNodeSettings";
 import {
   listApprovedTemplates,
   listContactAttributeOptions,
@@ -537,6 +538,8 @@ export function MessageNodeSettings({
   type,
   config,
   availableContextKeys = [],
+  flowId,
+  nodeId,
   onChange,
   onHandleRename,
 }: Readonly<MessageNodeSettingsProps>) {
@@ -580,23 +583,13 @@ export function MessageNodeSettings({
   }
   if (type === "media") {
     return (
-      <>
-        <PlainMessageNotice>
-          Media captions and URLs are static. Use Template Message node for dynamic WhatsApp variables.
-        </PlainMessageNotice>
-        <Select label="Media type" value={configString(config, "mediaType", "image")} onChange={(event) => onChange({ ...config, mediaType: event.target.value })}>
-          <option value="image">Image</option>
-          <option value="video">Video</option>
-          <option value="document">Document</option>
-          <option value="audio">Audio</option>
-        </Select>
-        <Input label="Media URL" value={configString(config, "mediaUrl")} onChange={(event) => onChange({ ...config, mediaUrl: event.target.value })} placeholder="https://..." />
-        <Textarea label="Caption" value={configString(config, "caption")} onChange={(event) => onChange({ ...config, caption: event.target.value })} />
-        {configString(config, "mediaType") === "document" ? (
-          <Input label="Filename" value={configString(config, "filename")} onChange={(event) => onChange({ ...config, filename: event.target.value })} />
-        ) : null}
-        <AutoContinue checked={configBoolean(config, "autoContinue")} onChange={(checked) => onChange({ ...config, autoContinue: checked })} />
-      </>
+      <MediaNodeSettings
+        config={config}
+        availableContextKeys={availableContextKeys}
+        flowId={flowId}
+        nodeId={nodeId}
+        onChange={onChange}
+      />
     );
   }
   if (type === "template") {

@@ -65,7 +65,9 @@ export function nodePreview(type: FlowNodeType, config: FlowNodeConfig) {
   if (type === "list") return textValue(config, "text") || "List not configured";
   if (type === "media") {
     const sourceType = textValue(config, "sourceType") || (textValue(config, "mediaAssetId") ? "upload" : "url");
-    if (sourceType === "upload") return textValue(config, "mediaAssetName") || "Uploaded media";
+    if (sourceType === "upload" || sourceType === "library") {
+      return textValue(config, "mediaAssetName") || "Selected media";
+    }
     if (sourceType === "api_context") return textValue(config, "sourceKey") ? `API media: ${textValue(config, "sourceKey")}` : "API media key missing";
     if (sourceType === "contact_attribute") return textValue(config, "sourceKey") ? `Attribute media: ${textValue(config, "sourceKey")}` : "Attribute key missing";
     return textValue(config, "url") || textValue(config, "mediaUrl") || `${textValue(config, "mediaType") || "Media"} URL missing`;
@@ -86,7 +88,9 @@ export function nodeHasWarning(type: FlowNodeType, config: FlowNodeConfig) {
   if (type === "media") {
     const sourceType = textValue(config, "sourceType") || (textValue(config, "mediaAssetId") ? "upload" : "url");
     if (!textValue(config, "mediaType").trim()) return true;
-    if (sourceType === "upload") return !textValue(config, "mediaAssetId").trim();
+    if (sourceType === "upload" || sourceType === "library") {
+      return !textValue(config, "mediaAssetId").trim();
+    }
     if (sourceType === "api_context" || sourceType === "contact_attribute") return !textValue(config, "sourceKey").trim();
     return !(textValue(config, "url") || textValue(config, "mediaUrl")).trim();
   }

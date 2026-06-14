@@ -102,6 +102,9 @@ export function buildApiGroupSecondary(api, unwrap, API_BASE_URL) {
         }).then(unwrap);
       },
       list: (params) => api.get("/media", { params }).then(unwrap),
+      get: (id) => api.get(`/media/${encodeURIComponent(id)}`).then(unwrap),
+      update: (id, payload) =>
+        api.patch(`/media/${encodeURIComponent(id)}`, payload).then(unwrap),
       remove: (id) => api.delete(`/media/${encodeURIComponent(id)}`).then(unwrap),
     },
     analytics: {

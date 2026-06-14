@@ -23,11 +23,13 @@ export interface ContactAttributeOption {
 export interface MediaAssetOption {
   id: string;
   originalName: string;
+  displayName: string;
   mimeType: string;
   sizeBytes: number;
   mediaType: string;
   publicUrl: string;
   status: string;
+  createdAt?: string;
 }
 
 function asObject(value: unknown): Record<string, unknown> {
@@ -97,11 +99,13 @@ export async function uploadMediaAsset(
   return {
     id: String(asset.id || asset._id || ""),
     originalName: String(asset.originalName || asset.name || file.name),
+    displayName: String(asset.displayName || asset.originalName || file.name),
     mimeType: String(asset.mimeType || file.type || ""),
     sizeBytes: Number(asset.sizeBytes || file.size || 0),
     mediaType: String(asset.mediaType || mediaType),
     publicUrl: String(asset.publicUrl || ""),
     status: String(asset.status || "ready"),
+    createdAt: asset.createdAt ? String(asset.createdAt) : undefined,
   };
 }
 
@@ -114,11 +118,13 @@ export async function listMediaAssets(mediaType?: string): Promise<MediaAssetOpt
       return {
         id: String(record.id || record._id || ""),
         originalName: String(record.originalName || record.name || ""),
+        displayName: String(record.displayName || record.originalName || record.name || ""),
         mimeType: String(record.mimeType || ""),
         sizeBytes: Number(record.sizeBytes || 0),
         mediaType: String(record.mediaType || ""),
         publicUrl: String(record.publicUrl || ""),
         status: String(record.status || ""),
+        createdAt: record.createdAt ? String(record.createdAt) : undefined,
       };
     })
     .filter((asset) => asset.id && asset.status !== "deleted");

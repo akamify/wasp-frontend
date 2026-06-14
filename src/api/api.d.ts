@@ -234,6 +234,8 @@ export const API: {
   media: {
     upload(file: any, mediaType: string, onProgress?: (pct: number) => void): Promise<any>;
     list(params?: any): Promise<any>;
+    get(id: string): Promise<any>;
+    update(id: string, payload: unknown): Promise<any>;
     remove(id: string): Promise<any>;
   };
   analytics: {

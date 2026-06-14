@@ -103,6 +103,7 @@ function MediaOrPlainMessage(props: Props) {
   const payload = (message as any)?.payload || {};
   const inboundImageId = payload?.image?.id;
   const inboundVideoId = payload?.video?.id;
+  const inboundVideoLink = payload?.video?.link;
   const inboundAudioId = payload?.audio?.id;
   const inboundAudioLink = payload?.audio?.link;
   const inboundDoc = payload?.document;
@@ -134,8 +135,11 @@ function MediaOrPlainMessage(props: Props) {
   }
   if (inboundImageId) return <MediaPreview id={String(inboundImageId)} type="Image" mediaErrors={mediaErrors} mediaLoading={mediaLoading} mediaUrls={mediaUrls} ensureMediaUrl={ensureMediaUrl} onImage={setSelectedImage} />;
   if (inboundVideoId) return <MediaPreview id={String(inboundVideoId)} type="Video" mediaErrors={mediaErrors} mediaLoading={mediaLoading} mediaUrls={mediaUrls} ensureMediaUrl={ensureMediaUrl} />;
+  if (inboundVideoLink) {
+    return <video controls src={String(inboundVideoLink)} className="max-w-full rounded-[8px] ring-1 ring-ink-900/10" />;
+  }
   if (inboundAudioId || inboundAudioLink) return <AudioBlock id={inboundAudioId} link={inboundAudioLink} mediaErrors={mediaErrors} mediaLoading={mediaLoading} mediaUrls={mediaUrls} ensureMediaUrl={ensureMediaUrl} />;
-  if (inboundDoc?.id) return <DocumentBlock doc={inboundDoc} mediaErrors={mediaErrors} mediaLoading={mediaLoading} mediaUrls={mediaUrls} ensureMediaUrl={ensureMediaUrl} />;
+  if (inboundDoc?.id || inboundDoc?.link) return <DocumentBlock doc={inboundDoc} mediaErrors={mediaErrors} mediaLoading={mediaLoading} mediaUrls={mediaUrls} ensureMediaUrl={ensureMediaUrl} />;
   if (Array.isArray(inboundContacts) && inboundContacts.length) return <div className="text-[13px] font-semibold text-ink-900/70">Shared {inboundContacts.length} contact(s)</div>;
   if (
     message.type === "interactive_buttons" ||
@@ -238,10 +242,11 @@ function AudioBlock({ ensureMediaUrl, id, link, mediaErrors, mediaLoading, media
 }
 
 function DocumentBlock({ doc, ensureMediaUrl, mediaErrors, mediaLoading, mediaUrls }: Pick<Props, "ensureMediaUrl" | "mediaErrors" | "mediaLoading" | "mediaUrls"> & { doc: any }) {
-  const id = String(doc.id);
-  const href = mediaUrls[id];
+  const id = doc?.id ? String(doc.id) : "";
+  const href = String(doc?.link || (id ? mediaUrls[id] : "") || "");
   const name = doc?.filename ? String(doc.filename) : "Document";
-  if (!href) return <LoadMediaButton id={id} label={name} action="Tap to download" mediaErrors={mediaErrors} mediaLoading={mediaLoading} ensureMediaUrl={ensureMediaUrl} />;
+  if (!href && id) return <LoadMediaButton id={id} label={name} action="Tap to download" mediaErrors={mediaErrors} mediaLoading={mediaLoading} ensureMediaUrl={ensureMediaUrl} />;
+  if (!href) return <div className="text-[13px] font-semibold text-ink-900/70">{name}</div>;
   return (
     <div className="w-full max-w-[360px] rounded-[8px] border border-ink-900/10 bg-white px-3 py-3">
       <div className="flex items-start gap-3">
