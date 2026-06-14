@@ -66,6 +66,7 @@ export function useAutomationBuilderPreferences() {
   const [mobileBlocksOpen, setMobileBlocksOpen] = useState(false);
   const [loadingPreferences, setLoadingPreferences] = useState(true);
   const pendingRef = useRef<Partial<AutomationBuilderPreferences>>({});
+  const localOverridesRef = useRef<Partial<AutomationBuilderPreferences>>({});
   const patchTimerRef = useRef<number | null>(null);
 
   const persistCache = useCallback(
@@ -92,6 +93,7 @@ export function useAutomationBuilderPreferences() {
 
   useEffect(() => {
     let active = true;
+    localOverridesRef.current = {};
     const cached = readCache(key);
     setPreferences(cached);
     setLoadingPreferences(true);
@@ -106,8 +108,9 @@ export function useAutomationBuilderPreferences() {
     void getAutomationBuilderPreferences()
       .then((remote) => {
         if (!active) return;
-        setPreferences(remote);
-        persistCache(remote);
+        const resolved = { ...remote, ...localOverridesRef.current };
+        setPreferences(resolved);
+        persistCache(resolved);
       })
       .catch((error: unknown) => {
         console.warn("[AUTOMATION_BUILDER_PREFERENCES_LOAD_FAILED]", error);
@@ -132,6 +135,10 @@ export function useAutomationBuilderPreferences() {
 
   const updatePreference = useCallback(
     (partial: Partial<AutomationBuilderPreferences>) => {
+      localOverridesRef.current = {
+        ...localOverridesRef.current,
+        ...partial,
+      };
       setPreferences((current) => {
         const next = { ...current, ...partial };
         persistCache(next);

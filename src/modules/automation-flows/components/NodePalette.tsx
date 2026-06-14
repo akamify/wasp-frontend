@@ -33,10 +33,11 @@ export function NodePalette({
     <aside
       className={cn(
         "absolute inset-y-0 left-0 z-40 flex w-[280px] shrink-0 flex-col overflow-hidden border-r border-slate-200 bg-white shadow-xl transition-[width,transform] duration-200 ease-out lg:relative lg:z-20 lg:w-[var(--palette-width)] lg:translate-x-0 lg:shadow-none",
-        mobileOpen ? "translate-x-0" : "-translate-x-full pointer-events-none lg:pointer-events-auto",
-        collapsed && "lg:w-[72px]"
+        mobileOpen ? "translate-x-0" : "-translate-x-full pointer-events-none lg:pointer-events-auto"
       )}
-      style={{ "--palette-width": `${width}px` } as React.CSSProperties}
+      style={{
+        "--palette-width": `${collapsed ? 72 : width}px`,
+      } as React.CSSProperties}
     >
       <div className={cn("flex items-start border-b border-slate-100 p-4", collapsed && "lg:justify-center lg:px-2")}>
         <div className={cn("min-w-0 flex-1", collapsed && "lg:hidden")}>
@@ -95,16 +96,15 @@ export function NodePalette({
                 "lg:hidden"
             )}
           >
-            <div className={cn("mb-2 text-[10px] font-black uppercase tracking-[0.16em] text-slate-400", collapsed && "lg:text-center lg:text-[8px]")}>
+            <div
+              className={cn(
+                "mb-2 text-[10px] font-black uppercase tracking-[0.16em] text-slate-400",
+                collapsed && "lg:hidden"
+              )}
+            >
               <span className="lg:hidden">{group === "content" ? "Messages" : "Actions"}</span>
               <span className="hidden lg:inline">
-                {collapsed
-                  ? group === "content"
-                    ? "Msg"
-                    : "Act"
-                  : group === "content"
-                    ? "Messages"
-                    : "Actions"}
+                {group === "content" ? "Messages" : "Actions"}
               </span>
             </div>
             <div className="space-y-2">
