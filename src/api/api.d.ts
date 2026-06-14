@@ -317,4 +317,18 @@ export const API: {
   automation: {
     triggerEvent(payload: any): Promise<any>;
   };
+  automationFlows: {
+    list(params?: unknown): Promise<unknown>;
+    get(flowId: string): Promise<unknown>;
+    create(payload: unknown): Promise<unknown>;
+    updateMetadata(flowId: string, payload: unknown): Promise<unknown>;
+    saveDraft(flowId: string, payload: unknown): Promise<unknown>;
+    validate(flowId: string): Promise<unknown>;
+    publish(flowId: string): Promise<unknown>;
+    pause(flowId: string): Promise<unknown>;
+    resume(flowId: string): Promise<unknown>;
+    archive(flowId: string): Promise<unknown>;
+    remove(flowId: string): Promise<unknown>;
+    versions(flowId: string): Promise<unknown>;
+  };
 };

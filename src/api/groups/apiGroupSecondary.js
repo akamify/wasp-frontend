@@ -176,5 +176,19 @@ export function buildApiGroupSecondary(api, unwrap, API_BASE_URL) {
     automation: {
       triggerEvent: (payload) => api.post("/trigger-event", payload).then(unwrap),
     },
+    automationFlows: {
+      list: (params) => api.get("/flows", { params }).then(unwrap),
+      get: (flowId) => api.get(`/flows/${encodeURIComponent(flowId)}`).then(unwrap),
+      create: (payload) => api.post("/flows", payload).then(unwrap),
+      updateMetadata: (flowId, payload) => api.patch(`/flows/${encodeURIComponent(flowId)}`, payload).then(unwrap),
+      saveDraft: (flowId, payload) => api.put(`/flows/${encodeURIComponent(flowId)}/draft`, payload).then(unwrap),
+      validate: (flowId) => api.post(`/flows/${encodeURIComponent(flowId)}/validate`).then(unwrap),
+      publish: (flowId) => api.post(`/flows/${encodeURIComponent(flowId)}/publish`).then(unwrap),
+      pause: (flowId) => api.post(`/flows/${encodeURIComponent(flowId)}/pause`).then(unwrap),
+      resume: (flowId) => api.post(`/flows/${encodeURIComponent(flowId)}/resume`).then(unwrap),
+      archive: (flowId) => api.post(`/flows/${encodeURIComponent(flowId)}/archive`).then(unwrap),
+      remove: (flowId) => api.delete(`/flows/${encodeURIComponent(flowId)}`).then(unwrap),
+      versions: (flowId) => api.get(`/flows/${encodeURIComponent(flowId)}/versions`).then(unwrap),
+    },
   };
 }

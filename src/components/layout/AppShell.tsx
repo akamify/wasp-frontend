@@ -28,6 +28,10 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     location.pathname.startsWith("/app/conversations/") &&
     location.pathname !== "/app/conversations" &&
     location.pathname !== "/app/conversations/";
+  const isAutomationBuilder =
+    location.pathname.startsWith("/app/automation/") &&
+    location.pathname !== "/app/automation/events";
+  const hideMobileBars = hideMobileBarsOnChatDetail || isAutomationBuilder;
 
   // Listen for "More" tab event from the bottom bar
   useEffect(() => {
@@ -124,7 +128,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       </div>
 
       {/* Mobile Top Navbar */}
-      {!hideMobileBarsOnChatDetail ? (
+      {!hideMobileBars ? (
         <MobileTopBar
           onMenuOpen={() => setMobileDrawerOpen(true)}
           workspaceName={workspace?.name}
@@ -137,7 +141,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       ) : null}
 
       {/* Mobile Bottom Tab Bar */}
-      {!hideMobileBarsOnChatDetail ? <MobileBottomTabs /> : null}
+      {!hideMobileBars ? <MobileBottomTabs /> : null}
 
       {/* Mobile Drawer */}
       <MobileDrawer
@@ -186,8 +190,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         <main
           className={cn(
             "flex-1 min-h-0 custom-scrollbar relative z-10 lg:pt-0 lg:pb-0",
-            hideMobileBarsOnChatDetail ? "overflow-hidden" : "overflow-y-auto",
-            hideMobileBarsOnChatDetail ? "pt-0 pb-0" : "pt-14 pb-[68px]"
+            hideMobileBars ? "overflow-hidden pt-0 pb-0" : "overflow-y-auto pt-14 pb-[68px]"
           )}
         >
           <PlanAccessOverlay show={isPlanAccessBlocked} requiredPlan={requiredPlan} featureNeedsPro={featureNeedsPro} navigate={navigate} />
@@ -200,8 +203,8 @@ export function AppShell({ children }: { children: React.ReactNode }) {
               exit={{ opacity: 0, y: -10 }}
               transition={{ duration: 0.2 }}
               className={cn(
-                "max-w-[1400px] mx-auto",
-                location.pathname.startsWith("/app/conversations") ? "h-full min-h-0" : "min-h-full",
+                isAutomationBuilder ? "max-w-none" : "max-w-[1400px] mx-auto",
+                location.pathname.startsWith("/app/conversations") || isAutomationBuilder ? "h-full min-h-0" : "min-h-full",
                 "p-0"
               )}
             >

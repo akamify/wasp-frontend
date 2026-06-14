@@ -17,7 +17,9 @@ import ContactsPage from "@pages/user/pages/Contacts";
 import AttributesPage from "@pages/user/pages/Attributes";
 import ConversationsPage from "@pages/user/pages/Conversations";
 import LinksPage from "@pages/user/pages/Links";
-import AutomationPage from "@pages/user/pages/Automation";
+import AutomationEventTestPage from "@pages/user/pages/Automation";
+import AutomationFlowsPage from "@modules/automation-flows/pages/AutomationFlowsPage";
+import FlowBuilderPage from "@modules/automation-flows/pages/FlowBuilderPage";
 import SettingsPage from "@pages/user/pages/Settings";
 import ProfilePage from "@pages/user/pages/ProfilePage";
 import PlanPage from "@pages/user/pages/Plan";
@@ -54,7 +56,9 @@ export function userRoutes() {
         <Route path="/app/crm/settings" element={inApp(<CrmSettingsPage />)} />
       </Route>
       <Route path="/app/links" element={inApp(<LinksPage />)} />
-      <Route path="/app/automation" element={inApp(<AutomationPage />)} />
+      <Route path="/app/automation" element={inApp(<AutomationFlowsPage />)} />
+      <Route path="/app/automation/events" element={inApp(<AutomationEventTestPage />)} />
+      <Route path="/app/automation/:flowId" element={inApp(<FlowBuilderPage />)} />
       <Route path="/app/settings" element={inApp(<SettingsPage />)} />
       <Route path="/app/profile" element={inApp(<ProfilePage />)} />
       <Route path="/app/plan" element={inApp(<PlanPage />)} />

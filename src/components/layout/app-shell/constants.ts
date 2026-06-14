@@ -12,7 +12,7 @@ export const NAV_ITEMS = [
   { to: "/app/flows", label: "Flows", kicker: "forms", icon: Workflow },
   { to: "/app/wallet", label: "Wallet", kicker: "credits", icon: Wallet },
   { to: "/app/links", label: "Tracked links", kicker: "analytics", icon: Link2 },
-  { to: "/app/automation", label: "Automation", kicker: "events", icon: Zap },
+  { to: "/app/automation", label: "Automation", kicker: "chat flows", icon: Zap },
   { to: "/app/activity", label: "Activity", kicker: "audit logs", icon: History },
   { to: "/app/api-keys", label: "API Keys", kicker: "developer", icon: Terminal },
   { to: "/app/api-reports", label: "API Report", kicker: "api logs", icon: FileSearch },
