@@ -62,7 +62,7 @@ export function Seo({
         if (robots) {
             setMetaTag('meta[name="robots"]', { name: "robots" }, robots);
         }
-        setMetaTag('meta[property="og:title"]', { property: "og:title" }, title || previousTitle);
+        setMetaTag('meta[property="og:title"]', { property: "og:title" }, title );
         if (description) {
             setMetaTag('meta[property="og:description"]', { property: "og:description" }, description);
         }
@@ -75,7 +75,7 @@ export function Seo({
             setMetaTag('meta[property="og:image:alt"]', { property: "og:image:alt" }, ogImageAlt);
         }
         setMetaTag('meta[name="twitter:card"]', { name: "twitter:card" }, twitterCard);
-        setMetaTag('meta[name="twitter:title"]', { name: "twitter:title" }, title || previousTitle);
+        setMetaTag('meta[name="twitter:title"]', { name: "twitter:title" }, title );
         if (description) {
             setMetaTag('meta[name="twitter:description"]', { name: "twitter:description" }, description);
         }
