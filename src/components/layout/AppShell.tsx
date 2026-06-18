@@ -53,7 +53,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         if (!mounted) return;
         setRuntimeBrandName(String(res?.settings?.brandName || "").trim());
       })
-      .catch(() => {});
+      .catch(() => { });
     return () => {
       mounted = false;
     };

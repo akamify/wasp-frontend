@@ -218,19 +218,19 @@ function findInteractiveReplyContext(messages: ChatMessage[], message: ChatMessa
 
   const replyId = String(
     message.buttonReply?.id ||
-      message.listReply?.id ||
-      inboundInteractive?.button_reply?.id ||
-      inboundInteractive?.list_reply?.id ||
-      ""
+    message.listReply?.id ||
+    inboundInteractive?.button_reply?.id ||
+    inboundInteractive?.list_reply?.id ||
+    ""
   ).trim();
   const replyTitle = String(
     message.buttonReply?.title ||
-      message.listReply?.title ||
-      inboundInteractive?.button_reply?.title ||
-      inboundInteractive?.list_reply?.title ||
-      message.displayText ||
-      message.text ||
-      ""
+    message.listReply?.title ||
+    inboundInteractive?.button_reply?.title ||
+    inboundInteractive?.list_reply?.title ||
+    message.displayText ||
+    message.text ||
+    ""
   ).trim();
 
   const currentIndex = messages.findIndex((item) => item._id === message._id);
@@ -272,10 +272,10 @@ function getPromptText(message: ChatMessage) {
   const interactive = getMessageInteractive(message);
   return String(
     message.displayText ||
-      message.previewText ||
-      message.text ||
-      interactive?.body?.text ||
-      ""
+    message.previewText ||
+    message.text ||
+    interactive?.body?.text ||
+    ""
   ).trim();
 }
 
