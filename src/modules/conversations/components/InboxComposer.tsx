@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { Loader2, Paperclip, Send, Smile } from "lucide-react";
 import { AttachmentMenu } from "@modules/conversations/components/AttachmentMenu";
 import { EmojiPopover } from "@modules/conversations/components/EmojiPopover";
@@ -27,6 +27,9 @@ export function InboxComposer({ to, disabled, forceDisabledReason, onSent, onErr
   const emojiPanelRef = useRef<HTMLDivElement>(null);
   const attachPanelRef = useRef<HTMLDivElement>(null);
 
+  const minTextareaHeight = 44;
+  const maxTextareaHeight = 120;
+
   const isDisabled = Boolean(disabled || sending || forceDisabledReason);
   const emoji = useEmojiDataset(showEmojis);
 
@@ -45,12 +48,36 @@ export function InboxComposer({ to, disabled, forceDisabledReason, onSent, onErr
     return () => window.removeEventListener("mousedown", onDown, true);
   }, [showEmojis, showAttach, emoji]);
 
-  useEffect(() => {
-    if (!textareaRef.current) return;
-    textareaRef.current.style.height = "44px";
-    const scrollHeight = textareaRef.current.scrollHeight;
-    textareaRef.current.style.height = Math.min(scrollHeight, 120) + "px";
+  useLayoutEffect(() => {
+    const textarea = textareaRef.current;
+    if (!textarea) return;
+
+    textarea.style.height = "0px";
+    const nextHeight = Math.min(Math.max(textarea.scrollHeight, minTextareaHeight), maxTextareaHeight);
+    textarea.style.height = `${nextHeight}px`;
+    textarea.style.overflowY = textarea.scrollHeight > maxTextareaHeight ? "auto" : "hidden";
   }, [text]);
+
+  useEffect(() => {
+    const fontSet = document.fonts;
+    if (!fontSet?.ready) return;
+
+    let cancelled = false;
+    fontSet.ready.then(() => {
+      if (cancelled) return;
+      const textarea = textareaRef.current;
+      if (!textarea) return;
+
+      textarea.style.height = "0px";
+      const nextHeight = Math.min(Math.max(textarea.scrollHeight, minTextareaHeight), maxTextareaHeight);
+      textarea.style.height = `${nextHeight}px`;
+      textarea.style.overflowY = textarea.scrollHeight > maxTextareaHeight ? "auto" : "hidden";
+    });
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   const submit = async (event: React.FormEvent) => {
     event.preventDefault();
@@ -175,7 +202,7 @@ export function InboxComposer({ to, disabled, forceDisabledReason, onSent, onErr
           value={text}
           onChange={(e) => setText(e.target.value)}
           placeholder={isDisabled ? "Chat is disabled" : "Type a message"}
-          className="min-h-[44px] w-full flex-1 resize-none rounded-xl border-none bg-white px-3 py-2.5 md:px-4 md:py-3 text-sm text-ink-900 shadow-sm outline-none focus:ring-1 focus:ring-brand-300 disabled:bg-[#e9edef] disabled:text-slate-500"
+          className="min-h-[44px] w-full flex-1 resize-none overflow-y-hidden rounded-xl border-none bg-white px-3 py-2.5 text-sm leading-6 text-ink-900 shadow-sm outline-none focus:ring-1 focus:ring-brand-300 md:px-4 md:py-3 disabled:bg-[#e9edef] disabled:text-slate-500"
           rows={1}
           disabled={isDisabled}
           onKeyDown={(event) => {
