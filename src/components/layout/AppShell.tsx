@@ -14,6 +14,7 @@ import { DesktopTopBar } from "@components/layout/app-shell/DesktopTopBar";
 import { PlanAccessOverlay } from "@components/layout/app-shell/PlanAccessOverlay";
 import { useAppShellBilling } from "@components/layout/app-shell/useAppShellBilling";
 import { useAppShellNotifications } from "@components/layout/app-shell/useAppShellNotifications";
+import { Seo } from "@shared/components/Seo";
 
 
 export function AppShell({ children }: { children: React.ReactNode }) {
@@ -93,6 +94,8 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const [sidebarProfileMenuOpen, setSidebarProfileMenuOpen] = useState(false);
   const { notifications, lastReadAt, markAllRead } = useAppShellNotifications(notifOpen);
   const { requiredPlan, featureNeedsPro, isPlanAccessBlocked, isAccessCheckPending } = useAppShellBilling(location.pathname);
+  const shellTitle = getShellTitle(location.pathname, NAV_ITEMS as any);
+  const pageTitle = `${shellTitle} | ${resolvedBrandName}`;
 
   // Auto-scroll active nav item into view in sidebar
   useEffect(() => {
@@ -121,6 +124,8 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
   return (
     <div className="min-h-dvh bg-[#F8FAFC] text-slate-900 font-sans antialiased flex overflow-hidden">
+      <Seo title={pageTitle} description={`${shellTitle} inside ${resolvedBrandName}.`} robots="noindex,nofollow" />
+
       {/* Background Ornaments */}
       <div className="fixed inset-0 pointer-events-none z-0">
         <div className="absolute top-0 right-0 w-1/3 h-1/3 bg-brand-500/5 blur-[120px] rounded-[5px]" />

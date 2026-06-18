@@ -5,6 +5,7 @@ import { Input } from "@components/ui/Input";
 import { Button } from "@components/ui/Button";
 import { Alert } from "@components/ui/Alert";
 import { crmEmployeeAuthService } from "@modules/crm/services/crmEmployeeAuth.service";
+import { Seo } from "@shared/components/Seo";
 
 export default function EmployeeResetPasswordPage() {
   const navigate = useNavigate();
@@ -48,6 +49,7 @@ export default function EmployeeResetPasswordPage() {
 
   return (
     <div className="flex min-h-dvh items-center justify-center px-4 py-10 bg-slate-50">
+      <Seo title="Reset employee password | WaspAkamify" description="Reset your employee account password." robots="noindex,nofollow" />
       <Card className="w-full max-w-md p-6">
         <div className="text-xs font-semibold text-ink-800/60">CRM Employee</div>
         <h1 className="mt-1 text-2xl font-black tracking-tight">Set new password</h1>

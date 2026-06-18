@@ -24,6 +24,7 @@ import {
   isMetaBillingEligibilityPaymentIssue,
 } from "@shared/utils/metaErrors";
 import { cn } from "@shared/utils/cn";
+import { Seo } from "@shared/components/Seo";
 
 type ReplyContext = {
   promptText: string;
@@ -60,6 +61,11 @@ export function ConversationsView() {
 
   const { customerServiceWindowOpen, windowRemainingMs } = useCustomerServiceWindow(activeConversation, messages);
   const { ensureMediaUrl, mediaErrors, mediaLoading, mediaUrls, selectedImage, setSelectedImage } = useMessageActions(messages);
+  const conversationName = String(contactDetail?.name || activeConversation?.contact?.name || urlPhone).trim();
+  const pageTitle = urlPhone
+    ? `${conversationName} | Inbox | WaspAkamify`
+    : `Inbox | WaspAkamify`;
+  const pageDescription = `WhatsApp conversation with ${conversationName}. Reply, manage messages, and track delivery status in WaspAkamify.`;
   const { definitions, editBusy, editForm, editOpen, openEdit, saveEdit, setEditForm, setEditOpen } = useContactEditor({
     contactDetail,
     refreshListSilently,
@@ -104,6 +110,8 @@ export function ConversationsView() {
 
   return (
     <div className="flex bg-white overflow-hidden relative h-dvh lg:h-full min-h-0">
+      <Seo title={pageTitle} description={pageDescription} robots="noindex,nofollow" />
+
       <ConversationsSidebar
         activePhone={urlPhone}
         conversations={visibleConversations}

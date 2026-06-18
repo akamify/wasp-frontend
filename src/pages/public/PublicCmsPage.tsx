@@ -3,6 +3,7 @@ import { API } from "@api/api";
 import { Alert } from "@components/ui/Alert";
 import { PublicShell } from "@pages/public/PublicShell";
 import { HelpCircle, Info, Shield, FileText, Briefcase, Cookie } from "lucide-react";
+import { Seo } from "@shared/components/Seo";
 
 const ICONS: Record<string, any> = { HelpCircle, Info, Shield, FileText, Briefcase, Cookie };
 
@@ -43,9 +44,12 @@ export function PublicCmsPage({ slug }: { slug: string }) {
 
   const hero = page?.data?.hero || {};
   const body = String(page?.data?.bodyMarkdown || "").trim();
+  const pageTitle = `${String(hero?.title || page?.title || slug || "Page").trim()} | WaspAkamify`;
+  const pageDescription = String(hero?.subtitle || page?.excerpt || body.slice(0, 155) || "").trim() || undefined;
 
   return (
     <PublicShell>
+      <Seo title={pageTitle} description={pageDescription} canonical={window.location.href} />
       {error ? <Alert>{error}</Alert> : null}
       <div className="rounded-3xl border border-ink-900/10 bg-white/80 p-8 shadow-xl shadow-ink-900/5 backdrop-blur-md">
         <div className="mb-6 flex items-start gap-3">

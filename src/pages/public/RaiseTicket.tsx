@@ -7,6 +7,7 @@ import { Textarea } from "@components/ui/Textarea";
 import { Alert } from "@components/ui/Alert";
 import { useToast } from "@shared/providers/ToastContext";
 import { PublicShell } from "@pages/public/PublicShell";
+import { Seo } from "@shared/components/Seo";
 
 export default function RaiseTicketPage() {
   const { toast } = useToast();
@@ -44,6 +45,11 @@ export default function RaiseTicketPage() {
 
   return (
     <PublicShell>
+      <Seo
+        title="Raise a Ticket | WaspAkamify"
+        description="Contact support by raising a ticket with your details, subject, and issue description."
+        canonical={window.location.href}
+      />
       <div className="rounded-3xl border border-ink-900/10 bg-white/80 p-8 shadow-xl shadow-ink-900/5 backdrop-blur-md">
         <h1 className="text-2xl font-extrabold tracking-tight text-ink-900">Raise a Ticket</h1>
         <p className="mt-2 text-sm text-ink-900/60">Please share your details and the problem. Our team will contact you.</p>

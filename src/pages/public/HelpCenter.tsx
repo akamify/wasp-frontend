@@ -5,6 +5,7 @@ import { Alert } from "@components/ui/Alert";
 import { Button } from "@components/ui/Button";
 import { PublicShell } from "@pages/public/PublicShell";
 import { HelpCircle } from "lucide-react";
+import { Seo } from "@shared/components/Seo";
 
 export default function HelpCenterPage() {
   const navigate = useNavigate();
@@ -38,9 +39,12 @@ export default function HelpCenterPage() {
   const hero = page?.data?.hero || {};
   const faqs = Array.isArray(page?.data?.faqs) ? page.data.faqs : [];
   const contacts = Array.isArray(page?.data?.contacts) ? page.data.contacts : [];
+  const pageTitle = `${String(hero?.title || "Help Center").trim()} | WaspAkamify`;
+  const pageDescription = String(hero?.subtitle || "Find answers, contact support, or raise a ticket.").trim();
 
   return (
     <PublicShell>
+      <Seo title={pageTitle} description={pageDescription} canonical={window.location.href} />
       {error ? <Alert>{error}</Alert> : null}
 
       <div className="p-4">

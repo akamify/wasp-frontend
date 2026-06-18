@@ -10,6 +10,7 @@ import { AuthIllustration } from "@components/auth/AuthIllustration";
 import { useOtpGuard } from "@shared/hooks/useOtpGuard";
 import { authenticatedHome } from "@shared/utils/authNavigation";
 import { Eye, EyeOff } from "lucide-react";
+import { Seo } from "@shared/components/Seo";
 
 export default function RegisterPage() {
   const { loading, register, token, user } = useAuth();
@@ -88,6 +89,11 @@ export default function RegisterPage() {
 
   return (
     <div className="flex flex-row items-center lg:items-start justify-center min-h-screen bg-gray-50 gap-12">
+      <Seo
+        title="Create account | WaspAkamify"
+        description="Create your workspace and start sending WhatsApp campaigns, managing contacts, and automating conversations."
+        robots="noindex,nofollow"
+      />
       <div className="hidden lg:sticky lg:top-10 lg:self-start lg:block">
         <AuthIllustration />
       </div>

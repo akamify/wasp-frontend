@@ -11,6 +11,7 @@ import { normalizeRole } from "@shared/utils/authRole";
 import { authenticatedHome } from "@shared/utils/authNavigation";
 import { Eye, EyeOff } from "lucide-react";
 import { AuthIllustration } from "@components/auth/AuthIllustration";
+import { Seo } from "@shared/components/Seo";
 
 export default function LoginPage() {
   const { loading, login, token, user } = useAuth();
@@ -112,6 +113,11 @@ export default function LoginPage() {
 
   return (
     <div className="flex flex-row items-center lg:items-start justify-center min-h-screen bg-gray-50 gap-12">
+      <Seo
+        title={`Sign in | ${BRAND_NAME}`}
+        description={`Sign in to your ${BRAND_NAME} account to manage campaigns, contacts, conversations, and automation.`}
+        robots="noindex,nofollow"
+      />
       <div className="hidden lg:sticky lg:top-10 lg:self-start lg:block">
         <AuthIllustration />
       </div>
