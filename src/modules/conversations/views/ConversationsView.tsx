@@ -25,6 +25,10 @@ import {
 } from "@shared/utils/metaErrors";
 import { cn } from "@shared/utils/cn";
 
+type ReplyContext = {
+  promptText: string;
+};
+
 export function ConversationsView() {
   const { navigate, urlPhone, waLink } = useConversationParams();
   const [error, setError] = useState<string | null>(null);
@@ -111,9 +115,9 @@ export function ConversationsView() {
         onSelect={(phone) => navigate(`/app/conversations/${phone}`)}
       />
 
-      <div className={cn("flex-1 flex flex-col bg-[#F8FAFC] relative min-h-0", !urlPhone ? "hidden md:flex" : "flex")}>
+      <div className={cn("flex-1 min-w-0 flex flex-col bg-[#F8FAFC] relative min-h-0", !urlPhone ? "hidden md:flex" : "flex")}>
         {urlPhone ? (
-          <motion.div initial={{ x: "100%" }} animate={{ x: 0 }} transition={{ type: "spring", stiffness: 320, damping: 34 }} className="flex h-full min-h-0 flex-col">
+          <motion.div initial={{ x: "100%" }} animate={{ x: 0 }} transition={{ type: "spring", stiffness: 320, damping: 34 }} className="flex h-full min-h-0 min-w-0 flex-col">
             <ChatHeader
               activeConversation={activeConversation}
               contactDetail={contactDetail}
@@ -150,6 +154,7 @@ export function ConversationsView() {
                   mediaLoading={mediaLoading}
                   mediaUrls={mediaUrls}
                   message={message}
+                  replyContext={findInteractiveReplyContext(messages, message)}
                   setSelectedImage={setSelectedImage}
                 />
               )}
@@ -195,9 +200,111 @@ export function ConversationsView() {
   );
 }
 
+function findInteractiveReplyContext(messages: ChatMessage[], message: ChatMessage): ReplyContext | null {
+  if (message.direction !== "inbound") return null;
+  const inboundInteractive = getMessageInteractive(message);
+  const type = String(message.type || inboundInteractive?.type || "").toLowerCase();
+  const isButtonReply = type === "button_reply" || !!inboundInteractive?.button_reply || !!message.buttonReply?.id;
+  const isListReply = type === "list_reply" || !!inboundInteractive?.list_reply || !!message.listReply?.id;
+  if (!isButtonReply && !isListReply) return null;
+
+  const replyId = String(
+    message.buttonReply?.id ||
+      message.listReply?.id ||
+      inboundInteractive?.button_reply?.id ||
+      inboundInteractive?.list_reply?.id ||
+      ""
+  ).trim();
+  const replyTitle = String(
+    message.buttonReply?.title ||
+      message.listReply?.title ||
+      inboundInteractive?.button_reply?.title ||
+      inboundInteractive?.list_reply?.title ||
+      message.displayText ||
+      message.text ||
+      ""
+  ).trim();
+
+  const currentIndex = messages.findIndex((item) => item._id === message._id);
+  const previousMessages = currentIndex >= 0 ? messages.slice(0, currentIndex).reverse() : [...messages].reverse();
+  const quotedMessageId = String(message.replyToMessageId || (message.payload as any)?.context?.id || "").trim();
+  if (quotedMessageId) {
+    const quotedMessage = previousMessages.find((candidate) => String(candidate.whatsappMessageId || "") === quotedMessageId);
+    if (quotedMessage) return { promptText: getPromptText(quotedMessage) };
+  }
+
+  for (const candidate of previousMessages) {
+    if (candidate.direction !== "outbound") continue;
+    if (!isInteractivePrompt(candidate)) continue;
+    if (isButtonReply && promptHasButton(candidate, replyId, replyTitle)) {
+      return { promptText: getPromptText(candidate) };
+    }
+    if (isListReply && promptHasListRow(candidate, replyId, replyTitle)) {
+      return { promptText: getPromptText(candidate) };
+    }
+  }
+
+  const fallbackPrompt = previousMessages.find((candidate) => candidate.direction === "outbound" && isInteractivePrompt(candidate)) ||
+    previousMessages.find((candidate) => candidate.direction === "outbound" && getPromptText(candidate));
+  return fallbackPrompt ? { promptText: getPromptText(fallbackPrompt) } : null;
+}
+
+function isInteractivePrompt(message: ChatMessage) {
+  const interactive = getMessageInteractive(message);
+  return (
+    message.type === "interactive_buttons" ||
+    message.type === "interactive_list" ||
+    Array.isArray(message.buttons) ||
+    interactive?.type === "button" ||
+    interactive?.type === "list"
+  );
+}
+
+function getPromptText(message: ChatMessage) {
+  const interactive = getMessageInteractive(message);
+  return String(
+    message.displayText ||
+      message.previewText ||
+      message.text ||
+      interactive?.body?.text ||
+      ""
+  ).trim();
+}
+
+function promptHasButton(message: ChatMessage, replyId: string, replyTitle: string) {
+  const interactive = getMessageInteractive(message);
+  const payloadButtons = Array.isArray(interactive?.action?.buttons)
+    ? interactive.action.buttons.map((button: any) => button?.reply || button)
+    : [];
+  const buttons = [...(message.buttons || []), ...payloadButtons] as Array<{ id?: string; title?: string }>;
+  return buttons.some((button) => {
+    const id = String(button?.id || "").trim();
+    const title = String(button?.title || "").trim();
+    return (replyId && id === replyId) || (replyTitle && title.toLowerCase() === replyTitle.toLowerCase());
+  });
+}
+
+function promptHasListRow(message: ChatMessage, replyId: string, replyTitle: string) {
+  const interactive = getMessageInteractive(message);
+  const sections = Array.isArray(interactive?.action?.sections)
+    ? interactive.action.sections
+    : [];
+  return sections.some((section: any) =>
+    (section?.rows || []).some((row: any) => {
+      const id = String(row?.id || "").trim();
+      const title = String(row?.title || "").trim();
+      return (replyId && id === replyId) || (replyTitle && title.toLowerCase() === replyTitle.toLowerCase());
+    })
+  );
+}
+
+function getMessageInteractive(message: ChatMessage) {
+  return (message.interactive || message.payload?.interactive || {}) as any;
+}
+
 function ComposerPanel({ customerServiceWindowOpen, refreshChat, setError, setOk, urlPhone }: { customerServiceWindowOpen: boolean; refreshChat: () => void; setError: (value: string) => void; setOk: (value: string | null) => void; urlPhone: string }) {
   return (
-    <div className="p-4 bg-white border-t border-slate-100 shrink-0">
+    <div className="min-w-0 p-4 bg-white border-t border-slate-100 shrink-0">
       {!customerServiceWindowOpen && (
         <div className="mb-4 bg-amber-50 border border-amber-100 p-3 rounded-[5px] flex items-center gap-3">
           <div className="p-2 bg-amber-100 text-amber-600 rounded-[5px]"><Info size={16} /></div>
@@ -243,11 +350,21 @@ function renderMetaBillingGuidance(err: any) {
   const provider = getErrorMessage(err);
   const debug = formatMetaDebugInline(extractMetaDebugFields(err));
   return (
-    <div className="space-y-1">
+    <div className="max-w-full space-y-1.5">
       <div className="text-[10px] font-black uppercase tracking-widest text-rose-700">Meta billing / eligibility issue</div>
-      <div className="text-[10px] font-bold leading-relaxed text-rose-700/90">Fix: Meta Business Manager -&gt; WhatsApp Manager -&gt; Payment method / billing setup + business verification.</div>
-      <div className="text-[10px] font-bold text-rose-700/80">{provider}</div>
-      {debug ? <div className="text-[9px] font-bold text-rose-700/70">{debug}</div> : null}
+      <div className="text-[10px] font-bold leading-relaxed text-rose-700/90">
+        Payment setup or business verification is required in Meta WhatsApp Manager.
+      </div>
+      <details className="group">
+        <summary className="cursor-pointer select-none text-[10px] font-black text-rose-700/80 outline-none hover:text-rose-700 focus-visible:ring-2 focus-visible:ring-rose-200">
+          View fix details
+        </summary>
+        <div className="mt-1 space-y-1 rounded-[4px] bg-rose-50/70 p-2 text-[9.5px] font-bold leading-relaxed text-rose-700/80">
+          <div>Meta Business Manager -&gt; WhatsApp Manager -&gt; Payment method / billing setup + business verification.</div>
+          <div>{provider}</div>
+          {debug ? <div className="text-rose-700/65">{debug}</div> : null}
+        </div>
+      </details>
     </div>
   );
 }

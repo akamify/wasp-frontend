@@ -9,6 +9,7 @@ type Props = {
   mediaLoading: Record<string, true>;
   mediaUrls: Record<string, string>;
   message: ChatMessage;
+  replyContext?: { promptText: string } | null;
   setSelectedImage: (value: string | null) => void;
 };
 
@@ -122,12 +123,14 @@ function MediaOrPlainMessage(props: Props) {
   const listReply = payload?.interactive?.list_reply;
 
   if (message.type === "button_reply" || buttonReply?.title) {
-    const title = String(buttonReply?.title || message.text || "").trim();
-    return <InteractiveReply label="Button reply" text={title || "Button reply"} />;
+    const topLevelReply = (message as any).interactive?.button_reply;
+    const title = String(message.buttonReply?.title || topLevelReply?.title || buttonReply?.title || message.displayText || message.text || "").trim();
+    return <InteractiveReplyQuote promptText={props.replyContext?.promptText || ""} text={title || "Button reply"} />;
   }
   if (message.type === "list_reply" || listReply?.title) {
-    const title = String(listReply?.title || message.text || "").trim();
-    return <InteractiveReply label="List reply" text={title || "List reply"} />;
+    const topLevelReply = (message as any).interactive?.list_reply;
+    const title = String(message.listReply?.title || topLevelReply?.title || listReply?.title || message.displayText || message.text || "").trim();
+    return <InteractiveReplyQuote promptText={props.replyContext?.promptText || ""} text={title || "List reply"} />;
   }
 
   if (message.display?.kind === "media" && String(message.display.mediaType || "").toLowerCase() === "audio") {
@@ -210,14 +213,18 @@ function MediaOrPlainMessage(props: Props) {
   return <div className="whitespace-pre-wrap break-words pb-1 text-[15px] leading-relaxed tracking-tight [overflow-wrap:anywhere]">{renderWhatsAppText(plainText || "[No Content]")}</div>;
 }
 
-function InteractiveReply({ label, text }: { label: string; text: string }) {
+function InteractiveReplyQuote({ promptText, text }: { promptText: string; text: string }) {
   return (
-    <div className="space-y-1 pb-1">
-      <div className="whitespace-pre-wrap break-words text-[15px] font-semibold leading-relaxed tracking-tight [overflow-wrap:anywhere]">
+    <div className="w-fit min-w-[150px] max-w-[320px] pb-1">
+      {promptText ? (
+        <div className="mb-1 overflow-hidden rounded-[4px] border-l-4 border-ink-900/35 bg-[#c8f5ad]/80 px-2.5 py-2">
+          <div className="max-h-[3.8rem] overflow-hidden whitespace-pre-wrap break-words text-[13px] font-semibold leading-snug text-ink-900/35 [overflow-wrap:anywhere]">
+            {renderWhatsAppText(promptText)}
+          </div>
+        </div>
+      ) : null}
+      <div className="whitespace-pre-wrap break-words px-0.5 text-[15px] font-bold leading-snug tracking-tight [overflow-wrap:anywhere]">
         {renderWhatsAppText(text)}
-      </div>
-      <div className="inline-flex rounded-full bg-white/70 px-2 py-0.5 text-[10px] font-black uppercase tracking-wider text-ink-900/45 ring-1 ring-ink-900/10">
-        {label}
       </div>
     </div>
   );

@@ -14,14 +14,14 @@ type Props = {
 
 export function MessageBubble({ message, children, getErrorMessage, renderMetaBillingGuidance, statusMark }: Props) {
   return (
-    <div className={cn("flex w-full", message.direction === "outbound" ? "justify-end" : "justify-start")}>
+    <div className={cn("flex w-full min-w-0", message.direction === "outbound" ? "justify-end" : "justify-start")}>
       <div
         className={cn(
-          "relative max-w-[75%] w-fit p-3.5 text-ink-900 shadow-sm transition-all rounded-[5px] overflow-visible",
+          "relative max-w-[calc(100%-2rem)] sm:max-w-[75%] w-fit min-w-0 p-3.5 text-ink-900 shadow-sm transition-all rounded-[5px] overflow-visible",
           message.direction === "outbound" ? "bubble-outbound rounded-tr-none bg-white shadow-md" : "bubble-inbound rounded-tl-none bg-[#e1ffc7]"
         )}
       >
-        <div className="relative min-w-[70px]">
+        <div className="relative min-w-[70px] max-w-full">
           {children}
           <div className="flex items-center justify-end gap-0.5 mt-0.5">
             <span className={cn("text-[9.5px] font-bold uppercase tracking-wider", message.direction === "outbound" ? "text-ink-900/50" : "text-ink-800/40")}>
@@ -31,7 +31,7 @@ export function MessageBubble({ message, children, getErrorMessage, renderMetaBi
           </div>
         </div>
         {message.direction === "outbound" && message.status === "failed" && message.error && (
-          <div className="mt-3 border-t border-ink-900/10 pt-3 text-[10px] font-bold text-rose-600">
+          <div className="mt-3 max-w-[360px] border-t border-ink-900/10 pt-3 text-[10px] font-bold text-rose-600 [overflow-wrap:anywhere]">
             {isMetaBillingEligibilityPaymentIssue(getErrorMessage(message.error)) ? renderMetaBillingGuidance(message.error) : getErrorMessage(message.error)}
           </div>
         )}
@@ -39,4 +39,3 @@ export function MessageBubble({ message, children, getErrorMessage, renderMetaBi
     </div>
   );
 }
-

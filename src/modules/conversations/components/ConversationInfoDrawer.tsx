@@ -54,7 +54,7 @@ export function ConversationInfoDrawer({ activeConversation, contactDetail, cust
   return (
     <>
       {phone ? (
-        <div className="hidden md:flex w-[340px] bg-white border-l border-slate-200 overflow-y-auto flex-col shrink-0">
+        <div className="hidden md:flex w-[340px] min-w-[340px] max-w-[340px] bg-white border-l border-slate-200 overflow-y-auto flex-col shrink-0">
           <ContactInfoBody
             activeConversation={activeConversation}
             contactDetail={contactDetail}

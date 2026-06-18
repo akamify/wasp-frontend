@@ -33,15 +33,15 @@ export function ChatHeader({
   onShowProfile,
 }: Props) {
   return (
-    <div className="h-16 flex items-center justify-between px-3 md:px-6 bg-white border-b border-slate-100 shrink-0 z-10">
-      <div className="flex items-center gap-3">
+    <div className="h-16 flex min-w-0 items-center justify-between px-3 md:px-6 bg-white border-b border-slate-100 shrink-0 z-10">
+      <div className="flex min-w-0 flex-1 items-center gap-3">
         <button type="button" onClick={onBack} className="md:hidden -ml-2 p-2.5 hover:bg-slate-50 text-slate-500 hover:text-slate-900 rounded-[5px] transition-all" aria-label="Back to conversations">
           <ArrowLeft size={20} />
         </button>
-        <div className="hidden md:block h-10 w-10 rounded-[8px] bg-slate-100 overflow-hidden shadow-sm">
+        <div className="hidden md:block h-10 w-10 shrink-0 rounded-[8px] bg-slate-100 overflow-hidden shadow-sm">
           <img src={`https://ui-avatars.com/api/?name=${activeConversation?.contact?.name || phone}&background=random`} alt="" className="h-full w-full object-cover" />
         </div>
-        <div className="min-w-0">
+        <div className="min-w-0 flex-1">
           <button type="button" className="font-black text-sm text-slate-900 leading-none mb-1 truncate hover:text-brand-600 transition-colors" onClick={() => { if (waLink) window.open(waLink, "_blank", "noopener,noreferrer"); }} title="Open in WhatsApp">
             {contactDetail?.name || activeConversation?.contact?.name || `+${phone}`}
           </button>
@@ -53,7 +53,7 @@ export function ChatHeader({
           </div>
         </div>
       </div>
-      <div className="flex items-center gap-2">
+      <div className="flex shrink-0 items-center gap-2">
         <button className="p-2.5 hover:bg-slate-50 text-slate-400 hover:text-slate-900 rounded-[5px] transition-all"><Video size={20} /></button>
         <button className="p-2.5 hover:bg-slate-50 text-slate-400 hover:text-slate-900 rounded-[5px] transition-all"><Phone size={18} /></button>
         <div className="w-px h-6 bg-slate-100 mx-1" />
@@ -90,4 +90,3 @@ function HeaderMenu({ mobile, onClearChat, onEdit, onShowProfile }: { mobile?: b
     </div>
   );
 }
-

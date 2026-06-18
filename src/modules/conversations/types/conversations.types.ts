@@ -14,10 +14,16 @@ export type ChatMessage = {
   direction: "outbound" | "inbound";
   status: string;
   whatsappMessageId?: string | null;
+  replyToMessageId?: string | null;
   createdAt: string;
   text?: string;
+  displayText?: string | null;
+  previewText?: string | null;
   type?: string | null;
   buttons?: Array<{ id: string; title: string }>;
+  buttonReply?: { id?: string | null; title?: string | null };
+  listReply?: { id?: string | null; title?: string | null; description?: string | null };
+  interactive?: any;
   payload?: {
     template?: { name?: string };
     image?: { link: string };
@@ -34,6 +40,10 @@ export type ChatMessage = {
         buttons?: Array<{
           type?: string;
           reply?: { id?: string; title?: string };
+        }>;
+        sections?: Array<{
+          title?: string;
+          rows?: Array<{ id?: string; title?: string; description?: string }>;
         }>;
       };
     };
