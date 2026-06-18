@@ -14,7 +14,7 @@ export function DashboardSidebar({ snapshot, onView, onEdit, onRecharge }: any) 
         <div className="p-6">
           <div className="flex items-center gap-4 mb-6">
             {profilePictureUrl ? (
-              <div className="h-16 w-16 overflow-hidden rounded-[5px] ring-4 ring-slate-50 group-hover:scale-105 transition-transform"><img src={profilePictureUrl} alt="profile" className="h-full w-full object-cover" /></div>
+              <div className="h-16 w-16 overflow-hidden rounded-[5px] ring-4 ring-slate-50 hover:scale-105 transition-transform"><img src={profilePictureUrl} alt="profile" className="h-full w-full object-cover" /></div>
             ) : (
               <div className="h-16 w-16 rounded-[5px] bg-brand-600 flex items-center justify-center text-white font-black text-2xl shadow-lg shadow-brand-500/20">{snapshot?.meta?.phone?.verified_name?.[0] || "W"}</div>
             )}

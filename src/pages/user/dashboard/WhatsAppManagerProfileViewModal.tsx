@@ -1,7 +1,25 @@
 import { AnimatePresence, motion } from "framer-motion";
 import { createPortal } from "react-dom";
-import { X, Mail, Globe, Info, Edit2, Edit, LocationEdit } from "lucide-react";
+import { X, Mail, Globe, Info, Edit2, Edit, LocationEdit, PhoneCall } from "lucide-react";
 import { whatsappProfilePictureUrl } from "@shared/utils/whatsappProfile";
+
+function buildPhoneHref(value?: string | null) {
+  const phone = String(value || "").trim();
+  if (!phone) return "";
+  return `tel:${phone.replace(/[^\d+]/g, "")}`;
+}
+
+function buildEmailHref(value?: string | null) {
+  const email = String(value || "").trim();
+  if (!email) return "";
+  return `mailto:${email}`;
+}
+
+function buildMapsHref(value?: string | null) {
+  const address = String(value || "").trim();
+  if (!address) return "";
+  return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(address)}`;
+}
 
 export function WhatsAppManagerProfileViewModal({
   open,
@@ -16,6 +34,9 @@ export function WhatsAppManagerProfileViewModal({
 }) {
   const websites = Array.isArray(businessProfile?.websites) ? businessProfile.websites : [];
   const avatarUrl = whatsappProfilePictureUrl(businessProfile);
+  const phoneHref = buildPhoneHref(phone?.display_phone_number);
+  const emailHref = buildEmailHref(businessProfile?.email);
+  const mapsHref = buildMapsHref(businessProfile?.address);
 
   return createPortal(
     <AnimatePresence>
@@ -80,70 +101,90 @@ export function WhatsAppManagerProfileViewModal({
               <div className="mt-10 space-y-2">
                 {/* About/Notes */}
                 <div className="group flex items-start gap-4 p-4 hover:bg-slate-50 rounded-[5px] transition-all">
-                   <div className="mt-1 text-slate-400">
-                      <Edit2 size={18} />
-                   </div>
-                   <div className="flex-1 min-w-0">
-                      <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-1">About</p>
-                      <p className="text-sm font-semibold text-slate-700 leading-relaxed">
-                        {businessProfile?.about || "No business details added."}
-                      </p>
-                   </div>
+                  <div className="mt-1 text-slate-400">
+                    <Edit2 size={18} />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-1">About</p>
+                    <p className="text-sm font-semibold text-slate-700 leading-relaxed">
+                      {businessProfile?.about || "No business details added."}
+                    </p>
+                  </div>
                 </div>
 
                 <div className="h-px bg-slate-50 mx-4" />
 
                 {/* Description */}
                 <div className="group flex items-start gap-4 p-4 hover:bg-slate-50 rounded-[5px] transition-all">
-                   <div className="mt-1 text-slate-400">
-                      <Edit size={18} />
-                   </div>
-                   <div className="flex-1 min-w-0">
-                      <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-1">Description</p>
-                      <p className="text-sm font-semibold text-slate-700 leading-relaxed">
-                        {businessProfile?.description || "No description added."}
-                      </p>
-                   </div>
+                  <div className="mt-1 text-slate-400">
+                    <Edit size={18} />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-1">Description</p>
+                    <p className="text-sm font-semibold text-slate-700 leading-relaxed">
+                      {businessProfile?.description || "No description added."}
+                    </p>
+                  </div>
                 </div>
 
                 <div className="h-px bg-slate-50 mx-4" />
 
                 {/* Business Info Banner */}
-                 <div className="flex items-center gap-4 p-4 bg-slate-50 rounded-[5px] border border-slate-100">
-                   <Info size={18} className="text-slate-400" />
-                   <p className="text-xs font-bold text-slate-600">This is a business account.</p>
+                <div className="flex items-center gap-4 p-4 bg-slate-50 rounded-[5px] border border-slate-100">
+                  <Info size={18} className="text-slate-400" />
+                  <p className="text-xs font-bold text-slate-600">This is a business account.</p>
                 </div>
 
                 <div className="h-px bg-slate-50 mx-4" />
 
                 {/* Contact Details */}
                 <div className="space-y-1">
-                   {businessProfile?.email && (
-                      <div className="flex items-center gap-4 p-4 hover:bg-emerald-50 rounded-[5px] transition-all group">
-                        <Mail size={18} className="text-slate-400 group-hover:text-emerald-600" />
-                        <span className="text-sm font-bold text-emerald-600">{businessProfile.email}</span>
-                      </div>
-                   )}
+                  {businessProfile?.email && (
+                    <a
+                      href={emailHref || undefined}
+                      target="_blank"
+                      rel="noreferrer noopener"
+                      className="flex items-center gap-4 p-4 hover:bg-emerald-50 rounded-[5px] transition-all group"
+                    >
+                      <Mail size={18} className="text-slate-400 group-hover:text-emerald-600" />
+                      <span className="text-sm font-bold text-emerald-600">{businessProfile.email}</span>
+                    </a>
+                  )}
 
-                   {businessProfile?.address && (
-                      <div className="flex items-center gap-4 p-4 hover:bg-emerald-50 rounded-[5px] transition-all group">
-                        <LocationEdit size={18} className="text-slate-400 group-hover:text-emerald-600" />
-                        <span className="text-sm font-bold text-emerald-600">{businessProfile.address}</span>
-                      </div>
-                   )}
-                   
-                   {websites.map((w: string) => (
-                     <a
-                       key={w}
-                       href={w}
-                       target="_blank"
-                       rel="noreferrer"
-                        className="flex items-center gap-4 p-4 hover:bg-emerald-50 rounded-[5px] transition-all group"
-                     >
-                        <Globe size={18} className="text-slate-400 group-hover:text-emerald-600" />
-                        <span className="text-sm font-bold text-emerald-600 truncate">{w}</span>
-                     </a>
-                   ))}
+                  {businessProfile?.address && (
+                    <a
+                      href={mapsHref || undefined}
+                      target="_blank"
+                      rel="noreferrer noopener"
+                      className="flex items-center gap-4 p-4 hover:bg-emerald-50 rounded-[5px] transition-all group"
+                    >
+                      <LocationEdit size={18} className="text-slate-400 group-hover:text-emerald-600" />
+                      <span className="text-sm font-bold text-emerald-600">{businessProfile.address}</span>
+                    </a>
+                  )}
+
+                  {phoneHref && (
+                    <a
+                      href={phoneHref}
+                      className="flex items-center gap-4 p-4 hover:bg-emerald-50 rounded-[5px] transition-all group"
+                    >
+                      <PhoneCall size={18} className="text-slate-400 group-hover:text-emerald-600" />
+                      <span className="text-sm font-bold text-emerald-600">{phone?.display_phone_number}</span>
+                    </a>
+                  )}
+
+                  {websites.map((w: string) => (
+                    <a
+                      key={w}
+                      href={w}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="flex items-center gap-4 p-4 hover:bg-emerald-50 rounded-[5px] transition-all group"
+                    >
+                      <Globe size={18} className="text-slate-400 group-hover:text-emerald-600" />
+                      <span className="text-sm font-bold text-emerald-600 truncate">{w}</span>
+                    </a>
+                  ))}
                 </div>
               </div>
             </div>
