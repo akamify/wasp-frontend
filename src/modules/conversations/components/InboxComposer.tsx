@@ -94,9 +94,9 @@ export function InboxComposer({ to, disabled, forceDisabledReason, onSent, onErr
     } catch (e: any) {
       onError(
         e?.response?.data?.details?.providerError ||
-          e?.response?.data?.details?.metaDebug?.meta?.error_user_msg ||
-          e?.response?.data?.message ||
-          "Failed to send message"
+        e?.response?.data?.details?.metaDebug?.meta?.error_user_msg ||
+        e?.response?.data?.message ||
+        "Failed to send message"
       );
     } finally {
       setSending(false);
