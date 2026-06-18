@@ -42,7 +42,7 @@ export function DesktopTopBar({
       <div className="flex items-center gap-4">
         <h1 className="text-lg font-black text-slate-900 tracking-tight">{getShellTitle(pathname, NAV_ITEMS as any)}</h1>
         <div className="h-4 w-px bg-slate-200 mx-2" />
-        <button type="button" onClick={() => navigate("/workspaces")} className="flex items-center gap-2 px-3 py-1 bg-slate-50 rounded-[5px] border border-slate-200/50 shadow-sm hover:bg-white transition-colors">
+        <button type="button" onClick={() => navigate("/workspaces")} className="flex items-center gap-2 px-3 py-1 cursor-pointer bg-slate-50 rounded-[5px] border border-slate-200/50 shadow-sm hover:bg-white transition-colors">
           <Globe size={14} className="text-slate-400" />
           <span className="max-w-48 truncate text-[10px] font-black text-slate-600 uppercase tracking-widest">{workspace?.name || "Workspace"}</span>
         </button>
