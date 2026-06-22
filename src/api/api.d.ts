@@ -298,6 +298,13 @@ export const API: {
     apiMessages(params?: any): Promise<any>;
     apiMessage(id: string): Promise<any>;
   };
+  externalChatWebhooks: {
+    list(): Promise<any>;
+    create(payload: any): Promise<any>;
+    update(id: string, payload: any): Promise<any>;
+    remove(id: string): Promise<any>;
+    rotateSecret(id: string): Promise<any>;
+  };
   conversations: {
     clear(phone: string): Promise<any>;
     list(params?: any): Promise<any>;

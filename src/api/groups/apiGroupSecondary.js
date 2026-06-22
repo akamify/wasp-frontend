@@ -171,6 +171,13 @@ export function buildApiGroupSecondary(api, unwrap, API_BASE_URL) {
       apiMessages: (params) => api.get("/reports/api-messages", { params }).then(unwrap),
       apiMessage: (id) => api.get(`/reports/api-messages/${encodeURIComponent(id)}`).then(unwrap),
     },
+    externalChatWebhooks: {
+      list: () => api.get("/api-keys/external-chat/webhooks").then(unwrap),
+      create: (payload) => api.post("/api-keys/external-chat/webhooks", payload).then(unwrap),
+      update: (id, payload) => api.patch(`/api-keys/external-chat/webhooks/${encodeURIComponent(id)}`, payload).then(unwrap),
+      remove: (id) => api.delete(`/api-keys/external-chat/webhooks/${encodeURIComponent(id)}`).then(unwrap),
+      rotateSecret: (id) => api.post(`/api-keys/external-chat/webhooks/${encodeURIComponent(id)}/rotate-secret`).then(unwrap),
+    },
     conversations: {
       list: (params) => api.get("/conversations", { params }).then(unwrap),
       get: (phone) => api.get(`/conversations/${phone}`).then(unwrap),

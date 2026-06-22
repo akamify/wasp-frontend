@@ -4,9 +4,11 @@ import { Card } from "@components/ui/Card";
 import { Button } from "@components/ui/Button";
 import { Input } from "@components/ui/Input";
 import { useToast } from "@shared/providers/ToastContext";
-import { Copy, Eye, EyeOff, RefreshCw, Terminal, Globe, ShieldCheck } from "lucide-react";
+import { Copy, Eye, EyeOff, RefreshCw, Terminal, ShieldCheck } from "lucide-react";
 import { ApiKeysSkeleton } from "@components/ui/Skeletons";
 import { useOtpGuard } from "@shared/hooks/useOtpGuard";
+import { DeveloperQuickStart } from "./api-keys/DeveloperQuickStart";
+import { ExternalChatWebhooksPanel } from "./api-keys/ExternalChatWebhooksPanel";
 
 export default function ApiKeysPage() {
   const [apiKey, setApiKey] = useState<string | null>(null);
@@ -244,39 +246,8 @@ export default function ApiKeysPage() {
             </div>
           </Card>
 
-          <Card className="p-6 border-none shadow-xl shadow-slate-200/50">
-            <div className="flex items-center justify-between mb-4">
-              <div>
-                <h3 className="text-lg font-black text-slate-900">Quick Start</h3>
-                <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mt-1">Use your API key</p>
-              </div>
-              <div className="p-2 bg-slate-50 rounded-[5px] text-slate-400">
-                <Globe size={20} />
-              </div>
-            </div>
-
-            <div className="space-y-3 text-sm text-slate-700">
-              <div className="flex items-start justify-between gap-4">
-                <span className="text-slate-500">Base URL</span>
-                <span className="font-semibold text-slate-900 break-all text-right">{API.baseUrl}</span>
-              </div>
-              <div className="flex items-start justify-between gap-4">
-                <span className="text-slate-500">Auth Header</span>
-                <span className="font-semibold text-slate-900 text-right">X-API-KEY: your_key</span>
-              </div>
-              <div className="rounded-[5px] bg-slate-50 border border-slate-100 p-3 text-xs text-slate-700">
-                <div className="font-bold text-slate-500 uppercase tracking-widest text-[10px] mb-2">Example</div>
-                <pre className="whitespace-pre-wrap">{`curl -X POST \\
-  ${API.baseUrl}/integrations/campaigns/send \\
-  -H "X-API-KEY: YOUR_KEY" \\
-  -H "Content-Type: application/json" \\
-  -d '{"campaignName":"Order Confirmation API","recipients":[{"to":"91XXXXXXXXXX","variables":["John"]}]}'`}</pre>
-              </div>
-              <p className="text-xs text-slate-500">
-                Tip: Keep keys secret.
-              </p>
-            </div>
-          </Card>
+          <DeveloperQuickStart baseUrl={API.baseUrl} />
+          <ExternalChatWebhooksPanel />
         </div>
       )}
     </div>
