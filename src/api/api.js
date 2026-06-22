@@ -3,11 +3,18 @@ import { buildApiGroupAdmin } from "./groups/apiGroupAdmin";
 import { buildApiGroupPrimary } from "./groups/apiGroupPrimary";
 import { buildApiGroupSecondary } from "./groups/apiGroupSecondary";
 
-const rawEnvBaseUrl = String(import.meta.env.VITE_API_BASE_URL || "").trim();
+const rawEnvBaseUrl = String(
+  import.meta.env.VITE_API_BASE_URL ||
+  import.meta.env.VITE_API_URL ||
+  import.meta.env.NEXT_PUBLIC_API_BASE_URL ||
+  import.meta.env.NEXT_PUBLIC_API_URL ||
+  ""
+).trim();
 const isBrowser = typeof window !== "undefined";
 const isLocalHost =
   isBrowser &&
   (window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1");
+const PRODUCTION_API_BASE_URL = "https://api.wasp.akamify.com/api";
 
 function normalizeApiBaseUrl(value) {
   const v = String(value || "").trim();
@@ -16,7 +23,7 @@ function normalizeApiBaseUrl(value) {
 }
 
 const envBaseUrl = normalizeApiBaseUrl(rawEnvBaseUrl);
-const API_BASE_URL = envBaseUrl || (isLocalHost ? "http://localhost:3000" : "/api");
+const API_BASE_URL = envBaseUrl || (isLocalHost ? "http://localhost:3000" : PRODUCTION_API_BASE_URL);
 const isDev = Boolean(import.meta.env.DEV);
 
 export const api = axios.create({

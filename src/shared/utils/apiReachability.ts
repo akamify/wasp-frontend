@@ -23,7 +23,13 @@ async function checkHostResolvable(baseUrl: string, signal: AbortSignal) {
 }
 
 export function startApiReachabilityCheck() {
-  const baseUrl = normalizeBaseUrl(import.meta.env.VITE_API_BASE_URL || "");
+  const baseUrl = normalizeBaseUrl(
+    import.meta.env.VITE_API_BASE_URL ||
+    import.meta.env.VITE_API_URL ||
+    import.meta.env.NEXT_PUBLIC_API_BASE_URL ||
+    import.meta.env.NEXT_PUBLIC_API_URL ||
+    ""
+  );
   if (!baseUrl) return;
 
   const controller = new AbortController();
