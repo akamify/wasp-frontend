@@ -191,7 +191,7 @@ export default function AdminDocsPage() {
       setEditorMode("blocks");
     };
     void initEditor();
-  }, [id, isEditorRoute, location.pathname, categoryOptions.length]);
+  }, [id, isEditorRoute, location.pathname]);
 
   function syncBlocks(next: Array<{ id: string; label: string; snippet: string }>) { setAddedBlocks(next); setEditing((p: any) => (p ? { ...p, content: next.map((x) => x.snippet).join("\n\n") } : p)); }
   function onRawContentChange(value: string) {
@@ -313,6 +313,14 @@ export default function AdminDocsPage() {
       const categoryRenameFrom = editing.__categoryMode === "rename" ? normalizeCategory(editing.__categoryRenameFrom || "") : "";
       const sectionOrder = Number(editing.sidebar?.sectionOrder || 0);
       const itemOrder = Number(editing.sidebar?.itemOrder ?? editing.order ?? 0);
+      if (editing.__categoryMode === "new" && !String(editing.category || "").trim()) {
+        toast("Category name is required.", "error");
+        return;
+      }
+      if (editing.__categoryMode === "rename" && !String(editing.category || "").trim()) {
+        toast("Category name is required.", "error");
+        return;
+      }
       if (occupiedPageOrders.includes(itemOrder)) {
         toast(`Page sort order ${itemOrder} is already used in ${category}.`, "error");
         return;
