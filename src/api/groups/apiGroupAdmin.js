@@ -86,6 +86,8 @@ export function buildApiGroupAdmin(api, unwrap) {
       docsDelete: (id) => api.delete(`/admin/docs/${encodeURIComponent(id)}`).then(unwrap),
       docsBrandGet: () => api.get("/admin/docs-brand").then(unwrap),
       docsBrandUpdate: (payload) => api.put("/admin/docs-brand", payload).then(unwrap),
+      docsFeedbacks: (params) => api.get("/admin/docs-feedbacks", { params }).then(unwrap),
+      docsFeedbackGet: (id) => api.get(`/admin/docs-feedbacks/${encodeURIComponent(id)}`).then(unwrap),
       docsBrandUploadLogo: (file, onProgress) => {
         const data = new FormData();
         data.append("file", file);

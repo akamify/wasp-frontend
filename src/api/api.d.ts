@@ -119,6 +119,8 @@ export const API: {
     docsDelete(id: string): Promise<any>;
     docsBrandGet(): Promise<any>;
     docsBrandUpdate(payload: any): Promise<any>;
+    docsFeedbacks(params?: any): Promise<any>;
+    docsFeedbackGet(id: string): Promise<any>;
     docsBrandUploadLogo(file: any, onProgress?: (pct: number) => void): Promise<any>;
   };
   superAdmin: {
@@ -185,6 +187,7 @@ export const API: {
   public: {
     page(slug: string): Promise<any>;
     platformBrandGet(): Promise<any>;
+    docsFeedback(payload: any): Promise<any>;
     createSupportTicket(payload: any): Promise<any>;
     applyCareer(payload: any, file: any, onProgress?: (pct: number) => void): Promise<any>;
   };

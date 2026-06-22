@@ -3,6 +3,7 @@ export function buildApiGroupSecondary(api, unwrap, API_BASE_URL) {
     public: {
       page: (slug) => api.get(`/public/pages/${encodeURIComponent(slug)}`).then(unwrap),
       platformBrandGet: () => api.get("/public/platform-brand").then(unwrap),
+      docsFeedback: (payload) => api.post("/public/docs/feedback", payload).then(unwrap),
       createSupportTicket: (payload) => api.post("/public/support-tickets", payload).then(unwrap),
       applyCareer: (payload, file, onProgress) => {
         const data = new FormData();
