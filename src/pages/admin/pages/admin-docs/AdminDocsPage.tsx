@@ -14,6 +14,7 @@ import { ListScreen } from "./ListScreen";
 
 type Doc = any;
 const NEW_CATEGORY_VALUE = "__new_category__";
+const RENAME_CATEGORY_VALUE = "__rename_category__";
 
 function normalizeCategory(value: any) {
   return String(value || "general").trim() || "general";
@@ -88,7 +89,11 @@ export default function AdminDocsPage() {
         count: (current?.count || 0) + 1,
       });
     }
-    const currentName = normalizeCategory(editing?.category || editing?.sidebar?.section || "");
+    const currentName = normalizeCategory(
+      editing?.__categoryMode === "rename"
+        ? editing?.__categoryRenameFrom
+        : editing?.category || editing?.sidebar?.section || ""
+    );
     if (currentName && !byName.has(currentName)) {
       byName.set(currentName, {
         name: currentName,
@@ -103,17 +108,21 @@ export default function AdminDocsPage() {
   }, [items, editing?.category, editing?.sidebar?.section, editing?.sidebar?.sectionOrder]);
   const selectedCategory = normalizeCategory(editing?.category || editing?.sidebar?.section || "general");
   const selectedCategoryOption = categoryOptions.find((category) => category.name === selectedCategory) || null;
+  const renameFromCategory = editing?.__categoryMode === "rename" ? normalizeCategory(editing?.__categoryRenameFrom || "") : "";
   const occupiedCategoryOrders = useMemo(
-    () => categoryOptions.filter((category) => category.name !== selectedCategory).map((category) => category.sectionOrder),
-    [categoryOptions, selectedCategory]
+    () => categoryOptions.filter((category) => category.name !== selectedCategory && category.name !== renameFromCategory).map((category) => category.sectionOrder),
+    [categoryOptions, selectedCategory, renameFromCategory]
   );
   const occupiedPageOrders = useMemo(
     () =>
       items
         .filter((item) => String(item?.id || "") !== String(editing?.id || ""))
-        .filter((item) => docCategory(item) === selectedCategory)
+        .filter((item) => {
+          const category = docCategory(item);
+          return category === selectedCategory || (!!renameFromCategory && category === renameFromCategory);
+        })
         .map(docItemOrder),
-    [items, editing?.id, selectedCategory]
+    [items, editing?.id, selectedCategory, renameFromCategory]
   );
   const categoryOrderOptions = useMemo(
     () => orderRange([...categoryOptions.map((category) => category.sectionOrder), Number(editing?.sidebar?.sectionOrder || 0)]),
@@ -228,6 +237,18 @@ export default function AdminDocsPage() {
       }) : p);
       return;
     }
+    if (value === RENAME_CATEGORY_VALUE) {
+      const category = selectedCategoryOption?.name || selectedCategory;
+      const sectionOrder = Number(selectedCategoryOption?.sectionOrder ?? editing?.sidebar?.sectionOrder ?? 0);
+      setEditing((p: any) => p ? ({
+        ...p,
+        __categoryMode: "rename",
+        __categoryRenameFrom: category,
+        category,
+        sidebar: { ...(p.sidebar || {}), section: category, sectionOrder },
+      }) : p);
+      return;
+    }
     const category = normalizeCategory(value);
     const option = categoryOptions.find((item) => item.name === category);
     const itemOrder = firstAvailablePageOrder(category);
@@ -240,6 +261,14 @@ export default function AdminDocsPage() {
     }) : p);
   }
   function handleNewCategoryName(value: string) {
+    const category = String(value || "").trim();
+    setEditing((p: any) => p ? ({
+      ...p,
+      category,
+      sidebar: { ...(p.sidebar || {}), section: category },
+    }) : p);
+  }
+  function handleRenameCategoryName(value: string) {
     const category = String(value || "").trim();
     setEditing((p: any) => p ? ({
       ...p,
@@ -281,6 +310,7 @@ export default function AdminDocsPage() {
     if (!editing) return; setSaving(true);
     try {
       const category = normalizeCategory(editing.category || editing.sidebar?.section || "general");
+      const categoryRenameFrom = editing.__categoryMode === "rename" ? normalizeCategory(editing.__categoryRenameFrom || "") : "";
       const sectionOrder = Number(editing.sidebar?.sectionOrder || 0);
       const itemOrder = Number(editing.sidebar?.itemOrder ?? editing.order ?? 0);
       if (occupiedPageOrders.includes(itemOrder)) {
@@ -291,8 +321,9 @@ export default function AdminDocsPage() {
         toast(`Category sort order ${sectionOrder} is already used.`, "error");
         return;
       }
-      const payload = { ...editing, category, slug: editing.slug || slugify(editing.title), keywords: Array.isArray(editing.keywords) ? editing.keywords : String(editing.keywords || "").split(",").map((x: string) => x.trim()).filter(Boolean), sidebar: { ...(editing.sidebar || {}), section: category, sectionOrder, itemOrder }, seo: { ...(editing.seo || {}), metaTitle: String(editing.title || ""), metaDescription: String(editing.description || ""), ogImage: "" } };
+      const payload = { ...editing, category, categoryRenameFrom, slug: editing.slug || slugify(editing.title), keywords: Array.isArray(editing.keywords) ? editing.keywords : String(editing.keywords || "").split(",").map((x: string) => x.trim()).filter(Boolean), sidebar: { ...(editing.sidebar || {}), section: category, sectionOrder, itemOrder }, seo: { ...(editing.seo || {}), metaTitle: String(editing.title || ""), metaDescription: String(editing.description || ""), ogImage: "" } };
       delete payload.__categoryMode;
+      delete payload.__categoryRenameFrom;
       payload.order = itemOrder;
       if (editing.id) await API.admin.docsUpdate(editing.id, payload); else await API.admin.docsCreate(payload);
       toast("Doc saved", "success"); await load(); navigate(docsBasePath);
@@ -305,7 +336,7 @@ export default function AdminDocsPage() {
 
   return (
     <>
-      {isEditorRoute ? <EditorScreen navigate={navigate} saveDoc={saveDoc} saving={saving} editing={editing} canCreate={canCreate} canEdit={canEdit} setEditing={setEditing} slugify={slugify} TOOLBAR={TOOLBAR} setActiveTool={setActiveTool} addedBlocks={addedBlocks} syncBlocks={syncBlocks} liveContent={liveContent} editorMode={editorMode} onEditorModeChange={onEditorModeChange} rawContent={rawContent} onRawContentChange={onRawContentChange} canUseRaw={user?.role === "super_admin" || user?.role === "admin"} categoryOptions={categoryOptions} selectedCategory={selectedCategory} newCategoryValue={NEW_CATEGORY_VALUE} categoryOrderOptions={categoryOrderOptions} occupiedCategoryOrders={occupiedCategoryOrders} pageOrderOptions={pageOrderOptions} occupiedPageOrders={occupiedPageOrders} onCategorySelect={handleCategorySelect} onNewCategoryNameChange={handleNewCategoryName} onCategoryOrderChange={handleCategoryOrderChange} onPageOrderChange={handlePageOrderChange} /> : <ListScreen query={query} setQuery={setQuery} load={load} loading={loading} navigate={navigate} docsBasePath={docsBasePath} canCreate={canCreate} error={error} filtered={filtered} openPreview={openPreview} canEdit={canEdit} canDelete={canDelete} setDeleteTarget={setDeleteTarget} brandModal={brandModal} setBrandModal={setBrandModal} brandSettings={brandSettings} setBrandSettings={setBrandSettings} uploadBrandLogo={uploadBrandLogo} brandUploading={brandUploading} brandUploadPct={brandUploadPct} saveBrandSettings={saveBrandSettings} brandSaving={brandSaving} deleteTarget={deleteTarget} confirmDelete={confirmDelete} setPreviewDoc={setPreviewDoc} previewLoading={previewLoading} previewDoc={previewDoc} />}
+      {isEditorRoute ? <EditorScreen navigate={navigate} saveDoc={saveDoc} saving={saving} editing={editing} canCreate={canCreate} canEdit={canEdit} setEditing={setEditing} slugify={slugify} TOOLBAR={TOOLBAR} setActiveTool={setActiveTool} addedBlocks={addedBlocks} syncBlocks={syncBlocks} liveContent={liveContent} editorMode={editorMode} onEditorModeChange={onEditorModeChange} rawContent={rawContent} onRawContentChange={onRawContentChange} canUseRaw={user?.role === "super_admin" || user?.role === "admin"} categoryOptions={categoryOptions} selectedCategory={selectedCategory} newCategoryValue={NEW_CATEGORY_VALUE} renameCategoryValue={RENAME_CATEGORY_VALUE} categoryOrderOptions={categoryOrderOptions} occupiedCategoryOrders={occupiedCategoryOrders} pageOrderOptions={pageOrderOptions} occupiedPageOrders={occupiedPageOrders} onCategorySelect={handleCategorySelect} onNewCategoryNameChange={handleNewCategoryName} onRenameCategoryNameChange={handleRenameCategoryName} onCategoryOrderChange={handleCategoryOrderChange} onPageOrderChange={handlePageOrderChange} /> : <ListScreen query={query} setQuery={setQuery} load={load} loading={loading} navigate={navigate} docsBasePath={docsBasePath} canCreate={canCreate} error={error} filtered={filtered} openPreview={openPreview} canEdit={canEdit} canDelete={canDelete} setDeleteTarget={setDeleteTarget} brandModal={brandModal} setBrandModal={setBrandModal} brandSettings={brandSettings} setBrandSettings={setBrandSettings} uploadBrandLogo={uploadBrandLogo} brandUploading={brandUploading} brandUploadPct={brandUploadPct} saveBrandSettings={saveBrandSettings} brandSaving={brandSaving} deleteTarget={deleteTarget} confirmDelete={confirmDelete} setPreviewDoc={setPreviewDoc} previewLoading={previewLoading} previewDoc={previewDoc} />}
       <Modal isOpen={!!activeTool} onClose={() => setActiveTool(null)} title={activeTool ? `Add ${activeTool.title}` : ""}>
         {activeTool ? <div className="space-y-3">{["Text", "H", "Sec", "B", "I"].includes(activeTool.label) ? <Input label="Text" value={toolForm.text} onChange={(e) => setToolForm((p: any) => ({ ...p, text: e.target.value }))} /> : null}{activeTool.label === "Link" ? <><Input label="Text" value={toolForm.text} onChange={(e) => setToolForm((p: any) => ({ ...p, text: e.target.value }))} /><Input label="URL" value={toolForm.url} onChange={(e) => setToolForm((p: any) => ({ ...p, url: e.target.value }))} /></> : null}{["Code", "JSON", "Bash", "Mermaid"].includes(activeTool.label) ? <><Input label="Language" value={toolForm.language} onChange={(e) => setToolForm((p: any) => ({ ...p, language: e.target.value }))} /><Textarea label="Code" rows={8} value={toolForm.code} onChange={(e) => setToolForm((p: any) => ({ ...p, code: e.target.value }))} /></> : null}{activeTool.label === "Resp" ? <><Input label="Response Title" value={toolForm.responseTitle} onChange={(e) => setToolForm((p: any) => ({ ...p, responseTitle: e.target.value }))} /><Input label="Status" value={toolForm.responseStatus} onChange={(e) => setToolForm((p: any) => ({ ...p, responseStatus: e.target.value }))} /><Textarea label="Response JSON" rows={8} value={toolForm.responseBody} onChange={(e) => setToolForm((p: any) => ({ ...p, responseBody: e.target.value }))} /></> : null}{activeTool.label === "Callout" ? <><Select label="Type" value={toolForm.calloutType} onChange={(e) => setToolForm((p: any) => ({ ...p, calloutType: e.target.value }))}><option value="info">info</option><option value="warning">warning</option><option value="success">success</option><option value="error">error</option></Select><Input label="Title" value={toolForm.calloutTitle} onChange={(e) => setToolForm((p: any) => ({ ...p, calloutTitle: e.target.value }))} /><Textarea label="Description" rows={5} value={toolForm.calloutDescription} onChange={(e) => setToolForm((p: any) => ({ ...p, calloutDescription: e.target.value }))} /></> : null}{activeTool.label === "Key" ? <><Input label="Title" value={toolForm.keyTitle} onChange={(e) => setToolForm((p: any) => ({ ...p, keyTitle: e.target.value }))} /><Textarea label="Description" rows={4} value={toolForm.keyDescription} onChange={(e) => setToolForm((p: any) => ({ ...p, keyDescription: e.target.value }))} /></> : null}{activeTool.label === "Step" ? <><Input label="Step Title" value={toolForm.title} onChange={(e) => setToolForm((p: any) => ({ ...p, title: e.target.value }))} /><Textarea label="Step Description" rows={3} value={toolForm.description} onChange={(e) => setToolForm((p: any) => ({ ...p, description: e.target.value }))} /><Input label="Button Text" value={toolForm.buttonText} onChange={(e) => setToolForm((p: any) => ({ ...p, buttonText: e.target.value }))} /><Input label="Button URL" value={toolForm.url} onChange={(e) => setToolForm((p: any) => ({ ...p, url: e.target.value }))} /></> : null}<div className="flex justify-end gap-2"><Button variant="ghost" type="button" onClick={() => setActiveTool(null)}>Cancel</Button><Button type="button" onClick={saveToolBlock}>Save</Button></div></div> : null}
       </Modal>

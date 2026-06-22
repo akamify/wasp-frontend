@@ -29,16 +29,19 @@ export function EditorScreen(props: any) {
     categoryOptions,
     selectedCategory,
     newCategoryValue,
+    renameCategoryValue,
     categoryOrderOptions,
     occupiedCategoryOrders,
     pageOrderOptions,
     occupiedPageOrders,
     onCategorySelect,
     onNewCategoryNameChange,
+    onRenameCategoryNameChange,
     onCategoryOrderChange,
     onPageOrderChange,
   } = props;
   const isNewCategory = editing?.__categoryMode === "new";
+  const isRenameCategory = editing?.__categoryMode === "rename";
   const currentCategoryOrder = Number(editing?.sidebar?.sectionOrder || 0);
   const currentPageOrder = Number(editing?.sidebar?.itemOrder ?? editing?.order ?? 0);
   return (
@@ -56,14 +59,18 @@ export function EditorScreen(props: any) {
               <Input label="Description" value={editing.description} onChange={(e) => setEditing((p: any) => ({ ...p, description: e.target.value }))} />
               <Input label="Keywords (comma separated)" value={Array.isArray(editing.keywords) ? editing.keywords.join(", ") : String(editing.keywords || "")} onChange={(e) => setEditing((p: any) => ({ ...p, keywords: e.target.value }))} />
               <div className="grid grid-cols-1 gap-3 md:grid-cols-4">
-                <Select label="Category" value={isNewCategory ? newCategoryValue : selectedCategory} onChange={(e) => onCategorySelect(e.target.value)}>
+                <Select label="Category" value={isNewCategory ? newCategoryValue : isRenameCategory ? renameCategoryValue : selectedCategory} onChange={(e) => onCategorySelect(e.target.value)}>
                   {(Array.isArray(categoryOptions) ? categoryOptions : []).map((cat: any) => (
                     <option key={cat.name} value={cat.name}>{cat.name}</option>
                   ))}
+                  <option value={renameCategoryValue}>Rename selected category</option>
                   <option value={newCategoryValue}>Create new category</option>
                 </Select>
                 {isNewCategory ? (
                   <Input label="New Category" value={editing.category || ""} onChange={(e) => onNewCategoryNameChange(e.target.value)} />
+                ) : null}
+                {isRenameCategory ? (
+                  <Input label="Rename To" value={editing.category || ""} onChange={(e) => onRenameCategoryNameChange(e.target.value)} />
                 ) : null}
                 <Select label="Category Sort" value={String(currentCategoryOrder)} onChange={(e) => onCategoryOrderChange(e.target.value)}>
                   {(Array.isArray(categoryOrderOptions) ? categoryOrderOptions : []).map((order: number) => (
