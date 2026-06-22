@@ -13,6 +13,32 @@ import { EditorScreen } from "./EditorScreen";
 import { ListScreen } from "./ListScreen";
 
 type Doc = any;
+const NEW_CATEGORY_VALUE = "__new_category__";
+
+function normalizeCategory(value: any) {
+  return String(value || "general").trim() || "general";
+}
+
+function docCategory(doc: any) {
+  return normalizeCategory(doc?.category || doc?.sidebar?.section || "general");
+}
+
+function docSectionOrder(doc: any) {
+  const value = Number(doc?.sidebar?.sectionOrder);
+  return Number.isFinite(value) ? value : 0;
+}
+
+function docItemOrder(doc: any) {
+  const item = Number(doc?.sidebar?.itemOrder);
+  if (Number.isFinite(item)) return item;
+  const order = Number(doc?.order);
+  return Number.isFinite(order) ? order : 0;
+}
+
+function orderRange(values: number[], minimum = 20) {
+  const max = Math.max(minimum, ...values.map((value) => Number(value || 0))) + 5;
+  return Array.from({ length: max + 1 }, (_, index) => index);
+}
 
 export default function AdminDocsPage() {
   const { user } = useAuth();
@@ -49,18 +75,53 @@ export default function AdminDocsPage() {
   const canCreate = useMemo(() => user?.role === "super_admin" || !!user?.permissions?.components?.includes("docs.create") || !!user?.permissions?.actions?.includes("docs.create"), [user]);
   const canEdit = useMemo(() => user?.role === "super_admin" || !!user?.permissions?.components?.includes("docs.edit") || !!user?.permissions?.actions?.includes("docs.edit"), [user]);
   const canDelete = useMemo(() => user?.role === "super_admin" || !!user?.permissions?.components?.includes("docs.delete") || !!user?.permissions?.actions?.includes("docs.delete"), [user]);
-  const filtered = useMemo(() => { const q = query.trim().toLowerCase(); return q ? items.filter((x) => String(x.title || "").toLowerCase().includes(q) || String(x.slug || "").toLowerCase().includes(q) || String(x.category || "").toLowerCase().includes(q)) : items; }, [items, query]);
-  const availableCategories = useMemo(
+  const filtered = useMemo(() => { const q = query.trim().toLowerCase(); return q ? items.filter((x) => String(x.title || "").toLowerCase().includes(q) || String(x.slug || "").toLowerCase().includes(q) || docCategory(x).toLowerCase().includes(q)) : items; }, [items, query]);
+  const categoryOptions = useMemo(() => {
+    const byName = new Map<string, { name: string; sectionOrder: number; count: number }>();
+    for (const item of items) {
+      const name = docCategory(item);
+      const sectionOrder = docSectionOrder(item);
+      const current = byName.get(name);
+      byName.set(name, {
+        name,
+        sectionOrder: current ? Math.min(current.sectionOrder, sectionOrder) : sectionOrder,
+        count: (current?.count || 0) + 1,
+      });
+    }
+    const currentName = normalizeCategory(editing?.category || editing?.sidebar?.section || "");
+    if (currentName && !byName.has(currentName)) {
+      byName.set(currentName, {
+        name: currentName,
+        sectionOrder: Number(editing?.sidebar?.sectionOrder || 0),
+        count: 0,
+      });
+    }
+    return Array.from(byName.values()).sort((a, b) => {
+      if (a.sectionOrder !== b.sectionOrder) return a.sectionOrder - b.sectionOrder;
+      return a.name.localeCompare(b.name);
+    });
+  }, [items, editing?.category, editing?.sidebar?.section, editing?.sidebar?.sectionOrder]);
+  const selectedCategory = normalizeCategory(editing?.category || editing?.sidebar?.section || "general");
+  const selectedCategoryOption = categoryOptions.find((category) => category.name === selectedCategory) || null;
+  const occupiedCategoryOrders = useMemo(
+    () => categoryOptions.filter((category) => category.name !== selectedCategory).map((category) => category.sectionOrder),
+    [categoryOptions, selectedCategory]
+  );
+  const occupiedPageOrders = useMemo(
     () =>
-      Array.from(
-        new Set(
-          items
-            .map((x) => String(x?.category || "").trim())
-            .filter(Boolean)
-            .concat(String(editing?.category || "").trim() || [])
-        )
-      ).sort((a, b) => a.localeCompare(b)),
-    [items, editing?.category]
+      items
+        .filter((item) => String(item?.id || "") !== String(editing?.id || ""))
+        .filter((item) => docCategory(item) === selectedCategory)
+        .map(docItemOrder),
+    [items, editing?.id, selectedCategory]
+  );
+  const categoryOrderOptions = useMemo(
+    () => orderRange([...categoryOptions.map((category) => category.sectionOrder), Number(editing?.sidebar?.sectionOrder || 0)]),
+    [categoryOptions, editing?.sidebar?.sectionOrder]
+  );
+  const pageOrderOptions = useMemo(
+    () => orderRange([...items.filter((item) => docCategory(item) === selectedCategory).map(docItemOrder), Number(editing?.sidebar?.itemOrder ?? editing?.order ?? 0)]),
+    [items, selectedCategory, editing?.sidebar?.itemOrder, editing?.order]
   );
 
   async function load() {
@@ -82,7 +143,20 @@ export default function AdminDocsPage() {
     if (!isEditorRoute) { setEditing(null); setAddedBlocks([]); setEditorMode("blocks"); setRawContent(""); return; }
     const initEditor = async () => {
       if (location.pathname.endsWith("/create")) {
-        setEditing({ ...EMPTY_DOC });
+        const firstCategory = categoryOptions[0] || null;
+        const firstCategoryName = firstCategory?.name || "general";
+        const itemOrder = firstAvailablePageOrder(firstCategoryName);
+        setEditing({
+          ...EMPTY_DOC,
+          category: firstCategoryName,
+          order: itemOrder,
+          sidebar: {
+            ...(EMPTY_DOC.sidebar || {}),
+            section: firstCategoryName,
+            sectionOrder: firstCategory?.sectionOrder || 0,
+            itemOrder,
+          },
+        });
         setAddedBlocks([]);
         setRawContent("");
         setEditorMode("blocks");
@@ -92,6 +166,14 @@ export default function AdminDocsPage() {
       try {
         const res: any = await API.admin.docsGet(id);
         const doc = { ...(res?.doc || EMPTY_DOC) };
+        doc.category = docCategory(doc);
+        doc.order = docItemOrder(doc);
+        doc.sidebar = {
+          ...(doc.sidebar || {}),
+          section: docCategory(doc),
+          sectionOrder: docSectionOrder(doc),
+          itemOrder: docItemOrder(doc),
+        };
         setEditing(doc);
         setAddedBlocks(splitBlocks(doc.content).map((snippet, i) => ({ id: `loaded-${i}-${Date.now()}`, label: detectBlockLabel(snippet), snippet })));
         setRawContent(String(doc.content || ""));
@@ -100,7 +182,7 @@ export default function AdminDocsPage() {
       setEditorMode("blocks");
     };
     void initEditor();
-  }, [id, isEditorRoute, location.pathname]);
+  }, [id, isEditorRoute, location.pathname, categoryOptions.length]);
 
   function syncBlocks(next: Array<{ id: string; label: string; snippet: string }>) { setAddedBlocks(next); setEditing((p: any) => (p ? { ...p, content: next.map((x) => x.snippet).join("\n\n") } : p)); }
   function onRawContentChange(value: string) {
@@ -121,6 +203,65 @@ export default function AdminDocsPage() {
     setEditorMode("blocks");
   }
   function insertSnippet(snippet: string, label: string) { syncBlocks([...addedBlocks, { id: `${Date.now()}-${Math.random()}`, label, snippet: snippet.trim() }]); }
+  function firstAvailablePageOrder(category: string) {
+    const occupied = new Set(
+      items
+        .filter((item) => String(item?.id || "") !== String(editing?.id || ""))
+        .filter((item) => docCategory(item) === normalizeCategory(category))
+        .map(docItemOrder)
+    );
+    return orderRange(Array.from(occupied), 20).find((order) => !occupied.has(order)) || 0;
+  }
+  function firstAvailableCategoryOrder() {
+    const occupied = new Set(categoryOptions.map((category) => category.sectionOrder));
+    return orderRange(Array.from(occupied), 20).find((order) => !occupied.has(order)) || 0;
+  }
+  function handleCategorySelect(value: string) {
+    if (value === NEW_CATEGORY_VALUE) {
+      const sectionOrder = firstAvailableCategoryOrder();
+      setEditing((p: any) => p ? ({
+        ...p,
+        __categoryMode: "new",
+        category: "",
+        order: 0,
+        sidebar: { ...(p.sidebar || {}), section: "", sectionOrder, itemOrder: 0 },
+      }) : p);
+      return;
+    }
+    const category = normalizeCategory(value);
+    const option = categoryOptions.find((item) => item.name === category);
+    const itemOrder = firstAvailablePageOrder(category);
+    setEditing((p: any) => p ? ({
+      ...p,
+      __categoryMode: "existing",
+      category,
+      order: itemOrder,
+      sidebar: { ...(p.sidebar || {}), section: category, sectionOrder: Number(option?.sectionOrder || 0), itemOrder },
+    }) : p);
+  }
+  function handleNewCategoryName(value: string) {
+    const category = String(value || "").trim();
+    setEditing((p: any) => p ? ({
+      ...p,
+      category,
+      sidebar: { ...(p.sidebar || {}), section: category },
+    }) : p);
+  }
+  function handleCategoryOrderChange(value: string) {
+    const sectionOrder = Number(value || 0);
+    setEditing((p: any) => p ? ({
+      ...p,
+      sidebar: { ...(p.sidebar || {}), sectionOrder },
+    }) : p);
+  }
+  function handlePageOrderChange(value: string) {
+    const itemOrder = Number(value || 0);
+    setEditing((p: any) => p ? ({
+      ...p,
+      order: itemOrder,
+      sidebar: { ...(p.sidebar || {}), itemOrder },
+    }) : p);
+  }
   function saveToolBlock() {
     if (!activeTool) return; const label = activeTool.title;
     if (activeTool.label === "Text") return insertSnippet(toolForm.text || "Write text...", label), setActiveTool(null);
@@ -139,8 +280,20 @@ export default function AdminDocsPage() {
   async function saveDoc() {
     if (!editing) return; setSaving(true);
     try {
-      const payload = { ...editing, slug: editing.slug || slugify(editing.title), keywords: Array.isArray(editing.keywords) ? editing.keywords : String(editing.keywords || "").split(",").map((x: string) => x.trim()).filter(Boolean), sidebar: { ...(editing.sidebar || {}), section: String(editing.category || "general").trim() || "general" }, seo: { ...(editing.seo || {}), metaTitle: String(editing.title || ""), metaDescription: String(editing.description || ""), ogImage: "" } };
-      payload.order = Number.isFinite(Number(payload.order)) ? Number(payload.order) : 0;
+      const category = normalizeCategory(editing.category || editing.sidebar?.section || "general");
+      const sectionOrder = Number(editing.sidebar?.sectionOrder || 0);
+      const itemOrder = Number(editing.sidebar?.itemOrder ?? editing.order ?? 0);
+      if (occupiedPageOrders.includes(itemOrder)) {
+        toast(`Page sort order ${itemOrder} is already used in ${category}.`, "error");
+        return;
+      }
+      if (occupiedCategoryOrders.includes(sectionOrder)) {
+        toast(`Category sort order ${sectionOrder} is already used.`, "error");
+        return;
+      }
+      const payload = { ...editing, category, slug: editing.slug || slugify(editing.title), keywords: Array.isArray(editing.keywords) ? editing.keywords : String(editing.keywords || "").split(",").map((x: string) => x.trim()).filter(Boolean), sidebar: { ...(editing.sidebar || {}), section: category, sectionOrder, itemOrder }, seo: { ...(editing.seo || {}), metaTitle: String(editing.title || ""), metaDescription: String(editing.description || ""), ogImage: "" } };
+      delete payload.__categoryMode;
+      payload.order = itemOrder;
       if (editing.id) await API.admin.docsUpdate(editing.id, payload); else await API.admin.docsCreate(payload);
       toast("Doc saved", "success"); await load(); navigate(docsBasePath);
     } catch (e: any) { toast(e?.response?.data?.message || "Failed to save doc", "error"); } finally { setSaving(false); }
@@ -152,7 +305,7 @@ export default function AdminDocsPage() {
 
   return (
     <>
-      {isEditorRoute ? <EditorScreen navigate={navigate} saveDoc={saveDoc} saving={saving} editing={editing} canCreate={canCreate} canEdit={canEdit} setEditing={setEditing} slugify={slugify} TOOLBAR={TOOLBAR} setActiveTool={setActiveTool} addedBlocks={addedBlocks} syncBlocks={syncBlocks} liveContent={liveContent} editorMode={editorMode} onEditorModeChange={onEditorModeChange} rawContent={rawContent} onRawContentChange={onRawContentChange} canUseRaw={user?.role === "super_admin" || user?.role === "admin"} availableCategories={availableCategories} /> : <ListScreen query={query} setQuery={setQuery} load={load} loading={loading} navigate={navigate} docsBasePath={docsBasePath} canCreate={canCreate} error={error} filtered={filtered} openPreview={openPreview} canEdit={canEdit} canDelete={canDelete} setDeleteTarget={setDeleteTarget} brandModal={brandModal} setBrandModal={setBrandModal} brandSettings={brandSettings} setBrandSettings={setBrandSettings} uploadBrandLogo={uploadBrandLogo} brandUploading={brandUploading} brandUploadPct={brandUploadPct} saveBrandSettings={saveBrandSettings} brandSaving={brandSaving} deleteTarget={deleteTarget} confirmDelete={confirmDelete} setPreviewDoc={setPreviewDoc} previewLoading={previewLoading} previewDoc={previewDoc} />}
+      {isEditorRoute ? <EditorScreen navigate={navigate} saveDoc={saveDoc} saving={saving} editing={editing} canCreate={canCreate} canEdit={canEdit} setEditing={setEditing} slugify={slugify} TOOLBAR={TOOLBAR} setActiveTool={setActiveTool} addedBlocks={addedBlocks} syncBlocks={syncBlocks} liveContent={liveContent} editorMode={editorMode} onEditorModeChange={onEditorModeChange} rawContent={rawContent} onRawContentChange={onRawContentChange} canUseRaw={user?.role === "super_admin" || user?.role === "admin"} categoryOptions={categoryOptions} selectedCategory={selectedCategory} newCategoryValue={NEW_CATEGORY_VALUE} categoryOrderOptions={categoryOrderOptions} occupiedCategoryOrders={occupiedCategoryOrders} pageOrderOptions={pageOrderOptions} occupiedPageOrders={occupiedPageOrders} onCategorySelect={handleCategorySelect} onNewCategoryNameChange={handleNewCategoryName} onCategoryOrderChange={handleCategoryOrderChange} onPageOrderChange={handlePageOrderChange} /> : <ListScreen query={query} setQuery={setQuery} load={load} loading={loading} navigate={navigate} docsBasePath={docsBasePath} canCreate={canCreate} error={error} filtered={filtered} openPreview={openPreview} canEdit={canEdit} canDelete={canDelete} setDeleteTarget={setDeleteTarget} brandModal={brandModal} setBrandModal={setBrandModal} brandSettings={brandSettings} setBrandSettings={setBrandSettings} uploadBrandLogo={uploadBrandLogo} brandUploading={brandUploading} brandUploadPct={brandUploadPct} saveBrandSettings={saveBrandSettings} brandSaving={brandSaving} deleteTarget={deleteTarget} confirmDelete={confirmDelete} setPreviewDoc={setPreviewDoc} previewLoading={previewLoading} previewDoc={previewDoc} />}
       <Modal isOpen={!!activeTool} onClose={() => setActiveTool(null)} title={activeTool ? `Add ${activeTool.title}` : ""}>
         {activeTool ? <div className="space-y-3">{["Text", "H", "Sec", "B", "I"].includes(activeTool.label) ? <Input label="Text" value={toolForm.text} onChange={(e) => setToolForm((p: any) => ({ ...p, text: e.target.value }))} /> : null}{activeTool.label === "Link" ? <><Input label="Text" value={toolForm.text} onChange={(e) => setToolForm((p: any) => ({ ...p, text: e.target.value }))} /><Input label="URL" value={toolForm.url} onChange={(e) => setToolForm((p: any) => ({ ...p, url: e.target.value }))} /></> : null}{["Code", "JSON", "Bash", "Mermaid"].includes(activeTool.label) ? <><Input label="Language" value={toolForm.language} onChange={(e) => setToolForm((p: any) => ({ ...p, language: e.target.value }))} /><Textarea label="Code" rows={8} value={toolForm.code} onChange={(e) => setToolForm((p: any) => ({ ...p, code: e.target.value }))} /></> : null}{activeTool.label === "Resp" ? <><Input label="Response Title" value={toolForm.responseTitle} onChange={(e) => setToolForm((p: any) => ({ ...p, responseTitle: e.target.value }))} /><Input label="Status" value={toolForm.responseStatus} onChange={(e) => setToolForm((p: any) => ({ ...p, responseStatus: e.target.value }))} /><Textarea label="Response JSON" rows={8} value={toolForm.responseBody} onChange={(e) => setToolForm((p: any) => ({ ...p, responseBody: e.target.value }))} /></> : null}{activeTool.label === "Callout" ? <><Select label="Type" value={toolForm.calloutType} onChange={(e) => setToolForm((p: any) => ({ ...p, calloutType: e.target.value }))}><option value="info">info</option><option value="warning">warning</option><option value="success">success</option><option value="error">error</option></Select><Input label="Title" value={toolForm.calloutTitle} onChange={(e) => setToolForm((p: any) => ({ ...p, calloutTitle: e.target.value }))} /><Textarea label="Description" rows={5} value={toolForm.calloutDescription} onChange={(e) => setToolForm((p: any) => ({ ...p, calloutDescription: e.target.value }))} /></> : null}{activeTool.label === "Key" ? <><Input label="Title" value={toolForm.keyTitle} onChange={(e) => setToolForm((p: any) => ({ ...p, keyTitle: e.target.value }))} /><Textarea label="Description" rows={4} value={toolForm.keyDescription} onChange={(e) => setToolForm((p: any) => ({ ...p, keyDescription: e.target.value }))} /></> : null}{activeTool.label === "Step" ? <><Input label="Step Title" value={toolForm.title} onChange={(e) => setToolForm((p: any) => ({ ...p, title: e.target.value }))} /><Textarea label="Step Description" rows={3} value={toolForm.description} onChange={(e) => setToolForm((p: any) => ({ ...p, description: e.target.value }))} /><Input label="Button Text" value={toolForm.buttonText} onChange={(e) => setToolForm((p: any) => ({ ...p, buttonText: e.target.value }))} /><Input label="Button URL" value={toolForm.url} onChange={(e) => setToolForm((p: any) => ({ ...p, url: e.target.value }))} /></> : null}<div className="flex justify-end gap-2"><Button variant="ghost" type="button" onClick={() => setActiveTool(null)}>Cancel</Button><Button type="button" onClick={saveToolBlock}>Save</Button></div></div> : null}
       </Modal>

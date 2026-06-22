@@ -7,7 +7,40 @@ import { TableSkeleton } from "@pages/admin/components/AdminSkeletons";
 import { MarkdownPreview } from "./MarkdownPreview";
 
 export function EditorScreen(props: any) {
-  const { navigate, saveDoc, saving, editing, canCreate, canEdit, setEditing, slugify, TOOLBAR, setActiveTool, addedBlocks, syncBlocks, liveContent, editorMode, onEditorModeChange, rawContent, onRawContentChange, canUseRaw, availableCategories } = props;
+  const {
+    navigate,
+    saveDoc,
+    saving,
+    editing,
+    canCreate,
+    canEdit,
+    setEditing,
+    slugify,
+    TOOLBAR,
+    setActiveTool,
+    addedBlocks,
+    syncBlocks,
+    liveContent,
+    editorMode,
+    onEditorModeChange,
+    rawContent,
+    onRawContentChange,
+    canUseRaw,
+    categoryOptions,
+    selectedCategory,
+    newCategoryValue,
+    categoryOrderOptions,
+    occupiedCategoryOrders,
+    pageOrderOptions,
+    occupiedPageOrders,
+    onCategorySelect,
+    onNewCategoryNameChange,
+    onCategoryOrderChange,
+    onPageOrderChange,
+  } = props;
+  const isNewCategory = editing?.__categoryMode === "new";
+  const currentCategoryOrder = Number(editing?.sidebar?.sectionOrder || 0);
+  const currentPageOrder = Number(editing?.sidebar?.itemOrder ?? editing?.order ?? 0);
   return (
     <div className="flex h-[calc(100vh-4px)] flex-col p-2">
       <div className="mb-4 flex items-center justify-between">
@@ -22,16 +55,30 @@ export function EditorScreen(props: any) {
               <Input label="Slug" value={editing.slug} onChange={(e) => setEditing((p: any) => ({ ...p, slug: slugify(e.target.value) }))} />
               <Input label="Description" value={editing.description} onChange={(e) => setEditing((p: any) => ({ ...p, description: e.target.value }))} />
               <Input label="Keywords (comma separated)" value={Array.isArray(editing.keywords) ? editing.keywords.join(", ") : String(editing.keywords || "")} onChange={(e) => setEditing((p: any) => ({ ...p, keywords: e.target.value }))} />
-              <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
-                <div>
-                  <Input label="Category" list="docs-category-options" value={editing.category || ""} onChange={(e) => setEditing((p: any) => ({ ...p, category: e.target.value }))} />
-                  <datalist id="docs-category-options">
-                    {(Array.isArray(availableCategories) ? availableCategories : []).map((cat: string) => (
-                      <option key={cat} value={cat} />
-                    ))}
-                  </datalist>
-                </div>
-                <Input label="Sort Order" type="number" min={0} value={String(editing.order ?? 0)} onChange={(e) => setEditing((p: any) => ({ ...p, order: Number(e.target.value || 0) }))} />
+              <div className="grid grid-cols-1 gap-3 md:grid-cols-4">
+                <Select label="Category" value={isNewCategory ? newCategoryValue : selectedCategory} onChange={(e) => onCategorySelect(e.target.value)}>
+                  {(Array.isArray(categoryOptions) ? categoryOptions : []).map((cat: any) => (
+                    <option key={cat.name} value={cat.name}>{cat.name}</option>
+                  ))}
+                  <option value={newCategoryValue}>Create new category</option>
+                </Select>
+                {isNewCategory ? (
+                  <Input label="New Category" value={editing.category || ""} onChange={(e) => onNewCategoryNameChange(e.target.value)} />
+                ) : null}
+                <Select label="Category Sort" value={String(currentCategoryOrder)} onChange={(e) => onCategoryOrderChange(e.target.value)}>
+                  {(Array.isArray(categoryOrderOptions) ? categoryOrderOptions : []).map((order: number) => (
+                    <option key={order} value={order} disabled={Array.isArray(occupiedCategoryOrders) && occupiedCategoryOrders.includes(order)}>
+                      {order}{Array.isArray(occupiedCategoryOrders) && occupiedCategoryOrders.includes(order) ? " - occupied" : ""}
+                    </option>
+                  ))}
+                </Select>
+                <Select label="Page Sort" value={String(currentPageOrder)} onChange={(e) => onPageOrderChange(e.target.value)}>
+                  {(Array.isArray(pageOrderOptions) ? pageOrderOptions : []).map((order: number) => (
+                    <option key={order} value={order} disabled={Array.isArray(occupiedPageOrders) && occupiedPageOrders.includes(order)}>
+                      {order}{Array.isArray(occupiedPageOrders) && occupiedPageOrders.includes(order) ? " - occupied" : ""}
+                    </option>
+                  ))}
+                </Select>
                 <Select label="Status" value={editing.status} onChange={(e) => setEditing((p: any) => ({ ...p, status: e.target.value }))}><option value="draft">draft</option><option value="published">published</option></Select>
               </div>
               {canUseRaw ? <div className="rounded-[5px] border border-slate-200 bg-white p-2"><div className="inline-flex rounded-[5px] border border-slate-200 bg-slate-50 p-1"><Button type="button" variant={editorMode === "blocks" ? "primary" : "ghost"} className="h-8 px-3 text-xs" onClick={() => onEditorModeChange("blocks")}>Blocks</Button><Button type="button" variant={editorMode === "raw" ? "primary" : "ghost"} className="h-8 px-3 text-xs" onClick={() => onEditorModeChange("raw")}>Raw</Button></div></div> : null}
