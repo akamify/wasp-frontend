@@ -66,13 +66,14 @@ export function useAppShellNotifications(notifOpen: boolean) {
       if (!document.hidden) tick();
     };
     document.addEventListener("visibilitychange", onVisibility);
+    window.addEventListener("waspakamify:unread-update", tick);
     return () => {
       alive = false;
       window.clearInterval(timer);
       document.removeEventListener("visibilitychange", onVisibility);
+      window.removeEventListener("waspakamify:unread-update", tick);
     };
   }, [notifOpen]);
 
   return { notifications, lastReadAt, markAllRead };
 }
-

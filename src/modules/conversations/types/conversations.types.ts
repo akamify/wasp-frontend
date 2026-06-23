@@ -2,6 +2,9 @@ export type Conversation = {
   _id?: string;
   phone: string;
   lastMessageAt?: string;
+  lastMessage?: string;
+  lastMessageDirection?: "inbound" | "outbound" | null;
+  lastMessageStatus?: string | null;
   lastInboundAt?: string | null;
   lastInboundMessageAt?: string | null;
   lastCustomerMessageAt?: string | null;

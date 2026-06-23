@@ -23,6 +23,7 @@ export default function MetaConnectPage() {
   const [embeddedDebugError, setEmbeddedDebugError] = useState("");
   const [embeddedPhones, setEmbeddedPhones] = useState<Array<{ id: string; display_phone_number: string | null }>>([]);
   const [embeddedConnection, setEmbeddedConnection] = useState<any>(null);
+  const [metaHealth, setMetaHealth] = useState<any>(null);
   const authCodeRef = useRef<string | null>(null);
 
   const signupDetailsRef = useRef<{ waba_id: string | null; phone_number_id: string | null }>({
@@ -70,6 +71,7 @@ export default function MetaConnectPage() {
       ]);
       const statusRes = statusResult.status === "fulfilled" ? statusResult.value : null;
       const connectionRes = connectionResult.status === "fulfilled" ? connectionResult.value : null;
+      if (statusRes) setMetaHealth(statusRes);
 
       if (!statusRes && !connectionRes) {
         const error =
@@ -344,19 +346,16 @@ export default function MetaConnectPage() {
   const connectionStatusMessage =
     embeddedConnection?.connectionStatus === "reauthorization_required"
       ? "Meta authorization expired or was revoked. Reconnect WhatsApp to restore live phone and profile metadata."
-      : embeddedConnection?.connectionStatus === "pending_verification"
-      ? "Phone connected, verification pending"
+      : metaHealth?.businessVerificationPending
+      ? "Business verification is pending. Service-window replies can work, but business-initiated/template messaging and higher limits may require payment/business verification."
       : embeddedConnection?.connectionStatus === "pending_display_name_review"
         ? "Display name review pending"
         : embeddedConnection?.connectionStatus === "metadata_partial"
           ? "Metadata partially available from Meta"
           : null;
   const registrationWarning =
-    embeddedConnection?.connected &&
-    (["pending_verification", "metadata_partial"].includes(String(embeddedConnection?.connectionStatus || "")) ||
-      (embeddedConnection?.codeVerificationStatus &&
-        String(embeddedConnection.codeVerificationStatus).toUpperCase() !== "VERIFIED"))
-      ? "Cloud API registration may still be required before sending messages"
+    !metaHealth?.cloudApiActive && Array.isArray(metaHealth?.blockingIssues) && metaHealth.blockingIssues.length
+      ? String(metaHealth.blockingIssues[0])
       : null;
   const businessProfile = embeddedConnection?.businessProfile || {};
   const authorizationRequired =
@@ -435,6 +434,10 @@ export default function MetaConnectPage() {
           ) : null}
         </div>
         <div className="mt-3 grid gap-2 text-xs font-semibold text-slate-700 md:grid-cols-4">
+          <span>Connection: {isConnected ? "Connected" : "Not connected"}</span>
+          <span>Cloud API: {metaHealth?.cloudApiActive ? "Active" : "Not active"}</span>
+          <span>Service replies: {metaHealth?.canSendServiceMessages ? "Enabled" : "Unavailable"}</span>
+          <span>Template sending: {metaHealth?.paymentSetupRequiredForTemplates ? "Payment/business verification may be required" : "Available"}</span>
           <span>WABA: {embeddedConnection?.wabaName || "Not available yet"}</span>
           <span>Account status: {embeddedConnection?.connectionStatus || "Not available yet"}</span>
           <span>WABA ID: {embeddedConnection?.maskedWabaId || "Not available yet"}</span>

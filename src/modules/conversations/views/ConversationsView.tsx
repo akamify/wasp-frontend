@@ -40,6 +40,8 @@ export function ConversationsView() {
 
   const {
     activeConversation,
+    applyRealtimeConversation,
+    applyRealtimeUnread,
     filter,
     loadingList,
     refreshListSilently,
@@ -57,7 +59,15 @@ export function ConversationsView() {
     refreshChatSilently,
     scrollRef,
     setContactDetail,
-  } = useConversationMessages({ navigate, refreshListSilently, search, setError, urlPhone });
+  } = useConversationMessages({
+    navigate,
+    refreshListSilently,
+    search,
+    setError,
+    urlPhone,
+    applyRealtimeConversation,
+    applyRealtimeUnread,
+  });
 
   const { customerServiceWindowOpen, windowRemainingMs } = useCustomerServiceWindow(activeConversation, messages);
   const { ensureMediaUrl, mediaErrors, mediaLoading, mediaUrls, selectedImage, setSelectedImage } = useMessageActions(messages);

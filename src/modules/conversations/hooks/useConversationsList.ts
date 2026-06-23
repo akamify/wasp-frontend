@@ -41,12 +41,37 @@ export function useConversationsList(urlPhone: string, setError: (message: strin
     }
   }, [search]);
 
+  const applyRealtimeConversation = useCallback((payload: Record<string, unknown>) => {
+    const patch = ((payload.conversation as Conversation | undefined) || payload) as Conversation;
+    const phone = String(patch.phone || payload.customerPhone || "").trim();
+    if (!phone) return;
+    setItems((current) => {
+      const index = current.findIndex((item) => item.phone === phone || (patch._id && item._id === patch._id));
+      const next = [...current];
+      if (index >= 0) next[index] = { ...next[index], ...patch, phone };
+      else next.push({ ...patch, phone });
+      return next.sort((a, b) => new Date(b.lastMessageAt || 0).getTime() - new Date(a.lastMessageAt || 0).getTime());
+    });
+  }, []);
+
+  const applyRealtimeUnread = useCallback((payload: Record<string, unknown>) => {
+    const phone = String(payload.customerPhone || "").trim();
+    const conversationId = String(payload.conversationId || "").trim();
+    setItems((current) => current.map((item) =>
+      (phone && item.phone === phone) || (conversationId && item._id === conversationId)
+        ? { ...item, unreadCount: Number(payload.unreadCount || 0) }
+        : item
+    ));
+  }, []);
+
   useEffect(() => {
     void loadList();
   }, [loadList]);
 
   return {
     activeConversation,
+    applyRealtimeConversation,
+    applyRealtimeUnread,
     filter,
     loadingList,
     refreshListSilently,
@@ -56,4 +81,3 @@ export function useConversationsList(urlPhone: string, setError: (message: strin
     visibleConversations,
   };
 }
-
