@@ -3,6 +3,12 @@ export type Conversation = {
   phone: string;
   lastMessageAt?: string;
   lastInboundAt?: string | null;
+  lastInboundMessageAt?: string | null;
+  lastCustomerMessageAt?: string | null;
+  customerServiceWindowExpiresAt?: string | null;
+  serviceWindowStatus?: "open" | "closed";
+  canReply?: boolean;
+  remainingWindowMs?: number;
   lastMessagePreview?: string;
   unreadCount?: number;
   contact?: { name?: string; company?: string } | null;
