@@ -44,7 +44,7 @@ export function ConversationRow({ item, activePhone, onSelect }: Props) {
               {item.lastMessageAt ? new Date(item.lastMessageAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) : ""}
             </span>
             {Number(item.unreadCount || 0) > 0 && (
-              <span className="w-5 h-5 bg-brand-600 text-white text-[10px] font-black rounded-[5px] flex items-center justify-center ring-2 ring-white">
+              <span className="min-w-5 h-5 px-1 bg-brand-600 text-white text-[10px] font-black rounded-[5px] flex items-center justify-center ring-2 ring-white">
                 {Number(item.unreadCount || 0)}
               </span>
             )}
@@ -55,4 +55,3 @@ export function ConversationRow({ item, activePhone, onSelect }: Props) {
     </button>
   );
 }
-

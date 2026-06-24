@@ -92,7 +92,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const sidebarProfileMenuRef = useRef<HTMLDivElement | null>(null);
   const [profileMenuOpen, setProfileMenuOpen] = useState(false);
   const [sidebarProfileMenuOpen, setSidebarProfileMenuOpen] = useState(false);
-  const { notifications, lastReadAt, markAllRead } = useAppShellNotifications(notifOpen);
+  const { notifications, lastReadAt, markAllRead, totalUnread } = useAppShellNotifications(notifOpen);
   const { requiredPlan, featureNeedsPro, isPlanAccessBlocked, isAccessCheckPending } = useAppShellBilling(location.pathname);
   const shellTitle = getShellTitle(location.pathname, NAV_ITEMS as any);
   const pageTitle = `${shellTitle} | ${resolvedBrandName}`;
@@ -146,7 +146,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       ) : null}
 
       {/* Mobile Bottom Tab Bar */}
-      {!hideMobileBars ? <MobileBottomTabs /> : null}
+      {!hideMobileBars ? <MobileBottomTabs unreadCount={totalUnread} /> : null}
 
       {/* Mobile Drawer */}
       <MobileDrawer
@@ -156,6 +156,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         workspace={workspace}
         brandName={resolvedBrandName}
         navigate={navigate}
+        unreadCount={totalUnread}
       />
 
       <DesktopSidebar
@@ -170,6 +171,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         navigate={navigate}
         desktopNavRef={desktopNavRef}
         sidebarProfileMenuRef={sidebarProfileMenuRef}
+        unreadCount={totalUnread}
       />
 
       {/* Main Content Area */}

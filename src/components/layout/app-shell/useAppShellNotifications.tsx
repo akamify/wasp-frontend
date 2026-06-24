@@ -7,6 +7,7 @@ import type { AppNotification } from "@components/layout/app-shell/types";
 export function useAppShellNotifications(notifOpen: boolean) {
   const [notifications, setNotifications] = useState<AppNotification[]>([]);
   const [lastReadAt, setLastReadAt] = useState(0);
+  const [totalUnread, setTotalUnread] = useState(0);
   const markAllRead = useCallback(() => setLastReadAt(Date.now()), []);
 
   useEffect(() => {
@@ -23,6 +24,7 @@ export function useAppShellNotifications(notifOpen: boolean) {
         const logs = logsRes.status === "fulfilled" && Array.isArray(logsRes.value?.items) ? logsRes.value.items : [];
         const wallet = walletRes.status === "fulfilled" ? walletRes.value?.wallet : null;
         const unreadCount = conversations.reduce((total: number, item: any) => total + Number(item?.unreadCount || 0), 0);
+        setTotalUnread(unreadCount);
         const latestConversation = conversations[0] || null;
         const latestLog = logs[0] || null;
         const latestFailed = logs.find((item: any) => String(item?.status || "").toLowerCase() === "failed") || null;
@@ -66,14 +68,19 @@ export function useAppShellNotifications(notifOpen: boolean) {
       if (!document.hidden) tick();
     };
     document.addEventListener("visibilitychange", onVisibility);
-    window.addEventListener("waspakamify:unread-update", tick);
+    const onUnreadUpdate = (event: Event) => {
+      const value = Number((event as CustomEvent<{ totalUnread?: number }>).detail?.totalUnread);
+      if (Number.isFinite(value)) setTotalUnread(value);
+      tick();
+    };
+    window.addEventListener("waspakamify:unread-update", onUnreadUpdate);
     return () => {
       alive = false;
       window.clearInterval(timer);
       document.removeEventListener("visibilitychange", onVisibility);
-      window.removeEventListener("waspakamify:unread-update", tick);
+      window.removeEventListener("waspakamify:unread-update", onUnreadUpdate);
     };
   }, [notifOpen]);
 
-  return { notifications, lastReadAt, markAllRead };
+  return { notifications, lastReadAt, markAllRead, totalUnread };
 }

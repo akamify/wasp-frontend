@@ -257,18 +257,19 @@ export function useConversationMessages({ navigate, refreshListSilently, search,
       source.addEventListener("message:new", ((event: MessageEvent) => {
         try {
           const payload = parse(event);
-          console.info("[realtime] event message:new");
+          console.info("[realtime] message:new received");
           const message = payload?.message as ChatMessage | undefined;
           const customerPhone = String(payload?.customerPhone || message?.phone || "");
           const activePhone = String(realtimeContextRef.current.urlPhone || "");
-          realtimeContextRef.current.applyRealtimeConversation({
-            phone: customerPhone,
-            lastMessage: message?.displayText || message?.previewText || message?.text || "",
-            lastMessagePreview: message?.displayText || message?.previewText || message?.text || "",
-            lastMessageAt: message?.createdAt,
-            lastMessageDirection: message?.direction,
-            lastMessageStatus: message?.status,
-          } as Conversation);
+          realtimeContextRef.current.applyRealtimeConversation(payload?.conversation || ({
+              phone: customerPhone,
+              lastMessage: message?.displayText || message?.previewText || message?.text || "",
+              lastMessagePreview: message?.displayText || message?.previewText || message?.text || "",
+              lastMessageAt: message?.createdAt,
+              lastMessageDirection: message?.direction,
+              lastMessageStatus: message?.status,
+              unreadCount: Number(payload?.unreadCount || 0),
+            } as Conversation));
           if (message && customerPhone === activePhone) {
             setMessages((current) => current.some((item) => item._id === message._id || (message.whatsappMessageId && item.whatsappMessageId === message.whatsappMessageId))
               ? current
@@ -294,6 +295,7 @@ export function useConversationMessages({ navigate, refreshListSilently, search,
       source.addEventListener("unread:update", ((event: MessageEvent) => {
         try {
           const payload = parse(event);
+          console.info("[realtime] unread:update received");
           window.dispatchEvent(new CustomEvent("waspakamify:unread-update", { detail: payload }));
           if (String(payload?.customerPhone || "") !== String(realtimeContextRef.current.urlPhone || "")) {
             realtimeContextRef.current.applyRealtimeUnread(payload);
