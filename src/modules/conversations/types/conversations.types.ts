@@ -24,6 +24,11 @@ export type ChatMessage = {
   status: string;
   whatsappMessageId?: string | null;
   replyToMessageId?: string | null;
+  contextWamid?: string | null;
+  replyToPreview?: string | null;
+  replyToType?: string | null;
+  interactiveReplyId?: string | null;
+  interactiveReplyTitle?: string | null;
   createdAt: string;
   text?: string;
   displayText?: string | null;

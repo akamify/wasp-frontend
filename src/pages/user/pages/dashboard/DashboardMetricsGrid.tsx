@@ -5,15 +5,15 @@ import { cn } from "@shared/utils/cn";
 export function DashboardMetricsGrid({ analytics, sent, delivered, read, contactsUp, contactsGrowth, monthlyUp, monthly }: any) {
   const stats = [
     { label: "Contacts", value: Number(analytics?.counts?.contacts || 0), icon: Users, trendDir: contactsUp ? "up" : "down", trendValue: `${Math.abs(Number(contactsGrowth.pct || 0)).toFixed(1)}%`, color: "text-blue-600", bg: "bg-blue-50" },
-    { label: "Messages", value: sent, icon: MessageCircle, trendDir: monthlyUp ? "up" : "down", trendValue: `${Math.abs(Number(monthly.pct || 0)).toFixed(1)}%`, color: "text-[#ea580c]/60", bg: "bg-[#fff7ed]/50" },
-    { label: "Sent", value: sent, icon: Send, trend: "Total", color: "text-[#0891b2]/60", bg: "bg-[#ecfeff]/50" },
+    { label: "Template Messages", value: Number(analytics?.overview?.messages || 0), icon: MessageCircle, trendDir: monthlyUp ? "up" : "down", trendValue: `${Math.abs(Number(monthly.pct || 0)).toFixed(1)}%`, color: "text-[#ea580c]/60", bg: "bg-[#fff7ed]/50" },
+    { label: "Template Sent", value: sent, icon: Send, trend: "Total", color: "text-[#0891b2]/60", bg: "bg-[#ecfeff]/50" },
     { label: "Delivered", value: delivered, icon: TrendingUp, trend: Number(analytics?.rates?.deliveryRatePct || 0) >= 50 ? "Good" : "Low", color: "text-[#7c3aed]/60", bg: "bg-[#f5f3ff]/50" },
     { label: "Read", value: read, icon: Eye, trend: Number(analytics?.rates?.readRatePct || 0) >= 20 ? "Good" : "Low", color: "text-green-600", bg: "bg-green-50" },
-    { label: "Failed", value: Number(analytics?.overview?.failed || 0), icon: XCircle, trend: "Watch", color: "text-red-600", bg: "bg-red-50" },
+    { label: "Template Failed", value: Number(analytics?.overview?.failed || 0), icon: XCircle, trend: "Watch", color: "text-red-600", bg: "bg-red-50" },
     { label: "Total Campaigns", value: Number(analytics?.counts?.campaigns || 0), icon: Megaphone, trend: "Live", color: "text-brand-600", bg: "bg-brand-50" },
     { label: "Templates", value: Number(analytics?.counts?.templates || 0), icon: FileText, trend: "Library", color: "text-brand-600", bg: "bg-brand-50" },
     { label: "Engagement", value: sent > 0 ? `${Math.round((read / sent) * 100)}%` : "0%", icon: MessageSquare, trend: Number(analytics?.rates?.readRatePct || 0) >= 20 ? "High" : "Low", color: "text-purple-600", bg: "bg-purple-50" },
-    { label: "Today's Messages", value: Number(analytics?.today?.sent || 0), icon: Calendar, trend: "Today", color: "text-brand-600", bg: "bg-brand-50" },
+    { label: "Today's Templates", value: Number(analytics?.today?.sent || 0), icon: Calendar, trend: "Today", color: "text-brand-600", bg: "bg-brand-50" },
   ];
 
   return (

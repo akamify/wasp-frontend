@@ -31,8 +31,43 @@ export function useConversationMessages({ navigate, refreshListSilently, search,
   const [loadingChat, setLoadingChat] = useState(false);
   const [contactDetail, setContactDetail] = useState<any | null>(null);
   const [realtimeConnected, setRealtimeConnected] = useState(false);
+  const [activeChatPendingUnreadCount, setActiveChatPendingUnreadCount] = useState(0);
+  const [firstUnreadMessageId, setFirstUnreadMessageId] = useState<string | null>(null);
   const isInitialLoad = useRef(true);
+  const isNearBottomRef = useRef(true);
   const scrollRef = useRef<HTMLDivElement>(null);
+
+  const scrollToBottom = useCallback((behavior: ScrollBehavior = "smooth") => {
+    const panel = scrollRef.current;
+    if (panel) panel.scrollTo({ top: panel.scrollHeight, behavior });
+  }, []);
+
+  const onMessagesScroll = useCallback(() => {
+    const panel = scrollRef.current;
+    if (!panel) return;
+    isNearBottomRef.current = panel.scrollHeight - panel.scrollTop - panel.clientHeight < 80;
+  }, []);
+
+  const scrollToMessage = useCallback((messageId: string) => {
+    const panel = scrollRef.current;
+    if (!panel || !messageId) return false;
+    const target = Array.from(panel.querySelectorAll<HTMLElement>("[data-message-id]"))
+      .find((element) => element.dataset.messageId === messageId || element.dataset.whatsappMessageId === messageId);
+    if (!target) return false;
+    target.scrollIntoView({ behavior: "smooth", block: "center" });
+    return true;
+  }, []);
+
+  const scrollToPendingUnread = useCallback(() => {
+    if (!firstUnreadMessageId || !scrollToMessage(firstUnreadMessageId)) scrollToBottom("smooth");
+    if (urlPhone) {
+      applyRealtimeUnread({ customerPhone: urlPhone, unreadCount: 0 });
+      void API.conversations.read(urlPhone);
+    }
+    isNearBottomRef.current = true;
+    setActiveChatPendingUnreadCount(0);
+    setFirstUnreadMessageId(null);
+  }, [applyRealtimeUnread, firstUnreadMessageId, scrollToBottom, scrollToMessage, urlPhone]);
 
   const mergeStatusSnapshot = useCallback((snapshot: any) => {
     const waId = String(snapshot?.waId || snapshot?.message?.whatsappMessageId || "").trim();
@@ -182,6 +217,7 @@ export function useConversationMessages({ navigate, refreshListSilently, search,
     applyRealtimeMessageUpdate,
     refreshListSilently,
     refreshChatSilently,
+    scrollToBottom,
   });
   useEffect(() => {
     realtimeContextRef.current = {
@@ -191,13 +227,17 @@ export function useConversationMessages({ navigate, refreshListSilently, search,
       applyRealtimeMessageUpdate,
       refreshListSilently,
       refreshChatSilently,
+      scrollToBottom,
     };
-  }, [urlPhone, applyRealtimeConversation, applyRealtimeUnread, applyRealtimeMessageUpdate, refreshListSilently, refreshChatSilently]);
+  }, [urlPhone, applyRealtimeConversation, applyRealtimeUnread, applyRealtimeMessageUpdate, refreshListSilently, refreshChatSilently, scrollToBottom]);
 
   useInboundMessageTone(messages, urlPhone, loadingChat, navigate);
 
   useEffect(() => {
     if (urlPhone) {
+      isNearBottomRef.current = true;
+      setActiveChatPendingUnreadCount(0);
+      setFirstUnreadMessageId(null);
       void loadChat(urlPhone);
       isInitialLoad.current = true;
     } else {
@@ -275,8 +315,14 @@ export function useConversationMessages({ navigate, refreshListSilently, search,
               ? current
               : [...current, message]);
             if (message.direction === "inbound") {
-              realtimeContextRef.current.applyRealtimeUnread({ customerPhone, conversationId: payload?.conversationId, unreadCount: 0 });
-              void API.conversations.read(customerPhone);
+              if (isNearBottomRef.current) {
+                realtimeContextRef.current.applyRealtimeUnread({ customerPhone, conversationId: payload?.conversationId, unreadCount: 0 });
+                window.requestAnimationFrame(() => realtimeContextRef.current.scrollToBottom("smooth"));
+                void API.conversations.read(customerPhone);
+              } else {
+                setActiveChatPendingUnreadCount((count) => count + 1);
+                setFirstUnreadMessageId((current) => current || String(message._id || message.whatsappMessageId || ""));
+              }
             }
           }
         } catch {
@@ -324,14 +370,28 @@ export function useConversationMessages({ navigate, refreshListSilently, search,
 
   useEffect(() => {
     if (!loadingChat && messages.length > 0) {
-      const behavior = isInitialLoad.current ? "instant" : "smooth";
-      const scroll = () => scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: behavior as any });
+      if (!isInitialLoad.current && (!isNearBottomRef.current || activeChatPendingUnreadCount > 0)) return;
+      const behavior: ScrollBehavior = isInitialLoad.current ? "auto" : "smooth";
+      const scroll = () => scrollToBottom(behavior);
       scroll();
       const timer = setTimeout(scroll, 150);
       if (isInitialLoad.current) isInitialLoad.current = false;
       return () => clearTimeout(timer);
     }
-  }, [messages.length, loadingChat]);
+  }, [activeChatPendingUnreadCount, messages.length, loadingChat, scrollToBottom]);
 
-  return { contactDetail, loadChat, loadingChat, messages, refreshChatSilently, scrollRef, setContactDetail };
+  return {
+    activeChatPendingUnreadCount,
+    contactDetail,
+    firstUnreadMessageId,
+    loadChat,
+    loadingChat,
+    messages,
+    onMessagesScroll,
+    refreshChatSilently,
+    scrollRef,
+    scrollToMessage,
+    scrollToPendingUnread,
+    setContactDetail,
+  };
 }

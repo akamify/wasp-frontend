@@ -8,15 +8,17 @@ type Props = {
   loading: boolean;
   messages: ChatMessage[];
   panelRef: RefObject<HTMLDivElement | null>;
+  onScroll?: () => void;
   renderMessageContent: (message: ChatMessage) => ReactNode;
   renderMetaBillingGuidance: (error: any) => ReactNode;
   statusMark: (message: ChatMessage) => ReactNode;
 };
 
-export function MessagesPanel({ getErrorMessage, loading, messages, panelRef, renderMessageContent, renderMetaBillingGuidance, statusMark }: Props) {
+export function MessagesPanel({ getErrorMessage, loading, messages, onScroll, panelRef, renderMessageContent, renderMetaBillingGuidance, statusMark }: Props) {
   return (
     <div
       ref={panelRef}
+      onScroll={onScroll}
       className="relative flex-1 min-h-0 min-w-0 overflow-y-auto overflow-x-hidden overscroll-contain px-3 md:px-6 py-4 space-y-3 custom-scrollbar bg-[linear-gradient(180deg,#eefaf4_0%,#f7fbf9_100%)]"
       style={{
         backgroundImage:
@@ -30,15 +32,16 @@ export function MessagesPanel({ getErrorMessage, loading, messages, panelRef, re
         <ChatMessagesSkeleton count={10} />
       ) : (
         messages.map((message) => (
-          <MessageBubble
-            key={message._id}
-            message={message}
-            getErrorMessage={getErrorMessage}
-            renderMetaBillingGuidance={renderMetaBillingGuidance}
-            statusMark={statusMark}
-          >
-            {renderMessageContent(message)}
-          </MessageBubble>
+          <div key={message._id} data-message-id={message._id} data-whatsapp-message-id={message.whatsappMessageId || undefined}>
+            <MessageBubble
+              message={message}
+              getErrorMessage={getErrorMessage}
+              renderMetaBillingGuidance={renderMetaBillingGuidance}
+              statusMark={statusMark}
+            >
+              {renderMessageContent(message)}
+            </MessageBubble>
+          </div>
         ))
       )}
     </div>

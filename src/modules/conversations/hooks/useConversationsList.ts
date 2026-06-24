@@ -77,12 +77,18 @@ export function useConversationsList(urlPhone: string, setError: (message: strin
     const patch = ((payload.conversation as Conversation | undefined) || payload) as Conversation;
     const phone = String(patch.phone || payload.customerPhone || "").trim();
     if (!phone) return;
+    const hasUnreadCount = patch.unreadCount !== undefined && patch.unreadCount !== null;
     realtimePatchedAtRef.current.set(phone, Date.now());
     setItems((current) => {
       const index = current.findIndex((item) => item.phone === phone || (patch._id && item._id === patch._id));
       const next = [...current];
-      if (index >= 0) next[index] = { ...next[index], ...patch, phone };
-      else next.push({ ...patch, phone });
+      if (index >= 0) next[index] = {
+        ...next[index],
+        ...patch,
+        phone,
+        unreadCount: hasUnreadCount ? Number(patch.unreadCount || 0) : Number(next[index].unreadCount || 0),
+      };
+      else next.push({ ...patch, phone, unreadCount: Number(patch.unreadCount || 0) });
       return next.sort((a, b) => new Date(b.lastMessageAt || 0).getTime() - new Date(a.lastMessageAt || 0).getTime());
     });
   }, []);

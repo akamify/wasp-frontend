@@ -436,10 +436,6 @@ export default function MetaConnectPage() {
         <div className="mt-3 grid gap-2 text-xs font-semibold text-slate-700 md:grid-cols-4">
           <span>Connection: {isConnected ? "Connected" : "Not connected"}</span>
           <span>Cloud API: {metaHealth?.cloudApiActive ? "Active" : "Not active"}</span>
-          <span>Service replies: {metaHealth?.canSendServiceMessages ? "Enabled" : "Unavailable"}</span>
-          <span>Template credits: Charged from WaspAkamify wallet</span>
-          <span>Meta billing: Platform billing hub</span>
-          <span>User Meta billing setup: Not required</span>
           <span>WABA: {embeddedConnection?.wabaName || "Not available yet"}</span>
           <span>Account status: {embeddedConnection?.connectionStatus || "Not available yet"}</span>
           <span>WABA ID: {embeddedConnection?.maskedWabaId || "Not available yet"}</span>
@@ -457,11 +453,6 @@ export default function MetaConnectPage() {
         </div>
         {connectionStatusMessage ? <div className="mt-3 text-xs font-bold text-amber-700">{connectionStatusMessage}</div> : null}
         {registrationWarning ? <div className="mt-1 text-xs font-semibold text-amber-700">{registrationWarning}</div> : null}
-        {metaHealth?.cloudApiActive ? (
-          <div className="mt-2 text-xs font-semibold text-slate-600">
-            Meta charges WaspAkamify's configured billing hub. WaspAkamify separately deducts template credits from the user's internal wallet. Service-window replies are not charged to the user's wallet.
-          </div>
-        ) : null}
         {businessProfile.about || businessProfile.description || businessProfile.address || businessProfile.email || businessProfile.vertical || businessProfile.profilePictureUrl || businessProfile.websites?.length ? (
           <div className="mt-4 border-t border-slate-100 pt-3">
             <div className="text-[11px] font-black uppercase tracking-widest text-slate-400">Business Profile</div>
