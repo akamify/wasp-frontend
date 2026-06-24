@@ -2,6 +2,7 @@ import { ArrowLeft, Edit3, EllipsisVertical, Info, Phone, Trash2, Video } from "
 import type { RefObject } from "react";
 import type { Conversation } from "@modules/conversations/types/conversations.types";
 import { cn } from "@shared/utils/cn";
+import { ContactAvatar } from "@modules/conversations/components/ContactAvatar";
 
 type Props = {
   activeConversation: Conversation | null;
@@ -38,9 +39,7 @@ export function ChatHeader({
         <button type="button" onClick={onBack} className="md:hidden -ml-2 p-2.5 hover:bg-slate-50 text-slate-500 hover:text-slate-900 rounded-[5px] transition-all" aria-label="Back to conversations">
           <ArrowLeft size={20} />
         </button>
-        <div className="hidden md:block h-10 w-10 shrink-0 rounded-[8px] bg-slate-100 overflow-hidden shadow-sm">
-          <img src={`https://ui-avatars.com/api/?name=${activeConversation?.contact?.name || phone}&background=random`} alt="" className="h-full w-full object-cover" />
-        </div>
+        <ContactAvatar className="hidden h-10 w-10 rounded-[8px] text-sm md:flex" name={contactDetail?.name || activeConversation?.contact?.name} phone={phone} />
         <div className="min-w-0 flex-1">
           <button type="button" className="font-black text-sm text-slate-900 leading-none mb-1 truncate hover:text-brand-600 transition-colors" onClick={() => { if (waLink) window.open(waLink, "_blank", "noopener,noreferrer"); }} title="Open in WhatsApp">
             {contactDetail?.name || activeConversation?.contact?.name || `+${phone}`}

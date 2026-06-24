@@ -347,7 +347,7 @@ export default function MetaConnectPage() {
     embeddedConnection?.connectionStatus === "reauthorization_required"
       ? "Meta authorization expired or was revoked. Reconnect WhatsApp to restore live phone and profile metadata."
       : metaHealth?.businessVerificationPending
-      ? "Business verification is pending. Service-window replies can work, but business-initiated/template messaging and higher limits may require payment/business verification."
+      ? "Business verification is pending. This may affect messaging eligibility or limits; user Meta billing setup is not required."
       : embeddedConnection?.connectionStatus === "pending_display_name_review"
         ? "Display name review pending"
         : embeddedConnection?.connectionStatus === "metadata_partial"
@@ -437,7 +437,9 @@ export default function MetaConnectPage() {
           <span>Connection: {isConnected ? "Connected" : "Not connected"}</span>
           <span>Cloud API: {metaHealth?.cloudApiActive ? "Active" : "Not active"}</span>
           <span>Service replies: {metaHealth?.canSendServiceMessages ? "Enabled" : "Unavailable"}</span>
-          <span>Template sending: {metaHealth?.paymentSetupRequiredForTemplates ? "Payment/business verification may be required" : "Available"}</span>
+          <span>Template credits: Charged from WaspAkamify wallet</span>
+          <span>Meta billing: Platform billing hub</span>
+          <span>User Meta billing setup: Not required</span>
           <span>WABA: {embeddedConnection?.wabaName || "Not available yet"}</span>
           <span>Account status: {embeddedConnection?.connectionStatus || "Not available yet"}</span>
           <span>WABA ID: {embeddedConnection?.maskedWabaId || "Not available yet"}</span>
@@ -455,6 +457,11 @@ export default function MetaConnectPage() {
         </div>
         {connectionStatusMessage ? <div className="mt-3 text-xs font-bold text-amber-700">{connectionStatusMessage}</div> : null}
         {registrationWarning ? <div className="mt-1 text-xs font-semibold text-amber-700">{registrationWarning}</div> : null}
+        {metaHealth?.cloudApiActive ? (
+          <div className="mt-2 text-xs font-semibold text-slate-600">
+            Meta charges WaspAkamify's configured billing hub. WaspAkamify separately deducts template credits from the user's internal wallet. Service-window replies are not charged to the user's wallet.
+          </div>
+        ) : null}
         {businessProfile.about || businessProfile.description || businessProfile.address || businessProfile.email || businessProfile.vertical || businessProfile.profilePictureUrl || businessProfile.websites?.length ? (
           <div className="mt-4 border-t border-slate-100 pt-3">
             <div className="text-[11px] font-black uppercase tracking-widest text-slate-400">Business Profile</div>

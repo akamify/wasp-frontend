@@ -1,5 +1,6 @@
 import { cn } from "@shared/utils/cn";
 import type { Conversation } from "@modules/conversations/types/conversations.types";
+import { ContactAvatar } from "@modules/conversations/components/ContactAvatar";
 
 type Props = {
   item: Conversation;
@@ -19,13 +20,7 @@ export function ConversationRow({ item, activePhone, onSelect }: Props) {
         isActive ? "bg-brand-50/50" : "hover:bg-slate-50"
       )}
     >
-      <div className="h-12 w-12 rounded-[8px] bg-slate-100 shrink-0 overflow-hidden shadow-sm relative">
-        <img
-          src={`https://ui-avatars.com/api/?name=${item.contact?.name || item.phone}&background=random&size=128`}
-          alt=""
-          className="h-full w-full object-cover"
-        />
-      </div>
+      <ContactAvatar className="h-12 w-12 rounded-[8px] text-lg" name={item.contact?.name} phone={item.phone} />
       <div className="min-w-0 flex-1 text-left">
         <div className="mb-0.5 flex min-w-0 items-start justify-between gap-3">
           <div className="flex min-w-0 flex-1 flex-col items-start gap-1">
