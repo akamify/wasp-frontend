@@ -36,7 +36,7 @@ export function UserApiKeyCard({ item, onDisable, onEnable, onSetChatAccess, bus
         </div>
         <div className="rounded-[5px] bg-slate-50 px-3 py-2 flex items-center justify-between gap-3">
           <div>
-            <div className="font-black text-slate-700">externalChat</div>
+            <div className="font-black text-slate-700">External Chat API</div>
             <div className="text-slate-500">{chatAccess ? "enabled" : "disabled"}</div>
           </div>
           {onSetChatAccess ? (

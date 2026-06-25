@@ -9,10 +9,9 @@ type Props = {
   onSetChatAccess?: (keyId: string, enabled: boolean) => void;
   hideKeys?: boolean;
   onDisableMany?: (keyIds: string[]) => void;
-  onSyncChatAccess?: (enabled: boolean) => void;
 };
 
-export function ApiKeyListSection({ apiKeys, busy, onDisable, onEnable, onSetChatAccess, hideKeys, onDisableMany, onSyncChatAccess }: Props) {
+export function ApiKeyListSection({ apiKeys, busy, onDisable, onEnable, onSetChatAccess, hideKeys, onDisableMany }: Props) {
   const activeKeys = apiKeys.filter((key) => !key.revoked && key.status !== "disabled");
   if (hideKeys) {
     return (
@@ -37,31 +36,13 @@ export function ApiKeyListSection({ apiKeys, busy, onDisable, onEnable, onSetCha
 
   return (
     <div className="space-y-2">
-      <div className="flex items-center justify-between gap-3 rounded-[5px] border border-slate-200 p-3">
+      <div className="rounded-[5px] border border-slate-200 p-3">
         <div>
           <div className="text-xs font-black text-slate-800">API Keys</div>
-          <div className="mt-1 text-[11px] text-slate-500">Enable External Chat per key, or sync all active keys.</div>
-        </div>
-        {onSyncChatAccess ? (
-          <div className="flex items-center gap-2">
-            <button
-              type="button"
-              disabled={busy || !activeKeys.length}
-              onClick={() => onSyncChatAccess(true)}
-              className="h-8 rounded-[5px] border border-slate-200 bg-white px-3 text-[10px] font-black uppercase tracking-widest text-slate-700 disabled:opacity-50"
-            >
-              Enable all chat
-            </button>
-            <button
-              type="button"
-              disabled={busy || !activeKeys.length}
-              onClick={() => onSyncChatAccess(false)}
-              className="h-8 rounded-[5px] border border-slate-200 bg-white px-3 text-[10px] font-black uppercase tracking-widest text-slate-700 disabled:opacity-50"
-            >
-              Disable all chat
-            </button>
+          <div className="mt-1 text-[11px] text-slate-500">
+            Manage each key separately. Workspace External Chat must also be enabled above.
           </div>
-        ) : null}
+        </div>
       </div>
       {apiKeys.map((k) => (
         <UserApiKeyCard

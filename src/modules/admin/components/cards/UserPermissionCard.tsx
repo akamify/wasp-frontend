@@ -31,7 +31,7 @@ export function UserPermissionCard({
         readOnly={readOnly}
       />
       <PermissionRow
-        label="Chat API Access (Workspace)"
+        label="External Chat API Access"
         enabled={chatAccess}
         busy={busy}
         onEnable={onEnableChat}

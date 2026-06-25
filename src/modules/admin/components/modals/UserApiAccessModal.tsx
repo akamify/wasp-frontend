@@ -3,7 +3,6 @@ import { API } from "@api/api";
 import { Modal } from "@components/ui/Modal";
 import { UserSecuritySection } from "@modules/admin/components/sections/UserSecuritySection";
 import { UserCrmCard } from "@modules/admin/components/cards/UserCrmCard";
-import { UserExternalApiCard } from "@modules/admin/components/cards/UserExternalApiCard";
 import { UserPermissionCard } from "@modules/admin/components/cards/UserPermissionCard";
 import { ApiKeyListSection } from "@modules/admin/components/sections/ApiKeyListSection";
 import { useWorkspaceExternalChatFeature } from "@modules/admin/hooks/useWorkspaceExternalChatFeature";
@@ -20,7 +19,6 @@ type Props = {
   onDisableKeys?: (keyIds: string[]) => void;
   onEnableKey: (keyId: string) => void;
   onSetKeyChatAccess?: (keyId: string, enabled: boolean) => void;
-  onSyncKeyChatAccess?: (enabled: boolean) => void;
   onEnableCampaignSend: () => void;
   onDisableCampaignSend: () => void;
   onEnableChat: () => void | Promise<void>;
@@ -41,7 +39,6 @@ export function UserApiAccessModal(props: Props) {
     onDisableKeys,
     onEnableKey,
     onSetKeyChatAccess,
-    onSyncKeyChatAccess,
     onEnableCampaignSend,
     onDisableCampaignSend,
     onEnableChat,
@@ -76,17 +73,6 @@ export function UserApiAccessModal(props: Props) {
     };
   }, [isOpen, workspaceId]);
 
-  async function toggleExternalChat(next: boolean) {
-    if (!workspaceId) return;
-    if (!next) {
-      const ok = window.confirm(
-        "Disabling External Chat API will immediately block all external CRM inbox access for this workspace. Existing API keys will remain, but chat endpoints will be denied."
-      );
-      if (!ok) return;
-    }
-    await workspaceFeature.toggle(next);
-  }
-
   async function toggleWorkspaceChat(next: boolean) {
     if (next) {
       await onEnableChat();
@@ -110,15 +96,10 @@ export function UserApiAccessModal(props: Props) {
           onEnableChat={() => toggleWorkspaceChat(true)}
           onDisableChat={() => toggleWorkspaceChat(false)}
         />
-        {workspaceId ? (
-          <UserExternalApiCard
-            workspaceId={workspaceId}
-            busy={busy}
-            enabled={workspaceFeature.enabled}
-            loading={workspaceFeature.busy}
-            error={workspaceFeature.error}
-            onToggle={toggleExternalChat}
-          />
+        {workspaceFeature.error ? (
+          <div className="rounded-[5px] border border-rose-100 bg-rose-50 p-2 text-[11px] font-bold text-rose-700">
+            {workspaceFeature.error}
+          </div>
         ) : null}
         {workspaceId ? <UserCrmCard workspaceId={workspaceId} busy={busy} /> : null}
         <ApiKeyListSection
@@ -128,7 +109,6 @@ export function UserApiAccessModal(props: Props) {
           onDisableMany={onDisableKeys}
           onEnable={onEnableKey}
           onSetChatAccess={onSetKeyChatAccess}
-          onSyncChatAccess={onSyncKeyChatAccess}
         />
       </div>
     </Modal>

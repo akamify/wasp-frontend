@@ -94,6 +94,12 @@ export default function AdminUsersPage() {
 
   async function toggleChatAccess(enabled: boolean) {
     if (!selectedWorkspaceId || !selectedId) return;
+    const ok = window.confirm(
+      enabled
+        ? "Enable External Chat API for this workspace and all active API keys?"
+        : "Disable External Chat API for this workspace and all active API keys? External chat endpoints will stop working."
+    );
+    if (!ok) return;
     try {
       if (enabled) {
         await chatAccess.enableChat(selectedWorkspaceId);
@@ -208,6 +214,7 @@ export default function AdminUsersPage() {
         onDisableKeys={disableApiKeys}
         onEnableKey={async (keyId) => {
           if (!selectedId) return;
+          if (!window.confirm("Enable this API key?")) return;
           try {
             await apiActions.enableKey(selectedId, keyId);
             await refreshAccess();
@@ -218,20 +225,16 @@ export default function AdminUsersPage() {
         }}
         onSetKeyChatAccess={async (keyId, enabled) => {
           if (!selectedId) return;
+          const ok = window.confirm(
+            enabled
+              ? "Enable External Chat API for this API key?"
+              : "Disable External Chat API for this API key?"
+          );
+          if (!ok) return;
           try {
             await apiActions.setChatAccess(selectedId, keyId, enabled);
             await refreshAccess();
             toast(`API key external chat ${enabled ? "enabled" : "disabled"}`, "success");
-          } catch (e: any) {
-            toast(e?.response?.data?.message || "Failed", "error");
-          }
-        }}
-        onSyncKeyChatAccess={async (enabled) => {
-          if (!selectedId) return;
-          try {
-            await apiActions.syncChatAccess(selectedId, enabled);
-            await refreshAccess();
-            toast(`All active API keys external chat ${enabled ? "enabled" : "disabled"}`, "success");
           } catch (e: any) {
             toast(e?.response?.data?.message || "Failed", "error");
           }
