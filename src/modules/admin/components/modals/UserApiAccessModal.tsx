@@ -19,10 +19,12 @@ type Props = {
   onDisableKey: (keyId: string) => void;
   onDisableKeys?: (keyIds: string[]) => void;
   onEnableKey: (keyId: string) => void;
+  onSetKeyChatAccess?: (keyId: string, enabled: boolean) => void;
+  onSyncKeyChatAccess?: (enabled: boolean) => void;
   onEnableCampaignSend: () => void;
   onDisableCampaignSend: () => void;
-  onEnableChat: () => void;
-  onDisableChat: () => void;
+  onEnableChat: () => void | Promise<void>;
+  onDisableChat: () => void | Promise<void>;
   onBlock: () => void;
   onUnblock: () => void;
 };
@@ -38,6 +40,8 @@ export function UserApiAccessModal(props: Props) {
     onDisableKey,
     onDisableKeys,
     onEnableKey,
+    onSetKeyChatAccess,
+    onSyncKeyChatAccess,
     onEnableCampaignSend,
     onDisableCampaignSend,
     onEnableChat,
@@ -83,6 +87,16 @@ export function UserApiAccessModal(props: Props) {
     await workspaceFeature.toggle(next);
   }
 
+  async function toggleWorkspaceChat(next: boolean) {
+    if (next) {
+      await onEnableChat();
+      workspaceFeature.setEnabled(true);
+      return;
+    }
+    await onDisableChat();
+    workspaceFeature.setEnabled(false);
+  }
+
   return (
     <Modal isOpen={isOpen} onClose={onClose} title="Workspace Access">
       <div className="space-y-3">
@@ -93,8 +107,8 @@ export function UserApiAccessModal(props: Props) {
           busy={busy || workspaceFeature.busy}
           onEnableCampaignSend={onEnableCampaignSend}
           onDisableCampaignSend={onDisableCampaignSend}
-          onEnableChat={onEnableChat}
-          onDisableChat={onDisableChat}
+          onEnableChat={() => toggleWorkspaceChat(true)}
+          onDisableChat={() => toggleWorkspaceChat(false)}
         />
         {workspaceId ? (
           <UserExternalApiCard
@@ -107,7 +121,15 @@ export function UserApiAccessModal(props: Props) {
           />
         ) : null}
         {workspaceId ? <UserCrmCard workspaceId={workspaceId} busy={busy} /> : null}
-       
+        <ApiKeyListSection
+          apiKeys={data?.apiKeys || []}
+          busy={busy}
+          onDisable={onDisableKey}
+          onDisableMany={onDisableKeys}
+          onEnable={onEnableKey}
+          onSetChatAccess={onSetKeyChatAccess}
+          onSyncChatAccess={onSyncKeyChatAccess}
+        />
       </div>
     </Modal>
   );

@@ -93,10 +93,17 @@ export default function AdminUsersPage() {
   }
 
   async function toggleChatAccess(enabled: boolean) {
-    if (!selectedWorkspaceId) return;
+    if (!selectedWorkspaceId || !selectedId) return;
     try {
-      if (enabled) await chatAccess.enableChat(selectedWorkspaceId);
-      else await chatAccess.disableChat(selectedWorkspaceId);
+      if (enabled) {
+        await chatAccess.enableChat(selectedWorkspaceId);
+        await API.admin.enableChatAccess(selectedId);
+        await apiActions.syncChatAccess(selectedId, true);
+      } else {
+        await apiActions.syncChatAccess(selectedId, false);
+        await API.admin.disableChatAccess(selectedId);
+        await chatAccess.disableChat(selectedWorkspaceId);
+      }
       await refreshAccess();
       toast(`Chat access ${enabled ? "enabled" : "disabled"}`, "success");
     } catch (e: any) {
@@ -205,6 +212,26 @@ export default function AdminUsersPage() {
             await apiActions.enableKey(selectedId, keyId);
             await refreshAccess();
             toast("API key enabled", "success");
+          } catch (e: any) {
+            toast(e?.response?.data?.message || "Failed", "error");
+          }
+        }}
+        onSetKeyChatAccess={async (keyId, enabled) => {
+          if (!selectedId) return;
+          try {
+            await apiActions.setChatAccess(selectedId, keyId, enabled);
+            await refreshAccess();
+            toast(`API key external chat ${enabled ? "enabled" : "disabled"}`, "success");
+          } catch (e: any) {
+            toast(e?.response?.data?.message || "Failed", "error");
+          }
+        }}
+        onSyncKeyChatAccess={async (enabled) => {
+          if (!selectedId) return;
+          try {
+            await apiActions.syncChatAccess(selectedId, enabled);
+            await refreshAccess();
+            toast(`All active API keys external chat ${enabled ? "enabled" : "disabled"}`, "success");
           } catch (e: any) {
             toast(e?.response?.data?.message || "Failed", "error");
           }

@@ -5,10 +5,13 @@ type Props = {
   item: UserApiKey;
   onDisable: (keyId: string) => void;
   onEnable: (keyId: string) => void;
+  onSetChatAccess?: (keyId: string, enabled: boolean) => void;
   busy?: boolean;
 };
 
-export function UserApiKeyCard({ item, onDisable, onEnable, busy }: Props) {
+export function UserApiKeyCard({ item, onDisable, onEnable, onSetChatAccess, busy }: Props) {
+  const active = !item.revoked && item.status !== "disabled";
+  const chatAccess = Boolean(item.permissions?.chatAccess);
   return (
     <div className="rounded-[5px] border border-slate-200 p-3">
       <div className="flex items-center justify-between">
@@ -17,7 +20,7 @@ export function UserApiKeyCard({ item, onDisable, onEnable, busy }: Props) {
           <div className="text-[11px] text-slate-500">Created: {item.createdAt ? new Date(item.createdAt).toLocaleString() : "N/A"}</div>
           <div className="text-[11px] text-slate-500">Last used: {item.lastUsedAt ? new Date(item.lastUsedAt).toLocaleString() : "N/A"}</div>
         </div>
-        {item.revoked ? (
+        {!active ? (
           <Button disabled={busy} onClick={() => onEnable(item.id)} className="h-8 px-3">Enable Key</Button>
         ) : (
           <Button disabled={busy} variant="outline" onClick={() => onDisable(item.id)} className="h-8 px-3">Disable Key</Button>
@@ -30,6 +33,22 @@ export function UserApiKeyCard({ item, onDisable, onEnable, busy }: Props) {
             <div className="font-black text-slate-700">campaignSend</div>
             <div className="text-slate-500">{item.permissions?.campaignSend ? "enabled" : "disabled"}</div>
           </div>
+        </div>
+        <div className="rounded-[5px] bg-slate-50 px-3 py-2 flex items-center justify-between gap-3">
+          <div>
+            <div className="font-black text-slate-700">externalChat</div>
+            <div className="text-slate-500">{chatAccess ? "enabled" : "disabled"}</div>
+          </div>
+          {onSetChatAccess ? (
+            <button
+              type="button"
+              disabled={busy || !active}
+              onClick={() => onSetChatAccess(item.id, !chatAccess)}
+              className="h-8 rounded-[5px] border border-slate-200 bg-white px-3 text-[10px] font-black uppercase tracking-widest text-slate-700 disabled:opacity-50"
+            >
+              {chatAccess ? "Disable" : "Enable"}
+            </button>
+          ) : null}
         </div>
       </div>
     </div>
