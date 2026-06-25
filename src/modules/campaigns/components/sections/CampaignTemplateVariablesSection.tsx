@@ -155,7 +155,7 @@ function BodyVariables({ bodyVars, onBodyVarsChange, attributeDefinitions, bodyV
       <div className="text-[11px] font-semibold uppercase tracking-wider text-ink-800/55">Body variables</div>
       <div className="mt-1 text-xs text-ink-800/65">These values fill Body {"{{1}}"}, {"{{2}}"}, ... in your message.</div>
       <div className="mt-3 rounded-[5px] border border-amber-200 bg-amber-50 px-3 py-2 text-[11px] font-semibold text-amber-900/80">
-        Map placeholders to static values, contact fields, or saved attributes. Recipients missing values without fallback will be skipped.
+        Map placeholders to static values, contact fields, or saved attributes. Recipients missing required values will be skipped.
       </div>
       <div className="mt-3 grid gap-3">
         {bodyVars.map((value, index) => {
@@ -164,13 +164,12 @@ function BodyVariables({ bodyVars, onBodyVarsChange, attributeDefinitions, bodyV
             ? `Static: ${String(mapping.value ?? value) || "Not set"}`
             : mapping.sourceKey ? `$${mapping.sourceKey}` : "Source not selected";
           return <div key={index} className="rounded-[10px] border border-slate-100 bg-slate-50/40 p-4">
-            <div className="mb-3 flex items-center justify-between gap-3"><span className="font-mono text-sm font-black text-slate-900">{`{{${index + 1}}}`}</span><span className="truncate text-xs font-semibold text-slate-500">{sourceSummary}{mapping.fallback ? `, fallback: ${mapping.fallback}` : ""}</span></div>
-            <div className="grid gap-3 md:grid-cols-3">
+            <div className="mb-3 flex items-center justify-between gap-3"><span className="font-mono text-sm font-black text-slate-900">{`{{${index + 1}}}`}</span><span className="truncate text-xs font-semibold text-slate-500">{sourceSummary}</span></div>
+            <div className="grid gap-3 md:grid-cols-2">
               <label className="block"><span className="ml-1 text-xs font-bold uppercase tracking-wider text-slate-500">Source type</span><select className="mt-1.5 w-full rounded-[5px] border border-slate-200 bg-white px-3 py-2.5 text-sm" value={mapping.sourceType} onChange={(event) => onBodyVariableMappingsChange(bodyVariableMappings.map((item, itemIndex) => itemIndex === index ? { ...item, sourceType: event.target.value as CampaignVariableMapping["sourceType"], sourceKey: "", value: "" } : item))}><option value="static">Static value</option><option value="contact_field">Contact field</option><option value="contact_attribute">Contact attribute</option></select></label>
               {mapping.sourceType === "static" ? <Input label="Static value" value={String(mapping.value ?? value)} onChange={(event) => { onBodyVarsChange(bodyVars.map((item, itemIndex) => itemIndex === index ? event.target.value : item)); onBodyVariableMappingsChange(bodyVariableMappings.map((item, itemIndex) => itemIndex === index ? { ...item, value: event.target.value } : item)); }} /> : <label className="block"><span className="ml-1 text-xs font-bold uppercase tracking-wider text-slate-500">Source</span><select className="mt-1.5 w-full rounded-[5px] border border-slate-200 bg-white px-3 py-2.5 text-sm" value={mapping.sourceKey || ""} onChange={(event) => onBodyVariableMappingsChange(bodyVariableMappings.map((item, itemIndex) => itemIndex === index ? { ...item, sourceKey: event.target.value } : item))}><option value="">Select source</option>{mapping.sourceType === "contact_field" ? contactFields.map((field) => <option key={field} value={field}>${field}</option>) : attributeDefinitions.map((definition) => <option key={definition.key} value={definition.key}>{definition.label} (${`$${definition.key}`})</option>)}</select></label>}
-              <Input label="Fallback value" value={mapping.fallback || ""} placeholder="Used if selected value is missing" onChange={(event) => onBodyVariableMappingsChange(bodyVariableMappings.map((item, itemIndex) => itemIndex === index ? { ...item, fallback: event.target.value } : item))} />
             </div>
-            <div className="mt-3 text-[11px] font-semibold text-slate-500">If a value is missing and no fallback is set, that recipient will be skipped.</div>
+            <div className="mt-3 text-[11px] font-semibold text-slate-500">If a mapped value is missing, that recipient will be skipped.</div>
           </div>;
         })}
       </div>

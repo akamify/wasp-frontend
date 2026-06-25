@@ -23,7 +23,7 @@ export function createCampaignFormActions(ctx: any) {
     if (summary.bodyVariableCount > 0) {
       for (let i = 0; i < summary.bodyVariableCount; i += 1) {
         const mapping = bodyVariableMappings[i];
-        if (!mapping || (mapping.sourceType === "static" && !String(mapping.value || bodyVars[i] || "").trim() && !String(mapping.fallback || "").trim()) || (mapping.sourceType !== "static" && !mapping.sourceKey && !String(mapping.fallback || "").trim())) missing.push(`Body {{${i + 1}}}`);
+        if (!mapping || (mapping.sourceType === "static" && !String(mapping.value || bodyVars[i] || "").trim()) || (mapping.sourceType !== "static" && !mapping.sourceKey)) missing.push(`Body {{${i + 1}}}`);
       }
     }
     if (buttonsNeedingValue.length > 0) {
@@ -173,7 +173,20 @@ export function createCampaignFormActions(ctx: any) {
       if (audienceMode === "manual" && !recipients.length) throw new Error("Select at least one valid recipient");
       if (type === "broadcast") { const missing = missingBroadcastInputs(); if (missing.length) throw new Error(`Broadcast template needs values for: ${missing.slice(0, 6).join(", ")}${missing.length > 6 ? "..." : ""} (Use CSV for per-contact variables)`); }
       if (estimate?.insufficientBalance) throw new Error(`Insufficient balance: need ${formatCurrency(estimate.estimatedCredits, estimate.currency)}, available ${formatCurrency(estimate.walletBalance, estimate.currency)}`);
-      await API.campaigns.create({ name: campaignName, type, templateId, schedule, audience, recipients, templateVariableMappings: bodyVariableMappings.map((mapping: any, index: number) => ({ ...mapping, position: index + 1, value: mapping.sourceType === "static" ? String(mapping.value ?? bodyVars[index] ?? "") : undefined })) });
+      await API.campaigns.create({
+        name: campaignName,
+        type,
+        templateId,
+        schedule,
+        audience,
+        recipients,
+        templateVariableMappings: bodyVariableMappings.map((mapping: any, index: number) => ({
+          position: index + 1,
+          sourceType: mapping.sourceType,
+          sourceKey: mapping.sourceKey,
+          value: mapping.sourceType === "static" ? String(mapping.value ?? bodyVars[index] ?? "") : undefined,
+        })),
+      });
       toast("Campaign created successfully", "success"); onSuccess(); onClose();
     } catch (error) { toast(getErrorMessage(error, "Failed to create campaign"), "error"); } finally { setBusy(false); }
   };

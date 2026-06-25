@@ -87,7 +87,6 @@ export function useCampaignForm(props: CampaignCreateModalProps) {
       position: index + 1,
       sourceType: "static",
       value: bodyVars[index] || "",
-      fallback: "",
     }));
   }, [summary.bodyVariableCount]);
 

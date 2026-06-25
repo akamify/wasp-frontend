@@ -325,6 +325,7 @@ export const API: {
     get(id: string): Promise<any>;
     lookupByPhone(phone: string): Promise<any>;
     create(payload: any): Promise<any>;
+    importCsv(payload: any): Promise<any>;
     update(id: string, payload: any): Promise<any>;
     patchAttributes(id: string, attributes: Record<string, unknown>): Promise<any>;
     replaceAttributes(id: string, attributes: Record<string, unknown>, preserveLegacy?: boolean): Promise<any>;
