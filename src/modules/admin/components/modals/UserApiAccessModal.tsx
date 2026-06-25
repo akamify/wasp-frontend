@@ -87,15 +87,6 @@ export function UserApiAccessModal(props: Props) {
     <Modal isOpen={isOpen} onClose={onClose} title="Workspace Access">
       <div className="space-y-3">
         <UserSecuritySection blocked={Boolean(data?.accountBlocked)} busy={busy} onBlock={onBlock} onUnblock={onUnblock} />
-        <UserPermissionCard
-          campaignSend={campaignSendEnabled}
-          chatAccess={chatAccessEnabled}
-          busy={busy || workspaceFeature.busy}
-          onEnableCampaignSend={onEnableCampaignSend}
-          onDisableCampaignSend={onDisableCampaignSend}
-          onEnableChat={() => toggleWorkspaceChat(true)}
-          onDisableChat={() => toggleWorkspaceChat(false)}
-        />
         {workspaceFeature.error ? (
           <div className="rounded-[5px] border border-rose-100 bg-rose-50 p-2 text-[11px] font-bold text-rose-700">
             {workspaceFeature.error}

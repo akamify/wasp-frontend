@@ -36,14 +36,6 @@ export function ApiKeyListSection({ apiKeys, busy, onDisable, onEnable, onSetCha
 
   return (
     <div className="space-y-2">
-      <div className="rounded-[5px] border border-slate-200 p-3">
-        <div>
-          <div className="text-xs font-black text-slate-800">API Keys</div>
-          <div className="mt-1 text-[11px] text-slate-500">
-            Manage each key separately. Workspace External Chat must also be enabled above.
-          </div>
-        </div>
-      </div>
       {apiKeys.map((k) => (
         <UserApiKeyCard
           key={k.id}
