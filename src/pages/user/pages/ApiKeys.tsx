@@ -247,7 +247,6 @@ export default function ApiKeysPage() {
           </Card>
 
           <DeveloperQuickStart baseUrl={API.baseUrl} />
-          <ExternalChatWebhooksPanel />
         </div>
       )}
     </div>
