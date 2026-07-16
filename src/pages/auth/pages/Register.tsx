@@ -90,7 +90,7 @@ export default function RegisterPage() {
   return (
     <div className="flex flex-row items-center lg:items-start justify-center min-h-screen bg-gray-50 gap-12">
       <Seo
-        title="Create account | WaspAkamify"
+        title="Create account | AiWizChat"
         description="Create your workspace and start sending WhatsApp campaigns, managing contacts, and automating conversations."
         robots="noindex,nofollow"
       />

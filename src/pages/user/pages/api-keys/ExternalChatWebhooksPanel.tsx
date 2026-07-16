@@ -153,7 +153,7 @@ export function ExternalChatWebhooksPanel() {
       ) : null}
 
       <div className="grid gap-3 lg:grid-cols-[1fr_auto]">
-        <Input label="Endpoint URL" value={url} onChange={(e) => setUrl(e.target.value)} placeholder="https://crm.example.com/webhooks/waspakamify" />
+        <Input label="Endpoint URL" value={url} onChange={(e) => setUrl(e.target.value)} placeholder="https://crm.example.com/webhooks/aiwizchat" />
         <Button type="button" disabled={busy} onClick={createWebhook} className="self-end">
           Add Endpoint
         </Button>

@@ -1,4 +1,5 @@
 import { useEffect } from "react";
+import { BRAND_NAME } from "@shared/config/brand";
 
 type SeoProps = {
     title?: string;
@@ -50,7 +51,7 @@ export function Seo({
     ogType = "website",
     ogImage,
     ogImageAlt,
-    ogSiteName = "WaspAkamify",
+    ogSiteName = BRAND_NAME,
     twitterCard = "summary_large_image",
 }: SeoProps) {
     useEffect(() => {

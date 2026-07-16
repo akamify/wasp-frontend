@@ -44,7 +44,7 @@ export function PublicCmsPage({ slug }: { slug: string }) {
 
   const hero = page?.data?.hero || {};
   const body = String(page?.data?.bodyMarkdown || "").trim();
-  const pageTitle = `${String(hero?.title || page?.title || slug || "Page").trim()} | WaspAkamify`;
+  const pageTitle = `${String(hero?.title || page?.title || slug || "Page").trim()} | AiWizChat`;
   const pageDescription = String(hero?.subtitle || page?.excerpt || body.slice(0, 155) || "").trim() || undefined;
 
   return (
@@ -73,4 +73,3 @@ export function PublicCmsPage({ slug }: { slug: string }) {
     </PublicShell>
   );
 }
-

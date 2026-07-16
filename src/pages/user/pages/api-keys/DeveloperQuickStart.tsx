@@ -64,7 +64,7 @@ new EventSource("${baseUrl}/external/chat/realtime/stream?token=STREAM_TOKEN")`}
             ))}
           </div>
           <pre className="mt-3 whitespace-pre-wrap rounded-[5px] bg-white p-3 text-xs text-slate-700">{`signature = hmac_sha256(secret, timestamp + "." + raw_body)
-header: X-Waspakamify-Signature: sha256=<signature>`}</pre>
+header: X-AiWizChat-Signature: sha256=<signature>`}</pre>
         </div>
       </div>
     </Card>

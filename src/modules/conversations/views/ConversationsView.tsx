@@ -78,9 +78,9 @@ export function ConversationsView() {
   const { ensureMediaUrl, mediaErrors, mediaLoading, mediaUrls, selectedImage, setSelectedImage } = useMessageActions(messages);
   const conversationName = String(contactDetail?.name || activeConversation?.contact?.name || urlPhone).trim();
   const pageTitle = urlPhone
-    ? `${conversationName} | Inbox | WaspAkamify`
-    : `Inbox | WaspAkamify`;
-  const pageDescription = `WhatsApp conversation with ${conversationName}. Reply, manage messages, and track delivery status in WaspAkamify.`;
+    ? `${conversationName} | Inbox | AiWizChat`
+    : `Inbox | AiWizChat`;
+  const pageDescription = `WhatsApp conversation with ${conversationName}. Reply, manage messages, and track delivery status in AiWizChat.`;
   const { definitions, editBusy, editForm, editOpen, openEdit, saveEdit, setEditForm, setEditOpen } = useContactEditor({
     contactDetail,
     refreshListSilently,

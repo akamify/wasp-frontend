@@ -21,7 +21,7 @@ export default function LandingPage() {
   return (
     <div ref={containerRef} className="landing-root overflow-x-hidden">
       <Seo
-        title="WaspAkamify | WhatsApp Marketing Platform"
+        title="AiWizChat | WhatsApp Marketing Platform"
         description="Automate WhatsApp campaigns, manage conversations, and scale customer engagement from one workspace."
         canonical={window.location.origin + "/"}
       />

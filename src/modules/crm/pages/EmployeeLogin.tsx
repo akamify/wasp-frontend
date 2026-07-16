@@ -38,7 +38,7 @@ export default function EmployeeLoginPage() {
 
   return (
     <div className="flex flex-row items-center justify-center min-h-dvh gap-20">
-      <Seo title="Employee sign in | WaspAkamify" description="Employee CRM login for assigned workspace access." robots="noindex,nofollow" />
+      <Seo title="Employee sign in | AiWizChat" description="Employee CRM login for assigned workspace access." robots="noindex,nofollow" />
       <div className="hidden lg:sticky lg:top-5 lg:self-start lg:block">
         <EmployeeIllustration />
       </div>

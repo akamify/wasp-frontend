@@ -257,7 +257,7 @@ export default function WalletPage() {
               <h3 className="font-black tracking-tight text-ink-900">Billing Info</h3>
             </div>
             <p className="text-xs font-semibold text-ink-800/60 leading-relaxed">
-              WaspAkamify credits are charged for accepted template messages according to category. Meta billing is separate and handled by the connected WhatsApp billing hub; service-window replies are not wallet charged.
+              AiWizChat credits are charged for accepted template messages according to category. Meta billing is separate and handled by the connected WhatsApp billing hub; service-window replies are not wallet charged.
             </p>
           </Card>
 

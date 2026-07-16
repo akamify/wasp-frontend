@@ -290,7 +290,10 @@ export default function MetaConnectPage() {
     } catch (e: any) {
       const backendMessage = e?.response?.data?.message || "";
       const backendDetail = e?.response?.data?.details?.message || "";
-      const message = /could not be matched to the selected waba/i.test(backendMessage)
+      const rawMessage = backendMessage || e?.message || "";
+      const message = /jssdk unknown host domain/i.test(rawMessage)
+        ? `Meta blocked Embedded Signup because ${window.location.hostname} is not added in your Meta app's JavaScript SDK allowed domains. Add this domain in Meta App Dashboard > Facebook Login for Business > Settings > Allowed Domains for JavaScript SDK, then try again.`
+        : /could not be matched to the selected waba/i.test(backendMessage)
         ? "Meta returned a phone number that does not match the selected WABA. Please reconnect WhatsApp. If this repeats, contact support."
         : backendMessage || e?.message || "Could not exchange Meta code";
       setEmbeddedError(message);

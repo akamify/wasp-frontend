@@ -46,7 +46,7 @@ export default function RaiseTicketPage() {
   return (
     <PublicShell>
       <Seo
-        title="Raise a Ticket | WaspAkamify"
+        title="Raise a Ticket | AiWizChat"
         description="Contact support by raising a ticket with your details, subject, and issue description."
         canonical={window.location.href}
       />
@@ -77,4 +77,3 @@ export default function RaiseTicketPage() {
     </PublicShell>
   );
 }
-
