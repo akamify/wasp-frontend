@@ -143,6 +143,9 @@ export function ExternalChatWebhooksPanel() {
       {secret ? (
         <div className="mb-4 rounded-[5px] border border-emerald-100 bg-emerald-50 p-3">
           <div className="mb-2 text-[10px] font-black uppercase tracking-widest text-emerald-700">Secret shown once</div>
+          <p className="mb-2 text-[11px] font-bold leading-5 text-emerald-800">
+            Required: save this secret in your CRM and verify every webhook using the X-AiWizChat-Signature header. It cannot be shown again after you leave this screen.
+          </p>
           <div className="flex items-center gap-2">
             <code className="min-w-0 flex-1 break-all text-xs font-black text-emerald-800">{secret}</code>
             <Button type="button" size="icon" variant="outline" onClick={copySecret} title="Copy secret">
@@ -151,6 +154,10 @@ export function ExternalChatWebhooksPanel() {
           </div>
         </div>
       ) : null}
+
+      <div className="mb-4 rounded-[5px] border border-amber-100 bg-amber-50 p-3 text-[12px] font-semibold leading-5 text-amber-900">
+        Webhook signature verification is required for production inbox integrations. AiWizChat signs the exact JSON body with HMAC-SHA256 using the secret shown when the endpoint is created or rotated.
+      </div>
 
       <div className="grid gap-3 lg:grid-cols-[1fr_auto]">
         <Input label="Endpoint URL" value={url} onChange={(e) => setUrl(e.target.value)} placeholder="https://crm.example.com/webhooks/aiwizchat" />

@@ -56,6 +56,9 @@ new EventSource("${baseUrl}/external/chat/realtime/stream?token=STREAM_TOKEN")`}
 
         <div className="rounded-[5px] border border-slate-100 bg-slate-50 p-3">
           <div className="text-[10px] font-black uppercase tracking-widest text-slate-500">Webhook Events</div>
+          <p className="mt-1 text-xs font-semibold leading-5 text-slate-500">
+            Save the webhook secret shown once during endpoint creation. Your receiver must verify X-AiWizChat-Signature before processing inbox events.
+          </p>
           <div className="mt-2 flex flex-wrap gap-2">
             {events.map((event) => (
               <span key={event} className="rounded-[5px] border border-slate-200 bg-white px-2.5 py-1 text-[11px] font-bold text-slate-600">
@@ -63,8 +66,8 @@ new EventSource("${baseUrl}/external/chat/realtime/stream?token=STREAM_TOKEN")`}
               </span>
             ))}
           </div>
-          <pre className="mt-3 whitespace-pre-wrap rounded-[5px] bg-white p-3 text-xs text-slate-700">{`signature = hmac_sha256(secret, timestamp + "." + raw_body)
-header: X-AiWizChat-Signature: sha256=<signature>`}</pre>
+          <pre className="mt-3 whitespace-pre-wrap rounded-[5px] bg-white p-3 text-xs text-slate-700">{`const expected = "sha256=" + hmac_sha256(secret, timestamp + "." + rawBody)
+verify expected === req.header("X-AiWizChat-Signature")`}</pre>
         </div>
       </div>
     </Card>
