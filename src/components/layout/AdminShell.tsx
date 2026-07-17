@@ -27,7 +27,6 @@ import { API } from "@api/api";
 import { Button } from "@components/ui/Button";
 import { cn } from "@shared/utils/cn";
 import { useAuth } from "@shared/providers/AuthContext";
-import { Seo } from "@shared/components/Seo";
 
 const SIDEBAR_WIDTH_OPEN = 260;
 const SIDEBAR_WIDTH_COLLAPSED = 80;
@@ -58,40 +57,6 @@ const NAV_ITEMS: AdminShellNavItem[] = [
   { to: "/admin/career-applications", label: "Careers", kicker: "hiring", icon: Briefcase },
   { to: "/admin/profile", label: "Profile", kicker: "account", icon: User },
 ];
-
-const ADMIN_ROUTE_TITLES: Record<string, string> = {
-  "/admin/docs-feedbacks": "Docs Feedbacks",
-  "/super-admin/docs-feedbacks": "Docs Feedbacks",
-};
-
-function titleFromPathSegment(segment: string) {
-  return segment
-    .split("-")
-    .filter(Boolean)
-    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
-    .join(" ");
-}
-
-function getAdminShellTitle(pathname: string, navItems: AdminShellNavItem[]) {
-  const normalizedPath = String(pathname || "").replace(/\/+$/, "") || "/";
-  if (ADMIN_ROUTE_TITLES[normalizedPath]) return ADMIN_ROUTE_TITLES[normalizedPath];
-
-  const exactMatch = navItems.find((item) => item.to === normalizedPath);
-  if (exactMatch) return exactMatch.label;
-
-  const prefixMatch = [...navItems]
-    .sort((a, b) => b.to.length - a.to.length)
-    .find((item) => normalizedPath.startsWith(`${item.to}/`));
-  if (prefixMatch) {
-    const leaf = normalizedPath.split("/").filter(Boolean).at(-1) || "";
-    if (leaf === "create") return `Create ${prefixMatch.label}`;
-    if (leaf === "edit") return `Edit ${prefixMatch.label}`;
-    return prefixMatch.label;
-  }
-
-  const leaf = normalizedPath.split("/").filter(Boolean).at(-1) || "Admin";
-  return titleFromPathSegment(leaf) || "Admin";
-}
 
 function SideLink({ item, isCollapsed }: { item: AdminShellNavItem; isCollapsed: boolean }) {
   const { icon: Icon, label, kicker, to } = item;
@@ -133,7 +98,7 @@ function SideLink({ item, isCollapsed }: { item: AdminShellNavItem; isCollapsed:
 export function AdminShell({
   children,
   navItems = NAV_ITEMS,
-  storageKey = "waspakamify_admin_sidebar_collapsed",
+  storageKey = "aiwizchat_admin_sidebar_collapsed",
   brandSuffix = " Admin",
 }: {
   children: React.ReactNode;
@@ -178,8 +143,6 @@ export function AdminShell({
   }, []);
 
   const resolvedBrandName = runtimeBrandName || BRAND_NAME;
-  const shellTitle = getAdminShellTitle(location.pathname, navItems);
-  const pageTitle = `${shellTitle} | ${resolvedBrandName}${brandSuffix}`;
 
   const visibleNavItems = React.useMemo(() => {
     if (String(user?.role || "") !== "admin") return navItems;
@@ -191,7 +154,6 @@ export function AdminShell({
 
   return (
     <div className="relative min-h-screen bg-[#F8FAFC] font-sans text-slate-900 antialiased overflow-x-hidden">
-      <Seo title={pageTitle} description={`${shellTitle} inside ${resolvedBrandName}${brandSuffix}.`} robots="noindex,nofollow" />
       {/* Background Polish */}
       <div className="fixed inset-0 z-0 pointer-events-none">
         <div className="absolute top-0 left-0 w-full h-full bg-[radial-gradient(circle_at_0%_0%,rgba(6,183,126,0.05),transparent_50%)]" />

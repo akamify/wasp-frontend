@@ -45,10 +45,6 @@ export function toDraftPayload(
   handoverNodeId: string | null,
   runtimeSettings: FlowRuntimeSettings
 ): FlowDraftPayload {
-  const nodeIds = new Set(nodes.map((node) => node.id));
-  const safeFallbackNodeId = fallbackNodeId && nodeIds.has(fallbackNodeId) ? fallbackNodeId : null;
-  const safeHandoverNodeId = handoverNodeId && nodeIds.has(handoverNodeId) ? handoverNodeId : null;
-
   return {
     trigger,
     nodes: nodes.map((node) => ({
@@ -63,8 +59,8 @@ export function toDraftPayload(
       target: edge.target,
       sourceHandle: edge.sourceHandle || undefined,
     })),
-    fallbackNodeId: safeFallbackNodeId,
-    handoverNodeId: safeHandoverNodeId,
+    fallbackNodeId,
+    handoverNodeId,
     runtimeSettings,
   };
 }

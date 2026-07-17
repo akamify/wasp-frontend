@@ -4,7 +4,7 @@ import { NavLink, useLocation } from "react-router-dom";
 import { cn } from "@shared/utils/cn";
 import { MOBILE_TABS } from "./constants";
 
-export function MobileBottomTabs({ unreadCount = 0 }: { unreadCount?: number }) {
+export function MobileBottomTabs() {
   const location = useLocation();
   return (
     <nav className="lg:hidden fixed bottom-0 left-0 right-0 z-[200] bg-white/95 backdrop-blur-xl border-t border-slate-200 safe-area-bottom">
@@ -15,7 +15,6 @@ export function MobileBottomTabs({ unreadCount = 0 }: { unreadCount?: number }) 
             <NavLink key={tab.to} to={tab.to} end={tab.end} className="flex flex-col items-center justify-center flex-1 gap-0.5 relative transition-colors">
               {isActive ? <motion.div layoutId="mobile-tab-indicator" className="absolute top-0 left-1/2 -translate-x-1/2 w-8 h-[3px] bg-brand-600 rounded-b-full" transition={{ type: "spring", stiffness: 400, damping: 30 }} /> : null}
               <tab.icon size={20} className={cn("transition-colors", isActive ? "text-brand-600" : "text-slate-400")} strokeWidth={isActive ? 2.5 : 1.8} />
-              {tab.to === "/app/conversations" && unreadCount > 0 ? <span className="absolute right-[28%] top-1.5 min-w-4 h-4 px-1 rounded-[5px] bg-rose-500 text-white text-[9px] font-black flex items-center justify-center">{unreadCount}</span> : null}
               <span className={cn("text-[10px] font-semibold leading-none tracking-tight", isActive ? "text-brand-600 font-bold" : "text-slate-400")}>{tab.label}</span>
             </NavLink>
           );

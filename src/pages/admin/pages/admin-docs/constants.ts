@@ -4,18 +4,29 @@ export const EMPTY_DOC = {
   slug: "",
   description: "",
   content: "",
+  contentBlocks: [] as any[],
+  tags: [] as string[],
   keywords: [] as string[],
+  audience: [] as string[],
   category: "general",
-  order: 0,
+  order: 1,
   status: "draft",
-  sidebar: { section: "", sectionOrder: 0, itemOrder: 0 },
+  readingTime: 0,
+  hero: { title: "", subtitle: "", icon: "BookOpen", imageUrl: "" },
+  sidebar: { section: "", sectionOrder: 1, itemOrder: 1 },
   seo: { metaTitle: "", metaDescription: "", ogImage: "", noIndex: false },
+  relatedArticleSlugs: [] as string[],
+  videoMeta: { url: "", thumbnail: "", duration: "" },
+  isPopular: false,
+  isFeatured: false,
 };
 
 export const TOOLBAR = [
   { label: "Text", title: "Text Block" },
   { label: "H", title: "Heading" },
   { label: "Sec", title: "Section Heading" },
+  { label: "List", title: "List Block" },
+  { label: "Table", title: "Table Block" },
   { label: "B", title: "Bold" },
   { label: "I", title: "Italic" },
   { label: "Link", title: "Link" },
@@ -27,6 +38,9 @@ export const TOOLBAR = [
   { label: "Key", title: "Key Capability" },
   { label: "Mermaid", title: "Mermaid Diagram" },
   { label: "Step", title: "Step Card" },
+  { label: "Image", title: "Image Block" },
+  { label: "Video", title: "Video Block" },
+  { label: "API", title: "API Endpoint" },
 ] as const;
 
 export function slugify(value: string) {
@@ -42,11 +56,14 @@ export function detectBlockLabel(snippet: string) {
   if (!s) return "Text Block";
   if (/^:::step-card/i.test(s)) return "Step Card";
   if (/^:::callout/i.test(s)) return "Callout Block";
+  if (/^\|.+\|/.test(s)) return "Table Block";
+  if (/^- /.test(s)) return "List Block";
   if (/^\*\s+\*\*.+\*\*\s*:/.test(s)) return "Key Capability";
   if (/^####\s+.*\n```json/i.test(s)) return "Response Block";
   if (/^```mermaid/i.test(s)) return "Mermaid Diagram";
   if (/^```bash/i.test(s)) return "Bash Command";
   if (/^```json/i.test(s)) return "API Response";
+  if (/^!\[/.test(s)) return "Image Block";
   if (/^```/.test(s)) return "Code Block";
   if (/^###\s+/.test(s)) return "Section Heading";
   if (/^#\s+/.test(s)) return "Heading";

@@ -1,4 +1,4 @@
-import { BriefcaseBusiness, FileSearch, FileText, History, Key, LayoutDashboard, Link2, ListFilter, MessageSquare, Send, Terminal, Users, Wallet, Workflow, Zap } from "lucide-react";
+import { Bot, BriefcaseBusiness, CreditCard, FileSearch, FileText, History, Key, LayoutDashboard, Link2, ListFilter, MessageSquare, Send, Terminal, Users, Wallet, Workflow, Zap } from "lucide-react";
 
 export const NAV_ITEMS = [
   { to: "/app", label: "Dashboard", kicker: "overview", icon: LayoutDashboard },
@@ -11,8 +11,10 @@ export const NAV_ITEMS = [
   { to: "/app/crm", label: "CRM", kicker: "leads", icon: BriefcaseBusiness },
   { to: "/app/flows", label: "Flows", kicker: "forms", icon: Workflow },
   { to: "/app/wallet", label: "Wallet", kicker: "credits", icon: Wallet },
+  { to: "/app/plan", label: "Plans & Billing", kicker: "subscription", icon: CreditCard },
   { to: "/app/links", label: "Tracked links", kicker: "analytics", icon: Link2 },
   { to: "/app/automation", label: "Automation", kicker: "chat flows", icon: Zap },
+  { to: "/app/ai-agents", label: "AI Agents", kicker: "assistants", icon: Bot },
   { to: "/app/activity", label: "Activity", kicker: "audit logs", icon: History },
   { to: "/app/api-keys", label: "API Keys", kicker: "developer", icon: Terminal },
   { to: "/app/api-reports", label: "API Report", kicker: "api logs", icon: FileSearch },

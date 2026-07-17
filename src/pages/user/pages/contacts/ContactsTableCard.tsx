@@ -3,7 +3,7 @@ import { Badge } from "@components/ui/Badge";
 import { Button } from "@components/ui/Button";
 import { Card } from "@components/ui/Card";
 import { ContactsListSkeleton } from "@components/ui/Skeletons";
-import { Download, Pencil, Search, Trash2, User } from "lucide-react";
+import { BarChart3, Download, Pencil, Search, Trash2, User } from "lucide-react";
 import { formatDate, type Contact } from "./contacts.utils";
 import type { AttributeDefinition } from "../Attributes";
 
@@ -32,6 +32,7 @@ type Props = {
   onToggleAll: (checked: boolean) => void;
   onToggleOne: (id: string) => void;
   onEdit: (contact: Contact) => void;
+  onAnalytics: (contact: Contact) => void;
   onExportSelected: () => void;
   onBulkDelete: () => void;
   onClearSelected: () => void;
@@ -45,7 +46,7 @@ export function ContactsTableCard(props: Props) {
     loading, syncing, saving, search, filter, sort, contacts, definitions, processedContacts, page, totalPages, total,
     allSelected, someSelected, selectedCount, multiSelected, tableRef,
     onSearchChange, onSearchSubmit, onFilterChange, onSortChange,
-    onToggleAll, onToggleOne, onEdit, onExportSelected, onBulkDelete, onClearSelected, onPagePrev, onPageNext,
+    onToggleAll, onToggleOne, onEdit, onAnalytics, onExportSelected, onBulkDelete, onClearSelected, onPagePrev, onPageNext,
   } = props;
 
   return (
@@ -152,6 +153,18 @@ export function ContactsTableCard(props: Props) {
                   <td className="px-6 py-4 text-xs font-semibold text-ink-800/60">{contact.lastInboundAt ? formatDate(contact.lastInboundAt) : "No activity"}</td>
                   <td className="px-6 py-4 text-right">
                     <div className="flex items-center justify-end gap-2">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          onAnalytics(contact);
+                        }}
+                        className="h-10 w-10 p-0 transition-opacity"
+                        title="View analytics"
+                      >
+                        <BarChart3 size={14} />
+                      </Button>
                       <Button
                         variant="ghost"
                         size="sm"

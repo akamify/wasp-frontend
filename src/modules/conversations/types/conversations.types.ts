@@ -2,16 +2,7 @@ export type Conversation = {
   _id?: string;
   phone: string;
   lastMessageAt?: string;
-  lastMessage?: string;
-  lastMessageDirection?: "inbound" | "outbound" | null;
-  lastMessageStatus?: string | null;
   lastInboundAt?: string | null;
-  lastInboundMessageAt?: string | null;
-  lastCustomerMessageAt?: string | null;
-  customerServiceWindowExpiresAt?: string | null;
-  serviceWindowStatus?: "open" | "closed";
-  canReply?: boolean;
-  remainingWindowMs?: number;
   lastMessagePreview?: string;
   unreadCount?: number;
   contact?: { name?: string; company?: string } | null;
@@ -24,11 +15,6 @@ export type ChatMessage = {
   status: string;
   whatsappMessageId?: string | null;
   replyToMessageId?: string | null;
-  contextWamid?: string | null;
-  replyToPreview?: string | null;
-  replyToType?: string | null;
-  interactiveReplyId?: string | null;
-  interactiveReplyTitle?: string | null;
   createdAt: string;
   text?: string;
   displayText?: string | null;

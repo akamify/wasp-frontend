@@ -4,7 +4,6 @@ import { Edit3, Languages, Mail, StickyNote, Tag, X, ListFilter } from "lucide-r
 import type { Conversation } from "@modules/conversations/types/conversations.types";
 import { formatDurationShort } from "@modules/conversations/utils/timeFormat";
 import { cn } from "@shared/utils/cn";
-import { ContactAvatar } from "@modules/conversations/components/ContactAvatar";
 
 type Props = {
   activeConversation: Conversation | null;
@@ -78,7 +77,9 @@ function ContactInfoBody({ activeConversation, contactDetail, customerServiceWin
   return (
     <div className={`${mobile ? "overflow-y-auto custom-scrollbar" : ""} p-6 flex flex-col`}>
       <div className="flex items-center gap-3 min-w-0">
-        <ContactAvatar className="h-12 w-12 rounded-[10px] text-lg" name={contactDetail?.name || activeConversation?.contact?.name} phone={phone} />
+        <div className="h-12 w-12 rounded-[10px] bg-slate-100 overflow-hidden shadow-sm shrink-0">
+          <img src={`https://ui-avatars.com/api/?name=${contactDetail?.name || phone}&background=random`} alt="" className="h-full w-full object-cover" />
+        </div>
         <div className="min-w-0 flex-1">
           <div className="truncate text-sm font-black text-slate-900">{contactDetail?.name || activeConversation?.contact?.name || "Unknown"}</div>
           <div className="text-xs font-bold text-slate-400">{`+${phone}`}</div>

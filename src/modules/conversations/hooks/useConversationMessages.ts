@@ -2,7 +2,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import type { NavigateFunction } from "react-router-dom";
 import { API, getToken, getWorkspaceId } from "@api/api";
 import { useInboundMessageTone } from "@modules/conversations/hooks/useInboundMessageTone";
-import type { ChatMessage, Conversation } from "@modules/conversations/types/conversations.types";
+import type { ChatMessage } from "@modules/conversations/types/conversations.types";
 
 const FINAL_MESSAGE_STATUSES = new Set(["read", "delivered", "failed", "timeout_unknown"]);
 const STATUS_RANK: Record<string, number> = {
@@ -22,52 +22,15 @@ type Args = {
   search: string;
   setError: (message: string) => void;
   urlPhone: string;
-  applyRealtimeConversation: (payload: Record<string, unknown>) => void;
-  applyRealtimeUnread: (payload: Record<string, unknown>) => void;
 };
 
-export function useConversationMessages({ navigate, refreshListSilently, search, setError, urlPhone, applyRealtimeConversation, applyRealtimeUnread }: Args) {
+export function useConversationMessages({ navigate, refreshListSilently, search, setError, urlPhone }: Args) {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [loadingChat, setLoadingChat] = useState(false);
   const [contactDetail, setContactDetail] = useState<any | null>(null);
   const [realtimeConnected, setRealtimeConnected] = useState(false);
-  const [activeChatPendingUnreadCount, setActiveChatPendingUnreadCount] = useState(0);
-  const [firstUnreadMessageId, setFirstUnreadMessageId] = useState<string | null>(null);
   const isInitialLoad = useRef(true);
-  const isNearBottomRef = useRef(true);
   const scrollRef = useRef<HTMLDivElement>(null);
-
-  const scrollToBottom = useCallback((behavior: ScrollBehavior = "smooth") => {
-    const panel = scrollRef.current;
-    if (panel) panel.scrollTo({ top: panel.scrollHeight, behavior });
-  }, []);
-
-  const onMessagesScroll = useCallback(() => {
-    const panel = scrollRef.current;
-    if (!panel) return;
-    isNearBottomRef.current = panel.scrollHeight - panel.scrollTop - panel.clientHeight < 80;
-  }, []);
-
-  const scrollToMessage = useCallback((messageId: string) => {
-    const panel = scrollRef.current;
-    if (!panel || !messageId) return false;
-    const target = Array.from(panel.querySelectorAll<HTMLElement>("[data-message-id]"))
-      .find((element) => element.dataset.messageId === messageId || element.dataset.whatsappMessageId === messageId);
-    if (!target) return false;
-    target.scrollIntoView({ behavior: "smooth", block: "center" });
-    return true;
-  }, []);
-
-  const scrollToPendingUnread = useCallback(() => {
-    if (!firstUnreadMessageId || !scrollToMessage(firstUnreadMessageId)) scrollToBottom("smooth");
-    if (urlPhone) {
-      applyRealtimeUnread({ customerPhone: urlPhone, unreadCount: 0 });
-      void API.conversations.read(urlPhone);
-    }
-    isNearBottomRef.current = true;
-    setActiveChatPendingUnreadCount(0);
-    setFirstUnreadMessageId(null);
-  }, [applyRealtimeUnread, firstUnreadMessageId, scrollToBottom, scrollToMessage, urlPhone]);
 
   const mergeStatusSnapshot = useCallback((snapshot: any) => {
     const waId = String(snapshot?.waId || snapshot?.message?.whatsappMessageId || "").trim();
@@ -188,7 +151,7 @@ export function useConversationMessages({ navigate, refreshListSilently, search,
 
   const applyRealtimeMessageUpdate = useCallback((payload: any) => {
     const nextMessageId = String(payload?.messageId || payload?.message?._id || "");
-    const nextWaId = String(payload?.wamid || payload?.whatsappMessageId || payload?.message?.whatsappMessageId || "");
+    const nextWaId = String(payload?.whatsappMessageId || payload?.message?.whatsappMessageId || "");
     const nextStatus = String(payload?.status || payload?.message?.status || "").toLowerCase();
     const nextPhone = String(payload?.phone || payload?.message?.phone || "");
     const nextTimestamps = payload?.statusTimestamps || payload?.message?.statusTimestamps || null;
@@ -210,34 +173,10 @@ export function useConversationMessages({ navigate, refreshListSilently, search,
     return applied;
   }, []);
 
-  const realtimeContextRef = useRef({
-    urlPhone,
-    applyRealtimeConversation,
-    applyRealtimeUnread,
-    applyRealtimeMessageUpdate,
-    refreshListSilently,
-    refreshChatSilently,
-    scrollToBottom,
-  });
-  useEffect(() => {
-    realtimeContextRef.current = {
-      urlPhone,
-      applyRealtimeConversation,
-      applyRealtimeUnread,
-      applyRealtimeMessageUpdate,
-      refreshListSilently,
-      refreshChatSilently,
-      scrollToBottom,
-    };
-  }, [urlPhone, applyRealtimeConversation, applyRealtimeUnread, applyRealtimeMessageUpdate, refreshListSilently, refreshChatSilently, scrollToBottom]);
-
   useInboundMessageTone(messages, urlPhone, loadingChat, navigate);
 
   useEffect(() => {
     if (urlPhone) {
-      isNearBottomRef.current = true;
-      setActiveChatPendingUnreadCount(0);
-      setFirstUnreadMessageId(null);
       void loadChat(urlPhone);
       isInitialLoad.current = true;
     } else {
@@ -278,120 +217,51 @@ export function useConversationMessages({ navigate, refreshListSilently, search,
     const workspaceId = String(getWorkspaceId() || "").trim();
     if (!token || !workspaceId) return;
 
-    let source: EventSource | null = null;
-    let reconnectTimer: number | null = null;
-    let reconnectDelay = 1000;
-    let stopped = false;
     const base = String(API.baseUrl || "").replace(/\/+$/, "");
     const streamUrl = `${base}/realtime/stream?token=${encodeURIComponent(token)}&workspaceId=${encodeURIComponent(workspaceId)}`;
+    const source = new EventSource(streamUrl);
+    source.onopen = () => setRealtimeConnected(true);
 
-    const parse = (event: Event) => JSON.parse(String((event as MessageEvent).data || "{}"));
-    const connect = () => {
-      if (stopped) return;
-      source = new EventSource(streamUrl);
-      source.onopen = () => {
-        reconnectDelay = 1000;
-        setRealtimeConnected(true);
-        console.info("[realtime] connected");
-      };
-      source.addEventListener("message:new", ((event: MessageEvent) => {
-        try {
-          const payload = parse(event);
-          console.info("[realtime] message:new received");
-          const message = payload?.message as ChatMessage | undefined;
-          const customerPhone = String(payload?.customerPhone || message?.phone || "");
-          const activePhone = String(realtimeContextRef.current.urlPhone || "");
-          realtimeContextRef.current.applyRealtimeConversation(payload?.conversation || ({
-              phone: customerPhone,
-              lastMessage: message?.displayText || message?.previewText || message?.text || "",
-              lastMessagePreview: message?.displayText || message?.previewText || message?.text || "",
-              lastMessageAt: message?.createdAt,
-              lastMessageDirection: message?.direction,
-              lastMessageStatus: message?.status,
-              unreadCount: Number(payload?.unreadCount || 0),
-            } as Conversation));
-          if (message && customerPhone === activePhone) {
-            setMessages((current) => current.some((item) => item._id === message._id || (message.whatsappMessageId && item.whatsappMessageId === message.whatsappMessageId))
-              ? current
-              : [...current, message]);
-            if (message.direction === "inbound") {
-              if (isNearBottomRef.current) {
-                realtimeContextRef.current.applyRealtimeUnread({ customerPhone, conversationId: payload?.conversationId, unreadCount: 0 });
-                window.requestAnimationFrame(() => realtimeContextRef.current.scrollToBottom("smooth"));
-                void API.conversations.read(customerPhone);
-              } else {
-                setActiveChatPendingUnreadCount((count) => count + 1);
-                setFirstUnreadMessageId((current) => current || String(message._id || message.whatsappMessageId || ""));
-              }
-            }
-          }
-        } catch {
-          void realtimeContextRef.current.refreshListSilently();
-        }
-      }) as EventListener);
-      source.addEventListener("message:status", ((event: MessageEvent) => {
-        try {
-          console.info("[realtime] event message:status");
-          realtimeContextRef.current.applyRealtimeMessageUpdate(parse(event));
-        } catch { /* ignore malformed event */ }
-      }) as EventListener);
-      source.addEventListener("conversation:update", ((event: MessageEvent) => {
-        try { realtimeContextRef.current.applyRealtimeConversation(parse(event)); } catch { /* ignore */ }
-      }) as EventListener);
-      source.addEventListener("unread:update", ((event: MessageEvent) => {
-        try {
-          const payload = parse(event);
-          console.info("[realtime] unread:update received");
-          window.dispatchEvent(new CustomEvent("waspakamify:unread-update", { detail: payload }));
-          if (String(payload?.customerPhone || "") !== String(realtimeContextRef.current.urlPhone || "")) {
-            realtimeContextRef.current.applyRealtimeUnread(payload);
-          }
-        } catch { /* ignore */ }
-      }) as EventListener);
-      source.addEventListener("ping", () => {});
-      source.onerror = () => {
-        if (stopped) return;
-        setRealtimeConnected(false);
-        console.info("[realtime] disconnected");
-        source?.close();
-        reconnectTimer = window.setTimeout(connect, reconnectDelay);
-        reconnectDelay = Math.min(reconnectDelay * 2, 30000);
-      };
+    const onRealtimeMessage = (evt: MessageEvent) => {
+      try {
+        const payload = JSON.parse(String(evt.data || "{}"));
+        const eventPhone = String(payload?.phone || "");
+        const applied = String(payload?.type || "") === "message_status" ? applyRealtimeMessageUpdate(payload) : false;
+        void refreshListSilently();
+        if (urlPhone && (!eventPhone || eventPhone === String(urlPhone) || applied)) void refreshChatSilently(urlPhone);
+      } catch {
+        void refreshListSilently();
+        if (urlPhone) void refreshChatSilently(urlPhone);
+      }
     };
 
-    connect();
+    source.addEventListener("message", onRealtimeMessage as EventListener);
+    source.addEventListener("message.created", onRealtimeMessage as EventListener);
+    source.addEventListener("message.status_updated", onRealtimeMessage as EventListener);
+    source.addEventListener("conversation.updated", onRealtimeMessage as EventListener);
+    source.addEventListener("assignment_changed", onRealtimeMessage as EventListener);
+    source.onerror = () => setRealtimeConnected(false);
     return () => {
-      stopped = true;
-      if (reconnectTimer !== null) window.clearTimeout(reconnectTimer);
-      source?.close();
+      source.removeEventListener("message", onRealtimeMessage as EventListener);
+      source.removeEventListener("message.created", onRealtimeMessage as EventListener);
+      source.removeEventListener("message.status_updated", onRealtimeMessage as EventListener);
+      source.removeEventListener("conversation.updated", onRealtimeMessage as EventListener);
+      source.removeEventListener("assignment_changed", onRealtimeMessage as EventListener);
+      source.close();
       setRealtimeConnected(false);
     };
-  }, []);
+  }, [urlPhone, search, refreshListSilently, refreshChatSilently]);
 
   useEffect(() => {
     if (!loadingChat && messages.length > 0) {
-      if (!isInitialLoad.current && (!isNearBottomRef.current || activeChatPendingUnreadCount > 0)) return;
-      const behavior: ScrollBehavior = isInitialLoad.current ? "auto" : "smooth";
-      const scroll = () => scrollToBottom(behavior);
+      const behavior = isInitialLoad.current ? "instant" : "smooth";
+      const scroll = () => scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: behavior as any });
       scroll();
       const timer = setTimeout(scroll, 150);
       if (isInitialLoad.current) isInitialLoad.current = false;
       return () => clearTimeout(timer);
     }
-  }, [activeChatPendingUnreadCount, messages.length, loadingChat, scrollToBottom]);
+  }, [messages.length, loadingChat]);
 
-  return {
-    activeChatPendingUnreadCount,
-    contactDetail,
-    firstUnreadMessageId,
-    loadChat,
-    loadingChat,
-    messages,
-    onMessagesScroll,
-    refreshChatSilently,
-    scrollRef,
-    scrollToMessage,
-    scrollToPendingUnread,
-    setContactDetail,
-  };
+  return { contactDetail, loadChat, loadingChat, messages, refreshChatSilently, scrollRef, setContactDetail };
 }

@@ -3,140 +3,464 @@ export function buildApiGroupAdmin(api, unwrap) {
     admin: {
       overview: (params) => api.get("/admin/overview", { params }).then(unwrap),
       users: (params) => api.get("/admin/users", { params }).then(unwrap),
-      updateUserStatus: (id, payload) => api.patch(`/admin/users/${encodeURIComponent(id)}/status`, payload || {}).then(unwrap),
-      userApiKeys: (id) => api.get(`/api-keys/admin/users/${encodeURIComponent(id)}`).then(unwrap),
-      sendChatAccessOtp: (id) => api.post(`/admin/users/${encodeURIComponent(id)}/chat-access/send-otp`, {}).then(unwrap),
-      verifyChatAccessOtp: (id, payload) => api.post(`/admin/users/${encodeURIComponent(id)}/chat-access/verify-otp`, payload).then(unwrap),
-      enableChatAccess: (id) => api.patch(`/admin/users/${encodeURIComponent(id)}/chat-access/enable`, {}).then(unwrap),
-      disableChatAccess: (id) => api.patch(`/admin/users/${encodeURIComponent(id)}/chat-access/disable`, {}).then(unwrap),
-      enableCampaignSendAccess: (id) => api.patch(`/admin/users/${encodeURIComponent(id)}/api-permissions/campaign-send/enable`, {}).then(unwrap),
-      disableCampaignSendAccess: (id) => api.patch(`/admin/users/${encodeURIComponent(id)}/api-permissions/campaign-send/disable`, {}).then(unwrap),
-      disableUserApiKey: (id, keyId) => api.patch(`/admin/users/${encodeURIComponent(id)}/api-keys/${encodeURIComponent(keyId)}/disable`, {}).then(unwrap),
-      enableUserApiKey: (id, keyId) => api.patch(`/admin/users/${encodeURIComponent(id)}/api-keys/${encodeURIComponent(keyId)}/enable`, {}).then(unwrap),
-      blockUser: (id) => api.patch(`/admin/users/${encodeURIComponent(id)}/block`, {}).then(unwrap),
-      unblockUser: (id) => api.patch(`/admin/users/${encodeURIComponent(id)}/unblock`, {}).then(unwrap),
+      updateUserStatus: (id, payload) =>
+        api
+          .patch(`/admin/users/${encodeURIComponent(id)}/status`, payload || {})
+          .then(unwrap),
+      userApiKeys: (id) =>
+        api.get(`/api-keys/admin/users/${encodeURIComponent(id)}`).then(unwrap),
+      sendChatAccessOtp: (id) =>
+        api
+          .post(
+            `/admin/users/${encodeURIComponent(id)}/chat-access/send-otp`,
+            {},
+          )
+          .then(unwrap),
+      verifyChatAccessOtp: (id, payload) =>
+        api
+          .post(
+            `/admin/users/${encodeURIComponent(id)}/chat-access/verify-otp`,
+            payload,
+          )
+          .then(unwrap),
+      enableChatAccess: (id) =>
+        api
+          .patch(
+            `/admin/users/${encodeURIComponent(id)}/chat-access/enable`,
+            {},
+          )
+          .then(unwrap),
+      disableChatAccess: (id) =>
+        api
+          .patch(
+            `/admin/users/${encodeURIComponent(id)}/chat-access/disable`,
+            {},
+          )
+          .then(unwrap),
+      enableCampaignSendAccess: (id) =>
+        api
+          .patch(
+            `/admin/users/${encodeURIComponent(id)}/api-permissions/campaign-send/enable`,
+            {},
+          )
+          .then(unwrap),
+      disableCampaignSendAccess: (id) =>
+        api
+          .patch(
+            `/admin/users/${encodeURIComponent(id)}/api-permissions/campaign-send/disable`,
+            {},
+          )
+          .then(unwrap),
+      disableUserApiKey: (id, keyId) =>
+        api
+          .patch(
+            `/admin/users/${encodeURIComponent(id)}/api-keys/${encodeURIComponent(keyId)}/disable`,
+            {},
+          )
+          .then(unwrap),
+      enableUserApiKey: (id, keyId) =>
+        api
+          .patch(
+            `/admin/users/${encodeURIComponent(id)}/api-keys/${encodeURIComponent(keyId)}/enable`,
+            {},
+          )
+          .then(unwrap),
+      blockUser: (id) =>
+        api
+          .patch(`/admin/users/${encodeURIComponent(id)}/block`, {})
+          .then(unwrap),
+      unblockUser: (id) =>
+        api
+          .patch(`/admin/users/${encodeURIComponent(id)}/unblock`, {})
+          .then(unwrap),
       channels: (params) => api.get("/admin/channels", { params }).then(unwrap),
-      workspaces: (params) => api.get("/admin/workspaces", { params }).then(unwrap),
-      masterCampaigns: (params) => api.get("/admin/master-campaigns", { params }).then(unwrap),
-      masterTemplates: (params) => api.get("/admin/master-templates", { params }).then(unwrap),
-      masterTemplateGet: (id) => api.get(`/admin/master-templates/${encodeURIComponent(id)}`).then(unwrap),
-      masterTemplateUpdate: (id, payload) => api.put(`/admin/master-templates/${encodeURIComponent(id)}`, payload).then(unwrap),
-      masterTemplateDelete: (id) => api.delete(`/admin/master-templates/${encodeURIComponent(id)}`).then(unwrap),
-      masterTemplateSyncStatus: (id) => api.post(`/admin/master-templates/${encodeURIComponent(id)}/sync-status`, null).then(unwrap),
-      masterTemplateSyncMeta: (payload) => api.post("/admin/master-templates/sync-meta", payload).then(unwrap),
-      masterContacts: (params) => api.get("/admin/master-contacts", { params }).then(unwrap),
-      notifications: (params) => api.get("/admin/notifications", { params }).then(unwrap),
-      subscriptionPlans: () => api.get("/admin/subscription-plans").then(unwrap),
-      subscriptionsData: (params) => api.get("/admin/subscriptions-data", { params }).then(unwrap),
-      subscriptionWorkspaceOverview: (workspaceId) => api.get(`/admin/subscriptions-data/${encodeURIComponent(workspaceId)}/overview`).then(unwrap),
-      subscriptionWorkspaceHistory: (workspaceId, params) => api.get(`/admin/subscriptions-data/${encodeURIComponent(workspaceId)}/history`, { params }).then(unwrap),
-      subscriptionWorkspacePaymentLinks: (workspaceId, params) => api.get(`/admin/subscriptions-data/${encodeURIComponent(workspaceId)}/payment-links`, { params }).then(unwrap),
-      assignWorkspacePlan: (workspaceId, payload) => api.post(`/admin/subscriptions-data/${encodeURIComponent(workspaceId)}/assign-plan`, payload || {}).then(unwrap),
-      disableActiveWorkspacePlan: (workspaceId) => api.post(`/admin/subscriptions-data/${encodeURIComponent(workspaceId)}/disable-active-plan`, {}).then(unwrap),
-      createWorkspacePaymentLink: (workspaceId, payload) => api.post(`/admin/subscriptions-data/${encodeURIComponent(workspaceId)}/payment-links`, payload || {}).then(unwrap),
-      cancelWorkspacePaymentLink: (id) => api.patch(`/admin/subscriptions-data/payment-links/${encodeURIComponent(id)}/cancel`, {}).then(unwrap),
-      transactionsLogs: (params) => api.get("/admin/transactions-logs", { params }).then(unwrap),
-      messageLogs: (params) => api.get("/admin/message-logs", { params }).then(unwrap),
-      paymentGateway: (params) => api.get("/admin/payment-gateway", { params }).then(unwrap),
-      supportTickets: (params) => api.get("/admin/support-tickets", { params }).then(unwrap),
-      resolveSupportTicket: (id, payload) => api.patch(`/admin/support-tickets/${id}/resolve`, payload || {}).then(unwrap),
+      workspaces: (params) =>
+        api.get("/admin/workspaces", { params }).then(unwrap),
+      masterCampaigns: (params) =>
+        api.get("/admin/master-campaigns", { params }).then(unwrap),
+      masterTemplates: (params) =>
+        api.get("/admin/master-templates", { params }).then(unwrap),
+      masterTemplateGet: (id) =>
+        api
+          .get(`/admin/master-templates/${encodeURIComponent(id)}`)
+          .then(unwrap),
+      masterTemplateUpdate: (id, payload) =>
+        api
+          .put(`/admin/master-templates/${encodeURIComponent(id)}`, payload)
+          .then(unwrap),
+      masterTemplateDelete: (id) =>
+        api
+          .delete(`/admin/master-templates/${encodeURIComponent(id)}`)
+          .then(unwrap),
+      masterTemplateSyncStatus: (id) =>
+        api
+          .post(
+            `/admin/master-templates/${encodeURIComponent(id)}/sync-status`,
+            null,
+          )
+          .then(unwrap),
+      masterTemplateSyncMeta: (payload) =>
+        api.post("/admin/master-templates/sync-meta", payload).then(unwrap),
+      masterContacts: (params) =>
+        api.get("/admin/master-contacts", { params }).then(unwrap),
+      notifications: (params) =>
+        api.get("/admin/notifications", { params }).then(unwrap),
+      subscriptionPlans: () =>
+        api.get("/admin/subscription-plans").then(unwrap),
+      subscriptionsData: (params) =>
+        api.get("/admin/subscriptions-data", { params }).then(unwrap),
+      subscriptionWorkspaceOverview: (workspaceId) =>
+        api
+          .get(
+            `/admin/subscriptions-data/${encodeURIComponent(workspaceId)}/overview`,
+          )
+          .then(unwrap),
+      subscriptionWorkspaceHistory: (workspaceId, params) =>
+        api
+          .get(
+            `/admin/subscriptions-data/${encodeURIComponent(workspaceId)}/history`,
+            { params },
+          )
+          .then(unwrap),
+      subscriptionWorkspacePaymentLinks: (workspaceId, params) =>
+        api
+          .get(
+            `/admin/subscriptions-data/${encodeURIComponent(workspaceId)}/payment-links`,
+            { params },
+          )
+          .then(unwrap),
+      assignWorkspacePlan: (workspaceId, payload) =>
+        api
+          .post(
+            `/admin/subscriptions-data/${encodeURIComponent(workspaceId)}/assign-plan`,
+            payload || {},
+          )
+          .then(unwrap),
+      disableActiveWorkspacePlan: (workspaceId) =>
+        api
+          .post(
+            `/admin/subscriptions-data/${encodeURIComponent(workspaceId)}/disable-active-plan`,
+            {},
+          )
+          .then(unwrap),
+      createWorkspacePaymentLink: (workspaceId, payload) =>
+        api
+          .post(
+            `/admin/subscriptions-data/${encodeURIComponent(workspaceId)}/payment-links`,
+            payload || {},
+          )
+          .then(unwrap),
+      cancelWorkspacePaymentLink: (id) =>
+        api
+          .patch(
+            `/admin/subscriptions-data/payment-links/${encodeURIComponent(id)}/cancel`,
+            {},
+          )
+          .then(unwrap),
+      transactionsLogs: (params) =>
+        api.get("/admin/transactions-logs", { params }).then(unwrap),
+      messageLogs: (params) =>
+        api.get("/admin/message-logs", { params }).then(unwrap),
+      paymentGateway: (params) =>
+        api.get("/admin/payment-gateway", { params }).then(unwrap),
+      supportTickets: (params) =>
+        api.get("/admin/support-tickets", { params }).then(unwrap),
+      resolveSupportTicket: (id, payload) =>
+        api
+          .patch(`/admin/support-tickets/${id}/resolve`, payload || {})
+          .then(unwrap),
       appUpdate: () => api.get("/admin/app-update").then(unwrap),
-      changePassword: (payload) => api.put("/admin/settings/password", payload).then(unwrap),
+      changePassword: (payload) =>
+        api.put("/admin/settings/password", payload).then(unwrap),
       profile: () => api.get("/admin/profile").then(unwrap),
-      profileUpdate: (payload) => api.put("/admin/profile", payload).then(unwrap),
-      profileLogins: (params) => api.get("/admin/profile/logins", { params }).then(unwrap),
-      profileRequests: (params) => api.get("/admin/profile/requests", { params }).then(unwrap),
-      createProfileRequest: (payload) => api.post("/admin/profile/requests", payload).then(unwrap),
-      verifyProfileRequestOtp: (requestId, payload) => api.post(`/admin/profile/requests/${encodeURIComponent(requestId)}/verify-otp`, payload || {}).then(unwrap),
-      resendProfileRequestOtp: (requestId) => api.post(`/admin/profile/requests/${encodeURIComponent(requestId)}/resend-otp`, {}).then(unwrap),
+      profileUpdate: (payload) =>
+        api.put("/admin/profile", payload).then(unwrap),
+      profileLogins: (params) =>
+        api.get("/admin/profile/logins", { params }).then(unwrap),
+      profileRequests: (params) =>
+        api.get("/admin/profile/requests", { params }).then(unwrap),
+      createProfileRequest: (payload) =>
+        api.post("/admin/profile/requests", payload).then(unwrap),
+      verifyProfileRequestOtp: (requestId, payload) =>
+        api
+          .post(
+            `/admin/profile/requests/${encodeURIComponent(requestId)}/verify-otp`,
+            payload || {},
+          )
+          .then(unwrap),
+      resendProfileRequestOtp: (requestId) =>
+        api
+          .post(
+            `/admin/profile/requests/${encodeURIComponent(requestId)}/resend-otp`,
+            {},
+          )
+          .then(unwrap),
       pages: () => api.get("/admin/pages").then(unwrap),
-      pageGet: (slug) => api.get(`/admin/pages/${encodeURIComponent(slug)}`).then(unwrap),
-      pageUpsert: (slug, payload) => api.put(`/admin/pages/${encodeURIComponent(slug)}`, payload).then(unwrap),
+      pageGet: (slug) =>
+        api.get(`/admin/pages/${encodeURIComponent(slug)}`).then(unwrap),
+      pageUpsert: (slug, payload) =>
+        api
+          .put(`/admin/pages/${encodeURIComponent(slug)}`, payload)
+          .then(unwrap),
       platformBrandGet: () => api.get("/admin/platform-brand").then(unwrap),
-      platformBrandUpdate: (payload) => api.put("/admin/platform-brand", payload).then(unwrap),
+      platformBrandUpdate: (payload) =>
+        api.put("/admin/platform-brand", payload).then(unwrap),
       platformBrandUploadLogo: (file, onProgress) => {
         const data = new FormData();
         data.append("file", file);
-        return api.post("/admin/platform-brand/upload-logo", data, {
-          headers: { "Content-Type": "multipart/form-data" },
-          onUploadProgress: (e) => {
-            if (!onProgress) return;
-            const total = e.total || 0;
-            const loaded = e.loaded || 0;
-            onProgress(total ? Math.round((loaded / total) * 100) : 0);
-          },
-        }).then(unwrap);
+        return api
+          .post("/admin/platform-brand/upload-logo", data, {
+            headers: { "Content-Type": "multipart/form-data" },
+            onUploadProgress: (e) => {
+              if (!onProgress) return;
+              const total = e.total || 0;
+              const loaded = e.loaded || 0;
+              onProgress(total ? Math.round((loaded / total) * 100) : 0);
+            },
+          })
+          .then(unwrap);
       },
-      careerApplications: (params) => api.get("/admin/career-applications", { params }).then(unwrap),
-      updateCareerApplication: (id, payload) => api.patch(`/admin/career-applications/${id}`, payload).then(unwrap),
-      downloadCareerResume: (id) => api.get(`/admin/career-applications/${id}/resume`, { responseType: "blob" }).then((r) => r.data),
-      crmWorkspace: (workspaceId) => api.get(`/admin/crm/workspaces/${encodeURIComponent(workspaceId)}`).then(unwrap),
-      crmSetEnabled: (workspaceId, enabled) => api.patch(`/admin/crm/workspaces/${encodeURIComponent(workspaceId)}/enabled`, { enabled: !!enabled }).then(unwrap),
-      crmSetLeadWindowHours: (workspaceId, leadWindowHours) => api.put(`/admin/crm/workspaces/${encodeURIComponent(workspaceId)}/settings/lead-window`, { leadWindowHours }).then(unwrap),
-      crmEmployees: (workspaceId) => api.get(`/admin/crm/workspaces/${encodeURIComponent(workspaceId)}/employees`).then(unwrap),
-      crmCreateEmployee: (workspaceId, payload) => api.post(`/admin/crm/workspaces/${encodeURIComponent(workspaceId)}/employees`, payload).then(unwrap),
-      setWorkspaceExternalChatFeature: (workspaceId, enabled) => api.patch(`/admin/workspaces/${encodeURIComponent(workspaceId)}/features/external-chat`, { enabled: !!enabled }).then(unwrap),
-      getWorkspaceExternalChatFeature: (workspaceId) => api.get(`/admin/workspaces/${encodeURIComponent(workspaceId)}/features/external-chat`).then(unwrap),
-      setApiKeyChatAccess: (userId, keyId, enabled) => api.patch(`/admin/users/${encodeURIComponent(userId)}/api-keys/${encodeURIComponent(keyId)}/permissions/chat-access`, { enabled: !!enabled }).then(unwrap),
-      syncApiKeysChatAccess: (userId, enabled) => api.post(`/admin/users/${encodeURIComponent(userId)}/api-keys/sync-chat-access`, { enabled: !!enabled }).then(unwrap),
+      careerApplications: (params) =>
+        api.get("/admin/career-applications", { params }).then(unwrap),
+      updateCareerApplication: (id, payload) =>
+        api.patch(`/admin/career-applications/${id}`, payload).then(unwrap),
+      downloadCareerResume: (id) =>
+        api
+          .get(`/admin/career-applications/${id}/resume`, {
+            responseType: "blob",
+          })
+          .then((r) => r.data),
+      crmWorkspace: (workspaceId) =>
+        api
+          .get(`/admin/crm/workspaces/${encodeURIComponent(workspaceId)}`)
+          .then(unwrap),
+      crmSetEnabled: (workspaceId, enabled) =>
+        api
+          .patch(
+            `/admin/crm/workspaces/${encodeURIComponent(workspaceId)}/enabled`,
+            { enabled: !!enabled },
+          )
+          .then(unwrap),
+      crmSetLeadWindowHours: (workspaceId, leadWindowHours) =>
+        api
+          .put(
+            `/admin/crm/workspaces/${encodeURIComponent(workspaceId)}/settings/lead-window`,
+            { leadWindowHours },
+          )
+          .then(unwrap),
+      crmEmployees: (workspaceId) =>
+        api
+          .get(
+            `/admin/crm/workspaces/${encodeURIComponent(workspaceId)}/employees`,
+          )
+          .then(unwrap),
+      crmCreateEmployee: (workspaceId, payload) =>
+        api
+          .post(
+            `/admin/crm/workspaces/${encodeURIComponent(workspaceId)}/employees`,
+            payload,
+          )
+          .then(unwrap),
+      setWorkspaceExternalChatFeature: (workspaceId, enabled) =>
+        api
+          .patch(
+            `/admin/workspaces/${encodeURIComponent(workspaceId)}/features/external-chat`,
+            { enabled: !!enabled },
+          )
+          .then(unwrap),
+      getWorkspaceExternalChatFeature: (workspaceId) =>
+        api
+          .get(
+            `/admin/workspaces/${encodeURIComponent(workspaceId)}/features/external-chat`,
+          )
+          .then(unwrap),
+      setApiKeyChatAccess: (userId, keyId, enabled) =>
+        api
+          .patch(
+            `/admin/users/${encodeURIComponent(userId)}/api-keys/${encodeURIComponent(keyId)}/permissions/chat-access`,
+            { enabled: !!enabled },
+          )
+          .then(unwrap),
+      syncApiKeysChatAccess: (userId, enabled) =>
+        api
+          .post(
+            `/admin/users/${encodeURIComponent(userId)}/api-keys/sync-chat-access`,
+            { enabled: !!enabled },
+          )
+          .then(unwrap),
       docsList: (params) => api.get("/admin/docs", { params }).then(unwrap),
-      docsGet: (id) => api.get(`/admin/docs/${encodeURIComponent(id)}`).then(unwrap),
+      docsGet: (id) =>
+        api.get(`/admin/docs/${encodeURIComponent(id)}`).then(unwrap),
       docsCreate: (payload) => api.post("/admin/docs", payload).then(unwrap),
-      docsUpdate: (id, payload) => api.put(`/admin/docs/${encodeURIComponent(id)}`, payload).then(unwrap),
-      docsDelete: (id) => api.delete(`/admin/docs/${encodeURIComponent(id)}`).then(unwrap),
+      docsUpdate: (id, payload) =>
+        api.put(`/admin/docs/${encodeURIComponent(id)}`, payload).then(unwrap),
+      docsDelete: (id) =>
+        api.delete(`/admin/docs/${encodeURIComponent(id)}`).then(unwrap),
+      docsCategories: () => api.get("/admin/docs-categories").then(unwrap),
+      docsCategoryCreate: (payload) => api.post("/admin/docs-categories", payload).then(unwrap),
+      docsCategoryUpdate: (id, payload) =>
+        api.put(`/admin/docs-categories/${encodeURIComponent(id)}`, payload).then(unwrap),
+      docsCategoryDelete: (id) =>
+        api.delete(`/admin/docs-categories/${encodeURIComponent(id)}`).then(unwrap),
       docsBrandGet: () => api.get("/admin/docs-brand").then(unwrap),
-      docsBrandUpdate: (payload) => api.put("/admin/docs-brand", payload).then(unwrap),
+      docsBrandUpdate: (payload) =>
+        api.put("/admin/docs-brand", payload).then(unwrap),
+      docsFeedbackSummary: () => api.get("/admin/docs-feedbacks-summary").then(unwrap),
       docsFeedbacks: (params) => api.get("/admin/docs-feedbacks", { params }).then(unwrap),
-      docsFeedbackGet: (id) => api.get(`/admin/docs-feedbacks/${encodeURIComponent(id)}`).then(unwrap),
       docsBrandUploadLogo: (file, onProgress) => {
         const data = new FormData();
         data.append("file", file);
-        return api.post("/admin/docs-brand/upload-logo", data, {
-          headers: { "Content-Type": "multipart/form-data" },
-          onUploadProgress: (e) => {
-            if (!onProgress) return;
-            const total = e.total || 0;
-            const loaded = e.loaded || 0;
-            onProgress(total ? Math.round((loaded / total) * 100) : 0);
-          },
-        }).then(unwrap);
+        return api
+          .post("/admin/docs-brand/upload-logo", data, {
+            headers: { "Content-Type": "multipart/form-data" },
+            onUploadProgress: (e) => {
+              if (!onProgress) return;
+              const total = e.total || 0;
+              const loaded = e.loaded || 0;
+              onProgress(total ? Math.round((loaded / total) * 100) : 0);
+            },
+          })
+          .then(unwrap);
+      },
+      docsMediaUpload: (file, onProgress) => {
+        const data = new FormData();
+        data.append("file", file);
+        return api
+          .post("/admin/docs-media/upload", data, {
+            headers: { "Content-Type": "multipart/form-data" },
+            onUploadProgress: (e) => {
+              if (!onProgress) return;
+              const total = e.total || 0;
+              const loaded = e.loaded || 0;
+              onProgress(total ? Math.round((loaded / total) * 100) : 0);
+            },
+          })
+          .then(unwrap);
       },
     },
     superAdmin: {
       profile: () => api.get("/super-admin/profile").then(unwrap),
-      updateProfileName: (payload) => api.patch("/super-admin/profile/name", payload).then(unwrap),
-      changeProfilePassword: (payload) => api.post("/super-admin/profile/change-password", payload).then(unwrap),
-      requestProfileOtp: (payload) => api.post("/super-admin/profile/request-otp", payload).then(unwrap),
-      verifyProfileOtp: (payload) => api.post("/super-admin/profile/verify-otp", payload).then(unwrap),
-      setProfile2fa: (payload) => api.patch("/super-admin/profile/2fa", payload).then(unwrap),
-      admins: (params) => api.get("/super-admin/admins", { params }).then(unwrap),
-      adminDetail: (id) => api.get(`/super-admin/admins/${encodeURIComponent(id)}`).then(unwrap),
-      updateAdmin: (id, payload) => api.patch(`/super-admin/admins/${encodeURIComponent(id)}`, payload || {}).then(unwrap),
-      decideAdminProfileRequest: (adminId, requestId, payload) => api.post(`/super-admin/admins/${encodeURIComponent(adminId)}/profile-requests/${encodeURIComponent(requestId)}/decision`, payload || {}).then(unwrap),
-      assignAdmin: (payload) => api.post("/super-admin/admins/assign", payload).then(unwrap),
-      removeAdmin: (payload) => api.post("/super-admin/admins/remove", payload).then(unwrap),
-      suspendUser: (payload) => api.post("/super-admin/users/suspend", payload).then(unwrap),
-      resetUserPassword: (payload) => api.post("/super-admin/users/reset-password", payload).then(unwrap),
-      securityLogs: (params) => api.get("/super-admin/security-logs", { params }).then(unwrap),
-      platformSettings: () => api.get("/super-admin/platform-settings").then(unwrap),
-      platformSettingsByCategory: (category) => api.get(`/super-admin/platform-settings/${encodeURIComponent(category)}`).then(unwrap),
-      updatePlatformSetting: (key, payload) => api.put(`/super-admin/platform-settings/${encodeURIComponent(key)}`, payload || {}).then(unwrap),
-      bulkUpdatePlatformSettings: (payload) => api.post("/super-admin/platform-settings/bulk", payload || {}).then(unwrap),
-      testPlatformCategory: (category, payload) => api.post(`/super-admin/platform-settings/${encodeURIComponent(category)}/test`, payload || {}).then(unwrap),
-      platformAddons: () => api.get("/super-admin/platform-addons").then(unwrap),
-      platformAddonsByCategory: (category) => api.get(`/super-admin/platform-addons/${encodeURIComponent(category)}`).then(unwrap),
-      updatePlatformAddon: (key, payload) => api.put(`/super-admin/platform-addons/${encodeURIComponent(key)}`, payload || {}).then(unwrap),
-      bulkUpdatePlatformAddons: (payload) => api.post("/super-admin/platform-addons/bulk", payload || {}).then(unwrap),
-      billingPlans: (params) => api.get("/admin/billing/plans", { params }).then(unwrap),
-      billingPlanGet: (id) => api.get(`/admin/billing/plans/${encodeURIComponent(id)}`).then(unwrap),
-      billingPlanCreate: (payload) => api.post("/admin/billing/plans", payload || {}).then(unwrap),
-      billingPlanUpdate: (id, payload) => api.put(`/admin/billing/plans/${encodeURIComponent(id)}`, payload || {}).then(unwrap),
-      billingPlanReview: (id, payload) => api.post(`/admin/billing/plans/${encodeURIComponent(id)}/review`, payload || {}).then(unwrap),
-      billingPlanPublish: (id, payload) => api.post(`/admin/billing/plans/${encodeURIComponent(id)}/publish`, payload || {}).then(unwrap),
-      billingPlanDisable: (id) => api.patch(`/admin/billing/plans/${encodeURIComponent(id)}/disable`, {}).then(unwrap),
-      billingSettingsGet: () => api.get("/admin/billing/settings").then(unwrap),
-      billingSettingsUpdate: (payload) => api.put("/admin/billing/settings", payload || {}).then(unwrap),
-      billingPricePreview: (payload) => api.post("/admin/billing/plans/price-preview", payload || {}).then(unwrap),
+      updateProfileName: (payload) =>
+        api.patch("/super-admin/profile/name", payload).then(unwrap),
+      changeProfilePassword: (payload) =>
+        api.post("/super-admin/profile/change-password", payload).then(unwrap),
+      requestProfileOtp: (payload) =>
+        api.post("/super-admin/profile/request-otp", payload).then(unwrap),
+      verifyProfileOtp: (payload) =>
+        api.post("/super-admin/profile/verify-otp", payload).then(unwrap),
+      setProfile2fa: (payload) =>
+        api.patch("/super-admin/profile/2fa", payload).then(unwrap),
+      admins: (params) =>
+        api.get("/super-admin/admins", { params }).then(unwrap),
+      adminDetail: (id) =>
+        api.get(`/super-admin/admins/${encodeURIComponent(id)}`).then(unwrap),
+      updateAdmin: (id, payload) =>
+        api
+          .patch(`/super-admin/admins/${encodeURIComponent(id)}`, payload || {})
+          .then(unwrap),
+      decideAdminProfileRequest: (adminId, requestId, payload) =>
+        api
+          .post(
+            `/super-admin/admins/${encodeURIComponent(adminId)}/profile-requests/${encodeURIComponent(requestId)}/decision`,
+            payload || {},
+          )
+          .then(unwrap),
+      assignAdmin: (payload) =>
+        api.post("/super-admin/admins/assign", payload).then(unwrap),
+      removeAdmin: (payload) =>
+        api.post("/super-admin/admins/remove", payload).then(unwrap),
+      suspendUser: (payload) =>
+        api.post("/super-admin/users/suspend", payload).then(unwrap),
+      resetUserPassword: (payload) =>
+        api.post("/super-admin/users/reset-password", payload).then(unwrap),
+      securityLogs: (params) =>
+        api.get("/super-admin/security-logs", { params }).then(unwrap),
+      platformSettings: () =>
+        api.get("/super-admin/platform-settings").then(unwrap),
+      platformSettingsByCategory: (category) =>
+        api
+          .get(`/super-admin/platform-settings/${encodeURIComponent(category)}`)
+          .then(unwrap),
+      updatePlatformSetting: (key, payload) =>
+        api
+          .put(
+            `/super-admin/platform-settings/${encodeURIComponent(key)}`,
+            payload || {},
+          )
+          .then(unwrap),
+      bulkUpdatePlatformSettings: (payload) =>
+        api
+          .post("/super-admin/platform-settings/bulk", payload || {})
+          .then(unwrap),
+      testPlatformCategory: (category, payload) =>
+        api
+          .post(
+            `/super-admin/platform-settings/${encodeURIComponent(category)}/test`,
+            payload || {},
+          )
+          .then(unwrap),
+      platformAddons: () =>
+        api.get("/super-admin/platform-addons").then(unwrap),
+      platformAddonsByCategory: (category) =>
+        api
+          .get(`/super-admin/platform-addons/${encodeURIComponent(category)}`)
+          .then(unwrap),
+      updatePlatformAddon: (key, payload) =>
+        api
+          .put(
+            `/super-admin/platform-addons/${encodeURIComponent(key)}`,
+            payload || {},
+          )
+          .then(unwrap),
+      bulkUpdatePlatformAddons: (payload) =>
+        api
+          .post("/super-admin/platform-addons/bulk", payload || {})
+          .then(unwrap),
+      billingPlans: (params) =>
+        api.get("/super-admin/billing/plans", { params }).then(unwrap),
+      billingPlanGet: (id) =>
+        api.get(`/super-admin/billing/plans/${encodeURIComponent(id)}`).then(unwrap),
+      billingPlanCreate: (payload) =>
+        api.post("/super-admin/billing/plans", payload || {}).then(unwrap),
+      billingPlanUpdate: (id, payload) =>
+        api
+          .put(`/super-admin/billing/plans/${encodeURIComponent(id)}`, payload || {})
+          .then(unwrap),
+      billingPlanReview: (id, payload) =>
+        api
+          .post(
+            `/super-admin/billing/plans/${encodeURIComponent(id)}/review`,
+            payload || {},
+          )
+          .then(unwrap),
+      billingPlanPublish: (id, payload) =>
+        api
+          .post(
+            `/super-admin/billing/plans/${encodeURIComponent(id)}/publish`,
+            payload || {},
+          )
+          .then(unwrap),
+      billingPlanDisable: (id) =>
+        api
+          .patch(`/super-admin/billing/plans/${encodeURIComponent(id)}/disable`, {})
+          .then(unwrap),
+      billingPlanDelete: (id) =>
+        api
+          .delete(`/super-admin/billing/plans/${encodeURIComponent(id)}`)
+          .then(unwrap)
+          .catch((error) => {
+            if (error?.response?.status !== 404) throw error;
+            return api
+              .delete(`/admin/billing/plans/${encodeURIComponent(id)}`)
+              .then(unwrap);
+          }),
+      billingSettingsGet: () => api.get("/super-admin/billing/settings").then(unwrap),
+      billingSettingsUpdate: (payload) =>
+        api.put("/super-admin/billing/settings", payload || {}).then(unwrap),
+      billingPricePreview: (payload) =>
+        api
+          .post("/super-admin/billing/plans/price-preview", payload || {})
+          .then(unwrap),
     },
   };
 }

@@ -2,16 +2,12 @@
 import { API } from "@api/api";
 import { Button } from "@components/ui/Button";
 import { Alert } from "@components/ui/Alert";
-import { RefreshCcw, Plus, Upload } from "lucide-react";
+import { Braces, RefreshCcw, Plus } from "lucide-react";
 import { cn } from "@shared/utils/cn";
 import { useToast } from "@shared/providers/ToastContext";
 import { ContactFormModal } from "./contacts/ContactFormModal";
-import {
-  ContactImportModal,
-  parseCsvText,
-  type ImportContactRow,
-} from "./contacts/ContactImportModal";
 import { ContactsTableCard } from "./contacts/ContactsTableCard";
+import { ContactAnalyticsModal } from "./contacts/ContactAnalyticsModal";
 import {
   EMPTY_FORM,
   joinTags,
@@ -23,7 +19,6 @@ import type { AttributeDefinition } from "./Attributes";
 export default function ContactsPage() {
   const { toast } = useToast();
   const tableRef = useRef<HTMLDivElement>(null);
-  const importInputRef = useRef<HTMLInputElement>(null);
   const isInitialLoad = useRef(true);
 
   const [contacts, setContacts] = useState<Contact[]>([]);
@@ -38,13 +33,13 @@ export default function ContactsPage() {
   const [total, setTotal] = useState(0);
   const [form, setForm] = useState(EMPTY_FORM);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [analyticsOpen, setAnalyticsOpen] = useState(false);
+  const [analyticsLoading, setAnalyticsLoading] = useState(false);
+  const [analyticsError, setAnalyticsError] = useState<string | null>(null);
+  const [contactAnalytics, setContactAnalytics] = useState<any | null>(null);
   const [multiSelected, setMultiSelected] = useState<Record<string, boolean>>({});
   const [filter, setFilter] = useState<"all" | "has-tags" | "has-company" | "recent-activity">("all");
   const [sort, setSort] = useState<"name" | "company" | "tags" | "recent" | "oldest">("recent");
-  const [importModalOpen, setImportModalOpen] = useState(false);
-  const [importFileName, setImportFileName] = useState("");
-  const [importHeaders, setImportHeaders] = useState<string[]>([]);
-  const [importRows, setImportRows] = useState<Record<string, string>[]>([]);
 
   const pageSize = 25;
   const totalPages = Math.max(1, Math.ceil(total / pageSize));
@@ -171,44 +166,6 @@ export default function ContactsPage() {
     }
   }
 
-  async function handleImportFile(file?: File | null) {
-    if (!file) return;
-    if (!file.name.toLowerCase().endsWith(".csv")) {
-      toast("Please select a CSV file.", "error");
-      return;
-    }
-    try {
-      const parsed = parseCsvText(await file.text());
-      if (!parsed.headers.length || !parsed.rows.length) {
-        toast("CSV file has no contacts to import.", "error");
-        return;
-      }
-      setImportFileName(file.name);
-      setImportHeaders(parsed.headers);
-      setImportRows(parsed.rows);
-      setImportModalOpen(true);
-    } catch {
-      toast("Could not parse CSV file.", "error");
-    } finally {
-      if (importInputRef.current) importInputRef.current.value = "";
-    }
-  }
-
-  async function saveImportedContacts(payload: { rows: ImportContactRow[]; options: { duplicateStrategy: "skip" | "update" | "merge" } }) {
-    setSaving(true);
-    try {
-      const res = await API.contacts.importCsv(payload);
-      const summary = res.summary || {};
-      setImportModalOpen(false);
-      toast(`Imported contacts: ${summary.created || 0} created, ${summary.updated || 0} updated, ${summary.skipped || 0} skipped.`, "success");
-      await load();
-    } catch (e: any) {
-      toast(e?.response?.data?.message || "Contacts import failed", "error");
-    } finally {
-      setSaving(false);
-    }
-  }
-
   async function exportSelectedCsv() {
     const selectedIds = Object.keys(multiSelected).filter((id) => multiSelected[id]);
     if (!selectedIds.length) return toast("Select contacts to export.", "error");
@@ -238,24 +195,29 @@ export default function ContactsPage() {
     await load();
   }
 
+  async function openAnalytics(contact: Contact) {
+    setAnalyticsOpen(true);
+    setAnalyticsLoading(true);
+    setAnalyticsError(null);
+    setContactAnalytics(null);
+    try {
+      const result = await API.analytics.customer(contact._id);
+      setContactAnalytics(result || null);
+    } catch (e: any) {
+      setAnalyticsError(e?.response?.data?.message || "Failed to load customer analytics");
+    } finally {
+      setAnalyticsLoading(false);
+    }
+  }
+
   return (
-    <div className="space-y-6 p-4 md:p-8">
+    <div className="space-y-5 p-2 md:p-2">
       <div className="flex flex-wrap items-center justify-between gap-4">
-        <div>
+        <div className="p-2">
           <h1 className="text-4xl font-black tracking-tight text-ink-900">Audience</h1>
           <p className="mt-2 text-sm font-semibold uppercase tracking-widest text-ink-800/60">Manage your customer records and chats</p>
         </div>
         <div className="flex items-center gap-3">
-          <input
-            ref={importInputRef}
-            type="file"
-            accept=".csv,text/csv"
-            className="hidden"
-            onChange={(event) => handleImportFile(event.target.files?.[0])}
-          />
-          <Button variant="ghost" onClick={() => importInputRef.current?.click()} disabled={saving} className="h-10 gap-2 border border-ink-900/10 bg-white">
-            <Upload size={16} /> Import Contacts
-          </Button>
           <Button variant="ghost" onClick={load} disabled={loading || syncing} className="h-10 gap-2 border border-ink-900/10 bg-white">
             <RefreshCcw size={16} className={cn(syncing && "animate-spin")} /> {syncing ? "Syncing..." : "Refresh"}
           </Button>
@@ -294,6 +256,7 @@ export default function ContactsPage() {
         }}
         onToggleOne={(id) => setMultiSelected((p) => ({ ...p, [id]: !p[id] }))}
         onEdit={fillForm}
+        onAnalytics={openAnalytics}
         onExportSelected={exportSelectedCsv}
         onBulkDelete={bulkDelete}
         onClearSelected={() => setMultiSelected({})}
@@ -312,16 +275,18 @@ export default function ContactsPage() {
         onChange={(updater) => setForm((curr) => updater(curr))}
       />
 
-      <ContactImportModal
-        open={importModalOpen}
-        fileName={importFileName}
-        headers={importHeaders}
-        rows={importRows}
-        definitions={definitions}
-        saving={saving}
-        onClose={() => setImportModalOpen(false)}
-        onImport={saveImportedContacts}
+      <ContactAnalyticsModal
+        open={analyticsOpen}
+        loading={analyticsLoading}
+        error={analyticsError}
+        data={contactAnalytics}
+        onClose={() => {
+          setAnalyticsOpen(false);
+          setAnalyticsError(null);
+          setContactAnalytics(null);
+        }}
       />
     </div>
   );
 }
+

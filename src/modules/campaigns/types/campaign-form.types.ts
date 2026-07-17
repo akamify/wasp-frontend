@@ -81,6 +81,8 @@ export type CampaignCreatePayload = {
     runAt?: string;
     timeOfDay?: string;
     weekdays?: number[];
+    endAt?: string;
+    maxOccurrences?: number;
   };
   audience?: {
     mode: CampaignAudienceMode;

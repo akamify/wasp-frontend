@@ -10,7 +10,6 @@ type Props = {
   mediaUrls: Record<string, string>;
   message: ChatMessage;
   replyContext?: { promptText: string } | null;
-  onReplyContextClick?: () => void;
   setSelectedImage: (value: string | null) => void;
 };
 
@@ -126,12 +125,12 @@ function MediaOrPlainMessage(props: Props) {
   if (message.type === "button_reply" || buttonReply?.title) {
     const topLevelReply = (message as any).interactive?.button_reply;
     const title = String(message.buttonReply?.title || topLevelReply?.title || buttonReply?.title || message.displayText || message.text || "").trim();
-    return <InteractiveReplyQuote onClick={props.onReplyContextClick} promptText={props.replyContext?.promptText || ""} text={title || "Button reply"} />;
+    return <InteractiveReplyQuote promptText={props.replyContext?.promptText || ""} text={title || "Button reply"} />;
   }
   if (message.type === "list_reply" || listReply?.title) {
     const topLevelReply = (message as any).interactive?.list_reply;
     const title = String(message.listReply?.title || topLevelReply?.title || listReply?.title || message.displayText || message.text || "").trim();
-    return <InteractiveReplyQuote onClick={props.onReplyContextClick} promptText={props.replyContext?.promptText || ""} text={title || "List reply"} />;
+    return <InteractiveReplyQuote promptText={props.replyContext?.promptText || ""} text={title || "List reply"} />;
   }
 
   if (message.display?.kind === "media" && String(message.display.mediaType || "").toLowerCase() === "audio") {
@@ -214,15 +213,15 @@ function MediaOrPlainMessage(props: Props) {
   return <div className="whitespace-pre-wrap break-words pb-1 text-[15px] leading-relaxed tracking-tight [overflow-wrap:anywhere]">{renderWhatsAppText(plainText || "[No Content]")}</div>;
 }
 
-function InteractiveReplyQuote({ onClick, promptText, text }: { onClick?: () => void; promptText: string; text: string }) {
+function InteractiveReplyQuote({ promptText, text }: { promptText: string; text: string }) {
   return (
     <div className="w-fit min-w-[150px] max-w-[320px] pb-1">
       {promptText ? (
-        <button type="button" onClick={onClick} className="mb-1 block w-full overflow-hidden rounded-[4px] border-l-4 border-ink-900/35 bg-[#c8f5ad]/80 px-2.5 py-2 text-left disabled:cursor-default" disabled={!onClick}>
+        <div className="mb-1 overflow-hidden rounded-[4px] border-l-4 border-ink-900/35 bg-[#c8f5ad]/80 px-2.5 py-2">
           <div className="max-h-[3.8rem] overflow-hidden whitespace-pre-wrap break-words text-[13px] font-semibold leading-snug text-ink-900/35 [overflow-wrap:anywhere]">
             {renderWhatsAppText(promptText)}
           </div>
-        </button>
+        </div>
       ) : null}
       <div className="whitespace-pre-wrap break-words px-0.5 text-[15px] font-bold leading-snug tracking-tight [overflow-wrap:anywhere]">
         {renderWhatsAppText(text)}

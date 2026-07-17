@@ -3,35 +3,20 @@ import { buildApiGroupAdmin } from "./groups/apiGroupAdmin";
 import { buildApiGroupPrimary } from "./groups/apiGroupPrimary";
 import { buildApiGroupSecondary } from "./groups/apiGroupSecondary";
 
-const rawEnvBaseUrl = String(
-  import.meta.env.VITE_API_BASE_URL ||
-  import.meta.env.VITE_API_URL ||
-  import.meta.env.NEXT_PUBLIC_API_BASE_URL ||
-  import.meta.env.NEXT_PUBLIC_API_URL ||
-  ""
-).trim();
+const rawEnvBaseUrl = String(import.meta.env.VITE_API_BASE_URL || "").trim();
 const isBrowser = typeof window !== "undefined";
 const isLocalHost =
   isBrowser &&
   (window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1");
-const PRODUCTION_API_BASE_URL = "https://api.aiwizchat.com/api";
 
 function normalizeApiBaseUrl(value) {
   const v = String(value || "").trim();
   if (!v || v === "/" || v === "./") return "";
-  const normalized = v.replace(/\/+$/, "");
-  try {
-    const url = new URL(normalized);
-    if (!url.pathname || url.pathname === "/") {
-      url.pathname = "/api";
-      return url.toString().replace(/\/+$/, "");
-    }
-  } catch {}
-  return normalized;
+  return v.replace(/\/+$/, "");
 }
 
 const envBaseUrl = normalizeApiBaseUrl(rawEnvBaseUrl);
-const API_BASE_URL = envBaseUrl || (isLocalHost ? "http://localhost:3000" : PRODUCTION_API_BASE_URL);
+const API_BASE_URL = envBaseUrl || (isLocalHost ? "http://localhost:3000" : "/api");
 const isDev = Boolean(import.meta.env.DEV);
 
 export const api = axios.create({
@@ -39,9 +24,9 @@ export const api = axios.create({
   timeout: 20000,
 });
 
-export const TOKEN_KEY = "waspakamify_token";
-export const WORKSPACE_KEY = "waspakamify_workspace_id";
-export const AUTH_STORAGE_EVENT = "waspakamify:auth-storage";
+export const TOKEN_KEY = "aiwizchat_token";
+export const WORKSPACE_KEY = "aiwizchat_workspace_id";
+export const AUTH_STORAGE_EVENT = "aiwizchat:auth-storage";
 let __workspaceResolvePromise = null;
 
 // Coalesce duplicate GET requests and add a tiny cache window to prevent

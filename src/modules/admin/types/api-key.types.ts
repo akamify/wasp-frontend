@@ -7,8 +7,6 @@ export type UserApiKey = {
   id: string;
   name: string;
   permissions: ApiKeyPermissions;
-  scopes?: string[];
-  status?: "active" | "disabled";
   revoked: boolean;
   revokedAt: string | null;
   createdAt: string | null;

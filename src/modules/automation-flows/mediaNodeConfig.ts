@@ -1,5 +1,5 @@
 export type MediaType = "image" | "video" | "document" | "audio";
-export type MediaSourceType = "upload" | "library" | "url" | "api_context";
+export type MediaSourceType = "upload" | "library" | "url" | "api_context" | "contact_attribute";
 
 export const MEDIA_UPLOAD_LIMITS: Record<
   MediaType,

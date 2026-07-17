@@ -17,10 +17,30 @@ type Campaign = {
   status: string;
   templateId: string;
   type?: "broadcast" | "csv" | "api";
+  schedule?: { type?: string; status?: string; nextRunAt?: string; lastRunAt?: string; timezone?: string };
   totals?: { total?: number; queued?: number; sent?: number; failed?: number };
   createdAt?: string;
   lastError?: { message?: any };
 };
+
+const STATUS_FILTERS = [
+  { value: "all", label: "All" },
+  { value: "active", label: "Active" },
+  { value: "queued", label: "Queued" },
+  { value: "running", label: "Running" },
+  { value: "paused", label: "Paused" },
+  { value: "completed", label: "Completed" },
+  { value: "failed", label: "Failed" },
+  { value: "canceled", label: "Canceled" },
+];
+
+function matchesStatusFilter(status: string, filter: string) {
+  const normalized = String(status || "").toLowerCase();
+  if (filter === "all") return true;
+  if (filter === "active") return ["queued", "running", "paused"].includes(normalized);
+  if (filter === "canceled") return normalized === "canceled" || normalized === "cancelled";
+  return normalized === filter;
+}
 
 export default function SendPage() {
   const navigate = useNavigate();
@@ -140,7 +160,7 @@ export default function SendPage() {
   const filteredCampaigns = useMemo(() => {
     return campaigns.filter(c => {
       const matchesSearch = c.name.toLowerCase().includes(search.toLowerCase());
-      const matchesFilter = filter === "all" || c.status.toLowerCase() === filter.toLowerCase();
+      const matchesFilter = matchesStatusFilter(c.status, filter);
       const matchesType = typeFilter === "all" || String(c.type || "broadcast") === typeFilter;
       return matchesSearch && matchesFilter && matchesType;
     });
@@ -162,7 +182,7 @@ export default function SendPage() {
   }, [page, totalPages]);
 
   return (
-    <div className="space-y-6 p-4 md:p-8">
+    <div className="space-y-5 p-2 md:p-3">
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div>
           <h1 className="text-4xl font-black tracking-tight text-ink-900">Campaigns</h1>
@@ -191,16 +211,16 @@ export default function SendPage() {
           />
         </div>
         <div className="flex items-center gap-1.5 p-1 bg-slate-50 border border-ink-900/5 rounded-[5px]">
-          {["all", "active", "completed", "Cancelled"].map((f) => (
+          {STATUS_FILTERS.map((item) => (
             <button
-              key={f}
-              onClick={() => setFilter(f)}
-              className={`rounded-[3px] px-4 py-1.5 text-[10px] font-black uppercase tracking-wider transition-all ${filter === f
+              key={item.value}
+              onClick={() => setFilter(item.value)}
+              className={`rounded-[3px] px-4 py-1.5 text-[10px] font-black uppercase tracking-wider transition-all ${filter === item.value
                 ? "bg-white text-ink-900 shadow-sm shadow-ink-900/10 ring-1 ring-ink-900/5"
                 : "text-ink-800/40 hover:text-ink-900"
                 }`}
             >
-              {f}
+              {item.label}
             </button>
           ))}
         </div>

@@ -145,7 +145,7 @@ export default function CareersPage() {
     <PublicShell>
       {error ? <Alert>{error}</Alert> : null}
       <div className="mx-25 p-4">
-        <h1 className="text-2xl font-extrabold tracking-tight text-ink-900">{page?.data?.hero?.title || "Apply at AiWizChat"}</h1>
+        <h1 className="text-2xl font-extrabold tracking-tight text-ink-900">{page?.data?.hero?.title || "Apply at DigitalWasp"}</h1>
         {page?.data?.introMarkdown ? (
           <p className="mt-2 max-w-3xl whitespace-pre-wrap text-sm leading-7 text-ink-900/60">{page.data.introMarkdown}</p>
         ) : null}
@@ -264,3 +264,4 @@ export default function CareersPage() {
     </PublicShell>
   );
 }
+

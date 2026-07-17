@@ -66,7 +66,10 @@ export function LeftOverviewPanel({ campaign, createdAt, templateName, templateP
 }
 
 export function OverviewCard(props: any) {
-  const { campaign, counts, audienceTotal, creditUsage, isCanceled, statusMenuOpen, setStatusMenuOpen, hasStatusActions, busy, allowPause, allowResume, allowStop, allowComplete, runAction, statusMenuRef } = props;
+  const { campaign, counts, analytics, audienceTotal, creditUsage, isCanceled, statusMenuOpen, setStatusMenuOpen, hasStatusActions, busy, allowPause, allowResume, allowStop, allowComplete, runAction, statusMenuRef } = props;
+  const revenue = Number(analytics?.revenue || 0);
+  const spend = Number(analytics?.spend || creditUsage?.net || 0);
+  const roi = analytics?.roi;
   return <Card className="p-4 md:p-6 border-ink-900/5 shadow-xl shadow-ink-900/5">
     <div className="grid grid-cols-3 gap-y-8 gap-x-2">
       <div className="col-span-3 flex flex-col items-center border-b border-ink-900/5 pb-5"><div className="text-[10px] font-bold uppercase tracking-wider text-ink-800/40 mb-2">Campaign Status</div><div className="flex items-center gap-2">
@@ -78,9 +81,16 @@ export function OverviewCard(props: any) {
           {allowComplete ? <button type="button" className="w-full px-4 py-2.5 text-left text-sm font-semibold text-emerald-700 hover:bg-emerald-50" onClick={() => void runAction("complete")}>Complete</button> : null}
         </div> : null}
       </div></div>
-      {[{ label: "Audience", value: audienceTotal }, { label: "Credit Used", value: creditUsage ? `${creditUsage.currency === "INR" ? "Rs " : ""}${creditUsage.net.toFixed(1)}` : "--" }, { label: "Sent", value: counts?.sent || 0 }, { label: "Delivered", value: counts?.delivered || 0 }, { label: "Read", value: counts?.read || 0 }, { label: "Replied", value: counts?.replied || 0 }, { label: "Failed", value: counts?.failed || 0 }, { label: "Queued", value: counts?.queued || 0 }].map((s) => (
+      {[{ label: "Audience", value: audienceTotal }, { label: "Credit Used", value: creditUsage ? `${creditUsage.currency === "INR" ? "Rs " : ""}${creditUsage.net.toFixed(1)}` : "--" }, { label: "Sent", value: counts?.sent || analytics?.sent || 0 }, { label: "Delivered", value: counts?.delivered || analytics?.delivered || 0 }, { label: "Read", value: counts?.read || analytics?.read || 0 }, { label: "Clicked", value: analytics?.clicked || 0 }, { label: "Converted", value: analytics?.converted || 0 }, { label: "Failed", value: counts?.failed || analytics?.failed || 0 }, { label: "Queued", value: counts?.queued || 0 }].map((s) => (
         <div key={s.label} className="flex flex-col items-center text-center min-w-0"><div className="text-[9px] font-bold uppercase tracking-wider text-ink-800/40 mb-1.5 truncate w-full">{s.label}</div><div className="text-base md:text-2xl font-black text-ink-900 truncate w-full">{typeof s.value === "number" ? s.value.toLocaleString() : s.value}</div></div>
       ))}
+    </div>
+    <div className="mt-8 grid gap-3 rounded-[5px] border border-ink-900/5 bg-slate-50/70 p-4 md:grid-cols-5">
+      <MetricPill label="CTR" value={`${Number(analytics?.ctr || 0).toFixed(1)}%`} />
+      <MetricPill label="Conversion Rate" value={`${Number(analytics?.conversionRate || 0).toFixed(1)}%`} />
+      <MetricPill label="Revenue" value={`Rs ${Math.round(revenue).toLocaleString()}`} />
+      <MetricPill label="Spend" value={`Rs ${Math.round(spend).toLocaleString()}`} />
+      <MetricPill label="ROI" value={roi === null || roi === undefined ? "--" : `${(Number(roi) * 100).toFixed(0)}%`} />
     </div>
     <div className="mt-8 border-t border-ink-900/5 pt-8"><div className="flex flex-wrap items-center gap-4 mb-4"><div className="flex items-center gap-1.5"><div className="w-2.5 h-2.5 rounded-full bg-emerald-500" /><span className="text-[10px] font-bold text-ink-800/60 uppercase">Sent</span></div><div className="flex items-center gap-1.5"><div className="w-2.5 h-2.5 rounded-full bg-blue-500" /><span className="text-[10px] font-bold text-ink-800/60 uppercase">Delivered</span></div><div className="flex items-center gap-1.5"><div className="w-2.5 h-2.5 rounded-full bg-rose-500" /><span className="text-[10px] font-bold text-ink-800/60 uppercase">Failed</span></div></div>
       <AreaChart datasets={[{ points: [{ xLabel: "Yesterday", y: 0 }, { xLabel: "Today", y: counts?.sent || 0 }], stroke: "#10b981", fill: "rgba(16,185,129,0.12)" }, { points: [{ xLabel: "Yesterday", y: 0 }, { xLabel: "Today", y: counts?.delivered || 0 }], stroke: "#3b82f6", fill: "rgba(59,130,246,0.1)" }, { points: [{ xLabel: "Yesterday", y: 0 }, { xLabel: "Today", y: counts?.failed || 0 }], stroke: "#ef4444", fill: "rgba(239,68,68,0.08)" }]} />
@@ -111,4 +121,13 @@ export function LastErrorBanner({ campaign }: { campaign: Campaign }) {
 
 export function MainGrid({ tab, children }: { tab: TabId; children: React.ReactNode }) {
   return <div className={cn("grid gap-6 md:gap-8", tab === "overview" ? "lg:grid-cols-[360px_minmax(0,1fr)]" : "lg:grid-cols-1", "items-start w-full")}>{children}</div>;
+}
+
+function MetricPill({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="rounded-[5px] bg-white px-3 py-3 text-center shadow-sm">
+      <div className="text-[10px] font-black uppercase tracking-widest text-ink-800/40">{label}</div>
+      <div className="mt-1 text-lg font-black text-ink-900">{value}</div>
+    </div>
+  );
 }

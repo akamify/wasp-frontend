@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { motion } from "framer-motion";
-import { ArrowDown, Check, CheckCheck, Info, MessageSquare } from "lucide-react";
+import { Check, CheckCheck, Info, MessageSquare } from "lucide-react";
 import { API } from "@api/api";
 import { ChatHeader } from "@modules/conversations/components/ChatHeader";
 import { ConversationFeedback } from "@modules/conversations/components/ConversationFeedback";
@@ -25,10 +25,10 @@ import {
 } from "@shared/utils/metaErrors";
 import { cn } from "@shared/utils/cn";
 import { Seo } from "@shared/components/Seo";
+import { BRAND_NAME } from "@shared/config/brand";
 
 type ReplyContext = {
   promptText: string;
-  originalMessageId?: string;
 };
 
 export function ConversationsView() {
@@ -41,8 +41,6 @@ export function ConversationsView() {
 
   const {
     activeConversation,
-    applyRealtimeConversation,
-    applyRealtimeUnread,
     filter,
     loadingList,
     refreshListSilently,
@@ -53,34 +51,22 @@ export function ConversationsView() {
   } = useConversationsList(urlPhone, setError);
 
   const {
-    activeChatPendingUnreadCount,
     contactDetail,
     loadChat,
     loadingChat,
     messages,
-    onMessagesScroll,
     refreshChatSilently,
     scrollRef,
-    scrollToMessage,
-    scrollToPendingUnread,
     setContactDetail,
-  } = useConversationMessages({
-    navigate,
-    refreshListSilently,
-    search,
-    setError,
-    urlPhone,
-    applyRealtimeConversation,
-    applyRealtimeUnread,
-  });
+  } = useConversationMessages({ navigate, refreshListSilently, search, setError, urlPhone });
 
   const { customerServiceWindowOpen, windowRemainingMs } = useCustomerServiceWindow(activeConversation, messages);
   const { ensureMediaUrl, mediaErrors, mediaLoading, mediaUrls, selectedImage, setSelectedImage } = useMessageActions(messages);
   const conversationName = String(contactDetail?.name || activeConversation?.contact?.name || urlPhone).trim();
   const pageTitle = urlPhone
-    ? `${conversationName} | Inbox | AiWizChat`
-    : `Inbox | AiWizChat`;
-  const pageDescription = `WhatsApp conversation with ${conversationName}. Reply, manage messages, and track delivery status in AiWizChat.`;
+    ? `${conversationName} | Inbox | ${BRAND_NAME}`
+    : `Inbox | ${BRAND_NAME}`;
+  const pageDescription = `WhatsApp conversation with ${conversationName}. Reply, manage messages, and track delivery status in ${BRAND_NAME}.`;
   const { definitions, editBusy, editForm, editOpen, openEdit, saveEdit, setEditForm, setEditOpen } = useContactEditor({
     contactDetail,
     refreshListSilently,
@@ -169,7 +155,6 @@ export function ConversationsView() {
               getErrorMessage={getErrorMessage}
               loading={loadingChat}
               messages={messages}
-              onScroll={onMessagesScroll}
               panelRef={scrollRef}
               renderMessageContent={(message) => (
                 <MessageContent
@@ -179,29 +164,12 @@ export function ConversationsView() {
                   mediaUrls={mediaUrls}
                   message={message}
                   replyContext={findInteractiveReplyContext(messages, message)}
-                  onReplyContextClick={() => {
-                    const context = findInteractiveReplyContext(messages, message);
-                    if (context?.originalMessageId) scrollToMessage(context.originalMessageId);
-                  }}
                   setSelectedImage={setSelectedImage}
                 />
               )}
               renderMetaBillingGuidance={renderMetaBillingGuidance}
               statusMark={statusMark}
             />
-            {activeChatPendingUnreadCount > 0 ? (
-              <button
-                type="button"
-                onClick={scrollToPendingUnread}
-                className="absolute bottom-28 right-5 z-20 flex size-11 items-center justify-center rounded-full bg-brand-600 text-white shadow-lg ring-4 ring-white/80 hover:bg-brand-700"
-                aria-label={`Jump to ${activeChatPendingUnreadCount} unread message${activeChatPendingUnreadCount === 1 ? "" : "s"}`}
-              >
-                <ArrowDown size={20} />
-                <span className="absolute -right-1 -top-1 flex min-w-5 h-5 items-center justify-center rounded-full bg-rose-500 px-1 text-[10px] font-black text-white">
-                  {activeChatPendingUnreadCount > 99 ? "99+" : activeChatPendingUnreadCount}
-                </span>
-              </button>
-            ) : null}
             <ComposerPanel
               customerServiceWindowOpen={customerServiceWindowOpen}
               refreshChat={() => void refreshChatSilently(urlPhone)}
@@ -270,31 +238,24 @@ function findInteractiveReplyContext(messages: ChatMessage[], message: ChatMessa
   const previousMessages = currentIndex >= 0 ? messages.slice(0, currentIndex).reverse() : [...messages].reverse();
   const quotedMessageId = String(message.replyToMessageId || (message.payload as any)?.context?.id || "").trim();
   if (quotedMessageId) {
-    const quotedMessage = previousMessages.find((candidate) =>
-      String(candidate.whatsappMessageId || "") === quotedMessageId || String(candidate._id || "") === quotedMessageId
-    );
-    if (quotedMessage) return { promptText: getPromptText(quotedMessage), originalMessageId: String(quotedMessage._id || quotedMessage.whatsappMessageId || "") };
-    if (message.replyToPreview) return { promptText: message.replyToPreview, originalMessageId: quotedMessageId };
+    const quotedMessage = previousMessages.find((candidate) => String(candidate.whatsappMessageId || "") === quotedMessageId);
+    if (quotedMessage) return { promptText: getPromptText(quotedMessage) };
   }
 
   for (const candidate of previousMessages) {
     if (candidate.direction !== "outbound") continue;
     if (!isInteractivePrompt(candidate)) continue;
     if (isButtonReply && promptHasButton(candidate, replyId, replyTitle)) {
-      return { promptText: getPromptText(candidate), originalMessageId: String(candidate._id || candidate.whatsappMessageId || "") };
+      return { promptText: getPromptText(candidate) };
     }
     if (isListReply && promptHasListRow(candidate, replyId, replyTitle)) {
-      return { promptText: getPromptText(candidate), originalMessageId: String(candidate._id || candidate.whatsappMessageId || "") };
+      return { promptText: getPromptText(candidate) };
     }
   }
 
   const fallbackPrompt = previousMessages.find((candidate) => candidate.direction === "outbound" && isInteractivePrompt(candidate)) ||
     previousMessages.find((candidate) => candidate.direction === "outbound" && getPromptText(candidate));
-  if (message.replyToPreview) return { promptText: message.replyToPreview, originalMessageId: quotedMessageId || undefined };
-  return fallbackPrompt ? {
-    promptText: getPromptText(fallbackPrompt),
-    originalMessageId: String(fallbackPrompt._id || fallbackPrompt.whatsappMessageId || ""),
-  } : null;
+  return fallbackPrompt ? { promptText: getPromptText(fallbackPrompt) } : null;
 }
 
 function isInteractivePrompt(message: ChatMessage) {

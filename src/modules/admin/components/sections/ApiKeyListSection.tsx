@@ -11,7 +11,7 @@ type Props = {
 };
 
 export function ApiKeyListSection({ apiKeys, busy, onDisable, onEnable, hideKeys, onDisableMany }: Props) {
-  const activeKeys = apiKeys.filter((key) => !key.revoked && key.status !== "disabled");
+  const activeKeys = apiKeys.filter((key) => !key.revoked);
   if (hideKeys) {
     return (
       <div className="rounded-[5px] border border-slate-200 p-3">
@@ -34,9 +34,7 @@ export function ApiKeyListSection({ apiKeys, busy, onDisable, onEnable, hideKeys
   }
 
   return (
-    <div className="rounded-[5px] border border-slate-200 p-3">
-      <div className="mb-2 text-xs font-black text-slate-800">API Keys</div>
-      <div className="space-y-2">
+    <div className="space-y-2">
       {apiKeys.map((k) => (
         <UserApiKeyCard
           key={k.id}
@@ -47,7 +45,6 @@ export function ApiKeyListSection({ apiKeys, busy, onDisable, onEnable, hideKeys
         />
       ))}
       {!apiKeys.length ? <div className="text-[11px] text-slate-500">No API keys</div> : null}
-      </div>
     </div>
   );
 }

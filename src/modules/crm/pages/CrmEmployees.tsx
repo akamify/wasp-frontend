@@ -17,6 +17,7 @@ type Employee = {
   role: string;
   status: "ACTIVE" | "BLOCKED" | "DISABLED" | "DELETED";
   assignedChatsCount: number;
+  maxActiveLeads?: number | null;
   lastLoginAt?: string | null;
   lastActivityAt?: string | null;
   createdAt?: string;
@@ -152,6 +153,7 @@ export default function CrmEmployeesPage() {
                 <th className="px-4 py-3 font-black uppercase tracking-widest text-[10px]">Email</th>
                 <th className="px-4 py-3 font-black uppercase tracking-widest text-[10px]">Status</th>
                 <th className="px-4 py-3 font-black uppercase tracking-widest text-[10px]">Assigned</th>
+                <th className="px-4 py-3 font-black uppercase tracking-widest text-[10px]">Lead Cap</th>
                 <th className="px-4 py-3 font-black uppercase tracking-widest text-[10px]">Last login</th>
                 <th className="px-4 py-3 font-black uppercase tracking-widest text-[10px]">Last activity</th>
                 <th className="px-4 py-3 font-black uppercase tracking-widest text-[10px]">Actions</th>
@@ -181,6 +183,7 @@ export default function CrmEmployeesPage() {
                     </span>
                   </td>
                   <td className="px-4 py-3 font-black text-slate-900">{Number(e.assignedChatsCount || 0)}</td>
+                  <td className="px-4 py-3 font-semibold text-slate-700">{e.maxActiveLeads == null ? "Unlimited" : Number(e.maxActiveLeads || 0)}</td>
                   <td className="px-4 py-3 text-slate-600 font-semibold">{fmtDate(e.lastLoginAt)}</td>
                   <td className="px-4 py-3 text-slate-600 font-semibold">{fmtDate(e.lastActivityAt)}</td>
                   <td className="px-4 py-3">
@@ -228,7 +231,7 @@ export default function CrmEmployeesPage() {
               ))}
               {!loading && items.length === 0 ? (
                 <tr>
-                  <td colSpan={7} className="px-4 py-10 text-center text-slate-500 font-semibold">
+                  <td colSpan={8} className="px-4 py-10 text-center text-slate-500 font-semibold">
                     No employees yet.
                   </td>
                 </tr>
@@ -248,6 +251,7 @@ export default function CrmEmployeesPage() {
                 email: editingEmployee.email,
                 name: editingEmployee.name,
                 role: editingEmployee.role,
+                maxActiveLeads: editingEmployee.maxActiveLeads,
               }
             : null
         }

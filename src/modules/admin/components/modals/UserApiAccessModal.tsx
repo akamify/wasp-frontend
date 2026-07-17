@@ -3,6 +3,7 @@ import { API } from "@api/api";
 import { Modal } from "@components/ui/Modal";
 import { UserSecuritySection } from "@modules/admin/components/sections/UserSecuritySection";
 import { UserCrmCard } from "@modules/admin/components/cards/UserCrmCard";
+import { UserExternalApiCard } from "@modules/admin/components/cards/UserExternalApiCard";
 import { UserPermissionCard } from "@modules/admin/components/cards/UserPermissionCard";
 import { ApiKeyListSection } from "@modules/admin/components/sections/ApiKeyListSection";
 import { useWorkspaceExternalChatFeature } from "@modules/admin/hooks/useWorkspaceExternalChatFeature";
@@ -18,11 +19,10 @@ type Props = {
   onDisableKey: (keyId: string) => void;
   onDisableKeys?: (keyIds: string[]) => void;
   onEnableKey: (keyId: string) => void;
-  onSetKeyChatAccess?: (keyId: string, enabled: boolean) => void;
   onEnableCampaignSend: () => void;
   onDisableCampaignSend: () => void;
-  onEnableChat: () => void | Promise<void>;
-  onDisableChat: () => void | Promise<void>;
+  onEnableChat: () => void;
+  onDisableChat: () => void;
   onBlock: () => void;
   onUnblock: () => void;
 };
@@ -72,48 +72,42 @@ export function UserApiAccessModal(props: Props) {
     };
   }, [isOpen, workspaceId]);
 
-  async function toggleWorkspaceChat(next: boolean) {
-    const action = next ? "Enable" : "Disable";
-    const message = next
-      ? "Enable External Chat API access for this workspace? This will also enable chat access on active API keys."
-      : "Disable External Chat API access for this workspace? External inbox API calls will be blocked.";
-    if (!window.confirm(`${action} External Chat API Access?\n\n${message}`)) return;
-    if (next) {
-      await onEnableChat();
-      workspaceFeature.setEnabled(true);
-      return;
+  async function toggleExternalChat(next: boolean) {
+    if (!workspaceId) return;
+    if (!next) {
+      const ok = window.confirm(
+        "Disabling External Chat API will immediately block all external CRM inbox access for this workspace. Existing API keys will remain, but chat endpoints will be denied."
+      );
+      if (!ok) return;
     }
-    await onDisableChat();
-    workspaceFeature.setEnabled(false);
+    await workspaceFeature.toggle(next);
   }
 
   return (
     <Modal isOpen={isOpen} onClose={onClose} title="Workspace Access">
       <div className="space-y-3">
         <UserSecuritySection blocked={Boolean(data?.accountBlocked)} busy={busy} onBlock={onBlock} onUnblock={onUnblock} />
-        {workspaceFeature.error ? (
-          <div className="rounded-[5px] border border-rose-100 bg-rose-50 p-2 text-[11px] font-bold text-rose-700">
-            {workspaceFeature.error}
-          </div>
-        ) : null}
         <UserPermissionCard
           campaignSend={campaignSendEnabled}
           chatAccess={chatAccessEnabled}
           busy={busy || workspaceFeature.busy}
           onEnableCampaignSend={onEnableCampaignSend}
           onDisableCampaignSend={onDisableCampaignSend}
-          onEnableChat={() => toggleWorkspaceChat(true)}
-          onDisableChat={() => toggleWorkspaceChat(false)}
-          readOnly={!workspaceId}
+          onEnableChat={onEnableChat}
+          onDisableChat={onDisableChat}
         />
+        {workspaceId ? (
+          <UserExternalApiCard
+            workspaceId={workspaceId}
+            busy={busy}
+            enabled={workspaceFeature.enabled}
+            loading={workspaceFeature.busy}
+            error={workspaceFeature.error}
+            onToggle={toggleExternalChat}
+          />
+        ) : null}
         {workspaceId ? <UserCrmCard workspaceId={workspaceId} busy={busy} /> : null}
-        <ApiKeyListSection
-          apiKeys={data?.apiKeys || []}
-          busy={busy}
-          onDisable={onDisableKey}
-          onDisableMany={onDisableKeys}
-          onEnable={onEnableKey}
-        />
+       
       </div>
     </Modal>
   );

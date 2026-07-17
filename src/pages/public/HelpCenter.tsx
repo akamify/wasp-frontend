@@ -6,6 +6,7 @@ import { Button } from "@components/ui/Button";
 import { PublicShell } from "@pages/public/PublicShell";
 import { HelpCircle } from "lucide-react";
 import { Seo } from "@shared/components/Seo";
+import { BRAND_NAME } from "@shared/config/brand";
 
 export default function HelpCenterPage() {
   const navigate = useNavigate();
@@ -39,7 +40,7 @@ export default function HelpCenterPage() {
   const hero = page?.data?.hero || {};
   const faqs = Array.isArray(page?.data?.faqs) ? page.data.faqs : [];
   const contacts = Array.isArray(page?.data?.contacts) ? page.data.contacts : [];
-  const pageTitle = `${String(hero?.title || "Help Center").trim()} | AiWizChat`;
+  const pageTitle = `${String(hero?.title || "Help Center").trim()} | ${BRAND_NAME}`;
   const pageDescription = String(hero?.subtitle || "Find answers, contact support, or raise a ticket.").trim();
 
   return (

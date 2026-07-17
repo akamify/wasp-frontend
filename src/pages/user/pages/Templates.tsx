@@ -129,8 +129,7 @@ export default function TemplatesPage() {
         category: payload.category,
         components: payload.components,
       });
-      await API.templates.submit(editingTemplate._id);
-      toast("Template updated and re-submitted to Meta for review.", "success");
+      toast("Template updated and sent to Meta for review.", "success");
       setShowEditPanel(false);
       setEditingTemplate(null);
       setSearchParams({});
@@ -171,7 +170,7 @@ export default function TemplatesPage() {
   }, [selectedTemplate]);
 
   return (
-    <div className=" p-4 md:p-8 relative">
+    <div className=" p-2 md:p-2 relative">
       {/* Main List */}
       <div className="relative">
         {showCreatePanel ? (

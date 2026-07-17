@@ -14,7 +14,7 @@ import { useToast } from "@shared/providers/ToastContext";
 function toneForType(type: string) {
   const t = String(type || "").toLowerCase();
   if (t === "credit") return "good";
-  if (t === "debit" || t === "template_message_charge") return "bad";
+  if (t === "debit") return "bad";
   return "neutral";
 }
 
@@ -61,7 +61,7 @@ export default function WalletPage() {
   const filteredTx = useMemo(() => {
     if (sort === "all") return tx;
     if (sort === "credited") return tx.filter((t) => t.type === "credit");
-    if (sort === "debited") return tx.filter((t) => t.type === "debit" || t.type === "template_message_charge");
+    if (sort === "debited") return tx.filter((t) => t.type === "debit");
     if (sort === "failed") return tx.filter((t) => t.status === "failed" || t.error);
     return tx;
   }, [tx, sort]);
@@ -257,7 +257,7 @@ export default function WalletPage() {
               <h3 className="font-black tracking-tight text-ink-900">Billing Info</h3>
             </div>
             <p className="text-xs font-semibold text-ink-800/60 leading-relaxed">
-              AiWizChat credits are charged for accepted template messages according to category. Meta billing is separate and handled by the connected WhatsApp billing hub; service-window replies are not wallet charged.
+              Credits are consumed per message sent via the WhatsApp Business API. Charges vary based on destination country and message category.
             </p>
           </Card>
 

@@ -5,8 +5,10 @@ import { Input } from "@components/ui/Input";
 import { Select } from "@components/ui/Select";
 import { Textarea } from "@components/ui/Textarea";
 import {
+  listContactAttributeOptions,
   listMediaAssets,
   uploadMediaAsset,
+  type ContactAttributeOption,
   type MediaAssetOption,
 } from "@modules/automation-flows/automationDataApi";
 import {
@@ -43,6 +45,7 @@ export function MediaNodeSettings({
   const sourceType = configString(config, "sourceType", "url") as MediaSourceType;
   const inputRef = useRef<HTMLInputElement>(null);
   const [assets, setAssets] = useState<MediaAssetOption[]>([]);
+  const [attributeOptions, setAttributeOptions] = useState<ContactAttributeOption[]>([]);
   const [search, setSearch] = useState("");
   const [libraryLoading, setLibraryLoading] = useState(false);
   const [libraryError, setLibraryError] = useState("");
@@ -71,6 +74,21 @@ export function MediaNodeSettings({
       active = false;
     };
   }, [mediaType, sourceType]);
+
+  useEffect(() => {
+    if (sourceType !== "contact_attribute") return;
+    let active = true;
+    void listContactAttributeOptions()
+      .then((items) => {
+        if (active) setAttributeOptions(items);
+      })
+      .catch(() => {
+        if (active) setAttributeOptions([]);
+      });
+    return () => {
+      active = false;
+    };
+  }, [sourceType]);
 
   function update(patch: FlowNodeConfig) {
     onChange({ ...config, ...patch });
@@ -191,6 +209,7 @@ export function MediaNodeSettings({
         <option value="library">Media library</option>
         <option value="url">Public URL</option>
         <option value="api_context">API / Dynamic URL</option>
+        <option value="contact_attribute">Contact attribute URL</option>
       </Select>
 
       {sourceType === "upload" ? (
@@ -266,6 +285,29 @@ export function MediaNodeSettings({
             onChange={(event) => update({ sourceKey: event.target.value })}
             placeholder="productImageUrl"
             hint="No API URL fields mapped yet. Add an API Request node and map a URL field."
+          />
+        )
+      ) : null}
+
+      {sourceType === "contact_attribute" ? (
+        attributeOptions.length ? (
+          <Select
+            label="Contact attribute URL field"
+            value={configString(config, "sourceKey")}
+            onChange={(event) => update({ sourceKey: event.target.value })}
+          >
+            <option value="">Select contact attribute...</option>
+            {attributeOptions.map((attribute) => (
+              <option key={attribute.key} value={attribute.key}>{attribute.label || attribute.key}</option>
+            ))}
+          </Select>
+        ) : (
+          <Input
+            label="Contact attribute URL key"
+            value={configString(config, "sourceKey")}
+            onChange={(event) => update({ sourceKey: event.target.value })}
+            placeholder="invoiceUrl"
+            hint="The selected contact attribute must contain a public media URL."
           />
         )
       ) : null}

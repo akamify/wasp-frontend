@@ -23,7 +23,6 @@ export default function MetaConnectPage() {
   const [embeddedDebugError, setEmbeddedDebugError] = useState("");
   const [embeddedPhones, setEmbeddedPhones] = useState<Array<{ id: string; display_phone_number: string | null }>>([]);
   const [embeddedConnection, setEmbeddedConnection] = useState<any>(null);
-  const [metaHealth, setMetaHealth] = useState<any>(null);
   const authCodeRef = useRef<string | null>(null);
 
   const signupDetailsRef = useRef<{ waba_id: string | null; phone_number_id: string | null }>({
@@ -71,7 +70,6 @@ export default function MetaConnectPage() {
       ]);
       const statusRes = statusResult.status === "fulfilled" ? statusResult.value : null;
       const connectionRes = connectionResult.status === "fulfilled" ? connectionResult.value : null;
-      if (statusRes) setMetaHealth(statusRes);
 
       if (!statusRes && !connectionRes) {
         const error =
@@ -290,10 +288,7 @@ export default function MetaConnectPage() {
     } catch (e: any) {
       const backendMessage = e?.response?.data?.message || "";
       const backendDetail = e?.response?.data?.details?.message || "";
-      const rawMessage = backendMessage || e?.message || "";
-      const message = /jssdk unknown host domain/i.test(rawMessage)
-        ? `Meta blocked Embedded Signup because ${window.location.hostname} is not added in your Meta app's JavaScript SDK allowed domains. Add this domain in Meta App Dashboard > Facebook Login for Business > Settings > Allowed Domains for JavaScript SDK, then try again.`
-        : /could not be matched to the selected waba/i.test(backendMessage)
+      const message = /could not be matched to the selected waba/i.test(backendMessage)
         ? "Meta returned a phone number that does not match the selected WABA. Please reconnect WhatsApp. If this repeats, contact support."
         : backendMessage || e?.message || "Could not exchange Meta code";
       setEmbeddedError(message);
@@ -349,16 +344,19 @@ export default function MetaConnectPage() {
   const connectionStatusMessage =
     embeddedConnection?.connectionStatus === "reauthorization_required"
       ? "Meta authorization expired or was revoked. Reconnect WhatsApp to restore live phone and profile metadata."
-      : metaHealth?.businessVerificationPending
-      ? "Business verification is pending. This may affect messaging eligibility or limits; user Meta billing setup is not required."
+      : embeddedConnection?.connectionStatus === "pending_verification"
+      ? "Phone connected, verification pending"
       : embeddedConnection?.connectionStatus === "pending_display_name_review"
         ? "Display name review pending"
         : embeddedConnection?.connectionStatus === "metadata_partial"
           ? "Metadata partially available from Meta"
           : null;
   const registrationWarning =
-    !metaHealth?.cloudApiActive && Array.isArray(metaHealth?.blockingIssues) && metaHealth.blockingIssues.length
-      ? String(metaHealth.blockingIssues[0])
+    embeddedConnection?.connected &&
+    (["pending_verification", "metadata_partial"].includes(String(embeddedConnection?.connectionStatus || "")) ||
+      (embeddedConnection?.codeVerificationStatus &&
+        String(embeddedConnection.codeVerificationStatus).toUpperCase() !== "VERIFIED"))
+      ? "Cloud API registration may still be required before sending messages"
       : null;
   const businessProfile = embeddedConnection?.businessProfile || {};
   const authorizationRequired =
@@ -437,8 +435,6 @@ export default function MetaConnectPage() {
           ) : null}
         </div>
         <div className="mt-3 grid gap-2 text-xs font-semibold text-slate-700 md:grid-cols-4">
-          <span>Connection: {isConnected ? "Connected" : "Not connected"}</span>
-          <span>Cloud API: {metaHealth?.cloudApiActive ? "Active" : "Not active"}</span>
           <span>WABA: {embeddedConnection?.wabaName || "Not available yet"}</span>
           <span>Account status: {embeddedConnection?.connectionStatus || "Not available yet"}</span>
           <span>WABA ID: {embeddedConnection?.maskedWabaId || "Not available yet"}</span>
@@ -504,7 +500,7 @@ export default function MetaConnectPage() {
                       </li>
                     ))}
                   </ul>
-                  <Link to="https://wasp-docs.vercel.app/connect-meta" target="_blank" className="mt-6 inline-flex items-center text-xs font-bold text-brand-600 hover:gap-2 transition-all">
+                  <Link to="/academy/getting-started/connect-meta-whatsapp-business" target="_blank" className="mt-6 inline-flex items-center text-xs font-bold text-brand-600 hover:gap-2 transition-all">
                     View Documentation <ArrowRight size={14} className="ml-1" />
                   </Link>
                 </div>

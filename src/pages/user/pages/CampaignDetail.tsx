@@ -9,7 +9,7 @@ import { useToast } from "@shared/providers/ToastContext";
 import type { TemplateRecord } from "@shared/utils/templateRuntime";
 import { downloadCsv } from "./campaign-detail/helpers";
 import { buildTabMeta, DetailHeader, LastErrorBanner, LeftOverviewPanel, LogCard, MainGrid, OverviewCard } from "./campaign-detail/sections";
-import type { Campaign, CampaignMessageItem, Metrics, ReplyItem, TabId } from "./campaign-detail/types";
+import type { Campaign, CampaignAnalytics, CampaignMessageItem, Metrics, ReplyItem, TabId } from "./campaign-detail/types";
 import { motion } from "framer-motion";
 
 export default function CampaignDetailPage() {
@@ -24,6 +24,7 @@ export default function CampaignDetailPage() {
   const [templatePreviewProps, setTemplatePreviewProps] = useState<any | null>(null);
   const [templateName, setTemplateName] = useState("");
   const [creditUsage, setCreditUsage] = useState<{ net: number; currency: string } | null>(null);
+  const [campaignAnalytics, setCampaignAnalytics] = useState<CampaignAnalytics | null>(null);
   const [statusMenuOpen, setStatusMenuOpen] = useState(false);
   const [loading, setLoading] = useState(true);
   const [syncing, setSyncing] = useState(false);
@@ -83,9 +84,15 @@ export default function CampaignDetailPage() {
       setCampaign(cRes?.campaign || null);
       setLoading(false);
       const templateId = cRes?.campaign?.templateId;
-      const [mRes, creditRes, tRes] = await Promise.allSettled([API.campaigns.metrics(id), API.campaigns.creditUsage(id), templateId ? API.templates.get(templateId) : Promise.resolve(null)]);
+      const [mRes, creditRes, tRes, analyticsRes] = await Promise.allSettled([
+        API.campaigns.metrics(id),
+        API.campaigns.creditUsage(id),
+        templateId ? API.templates.get(templateId) : Promise.resolve(null),
+        API.analytics.campaign(id),
+      ]);
       if (mRes.status === "fulfilled" && mRes.value?.success) setMetrics(mRes.value);
       if (creditRes.status === "fulfilled" && creditRes.value?.success) setCreditUsage({ net: Number(creditRes.value?.net || 0), currency: String(creditRes.value?.currency || "INR") });
+      if (analyticsRes.status === "fulfilled") setCampaignAnalytics(analyticsRes.value || null);
       if (tRes.status === "fulfilled") {
         const tpl = tRes.value?.template || null;
         setTemplateName(String(tpl?.name || ""));
@@ -173,7 +180,7 @@ export default function CampaignDetailPage() {
           {tab === "overview" ? <LeftOverviewPanel campaign={campaign} createdAt={createdAt} templateName={templateName} templatePreviewProps={templatePreviewProps} /> : null}
           <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="space-y-6 order-2 lg:order-2 w-full">
             {tab === "overview" ? (
-              <OverviewCard campaign={campaign} counts={counts} audienceTotal={audienceTotal} creditUsage={creditUsage} isCanceled={isCanceled} statusMenuOpen={statusMenuOpen} setStatusMenuOpen={setStatusMenuOpen} hasStatusActions={hasStatusActions} busy={busy} allowPause={allowPause} allowResume={allowResume} allowStop={allowStop} allowComplete={allowComplete} runAction={runAction} statusMenuRef={statusMenuRef} />
+              <OverviewCard campaign={campaign} counts={counts} analytics={campaignAnalytics?.metrics || null} audienceTotal={audienceTotal} creditUsage={creditUsage} isCanceled={isCanceled} statusMenuOpen={statusMenuOpen} setStatusMenuOpen={setStatusMenuOpen} hasStatusActions={hasStatusActions} busy={busy} allowPause={allowPause} allowResume={allowResume} allowStop={allowStop} allowComplete={allowComplete} runAction={runAction} statusMenuRef={statusMenuRef} />
             ) : (
               <LogCard tab={tab} itemsLoading={itemsLoading} replies={replies} items={items} allFailedSelected={allFailedSelected} failedPhones={failedPhones} selected={selected} setSelected={setSelected} itemsTotal={itemsTotal} itemsPage={itemsPage} setItemsPage={setItemsPage} ITEMS_PER_PAGE={ITEMS_PER_PAGE} selectedPhones={selectedPhones} exportFailed={exportFailed} createRetryBroadcast={createRetryBroadcast} busy={busy} tabGraphValue={tabGraphValue} />
             )}

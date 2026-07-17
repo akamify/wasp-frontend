@@ -20,6 +20,9 @@ import LinksPage from "@pages/user/pages/Links";
 import AutomationEventTestPage from "@pages/user/pages/Automation";
 import AutomationFlowsPage from "@modules/automation-flows/pages/AutomationFlowsPage";
 import FlowBuilderPage from "@modules/automation-flows/pages/FlowBuilderPage";
+import AiAgentsPage from "@modules/ai-agents/pages/AiAgentsPage";
+import AiAgentTestPage from "@modules/ai-agents/pages/AiAgentTestPage";
+import AiAgentKnowledgePage from "@modules/ai-agents/pages/AiAgentKnowledgePage";
 import SettingsPage from "@pages/user/pages/Settings";
 import ProfilePage from "@pages/user/pages/ProfilePage";
 import PlanPage from "@pages/user/pages/Plan";
@@ -59,6 +62,9 @@ export function userRoutes() {
       <Route path="/app/automation" element={inApp(<AutomationFlowsPage />)} />
       <Route path="/app/automation/events" element={inApp(<AutomationEventTestPage />)} />
       <Route path="/app/automation/:flowId" element={inApp(<FlowBuilderPage />)} />
+      <Route path="/app/ai-agents" element={inApp(<AiAgentsPage />)} />
+      <Route path="/app/ai-agents/:agentId/knowledge" element={inApp(<AiAgentKnowledgePage />)} />
+      <Route path="/app/ai-agents/:agentId/test" element={inApp(<AiAgentTestPage />)} />
       <Route path="/app/settings" element={inApp(<SettingsPage />)} />
       <Route path="/app/profile" element={inApp(<ProfilePage />)} />
       <Route path="/app/plan" element={inApp(<PlanPage />)} />

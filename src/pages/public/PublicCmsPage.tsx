@@ -4,6 +4,7 @@ import { Alert } from "@components/ui/Alert";
 import { PublicShell } from "@pages/public/PublicShell";
 import { HelpCircle, Info, Shield, FileText, Briefcase, Cookie } from "lucide-react";
 import { Seo } from "@shared/components/Seo";
+import { BRAND_NAME } from "@shared/config/brand";
 
 const ICONS: Record<string, any> = { HelpCircle, Info, Shield, FileText, Briefcase, Cookie };
 
@@ -44,7 +45,7 @@ export function PublicCmsPage({ slug }: { slug: string }) {
 
   const hero = page?.data?.hero || {};
   const body = String(page?.data?.bodyMarkdown || "").trim();
-  const pageTitle = `${String(hero?.title || page?.title || slug || "Page").trim()} | AiWizChat`;
+  const pageTitle = `${String(hero?.title || page?.title || slug || "Page").trim()} | ${BRAND_NAME}`;
   const pageDescription = String(hero?.subtitle || page?.excerpt || body.slice(0, 155) || "").trim() || undefined;
 
   return (
@@ -73,3 +74,4 @@ export function PublicCmsPage({ slug }: { slug: string }) {
     </PublicShell>
   );
 }
+

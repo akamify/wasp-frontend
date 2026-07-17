@@ -93,23 +93,10 @@ export default function AdminUsersPage() {
   }
 
   async function toggleChatAccess(enabled: boolean) {
-    if (!selectedWorkspaceId || !selectedId) return;
-    const ok = window.confirm(
-      enabled
-        ? "Enable External Chat API for this workspace and all active API keys?"
-        : "Disable External Chat API for this workspace and all active API keys? External chat endpoints will stop working."
-    );
-    if (!ok) return;
+    if (!selectedWorkspaceId) return;
     try {
-      if (enabled) {
-        await chatAccess.enableChat(selectedWorkspaceId);
-        await API.admin.enableChatAccess(selectedId);
-        await apiActions.syncChatAccess(selectedId, true);
-      } else {
-        await apiActions.syncChatAccess(selectedId, false);
-        await API.admin.disableChatAccess(selectedId);
-        await chatAccess.disableChat(selectedWorkspaceId);
-      }
+      if (enabled) await chatAccess.enableChat(selectedWorkspaceId);
+      else await chatAccess.disableChat(selectedWorkspaceId);
       await refreshAccess();
       toast(`Chat access ${enabled ? "enabled" : "disabled"}`, "success");
     } catch (e: any) {
@@ -214,27 +201,10 @@ export default function AdminUsersPage() {
         onDisableKeys={disableApiKeys}
         onEnableKey={async (keyId) => {
           if (!selectedId) return;
-          if (!window.confirm("Enable this API key?")) return;
           try {
             await apiActions.enableKey(selectedId, keyId);
             await refreshAccess();
             toast("API key enabled", "success");
-          } catch (e: any) {
-            toast(e?.response?.data?.message || "Failed", "error");
-          }
-        }}
-        onSetKeyChatAccess={async (keyId, enabled) => {
-          if (!selectedId) return;
-          const ok = window.confirm(
-            enabled
-              ? "Enable External Chat API for this API key?"
-              : "Disable External Chat API for this API key?"
-          );
-          if (!ok) return;
-          try {
-            await apiActions.setChatAccess(selectedId, keyId, enabled);
-            await refreshAccess();
-            toast(`API key external chat ${enabled ? "enabled" : "disabled"}`, "success");
           } catch (e: any) {
             toast(e?.response?.data?.message || "Failed", "error");
           }

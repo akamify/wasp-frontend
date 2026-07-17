@@ -60,8 +60,8 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   }, []);
   const [isCollapsed, setIsCollapsed] = useState(() => {
     try {
-      return localStorage.getItem("waspakamify_sidebar_collapsed_touched") === "1"
-        ? localStorage.getItem("waspakamify_sidebar_collapsed") === "1"
+      return localStorage.getItem("aiwizchat_sidebar_collapsed_touched") === "1"
+        ? localStorage.getItem("aiwizchat_sidebar_collapsed") === "1"
         : false;
     } catch {
       return false;
@@ -71,7 +71,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     try {
-      localStorage.setItem("waspakamify_sidebar_collapsed", isCollapsed ? "1" : "0");
+      localStorage.setItem("aiwizchat_sidebar_collapsed", isCollapsed ? "1" : "0");
     } catch { }
   }, [isCollapsed]);
 
@@ -79,8 +79,8 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     setIsCollapsed((current) => {
       const next = !current;
       try {
-        localStorage.setItem("waspakamify_sidebar_collapsed_touched", "1");
-        localStorage.setItem("waspakamify_sidebar_collapsed", next ? "1" : "0");
+        localStorage.setItem("aiwizchat_sidebar_collapsed_touched", "1");
+        localStorage.setItem("aiwizchat_sidebar_collapsed", next ? "1" : "0");
       } catch { }
       return next;
     });
@@ -92,7 +92,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const sidebarProfileMenuRef = useRef<HTMLDivElement | null>(null);
   const [profileMenuOpen, setProfileMenuOpen] = useState(false);
   const [sidebarProfileMenuOpen, setSidebarProfileMenuOpen] = useState(false);
-  const { notifications, lastReadAt, markAllRead, totalUnread } = useAppShellNotifications(notifOpen);
+  const { notifications, lastReadAt, markAllRead } = useAppShellNotifications(notifOpen);
   const { requiredPlan, featureNeedsPro, isPlanAccessBlocked, isAccessCheckPending } = useAppShellBilling(location.pathname);
   const shellTitle = getShellTitle(location.pathname, NAV_ITEMS as any);
   const pageTitle = `${shellTitle} | ${resolvedBrandName}`;
@@ -146,7 +146,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       ) : null}
 
       {/* Mobile Bottom Tab Bar */}
-      {!hideMobileBars ? <MobileBottomTabs unreadCount={totalUnread} /> : null}
+      {!hideMobileBars ? <MobileBottomTabs /> : null}
 
       {/* Mobile Drawer */}
       <MobileDrawer
@@ -156,7 +156,6 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         workspace={workspace}
         brandName={resolvedBrandName}
         navigate={navigate}
-        unreadCount={totalUnread}
       />
 
       <DesktopSidebar
@@ -171,7 +170,6 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         navigate={navigate}
         desktopNavRef={desktopNavRef}
         sidebarProfileMenuRef={sidebarProfileMenuRef}
-        unreadCount={totalUnread}
       />
 
       {/* Main Content Area */}

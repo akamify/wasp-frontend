@@ -7,9 +7,45 @@ export function getErrorMessage(error: unknown, fallback: string) {
   return candidate?.response?.data?.message || candidate?.message || fallback;
 }
 
+function getZonedParts(date: Date, timezone: string) {
+  const parts = new Intl.DateTimeFormat("en-CA", {
+    timeZone: timezone,
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit",
+    hourCycle: "h23",
+  }).formatToParts(date);
+  const values = Object.fromEntries(parts.filter((part) => part.type !== "literal").map((part) => [part.type, part.value]));
+  return {
+    year: Number(values.year),
+    month: Number(values.month),
+    day: Number(values.day),
+    hour: Number(values.hour),
+    minute: Number(values.minute),
+  };
+}
+
+function zonedDateTimeToUtc(date: string, time: string, timezone: string) {
+  const [year, month, day] = date.split("-").map(Number);
+  const [hour, minute] = time.split(":").map(Number);
+  let candidateMs = Date.UTC(year, month - 1, day, hour, minute, 0, 0);
+  const desiredLocalMs = candidateMs;
+  for (let attempt = 0; attempt < 4; attempt += 1) {
+    const actual = getZonedParts(new Date(candidateMs), timezone);
+    const actualLocalMs = Date.UTC(actual.year, actual.month - 1, actual.day, actual.hour, actual.minute, 0, 0);
+    const adjustment = desiredLocalMs - actualLocalMs;
+    candidateMs += adjustment;
+    if (adjustment === 0) break;
+  }
+  return new Date(candidateMs);
+}
+
 export function createCampaignFormActions(ctx: any) {
   const {
-    toast, type, selectedTemplate, summary, headerVars, bodyVars, buttonsNeedingValue, buttonValueByIndex, otpCode, csvPhoneColumn, setCsvPhoneColumn, setCsvBodyMap, setCsvHeaderMap, setSelectedPhones, headerMediaOverride, resolvedButtonValues, flowActionDataJson, csvParsed, csvHeaderMap, csvButtonMap, buttonTtlMinutes, flowTokens, csvBodyMap, setHeaderMediaUploading, setHeaderMediaOverride, setHeaderVars, setBusy, messageType, name, templateId, scheduleType, scheduleDate, scheduleTime, scheduleWeekdays, onSuccess, onClose, estimate,
+    toast, type, selectedTemplate, summary, headerVars, bodyVars, buttonsNeedingValue, buttonValueByIndex, otpCode, csvPhoneColumn, setCsvPhoneColumn, setCsvBodyMap, setCsvHeaderMap, setSelectedPhones, headerMediaOverride, resolvedButtonValues, flowActionDataJson, csvParsed, csvHeaderMap, csvButtonMap, buttonTtlMinutes, flowTokens, csvBodyMap, setHeaderMediaUploading, setHeaderMediaOverride, setHeaderVars, setBusy, messageType, name, templateId, scheduleType, scheduleDate, scheduleTime, scheduleWeekdays, scheduleTimezone, scheduleEndDate, scheduleMaxOccurrences, onSuccess, onClose, estimate,
     audienceMode, selectedTagList, tagMatchedContacts, tagMatchMode, attributeFilters, bodyVariableMappings,
   } = ctx;
 
@@ -23,7 +59,7 @@ export function createCampaignFormActions(ctx: any) {
     if (summary.bodyVariableCount > 0) {
       for (let i = 0; i < summary.bodyVariableCount; i += 1) {
         const mapping = bodyVariableMappings[i];
-        if (!mapping || (mapping.sourceType === "static" && !String(mapping.value || bodyVars[i] || "").trim()) || (mapping.sourceType !== "static" && !mapping.sourceKey)) missing.push(`Body {{${i + 1}}}`);
+        if (!mapping || (mapping.sourceType === "static" && !String(mapping.value || bodyVars[i] || "").trim() && !String(mapping.fallback || "").trim()) || (mapping.sourceType !== "static" && !mapping.sourceKey && !String(mapping.fallback || "").trim())) missing.push(`Body {{${i + 1}}}`);
       }
     }
     if (buttonsNeedingValue.length > 0) {
@@ -129,26 +165,39 @@ export function createCampaignFormActions(ctx: any) {
       if (!campaignName) throw new Error("Campaign name is required");
       if (!templateId) throw new Error("Select a template");
       let schedule:
-        | { type: "once"; timezone: string; runAt: string }
-        | { type: "daily"; timezone: string; timeOfDay: string }
-        | { type: "weekly"; timezone: string; timeOfDay: string; weekdays: number[] }
+        | { type: "once"; timezone: string; runAt: string; endAt?: string; maxOccurrences?: number }
+        | { type: "daily"; timezone: string; timeOfDay: string; endAt?: string; maxOccurrences?: number }
+        | { type: "weekly"; timezone: string; timeOfDay: string; weekdays: number[]; endAt?: string; maxOccurrences?: number }
         | undefined;
       if (scheduleType === "once") {
         if (!scheduleDate || !scheduleTime) throw new Error("Select date and time");
-        const runAt = new Date(`${scheduleDate}T${scheduleTime}:00+05:30`);
+        const timezone = scheduleTimezone || "Asia/Kolkata";
+        const runAt = zonedDateTimeToUtc(scheduleDate, scheduleTime, timezone);
         if (Number.isNaN(runAt.getTime()) || runAt.getTime() <= Date.now()) {
           throw new Error("Selected date and time must be in the future");
         }
-        schedule = { type: "once", timezone: "Asia/Kolkata", runAt: runAt.toISOString() };
+        schedule = { type: "once", timezone, runAt: runAt.toISOString() };
       }
       if (scheduleType === "daily") {
         if (!scheduleTime) throw new Error("Select a daily time");
-        schedule = { type: "daily", timezone: "Asia/Kolkata", timeOfDay: scheduleTime };
+        schedule = { type: "daily", timezone: scheduleTimezone || "Asia/Kolkata", timeOfDay: scheduleTime };
       }
       if (scheduleType === "weekly") {
         if (!scheduleTime) throw new Error("Select a weekly time");
         if (!scheduleWeekdays.length) throw new Error("Select at least one weekday");
-        schedule = { type: "weekly", timezone: "Asia/Kolkata", timeOfDay: scheduleTime, weekdays: scheduleWeekdays };
+        schedule = { type: "weekly", timezone: scheduleTimezone || "Asia/Kolkata", timeOfDay: scheduleTime, weekdays: scheduleWeekdays };
+      }
+      if (schedule) {
+        const maxOccurrences = Number(scheduleMaxOccurrences || 0);
+        if (scheduleEndDate) {
+          const endAt = zonedDateTimeToUtc(scheduleEndDate, "23:59", schedule.timezone || "Asia/Kolkata");
+          if (Number.isNaN(endAt.getTime()) || endAt.getTime() <= Date.now()) throw new Error("Schedule end date must be in the future");
+          schedule.endAt = endAt.toISOString();
+        }
+        if (scheduleMaxOccurrences) {
+          if (!Number.isInteger(maxOccurrences) || maxOccurrences < 1 || maxOccurrences > 365) throw new Error("Max runs must be between 1 and 365");
+          schedule.maxOccurrences = maxOccurrences;
+        }
       }
       const audienceRuntime = {
         variables: bodyVars,
@@ -173,20 +222,7 @@ export function createCampaignFormActions(ctx: any) {
       if (audienceMode === "manual" && !recipients.length) throw new Error("Select at least one valid recipient");
       if (type === "broadcast") { const missing = missingBroadcastInputs(); if (missing.length) throw new Error(`Broadcast template needs values for: ${missing.slice(0, 6).join(", ")}${missing.length > 6 ? "..." : ""} (Use CSV for per-contact variables)`); }
       if (estimate?.insufficientBalance) throw new Error(`Insufficient balance: need ${formatCurrency(estimate.estimatedCredits, estimate.currency)}, available ${formatCurrency(estimate.walletBalance, estimate.currency)}`);
-      await API.campaigns.create({
-        name: campaignName,
-        type,
-        templateId,
-        schedule,
-        audience,
-        recipients,
-        templateVariableMappings: bodyVariableMappings.map((mapping: any, index: number) => ({
-          position: index + 1,
-          sourceType: mapping.sourceType,
-          sourceKey: mapping.sourceKey,
-          value: mapping.sourceType === "static" ? String(mapping.value ?? bodyVars[index] ?? "") : undefined,
-        })),
-      });
+      await API.campaigns.create({ name: campaignName, type, templateId, schedule, audience, recipients, templateVariableMappings: bodyVariableMappings.map((mapping: any, index: number) => ({ ...mapping, position: index + 1, value: mapping.sourceType === "static" ? String(mapping.value ?? bodyVars[index] ?? "") : undefined })) });
       toast("Campaign created successfully", "success"); onSuccess(); onClose();
     } catch (error) { toast(getErrorMessage(error, "Failed to create campaign"), "error"); } finally { setBusy(false); }
   };

@@ -8,6 +8,7 @@ import { Alert } from "@components/ui/Alert";
 import { useToast } from "@shared/providers/ToastContext";
 import { PublicShell } from "@pages/public/PublicShell";
 import { Seo } from "@shared/components/Seo";
+import { BRAND_NAME } from "@shared/config/brand";
 
 export default function RaiseTicketPage() {
   const { toast } = useToast();
@@ -46,7 +47,7 @@ export default function RaiseTicketPage() {
   return (
     <PublicShell>
       <Seo
-        title="Raise a Ticket | AiWizChat"
+        title={`Raise a Ticket | ${BRAND_NAME}`}
         description="Contact support by raising a ticket with your details, subject, and issue description."
         canonical={window.location.href}
       />
@@ -77,3 +78,4 @@ export default function RaiseTicketPage() {
     </PublicShell>
   );
 }
+

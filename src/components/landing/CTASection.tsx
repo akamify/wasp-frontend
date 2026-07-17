@@ -4,19 +4,18 @@ import { motion, useInView } from "framer-motion";
 import { BRAND_NAME } from "@shared/config/brand";
 import { usePlans } from "@modules/billing/hooks/usePlans";
 import { useAuth } from "@shared/providers/AuthContext";
-import { authAwareHref, authenticatedHome } from "@shared/utils/authNavigation";
+import { authAwareHref } from "@shared/utils/authNavigation";
 
 function formatPlanPrice(plan: any) {
   const paise = plan?.pricing?.discountedPricePaise;
   if (paise == null) return "Custom";
-  return `?${Math.round(Number(paise) / 100).toLocaleString("en-IN")}`;
+  return `₹${Math.round(Number(paise) / 100).toLocaleString("en-IN")}`;
 }
 
 const logos = ["Digital Adbird", "Maxify Global", "Think Sync", "Mahabali Education"];
 
 export function CTASection() {
   const { token, user } = useAuth();
-  const authenticatedHref = authenticatedHome(user?.role, token);
   const startHref = authAwareHref({ token, role: user?.role, guestHref: "/register" });
   const signInHref = authAwareHref({ token, role: user?.role, guestHref: "/login" });
   const { items } = usePlans();
@@ -31,6 +30,7 @@ export function CTASection() {
     cta: plan?.buttonText || "Buy Now",
     badgeText: String(plan?.badgeText || ""),
     featured: Boolean(plan?.recommended),
+    slug: String(plan?.slug || plan?.id || ""),
   }));
 
   return (
@@ -97,7 +97,7 @@ export function CTASection() {
                 ))}
               </ul>
               <motion.a
-                href={token ? authenticatedHref : "/login"}
+                href={`/pricing?plan=${encodeURIComponent(plan.slug)}`}
                 whileHover={{ scale: 1.02 }}
                 whileTap={{ scale: 0.98 }}
                 transition={{ type: "spring", stiffness: 280, damping: 22 }}

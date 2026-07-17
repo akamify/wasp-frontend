@@ -61,7 +61,7 @@ export function UserCrmCard({ workspaceId, busy }: Props) {
       {error ? <div className="rounded-[5px] bg-rose-50 border border-rose-100 p-2 text-rose-700 font-bold">{error}</div> : null}
       <div className="flex items-center justify-between gap-3 rounded-[5px] bg-slate-50 px-3 py-2">
         <div>
-          <div className="font-black text-slate-700">CRM Access</div>
+          <div className="font-black text-slate-700">crmEnabled</div>
           <div className="text-slate-500">{crmEnabled ? "enabled" : "disabled"}</div>
         </div>
         <button
@@ -101,3 +101,4 @@ export function UserCrmCard({ workspaceId, busy }: Props) {
     </div>
   );
 }
+

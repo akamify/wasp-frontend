@@ -17,7 +17,6 @@ export function DesktopSidebar({
   navigate,
   desktopNavRef,
   sidebarProfileMenuRef,
-  unreadCount,
 }: any) {
   return (
     <motion.aside animate={{ width: isCollapsed ? 80 : 260 }} transition={{ type: "spring", damping: 25, stiffness: 200 }} className="hidden lg:flex flex-col bg-white border-r border-slate-200 z-[140] relative h-dvh">
@@ -36,7 +35,7 @@ export function DesktopSidebar({
       </div>
 
       <div ref={desktopNavRef} className="flex-1 overflow-y-auto p-4 space-y-1 custom-scrollbar">
-        {NAV_ITEMS.map((item) => <SideLink key={item.to} {...item} isCollapsed={isCollapsed} unreadCount={item.to === "/app/conversations" ? unreadCount : 0} />)}
+        {NAV_ITEMS.map((item) => <SideLink key={item.to} {...item} isCollapsed={isCollapsed} />)}
       </div>
 
       <div className="relative" ref={sidebarProfileMenuRef}>
@@ -66,3 +65,4 @@ export function DesktopSidebar({
     </motion.aside>
   );
 }
+

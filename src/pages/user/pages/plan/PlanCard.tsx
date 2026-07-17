@@ -16,6 +16,12 @@ type Plan = {
   planType: string;
   recommended: boolean;
   isCurrentPlan: boolean;
+  payableAmountPaise: number;
+  actionLabel?: string;
+  actionDisabled?: boolean;
+  actionHint?: string;
+  scheduleBadge?: string;
+  scheduleBadgeTone?: "current" | "scheduled";
 };
 
 type Props = {
@@ -23,7 +29,7 @@ type Props = {
   horizontal?: boolean;
   paymentProcessing: boolean;
   onCurrentPlanClick: () => void;
-  onActionClick: (planName: string) => void;
+  onActionClick: (plan: any) => void;
 };
 
 export function PlanCard({ plan, horizontal = false, paymentProcessing, onCurrentPlanClick, onActionClick }: Props) {
@@ -60,14 +66,27 @@ export function PlanCard({ plan, horizontal = false, paymentProcessing, onCurren
           </div>
 
           {plan.isCurrentPlan ? (
-            <div className="mt-4 inline-block rounded-[3px] bg-brand-100 px-3 py-1 text-[10px] font-black uppercase tracking-wider text-brand-700">Current Plan</div>
+            <div className="mt-4 flex flex-wrap gap-2">
+              <div className="inline-block rounded-[3px] bg-brand-100 px-3 py-1 text-[10px] font-black uppercase tracking-wider text-brand-700">🟢 Current Plan</div>
+              {plan.scheduleBadge ? (
+                <div className="inline-block rounded-[3px] bg-amber-100 px-3 py-1 text-[10px] font-black uppercase tracking-wider text-amber-700">
+                  🟡 {plan.scheduleBadge}
+                </div>
+              ) : null}
+            </div>
+          ) : null}
+
+          {!plan.isCurrentPlan && plan.scheduleBadge ? (
+            <div className="mt-4 inline-block rounded-[3px] bg-amber-100 px-3 py-1 text-[10px] font-black uppercase tracking-wider text-amber-700">
+              ⏳ {plan.scheduleBadge}
+            </div>
           ) : null}
 
           <Button
-            onClick={() => (plan.isCurrentPlan ? onCurrentPlanClick() : onActionClick(plan.name))}
+            onClick={() => (plan.isCurrentPlan ? onCurrentPlanClick() : onActionClick(plan))}
             className={cn("mt-6 w-full gap-2", !plan.isCurrentPlan && plan.planType !== "basic" && "bg-brand-600 hover:bg-brand-700")}
             variant={plan.isCurrentPlan ? "outline" : "primary"}
-            disabled={!plan.isCurrentPlan && plan.planType !== "custom" && paymentProcessing}
+            disabled={Boolean(plan.actionDisabled) || (!plan.isCurrentPlan && plan.planType !== "custom" && paymentProcessing)}
           >
             {plan.isCurrentPlan ? (
               "View Now"
@@ -76,9 +95,10 @@ export function PlanCard({ plan, horizontal = false, paymentProcessing, onCurren
             ) : paymentProcessing ? (
               "Processing..."
             ) : (
-              <>{plan.cta} <ArrowRight size={16} /></>
+              <>{plan.actionLabel || plan.cta} <ArrowRight size={16} /></>
             )}
           </Button>
+          {plan.actionHint ? <p className="mt-2 text-center text-[11px] font-semibold text-slate-500">{plan.actionHint}</p> : null}
         </div>
 
         <div className="mt-6 border-t border-slate-200 pt-6 md:mt-0 md:border-t-0 md:pt-0">

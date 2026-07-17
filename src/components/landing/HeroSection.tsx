@@ -1,233 +1,376 @@
+"use client";
+
+import { useState } from "react";
 import { motion } from "framer-motion";
+import type { Variants } from "framer-motion";
+import type { ElementType, ReactNode } from "react";
 import {
-  ArrowLeft,
+  ArrowRight,
   BadgeCheck,
-  CheckCheck,
-  ChevronLeft,
-  Image,
-  Mic,
-  MoreVertical,
-  Paperclip,
-  Phone,
-  Search,
+  Bot,
+  Play,
+  RotateCcw,
   Send,
+  Sparkles,
+  Users,
   ShieldCheck,
-  ShoppingBag,
-  Smile,
-  Video,
+  MessageCircle,
+  Zap,
+  MousePointerClick,
+  BarChart3,
 } from "lucide-react";
 import { useAuth } from "@shared/providers/AuthContext";
 import { authAwareHref } from "@shared/utils/authNavigation";
 
-function BusinessChatPreview() {
+const YOUTUBE_VIDEO_ID = "Cpvd4yOePWM";
+
+const YOUTUBE_THUMBNAIL_SRC = `https://i.ytimg.com/vi/${YOUTUBE_VIDEO_ID}/maxresdefault.jpg`;
+
+const getYoutubeEmbedSrc = () =>
+  `https://www.youtube-nocookie.com/embed/${YOUTUBE_VIDEO_ID}?rel=0&controls=1&playsinline=1&fs=0&autoplay=1`;
+
+const fadeUp: Variants = {
+  hidden: { opacity: 0, y: 22, filter: "blur(6px)" },
+  show: {
+    opacity: 1,
+    y: 0,
+    filter: "blur(0px)",
+    transition: {
+      type: "spring",
+      stiffness: 95,
+      damping: 20,
+    },
+  },
+};
+
+const staggerContainer: Variants = {
+  hidden: { opacity: 0 },
+  show: {
+    opacity: 1,
+    transition: {
+      staggerChildren: 0.08,
+      delayChildren: 0.08,
+    },
+  },
+};
+
+function MiniPill({
+  icon: Icon,
+  children,
+}: {
+  icon: ElementType;
+  children: ReactNode;
+}) {
   return (
-    <div className="relative mx-auto flex h-full w-full max-w-[460px] items-center justify-center">
-      <div className="absolute left-0 top-[18%] h-36 w-36 rounded-full bg-[#25D366]/20 blur-3xl" />
-      <div className="absolute bottom-[12%] right-0 h-44 w-44 rounded-full bg-cyan-400/20 blur-3xl" />
+    <motion.div
+      variants={fadeUp}
+      className="group inline-flex w-full items-center justify-center gap-1.5 rounded-full border border-emerald-100 bg-white/95 px-2 py-1.5 text-[10px] font-black text-slate-600 shadow-sm shadow-emerald-100/40 backdrop-blur-xl transition-all duration-300 hover:-translate-y-0.5 hover:border-emerald-200 hover:bg-emerald-50 hover:text-emerald-700 sm:w-auto sm:justify-start sm:gap-2 sm:border-slate-200/80 sm:bg-white/80 sm:px-3.5 sm:py-2 sm:text-xs"
+    >
+      <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-emerald-50 text-emerald-600 transition-all duration-300 group-hover:bg-emerald-600 group-hover:text-white sm:h-6 sm:w-6">
+        <Icon size={11} className="sm:size-[13px]" />
+      </span>
+      <span className="truncate">{children}</span>
+    </motion.div>
+  );
+}
 
-      <motion.div
-        initial={{ opacity: 0, y: 24, rotate: 1 }}
-        animate={{ opacity: 1, y: 0, rotate: 0 }}
-        transition={{ duration: 0.65, ease: [0.22, 1, 0.36, 1] }}
-        className="relative w-full overflow-hidden rounded-[28px] border border-slate-200/80 bg-white shadow-[0_35px_90px_-28px_rgba(15,23,42,0.38)]"
-      >
-        <div className="flex h-9 items-center justify-between border-b border-slate-200 bg-slate-50 px-4">
-          <div className="flex gap-1.5">
-            <span className="h-2.5 w-2.5 rounded-full bg-rose-400" />
-            <span className="h-2.5 w-2.5 rounded-full bg-amber-400" />
-            <span className="h-2.5 w-2.5 rounded-full bg-emerald-400" />
-          </div>
-          <div className="flex items-center gap-1.5 text-[10px] font-bold text-slate-400">
-            <ShieldCheck size={12} className="text-emerald-500" />
-            Secure business conversation
-          </div>
-          <div className="w-11" />
-        </div>
+function HeroStat({
+  icon: Icon,
+  label,
+  value,
+}: {
+  icon: ElementType;
+  label: string;
+  value: string;
+}) {
+  return (
+    <motion.div
+      variants={fadeUp}
+      className="group flex items-center gap-3 rounded-2xl border border-white/80 bg-white/75 p-3 shadow-lg shadow-slate-200/60 backdrop-blur-xl transition-all duration-300 hover:-translate-y-1 hover:border-emerald-200 hover:shadow-emerald-100"
+    >
+      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-slate-950 text-white transition-all duration-300 group-hover:bg-emerald-600">
+        <Icon size={17} />
+      </div>
 
-        <div className="flex items-center gap-3 border-b border-slate-200 bg-[#f0f2f5] px-3 py-3 sm:px-4">
-          <button type="button" aria-label="Back" className="text-slate-500 sm:hidden"><ChevronLeft size={20} /></button>
-          <div className="relative shrink-0">
-            <ArrowLeft size={20} className="absolute left-0 top-1/2 -translate-y-1/2 text-black" />
-            <div className="flex h-11 w-11 items-center justify-center rounded-full bg-gradient-to-br from-[#111827] to-[#374151] ml-8 text-sm font-black text-white ring-2 ring-white">
-              AM
+      <div>
+        <p className="text-[10px] font-black uppercase tracking-wider text-slate-400">
+          {label}
+        </p>
+        <p className="text-base font-black text-slate-950">{value}</p>
+      </div>
+    </motion.div>
+  );
+}
+
+function HeroYoutubeVideo() {
+  const [isPlaying, setIsPlaying] = useState(false);
+
+  return (
+    <motion.div
+      id="hero-demo-video"
+      initial={{ opacity: 0, y: 34, scale: 0.98 }}
+      animate={{ opacity: 1, y: 0, scale: 1 }}
+      transition={{
+        delay: 0.35,
+        duration: 0.8,
+        ease: [0.22, 1, 0.36, 1],
+      }}
+      className="relative mx-auto mt-8 w-full max-w-[1060px] px-0 sm:mt-12 sm:px-5 lg:px-8"
+    >
+      <div className="pointer-events-none absolute inset-x-0 top-8 -z-10 mx-auto h-52 max-w-5xl rounded-full bg-emerald-200/60 blur-[90px] sm:h-72 sm:blur-[110px]" />
+
+      <div className="absolute -left-2 top-10 z-20 hidden lg:block">
+        <HeroStat icon={MessageCircle} label="Replies" value="2.4x Faster" />
+      </div>
+
+      <div className="absolute -right-2 bottom-20 z-20 hidden lg:block">
+        <HeroStat icon={BarChart3} label="Campaign Reach" value="98.4%" />
+      </div>
+
+      <div className="relative rounded-[1.25rem] border border-white/80 bg-white/75 p-1.5 shadow-xl shadow-slate-200/80 backdrop-blur-xl sm:rounded-[2.2rem] sm:p-3 sm:shadow-2xl">
+        <div className="relative overflow-hidden rounded-[1rem] bg-slate-950 sm:rounded-[1.7rem]">
+          <div className="flex items-center justify-between border-b border-white/10 bg-slate-950 px-3 py-2.5 sm:px-4 sm:py-3">
+            <div className="flex items-center gap-1.5 sm:gap-2">
+              <span className="h-2 w-2 rounded-full bg-red-400 sm:h-2.5 sm:w-2.5" />
+              <span className="h-2 w-2 rounded-full bg-yellow-400 sm:h-2.5 sm:w-2.5" />
+              <span className="h-2 w-2 rounded-full bg-emerald-400 sm:h-2.5 sm:w-2.5" />
             </div>
-            <span className="absolute bottom-0 right-0 h-3 w-3 rounded-full border-2 border-[#f0f2f5] bg-[#25D366]" />
+
+            <div className="hidden rounded-full border border-white/10 bg-white/5 px-3 py-1 text-[10px] font-bold text-white/70 sm:block">
+              WhatsApp Automation Demo
+            </div>
+
+            <div className="flex items-center gap-1 text-[9px] font-bold text-emerald-300 sm:text-[10px]">
+              <span className="h-1.5 w-1.5 rounded-full bg-emerald-400" />
+              Live Preview
+            </div>
           </div>
-          <div className="min-w-0 flex-1">
-            <div className="flex items-center gap-1.5">
-              <div className="truncate text-sm font-black text-slate-900">Akamify Store</div>
-              <BadgeCheck size={14} className="shrink-0 fill-[#1d9bf0] text-white" />
-            </div>
-            <div className="text-[11px] font-medium text-slate-500">Business account · typing...</div>
-          </div>
-          <div className="flex items-center gap-0.5 text-slate-600">
-            <HeaderAction label="Video call"><Video size={17} /></HeaderAction>
-            <HeaderAction label="Call"><Phone size={16} /></HeaderAction>
-            <HeaderAction label="More options"><MoreVertical size={18} /></HeaderAction>
-          </div>
-        </div>
 
-        <div className="relative h-[390px] overflow-hidden bg-[#efeae2] sm:h-[430px]">
-          <div className="absolute inset-0 opacity-[0.055] [background-image:radial-gradient(#0f172a_1px,transparent_1px)] [background-size:16px_16px]" />
-          <div className="relative flex h-full flex-col px-3 py-3 sm:px-5">
-            <div className="mx-auto rounded-[7px] bg-white/80 px-3 py-1 text-[9px] font-black uppercase tracking-wider text-slate-500 shadow-sm">
-              Today
-            </div>
+          <div className="relative aspect-video overflow-hidden bg-slate-950">
+            {isPlaying ? (
+              <iframe
+                title="Akamify WhatsApp automation product demo"
+                src={getYoutubeEmbedSrc()}
+                className="absolute inset-0 h-full w-full"
+                loading="eager"
+                referrerPolicy="strict-origin-when-cross-origin"
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+              />
+            ) : (
+              <button
+                type="button"
+                onClick={() => setIsPlaying(true)}
+                aria-label="Play Akamify product demo video"
+                className="group absolute inset-0 block h-full w-full overflow-hidden text-left"
+              >
+                <img
+                  src={YOUTUBE_THUMBNAIL_SRC}
+                  alt="Akamify WhatsApp automation demo video thumbnail"
+                  className="h-full w-full select-none object-cover transition-transform duration-700 group-hover:scale-[1.04]"
+                  draggable={false}
+                  onError={(event) => {
+                    event.currentTarget.src = `https://i.ytimg.com/vi/${YOUTUBE_VIDEO_ID}/hqdefault.jpg`;
+                  }}
+                />
 
-            <div className="mt-4 max-w-[78%] self-start rounded-[10px] rounded-tl-[3px] bg-white px-3 py-2.5 shadow-sm">
-              <p className="text-[12px] font-medium leading-5 text-slate-800 sm:text-[13px]">
-                Hi! I saw the summer collection. Is the blue linen shirt available in size M?
-              </p>
-              <MessageMeta time="10:24 AM" />
-            </div>
+                <div className="absolute inset-0 bg-gradient-to-b from-slate-950/10 via-emerald-950/20 to-slate-950/55" />
+                <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(255,255,255,0.26),transparent_34%)]" />
 
-            <div className="mt-2 max-w-[82%] self-end rounded-[10px] rounded-tr-[3px] bg-[#d9fdd3] px-3 py-2.5 shadow-sm">
-              <p className="text-[12px] font-medium leading-5 text-slate-800 sm:text-[13px]">
-                Hi Riya! Yes, it is available. I have shared the product below.
-              </p>
-              <MessageMeta time="10:24 AM" outbound />
-            </div>
+                <div className="absolute inset-0 flex items-center justify-center">
+                  <div className="relative flex h-14 w-14 items-center justify-center rounded-full bg-white/95 text-emerald-600 shadow-2xl shadow-emerald-950/20 backdrop-blur-md transition-all duration-300 group-hover:scale-110 group-hover:bg-emerald-600 group-hover:text-white sm:h-20 sm:w-20">
+                    <span className="absolute inset-0 animate-ping rounded-full bg-white/40" />
+                    <span className="absolute inset-0 rounded-full border border-white/70" />
 
-            <div className="mt-2 w-[82%] self-end overflow-hidden rounded-[10px] rounded-tr-[3px] bg-[#d9fdd3] shadow-sm">
-              <div className="flex items-center gap-3 bg-white/70 p-2.5">
-                <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-[7px] bg-gradient-to-br from-sky-100 to-blue-200 text-blue-700">
-                  <ShoppingBag size={23} />
+                    <Play
+                      size={25}
+                      fill="currentColor"
+                      className="relative ml-1 sm:size-9"
+                    />
+                  </div>
                 </div>
-                <div className="min-w-0 flex-1">
-                  <div className="truncate text-[12px] font-black text-slate-900">Premium Linen Shirt</div>
-                  <div className="mt-0.5 text-[10px] font-semibold text-slate-500">Sky Blue · Size M</div>
-                  <div className="mt-1 text-[12px] font-black text-emerald-700">₹1,499</div>
-                </div>
-              </div>
-              <button type="button" className="flex w-full items-center justify-center border-t border-emerald-900/10 py-2 text-[11px] font-black text-[#008069]">
-                View product
               </button>
-              <div className="px-2.5 pb-1.5"><MessageMeta time="10:25 AM" outbound /></div>
-            </div>
-
-            <div className="mt-2 max-w-[72%] self-start rounded-[10px] rounded-tl-[3px] bg-white px-3 py-2.5 shadow-sm">
-              <p className="text-[12px] font-medium leading-5 text-slate-800 sm:text-[13px]">Perfect. Can you deliver it by Friday?</p>
-              <MessageMeta time="10:26 AM" />
-            </div>
-
-            <div className="mt-2 flex items-center gap-1.5 self-start rounded-full bg-white/75 px-2 py-2 shadow-sm">
-              <span className="h-1 w-1 animate-bounce rounded-full bg-slate-400 [animation-delay:-0.3s]" />
-              <span className="h-1 w-1 animate-bounce rounded-full bg-slate-400 [animation-delay:-0.15s]" />
-              <span className="h-1 w-1 animate-bounce rounded-full bg-slate-400" />
-              {/* <span className="ml-1 text-[9px] font-bold text-slate-400">Akamify Store is typing</span> */}
-            </div>
+            )}
           </div>
         </div>
+      </div>
 
-        <div className="flex items-end gap-2 border-t border-slate-200 bg-[#f0f2f5] px-3 py-3">
-          <div className="flex min-h-11 flex-1 items-center gap-2 rounded-[22px] bg-white px-3 shadow-sm">
-            <Smile size={19} className="shrink-0 text-slate-500" />
-            <div className="min-w-0 flex-1 truncate text-[12px] font-medium text-slate-400 sm:text-[13px]">Type a message</div>
-            <button type="button" aria-label="Attach file" className="text-slate-500"><Paperclip size={18} /></button>
-            <button type="button" aria-label="Add image" className="hidden text-slate-500 sm:block"><Image size={18} /></button>
-          </div>
-          <button type="button" aria-label="Voice message" className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-[#00a884] text-white shadow-md shadow-emerald-700/20">
-            <Mic size={18} />
-          </button>
-        </div>
-      </motion.div>
-
-      <motion.div
-        initial={{ opacity: 0, x: -12 }}
-        animate={{ opacity: 1, x: 0 }}
-        transition={{ delay: 0.65, duration: 0.45 }}
-        className="absolute -right-5 bottom-20 hidden items-center gap-2 rounded-xl border border-emerald-100 bg-white px-3 py-2 shadow-xl sm:flex"
-      >
-        <div className="flex h-8 w-8 items-center justify-center rounded-full bg-emerald-50 text-emerald-600"><Send size={14} /></div>
-        <div><div className="text-[10px] font-black text-slate-900">Reply sent</div><div className="text-[9px] font-semibold text-slate-400">in 8 seconds</div></div>
-      </motion.div>
-    </div>
-  );
-}
-
-function HeaderAction({ children, label }: { children: React.ReactNode; label: string }) {
-  return <button type="button" aria-label={label} className="rounded-full p-2 transition-colors hover:bg-slate-200">{children}</button>;
-}
-
-function MessageMeta({ outbound, time }: { outbound?: boolean; time: string }) {
-  return (
-    <div className="mt-1 flex items-center justify-end gap-1 text-[8px] font-semibold text-slate-500">
-      <span>{time}</span>
-      {outbound ? <CheckCheck size={13} className="text-[#53bdeb]" /> : null}
-    </div>
-  );
-}
-
-function Stat({ val, label }: { val: string; label: string }) {
-  return (
-    <div className="flex flex-col">
-      <span className="text-2xl font-extrabold text-ink-900">{val}</span>
-      <span className="text-xs font-medium text-ink-900/55">{label}</span>
-    </div>
+      <div className="mx-auto mt-3 grid w-full grid-cols-3 gap-1.5 px-1 text-center sm:mt-4 sm:flex sm:max-w-3xl sm:flex-wrap sm:items-center sm:justify-center sm:gap-2 sm:px-0">
+        {["Dashboard Flow", "Automation Setup", "Sales Recovery"].map(
+          (label) => (
+            <span
+              key={label}
+              className="rounded-full border border-emerald-100 bg-white/80 px-2 py-1 text-[9px] font-bold text-slate-600 shadow-sm backdrop-blur sm:px-3 sm:py-1.5 sm:text-[11px]"
+            >
+              {label}
+            </span>
+          )
+        )}
+      </div>
+    </motion.div>
   );
 }
 
 export function HeroSection() {
   const { token, user } = useAuth();
-  const startHref = authAwareHref({ token, role: user?.role, guestHref: "/register" });
+
+  const startHref = authAwareHref({
+    token,
+    role: user?.role,
+    guestHref: "/register",
+  });
+
+  const demoHref = authAwareHref({
+    token,
+    role: user?.role,
+    guestHref: "/login",
+  });
 
   return (
-    <section className="relative overflow-hidden pt-15 lg:pt-20">
-      <div className="pointer-events-none absolute inset-0">
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_14%_18%,rgba(37,211,102,0.16),transparent_45%)]" />
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_78%_30%,rgba(6,182,212,0.12),transparent_48%)]" />
+    <section className="relative isolate overflow-hidden bg-[#fbfdfb] pt-24 sm:pt-24 lg:pt-[7.25rem]">
+      {/* Background */}
+      <div className="pointer-events-none absolute inset-0 -z-10">
+        <div className="absolute left-1/2 top-[-140px] h-[430px] w-[430px] -translate-x-1/2 rounded-full bg-emerald-100/95 blur-[105px] sm:h-[560px] sm:w-[560px] sm:blur-[130px]" />
+        <div className="absolute right-[-210px] top-28 h-[360px] w-[360px] rounded-full bg-teal-100/80 blur-[110px] sm:right-[-180px] sm:top-36 sm:h-[440px] sm:w-[440px] sm:blur-[130px]" />
+        <div className="absolute left-[-210px] top-72 h-[360px] w-[360px] rounded-full bg-lime-100/70 blur-[110px] sm:left-[-190px] sm:h-[430px] sm:w-[430px] sm:blur-[130px]" />
+
+        <div className="absolute inset-0 opacity-[0.16] [background-image:radial-gradient(rgba(15,23,42,0.12)_1px,transparent_1px)] [background-size:24px_24px] [mask-image:radial-gradient(ellipse_90%_70%_at_50%_24%,#000_15%,transparent_100%)] sm:opacity-[0.2] sm:[background-size:28px_28px]" />
+
+        <div className="absolute inset-x-0 top-0 h-28 bg-gradient-to-b from-white to-transparent sm:h-36" />
       </div>
 
-      <div className="relative mx-auto max-w-7xl bg-white/60 px-6 backdrop-blur lg:px-8">
-        <div className="grid items-center gap-12 lg:grid-cols-[0.92fr_1.08fr]">
-          <div>
-            <h1 className="mt-6 text-4xl font-black tracking-tight text-ink-900 sm:text-5xl lg:text-6xl">
-              <span className="block">Send Smarter.</span>
-              <span className="block bg-gradient-to-r from-[#25D366] via-[#11d593] to-[#06b6d4] bg-clip-text text-transparent">
-                Convert Faster.
+      {/* IMPORTANT: mobile px is very small, desktop remains same */}
+      <div className="mx-auto max-w-7xl px-1 sm:px-1 lg:px-8">
+        <motion.div
+          variants={staggerContainer}
+          initial="hidden"
+          animate="show"
+          className="mx-auto flex w-full max-w-6xl flex-col items-center text-center"
+        >
+          {/* Badge */}
+          <motion.div variants={fadeUp} className="relative max-w-full">
+            <div className="absolute -inset-1 rounded-full bg-gradient-to-r from-emerald-300 via-green-300 to-teal-300 opacity-40 blur-md" />
+
+            <div className="relative inline-flex max-w-[98vw] items-center gap-1.5 rounded-full border border-emerald-200/80 bg-white/95 px-2.5 py-1.5 text-[8.5px] font-black uppercase tracking-[0.12em] text-emerald-800 shadow-sm backdrop-blur-xl min-[380px]:text-[9px] sm:gap-2 sm:px-4 sm:py-2 sm:text-xs">
+              <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-emerald-600 text-white sm:h-6 sm:w-6">
+                <Sparkles
+                  size={11}
+                  fill="currentColor"
+                  className="sm:size-[13px]"
+                />
               </span>
-              <span className="block text-ink-900/70">Scale Bigger.</span>
-            </h1>
 
-            <p className="mt-6 max-w-md text-lg leading-relaxed text-ink-900/70">
-              The all-in-one WhatsApp Business API platform. Automate campaigns, manage contacts, and turn every customer conversation into real revenue.
-            </p>
+              <span className="truncate">Built for WhatsApp Business API</span>
 
-            <div className="mt-8 flex items-center gap-4">
-              <motion.a
-                href={startHref}
-                whileHover={{ scale: 1.03 }}
-                whileTap={{ scale: 0.98 }}
-                transition={{ type: "spring", stiffness: 320, damping: 24 }}
-                className="group relative flex items-center gap-2 rounded-2xl bg-gradient-to-r from-[#25D366] to-[#06b77e] px-8 py-4 text-base font-bold text-white shadow-2xl shadow-[#25D366]/30 transition-all duration-300 ease-out hover:shadow-[#25D366]/50 hover:shadow-2xl hover:brightness-105"
-              >
-                Start Free Trial
-                <svg className="h-4 w-4 transition-transform duration-300 ease-out group-hover:translate-x-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
-                </svg>
-              </motion.a>
-            </div>
-
-            <div className="mt-10 flex items-center gap-8">
-              <Stat val="50K+" label="Active Users" />
-              <Stat val="2B+" label="Messages Sent" />
-              <Stat val="99.9%" label="Uptime SLA" />
-            </div>
-          </div>
-
-          <motion.div
-            initial={{ opacity: 0, y: 14 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.55, ease: "easeOut", delay: 0.05 }}
-            className="relative h-[570px] sm:h-[640px] lg:h-[680px]"
-          >
-            <div className="absolute inset-0 rounded-3xl bg-[radial-gradient(circle_at_50%_50%,rgba(37,211,102,0.09),transparent_70%)]" />
-            <div className="relative h-full py-5 lg:py-8">
-              <BusinessChatPreview />
+              <BadgeCheck
+                size={13}
+                className="shrink-0 fill-[#1d9bf0] text-white sm:size-[15px]"
+              />
             </div>
           </motion.div>
-        </div>
+
+          {/* Heading */}
+          <motion.h1
+            variants={fadeUp}
+            className="mt-5 w-full max-w-none text-balance text-[3rem] font-black leading-[0.92] tracking-[-0.075em] text-slate-950 min-[380px]:text-[3.25rem] sm:mt-6 sm:max-w-[1040px] sm:text-6xl sm:leading-[1.02] sm:tracking-[-0.055em] lg:text-[5rem] xl:text-[5.6rem]"
+          >
+            Automate WhatsApp.
+            <span className="block bg-gradient-to-r from-[#16a34a] via-[#22c55e] to-[#059669] bg-clip-text text-transparent">
+              Grow Real Revenue.
+            </span>
+          </motion.h1>
+
+          {/* Description */}
+          <motion.p
+            variants={fadeUp}
+            className="mt-4 w-full max-w-none px-3 text-balance text-[13px] font-semibold leading-6 text-slate-600 sm:mt-5 sm:max-w-3xl sm:px-1 sm:text-lg sm:font-medium sm:leading-8"
+          >
+            Send bulk campaigns, build drag & drop automation flows, reply with
+            smart bots, recover leads, and manage every customer chat from one
+            clean WhatsApp dashboard.
+          </motion.p>
+
+          {/* Pills */}
+          <motion.div
+            variants={staggerContainer}
+            className="mt-6 grid w-full grid-cols-2 gap-2 px-2 sm:mt-7 sm:flex sm:max-w-4xl sm:flex-wrap sm:items-center sm:justify-center sm:gap-2.5 sm:px-0"
+          >
+            <MiniPill icon={Send}>Bulk campaigns</MiniPill>
+            <MiniPill icon={MousePointerClick}>Click-to-WhatsApp ads</MiniPill>
+            <MiniPill icon={Bot}>Smart chatbot</MiniPill>
+            <MiniPill icon={RotateCcw}>Lead recovery</MiniPill>
+
+            <div className="col-span-2 flex justify-center sm:col-span-1">
+              <MiniPill icon={Users}>Team inbox</MiniPill>
+            </div>
+          </motion.div>
+
+          {/* Buttons */}
+          <motion.div
+            variants={fadeUp}
+            className="mt-7 flex w-full flex-col items-center justify-center gap-2.5 px-2 sm:mt-8 sm:max-w-none sm:flex-row sm:gap-3 sm:px-0"
+          >
+            <motion.a
+              href={startHref}
+              whileHover={{ y: -2, scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
+              className="group inline-flex h-12 w-full items-center justify-center gap-2 rounded-2xl bg-emerald-600 px-6 text-sm font-black text-white shadow-xl shadow-emerald-200 transition-all duration-300 hover:bg-slate-950 hover:shadow-slate-300 sm:h-14 sm:w-auto sm:px-7"
+            >
+              Start Free Trial
+              <ArrowRight
+                size={18}
+                className="transition-transform duration-300 group-hover:translate-x-1"
+              />
+            </motion.a>
+
+            <motion.a
+              href={demoHref}
+              whileHover={{ y: -2, scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
+              className="group inline-flex h-12 w-full items-center justify-center gap-2.5 rounded-2xl border border-slate-200 bg-white/90 px-6 text-sm font-black text-slate-950 shadow-sm backdrop-blur-xl transition-all duration-300 hover:border-emerald-200 hover:bg-emerald-50 sm:h-14 sm:w-auto sm:gap-3 sm:px-7"
+            >
+              <span className="flex h-7 w-7 items-center justify-center rounded-full bg-slate-950 text-white transition-colors group-hover:bg-emerald-600">
+                <Play size={12} fill="currentColor" />
+              </span>
+              Book Live Demo
+            </motion.a>
+          </motion.div>
+
+          {/* Trust Line */}
+          <motion.div
+            variants={fadeUp}
+            className="mt-4 flex w-full flex-wrap items-center justify-center gap-x-2 gap-y-1.5 px-2 text-[11px] font-bold text-slate-500 sm:mt-5 sm:max-w-none sm:gap-3 sm:px-0 sm:text-sm"
+          >
+            <span className="inline-flex items-center gap-1">
+              <ShieldCheck
+                size={13}
+                className="text-emerald-600 sm:size-[15px]"
+              />
+              Official API
+            </span>
+
+            <span className="h-1 w-1 rounded-full bg-slate-300" />
+
+            <span className="inline-flex items-center gap-1">
+              <Zap size={13} className="text-emerald-600 sm:size-[15px]" />
+              Fast setup
+            </span>
+
+            <span className="h-1 w-1 rounded-full bg-slate-300" />
+
+            <span className="inline-flex items-center gap-1">
+              <BadgeCheck
+                size={13}
+                className="text-emerald-600 sm:size-[15px]"
+              />
+              No-code
+            </span>
+          </motion.div>
+        </motion.div>
+
+        <HeroYoutubeVideo />
       </div>
+
+      <div className="mt-10 h-10 bg-gradient-to-b from-transparent to-white sm:mt-14 sm:h-12" />
     </section>
   );
 }

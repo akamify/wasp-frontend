@@ -1,14 +1,5 @@
 function normalizeBaseUrl(value: string) {
-  const normalized = String(value || "").trim().replace(/\/+$/, "");
-  if (!normalized) return "";
-  try {
-    const url = new URL(normalized);
-    if (!url.pathname || url.pathname === "/") {
-      url.pathname = "/api";
-      return url.toString().replace(/\/+$/, "");
-    }
-  } catch {}
-  return normalized;
+  return String(value || "").trim().replace(/\/+$/, "");
 }
 
 async function checkCorsPath(baseUrl: string, signal: AbortSignal) {
@@ -32,13 +23,7 @@ async function checkHostResolvable(baseUrl: string, signal: AbortSignal) {
 }
 
 export function startApiReachabilityCheck() {
-  const baseUrl = normalizeBaseUrl(
-    import.meta.env.VITE_API_BASE_URL ||
-    import.meta.env.VITE_API_URL ||
-    import.meta.env.NEXT_PUBLIC_API_BASE_URL ||
-    import.meta.env.NEXT_PUBLIC_API_URL ||
-    ""
-  );
+  const baseUrl = normalizeBaseUrl(import.meta.env.VITE_API_BASE_URL || "");
   if (!baseUrl) return;
 
   const controller = new AbortController();
@@ -46,18 +31,18 @@ export function startApiReachabilityCheck() {
 
   checkCorsPath(baseUrl, controller.signal)
     .then(() => {
-      (window as any).__waspakamifyApiReachable = true;
-      (window as any).__waspakamifyApiHealth = "ok";
+      (window as any).__aiwizchatApiReachable = true;
+      (window as any).__aiwizchatApiHealth = "ok";
     })
     .catch(async (err) => {
       try {
         await checkHostResolvable(baseUrl, controller.signal);
-        (window as any).__waspakamifyApiReachable = true;
-        (window as any).__waspakamifyApiHealth = "reachable_but_blocked";
+        (window as any).__aiwizchatApiReachable = true;
+        (window as any).__aiwizchatApiHealth = "reachable_but_blocked";
         void baseUrl;
       } catch (secondaryErr) {
-        (window as any).__waspakamifyApiReachable = false;
-        (window as any).__waspakamifyApiHealth = "unreachable";
+        (window as any).__aiwizchatApiReachable = false;
+        (window as any).__aiwizchatApiHealth = "unreachable";
         void secondaryErr;
       }
     })

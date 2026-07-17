@@ -85,7 +85,7 @@ export function NodeSettingsPanel({
       {type === "list" ? (
         <ListNodeSettings config={node.data.config} onChange={onConfigChange} onHandleRename={onHandleRename} />
       ) : null}
-      {["set_tag", "set_attribute", "api_request", "request_intervention"].includes(type) ? (
+      {["condition", "delay", "wait_for_reply", "variable", "fallback", "set_tag", "set_attribute", "api_request", "request_intervention"].includes(type) ? (
         <ActionNodeSettings
           type={type}
           config={node.data.config}

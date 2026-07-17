@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { Eye, RefreshCw, Trash2, MessageSquare, Folder, ShieldCheck, Megaphone, Package } from "lucide-react";
+import { Eye, RefreshCw, Trash2, Folder, ShieldCheck, Megaphone, Package } from "lucide-react";
 import { Badge } from "@components/ui/Badge";
 import { Button } from "@components/ui/Button";
 import { TemplatesTableSkeleton } from "@components/ui/Skeletons";
@@ -47,9 +47,16 @@ export function TemplatesList(props: Props) {
 
   const categoryMeta = (category: string) => {
     const c = String(category || "").toLowerCase();
-    if (c === "authentication") return { Icon: ShieldCheck, label: "Authentication", color: "text-blue-600", bg: "bg-blue-50" };
-    if (c === "marketing") return { Icon: Megaphone, label: "Marketing", color: "text-brand-600", bg: "bg-brand-50" };
-    return { Icon: Package, label: c || "Utility", color: "text-indigo-600", bg: "bg-indigo-50" };
+    if (c === "authentication") return { Icon: ShieldCheck, label: "Authentication", color: "text-blue-700", bg: "bg-blue-50", ring: "ring-blue-100" };
+    if (c === "marketing") return { Icon: Megaphone, label: "Marketing", color: "text-emerald-700", bg: "bg-emerald-50", ring: "ring-emerald-100" };
+    return { Icon: Package, label: "Utility", color: "text-indigo-700", bg: "bg-indigo-50", ring: "ring-indigo-100" };
+  };
+
+  const headerMediaLabel = (template: TemplateItem) => {
+    const header = (template.components || []).find((component) => String(component?.type || "").toUpperCase() === "HEADER");
+    const format = String(header?.format || "").toUpperCase();
+    if (["IMAGE", "VIDEO", "DOCUMENT", "LOCATION"].includes(format)) return format.toLowerCase();
+    return "";
   };
 
   const handleSyncMeta = useCallback(async () => {
@@ -64,7 +71,7 @@ export function TemplatesList(props: Props) {
     } finally {
       setSyncing(false);
     }
-  }, [templates]);
+  }, [onRefresh, toast]);
 
   const filteredTemplates = useMemo(() => {
     const term = search.trim().toLowerCase();
@@ -126,64 +133,24 @@ export function TemplatesList(props: Props) {
               </table>
             </div>
           ) : filteredTemplates.length === 0 ? (
-            <div className="p-20 flex flex-col items-center text-center">
-              <div className="p-6 bg-slate-50 rounded-[5px] text-slate-300 mb-6">
-                <Folder size={48} />
+            <div className="p-10 md:p-20 flex flex-col items-center text-center">
+              <div className="p-6 bg-slate-50 rounded-[5px] text-slate-300 mb-6 ring-1 ring-slate-100">
+                <Folder size={44} />
               </div>
-              <h3 className="text-xl font-black text-slate-900 uppercase tracking-tighter">No Templates Found</h3>
-              <p className="mt-2 text-slate-500 font-medium max-w-xs">Adjust your search or filters to find what you're looking for.</p>
-            </div>
-          ) : false ? (
-            <div className="p-6 md:p-8 cursor-pointer grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-              {pagedTemplates.map((template) => {
-                const { Icon, label, color, bg } = categoryMeta(template.category);
-                return (
-                  <div
-                    key={template._id}
-                    className={cn(
-                      "group p-6 rounded-[5px] cursor-pointer border transition-all duration-300 relative",
-                      selectedId === template._id ? "border-brand-600 bg-brand-50/20 cursor-pointer" : "border-slate-100 bg-white cursor-pointer hover:border-slate-300 hover:shadow-xl hover:shadow-slate-200/40"
-                    )}
-                  >
-                    <div className="flex items-start justify-between cursor-pointer mb-6">
-                      <div className={cn("p-3 rounded-[5px]", bg, color)}>
-                        <Icon size={20} />
-                      </div>
-                      <Badge tone={statusTone(template.status)} className="rounded-[5px] px-3 py-1 text-[10px] uppercase font-black tracking-widest">{template.status}</Badge>
-                    </div>
-                    <h5 className="font-black text-slate-900 truncate mb-1 group-hover:text-brand-600 transition-colors" title={template.name}>
-                      {truncateTemplateName(template.name)}
-                    </h5>
-                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-6">{label}</p>
-
-                    <div className="flex items-center gap-2 pt-4 border-t border-slate-50">
-                      <Button
-                        variant="ghost"
-                        onClick={() => onSelectTemplate(template)}
-                        className="flex-1 h-10 rounded-[5px] bg-slate-50 text-slate-600 font-black text-[10px] uppercase tracking-widest hover:bg-slate-900 hover:text-white transition-all"
-                      >
-                        <Eye size={14} className="mr-2" /> View
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        onClick={() => onSyncStatus(template._id)}
-                        disabled={busyId === template._id}
-                        className="h-10 w-10 rounded-[5px] bg-slate-50 text-slate-400 hover:text-brand-600 transition-all shrink-0"
-                      >
-                        <RefreshCw size={14} className={busyId === template._id ? "animate-spin" : ""} />
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        onClick={() => onDelete(template)}
-                        disabled={busyId === template._id}
-                        className="h-10 w-10 rounded-[5px] bg-rose-50 text-rose-400 hover:bg-rose-500 hover:text-white transition-all shrink-0"
-                      >
-                        <Trash2 size={14} />
-                      </Button>
-                    </div>
-                  </div>
-                );
-              })}
+              <h3 className="text-xl font-black text-slate-900 uppercase tracking-tighter">{templates.length ? "No Templates Found" : "No Templates Yet"}</h3>
+              <p className="mt-2 text-slate-500 font-medium max-w-sm">
+                {templates.length ? "Adjust search or filters to find the right template." : "Create your first WhatsApp template or sync approved templates from Meta."}
+              </p>
+              {!templates.length ? (
+                <div className="mt-6 flex flex-wrap items-center justify-center gap-3">
+                  <Button onClick={onOpenAdd} className="rounded-[5px] bg-brand-600 px-5 py-2.5 text-xs font-black uppercase tracking-widest text-white shadow-none hover:bg-brand-700">
+                    New Template
+                  </Button>
+                  <Button variant="ghost" onClick={() => void handleSyncMeta()} disabled={syncing} className="rounded-[5px] border border-slate-200 bg-white px-5 py-2.5 text-xs font-black uppercase tracking-widest text-slate-700 shadow-none hover:bg-slate-50">
+                    Sync Meta
+                  </Button>
+                </div>
+              ) : null}
             </div>
           ) : (
             <div className="overflow-x-auto">
@@ -198,22 +165,34 @@ export function TemplatesList(props: Props) {
                 </thead>
                 <tbody className="divide-y divide-slate-50">
                   {pagedTemplates.map((template) => {
-                    const { Icon, label, color, bg } = categoryMeta(template.category);
+                    const { Icon, label, color, bg, ring } = categoryMeta(template.category);
+                    const mediaLabel = headerMediaLabel(template);
                     return (
                       <tr
                         key={template._id}
-                        className={cn("group transition-colors", selectedId === template._id ? "bg-brand-50/20" : "hover:bg-slate-50/40")}
+                        className={cn(
+                          "group border-l-2 transition-colors",
+                          selectedId === template._id ? "border-brand-600 bg-brand-50/35" : "border-transparent hover:bg-slate-50/60"
+                        )}
                       >
                         <td className="pl-2 pr-0 py-3 md:px-8 md:py-5 cursor-pointer" onClick={() => onSelectTemplate(template)}>
                           <button
                             onClick={() => onSelectTemplate(template)}
-                            className="flex items-center gap-4 text-left group"
+                            className="flex min-w-0 items-center gap-4 text-left group"
+                            title={`Preview ${template.name}`}
                           >
-                            <div className="p-2.5 rounded-[5px] bg-slate-100 text-slate-400 group-hover:bg-brand-600 group-hover:text-white transition-all shadow-sm">
-                              <MessageSquare size={16} />
+                            <div className={cn("grid h-10 w-10 shrink-0 place-items-center rounded-[5px] ring-1 transition-all shadow-sm", bg, color, ring, "group-hover:bg-slate-900 group-hover:text-white group-hover:ring-slate-900")}>
+                              <Icon size={16} />
                             </div>
-                            <div className="font-black text-slate-900 text-sm group-hover:text-brand-600 transition-colors truncate max-w-[250px]" title={template.name}>
-                              {truncateTemplateName(template.name)}
+                            <div className="min-w-0">
+                              <div className="font-black text-slate-900 text-sm group-hover:text-brand-600 transition-colors truncate max-w-[260px]" title={template.name}>
+                                {truncateTemplateName(template.name, 34)}
+                              </div>
+                              <div className="mt-1 flex flex-wrap items-center gap-2 text-[10px] font-black uppercase tracking-wider text-slate-400">
+                                <span>{template.language || "en_US"}</span>
+                                {template.source ? <span className="rounded-[3px] bg-slate-100 px-1.5 py-0.5 text-slate-500">{template.source}</span> : null}
+                                {mediaLabel ? <span className="rounded-[3px] bg-slate-100 px-1.5 py-0.5 text-slate-500">{mediaLabel}</span> : null}
+                              </div>
                             </div>
                           </button>
                         </td>
@@ -236,7 +215,9 @@ export function TemplatesList(props: Props) {
                               variant="ghost"
                               size="sm"
                               onClick={() => onSelectTemplate(template)}
-                              className="h-10 px-4 rounded-[5px] bg-slate-50 text-slate-600 font-black text-[10px] uppercase tracking-widest hover:bg-slate-900 hover:text-white transition-all shadow-sm"
+                              title="Preview template"
+                              aria-label={`Preview ${template.name}`}
+                              className="h-10 w-10 rounded-[5px] bg-slate-50 p-0 text-slate-600 hover:bg-slate-900 hover:text-white transition-all shadow-sm"
                             >
                               <Eye size={12} />
                             </Button>
@@ -245,7 +226,9 @@ export function TemplatesList(props: Props) {
                               size="sm"
                               onClick={() => onSyncStatus(template._id)}
                               disabled={busyId === template._id}
-                              className="h-10 px-4 rounded-[5px] bg-slate-50 text-slate-600 font-black text-[10px] uppercase tracking-widest hover:bg-slate-900 hover:text-white transition-all shadow-sm"
+                              title="Sync status"
+                              aria-label={`Sync status for ${template.name}`}
+                              className="h-10 w-10 rounded-[5px] bg-slate-50 p-0 text-slate-600 hover:bg-slate-900 hover:text-white transition-all shadow-sm"
                             >
                               <RefreshCw size={14} className={busyId === template._id ? "animate-spin" : ""} />
                             </Button>
@@ -254,7 +237,9 @@ export function TemplatesList(props: Props) {
                               size="sm"
                               onClick={() => onDelete(template)}
                               disabled={busyId === template._id}
-                              className="h-10 px-4 rounded-[5px] bg-slate-50 text-slate-600 font-black text-[10px] uppercase tracking-widest hover:bg-slate-900 hover:text-white transition-all shadow-sm"
+                              title="Delete template"
+                              aria-label={`Delete ${template.name}`}
+                              className="h-10 w-10 rounded-[5px] bg-slate-50 p-0 text-slate-600 hover:bg-rose-600 hover:text-white transition-all shadow-sm"
                             >
                               <Trash2 size={14} />
                             </Button>

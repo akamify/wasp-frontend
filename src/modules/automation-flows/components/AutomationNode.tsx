@@ -14,11 +14,15 @@ function AutomationNodeView({ id, data, selected }: NodeProps<FlowNodeData>) {
   const accent =
     data.nodeType === "start"
       ? "from-emerald-400 to-brand-600"
-      : data.nodeType === "end" || data.nodeType === "request_intervention"
+      : data.nodeType === "end" || data.nodeType === "request_intervention" || data.nodeType === "fallback"
         ? "from-amber-400 to-orange-500"
+        : data.nodeType === "condition"
+          ? "from-cyan-400 to-teal-600"
+          : data.nodeType === "delay" || data.nodeType === "wait_for_reply"
+            ? "from-indigo-400 to-blue-600"
         : data.nodeType === "api_request"
           ? "from-sky-400 to-blue-600"
-          : data.nodeType === "set_tag" || data.nodeType === "set_attribute"
+          : data.nodeType === "set_tag" || data.nodeType === "set_attribute" || data.nodeType === "variable"
             ? "from-violet-400 to-purple-600"
             : "from-brand-400 to-brand-700";
 
