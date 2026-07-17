@@ -10,7 +10,6 @@ type Props = {
 
 export function UserApiKeyCard({ item, onDisable, onEnable, busy }: Props) {
   const active = !item.revoked && item.status !== "disabled";
-  const chatAccess = Boolean(item.permissions?.chatAccess);
   return (
     <div className="rounded-[5px] border border-slate-200 p-3">
       <div className="flex items-center justify-between">
@@ -24,21 +23,6 @@ export function UserApiKeyCard({ item, onDisable, onEnable, busy }: Props) {
         ) : (
           <Button disabled={busy} variant="outline" onClick={() => onDisable(item.id)} className="h-8 px-3">Disable Key</Button>
         )}
-      </div>
-
-      <div className="mt-3 grid grid-cols-1 gap-2 text-[11px]">
-        <div className="rounded-[5px] bg-slate-50 px-3 py-2 flex items-center justify-between gap-3">
-          <div>
-            <div className="font-black text-slate-700">campaignSend</div>
-            <div className="text-slate-500">{item.permissions?.campaignSend ? "enabled" : "disabled"}</div>
-          </div>
-        </div>
-        <div className="rounded-[5px] bg-slate-50 px-3 py-2 flex items-center justify-between gap-3">
-          <div>
-            <div className="font-black text-slate-700">External Chat API</div>
-            <div className="text-slate-500">{chatAccess ? "enabled by workspace access" : "disabled"}</div>
-          </div>
-        </div>
       </div>
     </div>
   );
