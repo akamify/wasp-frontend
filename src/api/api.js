@@ -14,7 +14,8 @@ const isBrowser = typeof window !== "undefined";
 const isLocalHost =
   isBrowser &&
   (window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1");
-const PRODUCTION_API_BASE_URL = "https://api.aiwizchat.com/api";
+const PRODUCTION_API_BASE_URL = "/api";
+const LOCAL_API_BASE_URL = "http://localhost:3000";
 
 function normalizeApiBaseUrl(value) {
   const v = String(value || "").trim();
@@ -22,7 +23,7 @@ function normalizeApiBaseUrl(value) {
   const normalized = v.replace(/\/+$/, "");
   try {
     const url = new URL(normalized);
-    if (url.hostname === "api.wasp.akamify.com") {
+    if (url.hostname === "api.wasp.akamify.com" || url.hostname === "api.aiwizchat.com") {
       return PRODUCTION_API_BASE_URL;
     }
     if (!url.pathname || url.pathname === "/") {
@@ -34,7 +35,7 @@ function normalizeApiBaseUrl(value) {
 }
 
 const envBaseUrl = normalizeApiBaseUrl(rawEnvBaseUrl);
-const API_BASE_URL = envBaseUrl || (isLocalHost ? "http://localhost:3000" : PRODUCTION_API_BASE_URL);
+const API_BASE_URL = envBaseUrl || (isLocalHost ? LOCAL_API_BASE_URL : PRODUCTION_API_BASE_URL);
 const isDev = Boolean(import.meta.env.DEV);
 
 export const api = axios.create({
