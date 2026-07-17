@@ -1,4 +1,4 @@
-const EMPLOYEE_TOKEN_KEY = "waspakamify_employee_token";
+const EMPLOYEE_TOKEN_KEY = "aiwizchat_employee_token";
 
 export function getEmployeeToken() {
   return localStorage.getItem(EMPLOYEE_TOKEN_KEY) || "";

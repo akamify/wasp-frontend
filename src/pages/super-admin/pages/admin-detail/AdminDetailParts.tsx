@@ -45,12 +45,21 @@ export function ActivityTrendGraph({ items }: { items: any[] }) {
     days.push({ key, label: d.toLocaleDateString("en-IN", { day: "2-digit", month: "short" }), count: 0 });
   }
   const map = new Map(days.map((x) => [x.key, x]));
+
+  
   (items || []).forEach((e) => {
+
     const dt = e?.createdAt ? new Date(e.createdAt) : null;
+
     if (!dt || Number.isNaN(dt.getTime())) return;
+
     const key = `${dt.getFullYear()}-${String(dt.getMonth() + 1).padStart(2, "0")}-${String(dt.getDate()).padStart(2, "0")}`;
+
     const row = map.get(key); if (row) row.count += 1;
+
   });
+
+
   const max = Math.max(1, ...days.map((x) => x.count));
   const bars = days.map((x) => ({ ...x, pct: Math.round((x.count / max) * 100) }));
 

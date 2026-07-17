@@ -16,6 +16,16 @@ const WEEKDAYS = [
   { value: 7, label: "Sun" },
 ];
 
+const TIMEZONES = [
+  { value: "Asia/Kolkata", label: "India (IST)" },
+  { value: "Asia/Dubai", label: "Dubai (GST)" },
+  { value: "Asia/Singapore", label: "Singapore (SGT)" },
+  { value: "Europe/London", label: "London" },
+  { value: "America/New_York", label: "New York" },
+  { value: "America/Los_Angeles", label: "Los Angeles" },
+  { value: "UTC", label: "UTC" },
+];
+
 type CampaignBasicsSectionProps = {
   type: CampaignType;
   name: string;
@@ -23,6 +33,9 @@ type CampaignBasicsSectionProps = {
   scheduleDate: string;
   scheduleTime: string;
   scheduleWeekdays: number[];
+  scheduleTimezone: string;
+  scheduleEndDate: string;
+  scheduleMaxOccurrences: string;
   templateId: string;
   approvedTemplates: TemplateRecord[];
   onTypeReset: () => void;
@@ -31,6 +44,9 @@ type CampaignBasicsSectionProps = {
   onScheduleDateChange: (value: string) => void;
   onScheduleTimeChange: (value: string) => void;
   onToggleScheduleWeekday: (value: number) => void;
+  onScheduleTimezoneChange: (value: string) => void;
+  onScheduleEndDateChange: (value: string) => void;
+  onScheduleMaxOccurrencesChange: (value: string) => void;
   onTemplateIdChange: (value: string) => void;
 };
 
@@ -56,6 +72,9 @@ export function CampaignBasicsSection({
   scheduleDate,
   scheduleTime,
   scheduleWeekdays,
+  scheduleTimezone,
+  scheduleEndDate,
+  scheduleMaxOccurrences,
   templateId,
   approvedTemplates,
   onTypeReset,
@@ -64,6 +83,9 @@ export function CampaignBasicsSection({
   onScheduleDateChange,
   onScheduleTimeChange,
   onToggleScheduleWeekday,
+  onScheduleTimezoneChange,
+  onScheduleEndDateChange,
+  onScheduleMaxOccurrencesChange,
   onTemplateIdChange,
 }: CampaignBasicsSectionProps) {
   return (
@@ -124,9 +146,43 @@ export function CampaignBasicsSection({
           </div>
         ) : null}
 
+        {scheduleType !== "immediate" ? (
+          <Select
+            label="Timezone"
+            value={scheduleTimezone}
+            onChange={(event) => onScheduleTimezoneChange(event.target.value)}
+          >
+            {TIMEZONES.map((zone) => (
+              <option key={zone.value} value={zone.value}>{zone.label}</option>
+            ))}
+          </Select>
+        ) : null}
+
+        {scheduleType === "daily" || scheduleType === "weekly" ? (
+          <div className="grid gap-3 sm:grid-cols-2">
+            <Input
+              label="End Date (optional)"
+              type="date"
+              value={scheduleEndDate}
+              onChange={(event) => onScheduleEndDateChange(event.target.value)}
+            />
+            <Input
+              label="Max Runs (optional)"
+              type="number"
+              min={1}
+              max={365}
+              value={scheduleMaxOccurrences}
+              onChange={(event) => onScheduleMaxOccurrencesChange(event.target.value)}
+              placeholder="e.g. 10"
+            />
+          </div>
+        ) : null}
+
         <div className="rounded-[5px] border border-ink-900/10 bg-slate-50 px-4 py-3 text-xs font-semibold text-ink-800/65">
           {getScheduleSummary(scheduleType, scheduleDate, scheduleTime, scheduleWeekdays)}
-          {scheduleType !== "immediate" ? " (Asia/Kolkata)" : ""}
+          {scheduleType !== "immediate" ? ` (${scheduleTimezone})` : ""}
+          {scheduleType !== "immediate" && scheduleEndDate ? ` · Ends ${scheduleEndDate}` : ""}
+          {scheduleType !== "immediate" && scheduleMaxOccurrences ? ` · Max ${scheduleMaxOccurrences} runs` : ""}
         </div>
       </div>
 

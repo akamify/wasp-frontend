@@ -516,6 +516,7 @@ function TextButtonsSettings({
                 label="Button ID / payload"
                 value={button.id}
                 onChange={(event) => updateButton(index, { ...button, id: event.target.value.trim() })}
+                maxLength={256}
               />
               <Button
                 type="button"
@@ -577,7 +578,7 @@ export function MessageNodeSettings({
           <option value="email">Email</option>
           <option value="phone">Phone</option>
         </Select>
-        <Input label="Save to attribute" value={configString(config, "saveToAttribute")} onChange={(event) => onChange({ ...config, saveToAttribute: event.target.value })} hint="Example: orderId, city, email" />
+        <Input label="Save to contact attribute" value={configString(config, "saveToAttribute")} onChange={(event) => onChange({ ...config, saveToAttribute: event.target.value.trim() })} hint="Example: orderId, city, email. Dots and $ are not allowed." />
       </>
     );
   }

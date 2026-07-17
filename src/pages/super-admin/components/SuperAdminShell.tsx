@@ -44,7 +44,7 @@ export function SuperAdminShell({ children }: { children: ReactNode }) {
   return (
     <AdminShell
       navItems={SUPER_ADMIN_NAV_ITEMS}
-      storageKey="waspakamify_super_admin_sidebar_collapsed"
+      storageKey="aiwizchat_super_admin_sidebar_collapsed"
       brandSuffix=" Root"
     >
       {children}

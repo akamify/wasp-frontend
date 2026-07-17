@@ -14,24 +14,45 @@ export function DashboardHeader({
   onNewCampaign: () => void;
 }) {
   return (
-    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 md:gap-4">
-      <div className="space-y-0.5">
-        <h1 className="text-2xl md:text-3xl font-black tracking-tight text-slate-900">Dashboard</h1>
-        <p className="text-xs md:text-base text-slate-500 font-medium">Welcome back!</p>
+    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 py-2">
+      {/* Title Section */}
+      <div className="space-y-1">
+        <h1 className="text-3xl font-extrabold tracking-tighter text-slate-950">
+          Dashboard
+        </h1>
+        <p className="text-sm text-slate-500 font-medium tracking-wide">
+          Welcome back, here's what's happening.
+        </p>
       </div>
-      <div className="flex items-center gap-2">
+
+      {/* Action Section */}
+      <div className="flex items-center gap-3">
         <Button
           variant="outline"
-          size="sm"
+          size="lg"
           onClick={onSync}
           disabled={loading || syncing}
-          className="flex-1 sm:flex-none rounded-[5px] h-9 md:h-10 px-3 md:px-4"
+          className={cn(
+            "rounded-xl border-slate-200 bg-white hover:bg-slate-50 hover:text-slate-900 transition-all shadow-sm",
+            "h-11 px-5 font-semibold text-slate-700"
+          )}
         >
-          <RefreshCw size={14} className={cn("mr-2 transition-transform duration-700", syncing && "animate-spin")} />
-          <span className="xs:inline">{syncing ? "Syncing..." : "Sync"}</span>
+          <RefreshCw 
+            size={16} 
+            className={cn("mr-2 transition-transform duration-700", syncing && "animate-spin")} 
+          />
+          {syncing ? "Syncing..." : "Sync Data"}
         </Button>
-        <Button size="sm" onClick={onNewCampaign} className="flex-1 sm:flex-none rounded-[5px] h-9 md:h-10 px-3 md:px-4">
-          <Plus size={14} className="mr-1.5" />
+
+        <Button 
+          size="lg" 
+          onClick={onNewCampaign} 
+          className={cn(
+            "rounded-xl h-11 px-5 font-semibold shadow-lg shadow-emerald-500/20",
+            "bg-emerald-600 hover:bg-emerald-700 text-white transition-all active:scale-95"
+          )}
+        >
+          <Plus size={18} className="mr-2" />
           <span>New Campaign</span>
         </Button>
       </div>

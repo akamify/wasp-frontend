@@ -98,7 +98,7 @@ function SideLink({ item, isCollapsed }: { item: AdminShellNavItem; isCollapsed:
 export function AdminShell({
   children,
   navItems = NAV_ITEMS,
-  storageKey = "waspakamify_admin_sidebar_collapsed",
+  storageKey = "aiwizchat_admin_sidebar_collapsed",
   brandSuffix = " Admin",
 }: {
   children: React.ReactNode;

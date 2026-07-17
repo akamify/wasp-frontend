@@ -15,7 +15,7 @@ export default function CrmEmployeeProfilePage() {
   const employeeId = String(params.employeeId || "").trim();
   const navigate = useNavigate();
   const [tab, setTab] = useState<OwnerTabKey>("overview"); const [loading, setLoading] = useState(true); const [busy, setBusy] = useState(false); const [error, setError] = useState<string | null>(null); const [profile, setProfile] = useState<ProfileRes | null>(null);
-  const [editOpen, setEditOpen] = useState(false); const [editForm, setEditForm] = useState({ name: "", role: "employee", email: "" }); const [confirmOpen, setConfirmOpen] = useState(false); const [confirmTitle, setConfirmTitle] = useState(""); const [confirmBody, setConfirmBody] = useState(""); const [confirmCta, setConfirmCta] = useState("Confirm"); const [confirmVariant, setConfirmVariant] = useState<"primary" | "danger">("primary"); const [confirmAction, setConfirmAction] = useState<null | (() => Promise<void>)>(null);
+  const [editOpen, setEditOpen] = useState(false); const [editForm, setEditForm] = useState({ name: "", role: "employee", email: "", maxActiveLeads: "" }); const [confirmOpen, setConfirmOpen] = useState(false); const [confirmTitle, setConfirmTitle] = useState(""); const [confirmBody, setConfirmBody] = useState(""); const [confirmCta, setConfirmCta] = useState("Confirm"); const [confirmVariant, setConfirmVariant] = useState<"primary" | "danger">("primary"); const [confirmAction, setConfirmAction] = useState<null | (() => Promise<void>)>(null);
   const [resetModalOpen, setResetModalOpen] = useState(false); const [resetMode, setResetMode] = useState<"link" | "direct">("link"); const [resetPwd, setResetPwd] = useState(""); const [resetPwd2, setResetPwd2] = useState("");
   const [leadsRange, setLeadsRange] = useState<"all" | "today" | "7d">("all"); const [leads, setLeads] = useState<PagedRes<LeadItem> | null>(null); const [selectedLead, setSelectedLead] = useState<LeadItem | null>(null); const [leadMultiSelected, setLeadMultiSelected] = useState<Record<string, boolean>>({}); const [transferOpen, setTransferOpen] = useState(false); const [transferPhones, setTransferPhones] = useState<string[]>([]); const [employeesForTransfer, setEmployeesForTransfer] = useState<any[]>([]);
   const [activities, setActivities] = useState<PagedRes<any> | null>(null); const [sessions, setSessions] = useState<PagedRes<any> | null>(null); const [requests, setRequests] = useState<{ id: string; createdAt?: string; metadata: any }[] | null>(null); const [requestOpen, setRequestOpen] = useState(false); const [selectedRequest, setSelectedRequest] = useState<{ id: string; createdAt?: string; metadata: any } | null>(null);
@@ -31,6 +31,7 @@ export default function CrmEmployeeProfilePage() {
         name: res?.employee?.name || "",
         role: res?.employee?.role || "employee",
         email: res?.employee?.email || "",
+        maxActiveLeads: res?.employee?.maxActiveLeads == null ? "" : String(res.employee.maxActiveLeads || 0),
       });
     } catch (e: any) {
       setError(e?.response?.data?.message || "Failed to load employee profile");
@@ -99,7 +100,10 @@ export default function CrmEmployeeProfilePage() {
     setBusy(true);
     setError(null);
     try {
-      await API.crm.updateEmployeeProfile(employeeId, { ...editForm });
+      await API.crm.updateEmployeeProfile(employeeId, {
+        ...editForm,
+        maxActiveLeads: editForm.maxActiveLeads === "" ? null : Number(editForm.maxActiveLeads || 0),
+      });
       setEditOpen(false);
       await reloadProfile();
     } catch (e: any) {

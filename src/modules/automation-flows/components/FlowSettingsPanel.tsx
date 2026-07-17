@@ -125,7 +125,7 @@ export function FlowSettingsPanel({
       ) : null}
       <Select label="Fallback node" value={fallbackNodeId || ""} onChange={(event) => onFallbackChange(event.target.value || null)}>
         <option value="">No fallback node</option>
-        {nodes.filter((node) => node.data.nodeType !== "start").map((node) => (
+        {nodes.filter((node) => node.data.nodeType === "fallback").map((node) => (
           <option key={node.id} value={node.id}>{nodeLabel(node)}</option>
         ))}
       </Select>

@@ -500,7 +500,7 @@ export default function MetaConnectPage() {
                       </li>
                     ))}
                   </ul>
-                  <Link to="https://wasp-docs.vercel.app/connect-meta" target="_blank" className="mt-6 inline-flex items-center text-xs font-bold text-brand-600 hover:gap-2 transition-all">
+                  <Link to="/academy/getting-started/connect-meta-whatsapp-business" target="_blank" className="mt-6 inline-flex items-center text-xs font-bold text-brand-600 hover:gap-2 transition-all">
                     View Documentation <ArrowRight size={14} className="ml-1" />
                   </Link>
                 </div>

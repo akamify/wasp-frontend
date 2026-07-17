@@ -7,6 +7,7 @@ import { cn } from "@shared/utils/cn";
 import { useToast } from "@shared/providers/ToastContext";
 import { ContactFormModal } from "./contacts/ContactFormModal";
 import { ContactsTableCard } from "./contacts/ContactsTableCard";
+import { ContactAnalyticsModal } from "./contacts/ContactAnalyticsModal";
 import {
   EMPTY_FORM,
   joinTags,
@@ -32,6 +33,10 @@ export default function ContactsPage() {
   const [total, setTotal] = useState(0);
   const [form, setForm] = useState(EMPTY_FORM);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [analyticsOpen, setAnalyticsOpen] = useState(false);
+  const [analyticsLoading, setAnalyticsLoading] = useState(false);
+  const [analyticsError, setAnalyticsError] = useState<string | null>(null);
+  const [contactAnalytics, setContactAnalytics] = useState<any | null>(null);
   const [multiSelected, setMultiSelected] = useState<Record<string, boolean>>({});
   const [filter, setFilter] = useState<"all" | "has-tags" | "has-company" | "recent-activity">("all");
   const [sort, setSort] = useState<"name" | "company" | "tags" | "recent" | "oldest">("recent");
@@ -190,10 +195,25 @@ export default function ContactsPage() {
     await load();
   }
 
+  async function openAnalytics(contact: Contact) {
+    setAnalyticsOpen(true);
+    setAnalyticsLoading(true);
+    setAnalyticsError(null);
+    setContactAnalytics(null);
+    try {
+      const result = await API.analytics.customer(contact._id);
+      setContactAnalytics(result || null);
+    } catch (e: any) {
+      setAnalyticsError(e?.response?.data?.message || "Failed to load customer analytics");
+    } finally {
+      setAnalyticsLoading(false);
+    }
+  }
+
   return (
-    <div className="space-y-6 p-4 md:p-8">
+    <div className="space-y-5 p-2 md:p-2">
       <div className="flex flex-wrap items-center justify-between gap-4">
-        <div>
+        <div className="p-2">
           <h1 className="text-4xl font-black tracking-tight text-ink-900">Audience</h1>
           <p className="mt-2 text-sm font-semibold uppercase tracking-widest text-ink-800/60">Manage your customer records and chats</p>
         </div>
@@ -236,6 +256,7 @@ export default function ContactsPage() {
         }}
         onToggleOne={(id) => setMultiSelected((p) => ({ ...p, [id]: !p[id] }))}
         onEdit={fillForm}
+        onAnalytics={openAnalytics}
         onExportSelected={exportSelectedCsv}
         onBulkDelete={bulkDelete}
         onClearSelected={() => setMultiSelected({})}
@@ -252,6 +273,18 @@ export default function ContactsPage() {
         onClose={() => setIsModalOpen(false)}
         onSubmit={saveContact}
         onChange={(updater) => setForm((curr) => updater(curr))}
+      />
+
+      <ContactAnalyticsModal
+        open={analyticsOpen}
+        loading={analyticsLoading}
+        error={analyticsError}
+        data={contactAnalytics}
+        onClose={() => {
+          setAnalyticsOpen(false);
+          setAnalyticsError(null);
+          setContactAnalytics(null);
+        }}
       />
     </div>
   );

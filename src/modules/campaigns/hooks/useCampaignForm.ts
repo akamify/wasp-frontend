@@ -38,6 +38,9 @@ export function useCampaignForm(props: CampaignCreateModalProps) {
   const [scheduleDate, setScheduleDate] = useState("");
   const [scheduleTime, setScheduleTime] = useState("");
   const [scheduleWeekdays, setScheduleWeekdays] = useState<number[]>([]);
+  const [scheduleTimezone, setScheduleTimezone] = useState("Asia/Kolkata");
+  const [scheduleEndDate, setScheduleEndDate] = useState("");
+  const [scheduleMaxOccurrences, setScheduleMaxOccurrences] = useState("");
   const [busy, setBusy] = useState(false);
   const [walletBalance, setWalletBalance] = useState<CampaignWalletBalance | null>(null);
   const [estimateLoading, setEstimateLoading] = useState(false);
@@ -204,7 +207,7 @@ export function useCampaignForm(props: CampaignCreateModalProps) {
     audienceMode, selectedTagList, tagMatchedContacts, setSelectedTags, attributeFilters, bodyVariableMappings,
     headerMediaOverride, resolvedButtonValues, flowActionDataJson, csvParsed, csvHeaderMap, csvButtonMap, buttonTtlMinutes,
     flowTokens, csvBodyMap, setHeaderMediaUploading, setHeaderMediaOverride, setHeaderVars, setBusy, messageType,
-    name, templateId, scheduleType, scheduleDate, scheduleTime, scheduleWeekdays, onSuccess, onClose, estimate, demoTo, csvPreviewData, csvFirstRow,
+    name, templateId, scheduleType, scheduleDate, scheduleTime, scheduleWeekdays, scheduleTimezone, scheduleEndDate, scheduleMaxOccurrences, onSuccess, onClose, estimate, demoTo, csvPreviewData, csvFirstRow,
     tagMatchMode,
   });
 
@@ -212,7 +215,7 @@ export function useCampaignForm(props: CampaignCreateModalProps) {
     isOpen, setLimitsLoading, setMessagingTierRaw, setRemainingQuotaRaw, setWalletBalance, initialType, initialName,
     initialSelectedPhones, setType, setName, setContactQuery, setSelectedPhones, setAudienceMode, setSelectedTags, setMessageType, setTemplateId,
     setAttributeFilters, setBodyVariableMappings,
-    setScheduleType, setScheduleDate, setScheduleTime, setScheduleWeekdays, setTagMatchMode,
+    setScheduleType, setScheduleDate, setScheduleTime, setScheduleWeekdays, setScheduleTimezone, setScheduleEndDate, setScheduleMaxOccurrences, setTagMatchMode,
     setHeaderVars, setBodyVars, setOtpCode, setButtonValues, setButtonValueByIndex, setButtonTtlMinutes,
     setFlowTokens, setFlowActionDataJson, setCsvBusy, setCsvFileName, setCsvText, setCsvPhoneColumn, setCsvBodyMap,
     setCsvHeaderMap, setCsvButtonMap, setDemoTo, setDemoBusy, selectedTemplate, summary, buttonTtlMinutes,
@@ -230,9 +233,18 @@ export function useCampaignForm(props: CampaignCreateModalProps) {
       setScheduleType(nextType);
       if (nextType !== "once") setScheduleDate("");
       if (nextType !== "weekly") setScheduleWeekdays([]);
-      if (nextType === "immediate") setScheduleTime("");
+      if (nextType === "immediate") {
+        setScheduleTime("");
+        setScheduleTimezone("Asia/Kolkata");
+        setScheduleEndDate("");
+        setScheduleMaxOccurrences("");
+      }
+      if (nextType === "once") {
+        setScheduleEndDate("");
+        setScheduleMaxOccurrences("");
+      }
     },
-    scheduleDate, setScheduleDate, scheduleTime, setScheduleTime, scheduleWeekdays,
+    scheduleDate, setScheduleDate, scheduleTime, setScheduleTime, scheduleWeekdays, scheduleTimezone, setScheduleTimezone, scheduleEndDate, setScheduleEndDate, scheduleMaxOccurrences, setScheduleMaxOccurrences,
     toggleScheduleWeekday: (weekday: number) => setScheduleWeekdays((current) =>
       current.includes(weekday)
         ? current.filter((value) => value !== weekday)

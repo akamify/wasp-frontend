@@ -12,6 +12,10 @@ type Props = {
 };
 
 export function CurrentPlanModal({ open, onClose, title, usageCards, details }: Props) {
+  const enabledFeatures = Object.entries(details?.subscription?.features || details?.effective?.features || {})
+    .filter(([, enabled]) => Boolean(enabled))
+    .map(([key]) => key.replace(/Access$/, "").replace(/([A-Z])/g, " $1").replace(/^./, (c) => c.toUpperCase()));
+
   return (
     <AnimatePresence>
       {open ? (
@@ -45,9 +49,9 @@ export function CurrentPlanModal({ open, onClose, title, usageCards, details }: 
                   <div key={card.key} className="rounded-[5px] border border-slate-200 p-3">
                     <div className="text-xs font-black uppercase tracking-wider text-slate-500">{card.label}</div>
                     <div className="mt-2 text-xl font-black text-slate-900">
-                      {Number(card?.data?.used || 0)}{card?.data?.limit == null ? " / 8" : ` / ${card.data.limit}`}
+                      {Number(card?.data?.used || 0)}{card?.data?.limit == null ? " / ∞" : ` / ${card.data.limit}`}
                     </div>
-                    <div className="mt-1 text-xs text-slate-600">Remaining: {card?.data?.remaining == null ? "8" : card.data.remaining}</div>
+                    <div className="mt-1 text-xs text-slate-600">Remaining: {card?.data?.remaining == null ? "Unlimited" : card.data.remaining}</div>
                   </div>
                 ))}
               </div>
@@ -65,12 +69,9 @@ export function CurrentPlanModal({ open, onClose, title, usageCards, details }: 
                 </div>
                 <div className="rounded-[5px] border border-slate-200 p-4">
                   <div className="text-xs font-black uppercase tracking-wider text-slate-500">Enabled Features</div>
-                  <div className="mt-2 space-y-1">
-                    {Object.entries(details?.subscription?.features || {}).map(([k, v]: any) => (
-                      <div key={k} className="text-sm font-semibold text-slate-700">
-                        {k}: <span className={v ? "text-emerald-700" : "text-slate-400"}>{v ? "Enabled" : "Disabled"}</span>
-                      </div>
-                    ))}
+                  <div className="mt-3 flex max-h-52 flex-wrap gap-2 overflow-y-auto">
+                    {enabledFeatures.slice(0, 24).map((feature) => <span key={feature} className="rounded-full bg-emerald-50 px-3 py-1 text-xs font-black text-emerald-700">{feature}</span>)}
+                    {!enabledFeatures.length ? <div className="text-sm font-semibold text-slate-500">No advanced features enabled.</div> : null}
                   </div>
                 </div>
               </div>

@@ -31,18 +31,18 @@ export function startApiReachabilityCheck() {
 
   checkCorsPath(baseUrl, controller.signal)
     .then(() => {
-      (window as any).__waspakamifyApiReachable = true;
-      (window as any).__waspakamifyApiHealth = "ok";
+      (window as any).__aiwizchatApiReachable = true;
+      (window as any).__aiwizchatApiHealth = "ok";
     })
     .catch(async (err) => {
       try {
         await checkHostResolvable(baseUrl, controller.signal);
-        (window as any).__waspakamifyApiReachable = true;
-        (window as any).__waspakamifyApiHealth = "reachable_but_blocked";
+        (window as any).__aiwizchatApiReachable = true;
+        (window as any).__aiwizchatApiHealth = "reachable_but_blocked";
         void baseUrl;
       } catch (secondaryErr) {
-        (window as any).__waspakamifyApiReachable = false;
-        (window as any).__waspakamifyApiHealth = "unreachable";
+        (window as any).__aiwizchatApiReachable = false;
+        (window as any).__aiwizchatApiHealth = "unreachable";
         void secondaryErr;
       }
     })

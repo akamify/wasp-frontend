@@ -13,11 +13,12 @@ import { DashboardSummaryCards } from "@pages/user/pages/dashboard/DashboardSumm
 import { DashboardSidebar } from "@pages/user/pages/dashboard/DashboardSidebar";
 import { DashboardChart } from "@pages/user/pages/dashboard/DashboardChart";
 import { DashboardActivity } from "@pages/user/pages/dashboard/DashboardActivity";
+import { DashboardAgentPerformance } from "@pages/user/pages/dashboard/DashboardAgentPerformance";
 
-const EMPTY_OVERVIEW = { sent: 0, delivered: 0, read: 0, failed: 0, clicks: 0 };
+const EMPTY_OVERVIEW = { sent: 0, delivered: 0, read: 0, failed: 0, clicks: 0, clicked: 0, converted: 0, revenue: 0, spend: 0, roi: null };
 const EMPTY_ANALYTICS = {
   overview: EMPTY_OVERVIEW,
-  rates: { deliveryRatePct: 0, readRatePct: 0 },
+  rates: { deliveryRatePct: 0, readRatePct: 0, clickRatePct: 0, conversionRatePct: 0 },
   growth: { monthly: { thisMonth: 0, lastMonth: 0, pct: 0 }, contacts: { thisWeek: 0, lastWeek: 0, pct: 0 } },
   counts: { campaigns: 0, templates: 0, contacts: 0 },
   today: { sent: 0 },
@@ -53,6 +54,7 @@ export default function DashboardPage() {
         API.meta.status().catch(() => null),
         API.campaigns.list({ limit: 5 }),
         API.billing.current().catch(() => null),
+        API.analytics.agents().catch(() => null),
       ]);
       const walletHistory = results[4].status === "fulfilled" ? results[4].value : null;
       const transactions = Array.isArray(walletHistory?.transactions) ? walletHistory.transactions : [];
@@ -69,6 +71,7 @@ export default function DashboardPage() {
         metaStatus: results[5].status === "fulfilled" ? results[5].value?.status : "disconnected",
         campaigns: results[6].status === "fulfilled" ? results[6].value.campaigns : [],
         billingCurrent: results[7].status === "fulfilled" ? results[7].value : null,
+        agents: results[8].status === "fulfilled" ? results[8].value?.agents || [] : [],
       });
       if (!isFirst) toast("Dashboard data updated", "success");
     } catch {
@@ -132,7 +135,7 @@ export default function DashboardPage() {
   const contactsUp = Number(contactsGrowth.pct || 0) >= 0;
 
   return (
-    <div className="space-y-6 md:space-y-8 p-3 md:p-8 pb-12">
+    <div className="space-y-6 md:space-y-2 p-3 md:p-3 pb-4">
       <DashboardHeader syncing={syncing} loading={loading} onSync={loadDashboard} onNewCampaign={() => navigate("/app/send")} />
       <DashboardOnboarding steps={steps} stepsExpanded={stepsExpanded} onToggle={() => setStepsExpanded((v) => !v)} />
 
@@ -145,6 +148,7 @@ export default function DashboardPage() {
       </div>
 
       <DashboardChart chartFilter={chartFilter} setChartFilter={setChartFilter} graphData={graphData} />
+      <DashboardAgentPerformance agents={snapshot?.agents || []} />
       <DashboardActivity liveActivities={liveActivities} />
 
       <WhatsAppManagerProfileModal open={editOpen} onClose={() => setEditOpen(false)} businessProfile={snapshot?.meta?.businessProfile || null} onSaved={() => { void loadDashboard(); window.setTimeout(() => void loadDashboard(), 2500); }} />

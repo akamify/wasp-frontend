@@ -3,7 +3,7 @@ import { API } from "@api/api";
 import { getErrorMessage } from "./actions";
 
 export function useCampaignFormEffects(ctx: any) {
-  const { isOpen, setLimitsLoading, setMessagingTierRaw, setRemainingQuotaRaw, setWalletBalance, initialType, initialName, initialSelectedPhones, setType, setName, setContactQuery, setSelectedPhones, setAudienceMode, setSelectedTags, setAttributeFilters, setBodyVariableMappings, setMessageType, setTemplateId, setScheduleType, setScheduleDate, setScheduleTime, setScheduleWeekdays, setTagMatchMode, setHeaderVars, setBodyVars, setOtpCode, setButtonValues, setButtonValueByIndex, setButtonTtlMinutes, setFlowTokens, setFlowActionDataJson, setCsvBusy, setCsvFileName, setCsvText, setCsvPhoneColumn, setCsvBodyMap, setCsvHeaderMap, setCsvButtonMap, setDemoTo, setDemoBusy, selectedTemplate, summary, buttonTtlMinutes, buttonsNeedingValue, csvColumns, type, audienceMode, autoMapCsvIfEmpty, buttonValues, setEstimate, buildRecipientsForCurrentState, templateId, setEstimateLoading, toast, headerMediaOverride, csvText, selectedPhones, selectedTagList, attributeFilters, csvPhoneColumn, csvBodyMap, csvHeaderMap, csvButtonMap, headerVars, bodyVars, resolvedButtonValues, otpCode, flowActionDataJson, flowTokens, tagMatchMode, setWalletBalance: setWalletFromEstimate } = ctx;
+  const { isOpen, setLimitsLoading, setMessagingTierRaw, setRemainingQuotaRaw, setWalletBalance, initialType, initialName, initialSelectedPhones, setType, setName, setContactQuery, setSelectedPhones, setAudienceMode, setSelectedTags, setAttributeFilters, setBodyVariableMappings, setMessageType, setTemplateId, setScheduleType, setScheduleDate, setScheduleTime, setScheduleWeekdays, setScheduleTimezone, setScheduleEndDate, setScheduleMaxOccurrences, setTagMatchMode, setHeaderVars, setBodyVars, setOtpCode, setButtonValues, setButtonValueByIndex, setButtonTtlMinutes, setFlowTokens, setFlowActionDataJson, setCsvBusy, setCsvFileName, setCsvText, setCsvPhoneColumn, setCsvBodyMap, setCsvHeaderMap, setCsvButtonMap, setDemoTo, setDemoBusy, selectedTemplate, summary, buttonTtlMinutes, buttonsNeedingValue, csvColumns, type, audienceMode, autoMapCsvIfEmpty, buttonValues, setEstimate, buildRecipientsForCurrentState, templateId, setEstimateLoading, toast, headerMediaOverride, csvText, selectedPhones, selectedTagList, attributeFilters, csvPhoneColumn, csvBodyMap, csvHeaderMap, csvButtonMap, headerVars, bodyVars, resolvedButtonValues, otpCode, flowActionDataJson, flowTokens, tagMatchMode, setWalletBalance: setWalletFromEstimate } = ctx;
 
   useEffect(() => {
     if (!isOpen) return;
@@ -40,6 +40,9 @@ export function useCampaignFormEffects(ctx: any) {
     setScheduleDate("");
     setScheduleTime("");
     setScheduleWeekdays([]);
+    setScheduleTimezone("Asia/Kolkata");
+    setScheduleEndDate("");
+    setScheduleMaxOccurrences("");
     setAudienceMode("manual");
     setSelectedTags({});
     setTagMatchMode("all");
@@ -50,7 +53,7 @@ export function useCampaignFormEffects(ctx: any) {
     if (!isOpen) return;
     const hasSeed = initialType !== undefined || initialName !== undefined || (Array.isArray(initialSelectedPhones) && initialSelectedPhones.length > 0);
     if (!hasSeed) { setType(null); setName(""); setContactQuery(""); setSelectedPhones({}); }
-    setMessageType("template"); setTemplateId(""); setScheduleType("immediate"); setScheduleDate(""); setScheduleTime(""); setScheduleWeekdays([]); setAudienceMode("manual"); setSelectedTags({}); setTagMatchMode("all"); setAttributeFilters([]); setHeaderVars([]); setBodyVars([]); setBodyVariableMappings([]); setOtpCode(""); setButtonValues([]); setButtonValueByIndex({}); setButtonTtlMinutes([]); setFlowTokens([]); setFlowActionDataJson("{}"); setCsvBusy(false); setCsvFileName(""); setCsvText(""); setCsvPhoneColumn(""); setCsvBodyMap([]); setCsvHeaderMap([]); setCsvButtonMap([]); setDemoTo(""); setDemoBusy(false);
+    setMessageType("template"); setTemplateId(""); setScheduleType("immediate"); setScheduleDate(""); setScheduleTime(""); setScheduleWeekdays([]); setScheduleTimezone("Asia/Kolkata"); setScheduleEndDate(""); setScheduleMaxOccurrences(""); setAudienceMode("manual"); setSelectedTags({}); setTagMatchMode("all"); setAttributeFilters([]); setHeaderVars([]); setBodyVars([]); setBodyVariableMappings([]); setOtpCode(""); setButtonValues([]); setButtonValueByIndex({}); setButtonTtlMinutes([]); setFlowTokens([]); setFlowActionDataJson("{}"); setCsvBusy(false); setCsvFileName(""); setCsvText(""); setCsvPhoneColumn(""); setCsvBodyMap([]); setCsvHeaderMap([]); setCsvButtonMap([]); setDemoTo(""); setDemoBusy(false);
   }, [isOpen, initialType, initialName, initialSelectedPhones]);
 
   useEffect(() => {

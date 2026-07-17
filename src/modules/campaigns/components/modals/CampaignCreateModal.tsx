@@ -34,6 +34,12 @@ export default function CampaignCreateModal(props: CampaignCreateModalProps) {
     setScheduleTime,
     scheduleWeekdays,
     toggleScheduleWeekday,
+    scheduleTimezone,
+    setScheduleTimezone,
+    scheduleEndDate,
+    setScheduleEndDate,
+    scheduleMaxOccurrences,
+    setScheduleMaxOccurrences,
     templateId,
     setTemplateId,
     approvedTemplates,
@@ -131,6 +137,9 @@ export default function CampaignCreateModal(props: CampaignCreateModalProps) {
                     scheduleDate={scheduleDate}
                     scheduleTime={scheduleTime}
                     scheduleWeekdays={scheduleWeekdays}
+                    scheduleTimezone={scheduleTimezone}
+                    scheduleEndDate={scheduleEndDate}
+                    scheduleMaxOccurrences={scheduleMaxOccurrences}
                     templateId={templateId}
                     approvedTemplates={approvedTemplates}
                     onTypeReset={() => setType(null)}
@@ -139,6 +148,9 @@ export default function CampaignCreateModal(props: CampaignCreateModalProps) {
                     onScheduleDateChange={setScheduleDate}
                     onScheduleTimeChange={setScheduleTime}
                     onToggleScheduleWeekday={toggleScheduleWeekday}
+                    onScheduleTimezoneChange={setScheduleTimezone}
+                    onScheduleEndDateChange={setScheduleEndDate}
+                    onScheduleMaxOccurrencesChange={setScheduleMaxOccurrences}
                     onTemplateIdChange={setTemplateId}
                   />
 

@@ -8,6 +8,7 @@ import { useEmployeeAuth } from "@modules/crm/providers/EmployeeAuthContext";
 import { Eye, EyeOff } from "lucide-react";
 import { EmployeeIllustration } from "@components/auth/EmployeeIllustration";
 import { Seo } from "@shared/components/Seo";
+import { BRAND_NAME } from "@shared/config/brand";
 
 export default function EmployeeLoginPage() {
   const { login } = useEmployeeAuth();
@@ -38,7 +39,7 @@ export default function EmployeeLoginPage() {
 
   return (
     <div className="flex flex-row items-center justify-center min-h-dvh gap-20">
-      <Seo title="Employee sign in | WaspAkamify" description="Employee CRM login for assigned workspace access." robots="noindex,nofollow" />
+      <Seo title={`Employee sign in | ${BRAND_NAME}`} description="Employee CRM login for assigned workspace access." robots="noindex,nofollow" />
       <div className="hidden lg:sticky lg:top-5 lg:self-start lg:block">
         <EmployeeIllustration />
       </div>

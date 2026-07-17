@@ -117,9 +117,16 @@ export const API: {
     docsCreate(payload: any): Promise<any>;
     docsUpdate(id: string, payload: any): Promise<any>;
     docsDelete(id: string): Promise<any>;
+    docsCategories(): Promise<any>;
+    docsCategoryCreate(payload: any): Promise<any>;
+    docsCategoryUpdate(id: string, payload: any): Promise<any>;
+    docsCategoryDelete(id: string): Promise<any>;
     docsBrandGet(): Promise<any>;
     docsBrandUpdate(payload: any): Promise<any>;
     docsBrandUploadLogo(file: any, onProgress?: (pct: number) => void): Promise<any>;
+    docsFeedbackSummary(): Promise<any>;
+    docsFeedbacks(params?: any): Promise<any>;
+    docsMediaUpload(file: any, onProgress?: (pct: number) => void): Promise<any>;
   };
   superAdmin: {
     profile(): Promise<any>;
@@ -185,6 +192,11 @@ export const API: {
   public: {
     page(slug: string): Promise<any>;
     platformBrandGet(): Promise<any>;
+    academyHome(): Promise<any>;
+    academyArticle(categorySlug: string, articleSlug: string): Promise<any>;
+    academyRelated(categorySlug: string, articleSlug: string): Promise<any>;
+    academySearch(params?: any): Promise<any>;
+    submitDocsFeedback(payload: any): Promise<any>;
     createSupportTicket(payload: any): Promise<any>;
     applyCareer(payload: any, file: any, onProgress?: (pct: number) => void): Promise<any>;
   };
@@ -241,6 +253,9 @@ export const API: {
   analytics: {
     overview(params?: any): Promise<any>;
     template(id: string): Promise<any>;
+    campaign(id: string): Promise<any>;
+    customer(id: string): Promise<any>;
+    agents(): Promise<any>;
   };
   meta: {
     status(): Promise<any>;
@@ -272,6 +287,23 @@ export const API: {
     plans(): Promise<any>;
     current(): Promise<any>;
     history(params?: any): Promise<any>;
+    invoices(params?: any): Promise<any>;
+    timeline(params?: any): Promise<any>;
+    renewalStatus(): Promise<any>;
+    paymentDue(): Promise<any>;
+    renewalSettings(): Promise<any>;
+    paymentMethod(): Promise<any>;
+    checkout(payload: any): Promise<any>;
+    verifyPayment(payload: any): Promise<any>;
+    renew(payload?: any): Promise<any>;
+    retryRenewal(payload?: any): Promise<any>;
+    enableAutoRenew(): Promise<any>;
+    confirmAutoRenew(payload: any): Promise<any>;
+    disableAutoRenew(): Promise<any>;
+    toggleAutoRenew(payload: any): Promise<any>;
+    changePaymentMethod(): Promise<any>;
+    scheduleDowngrade(payload: any): Promise<any>;
+    cancelScheduledChange(): Promise<any>;
   };
   wallet: {
     get(): Promise<any>;
@@ -340,6 +372,21 @@ export const API: {
     archive(flowId: string): Promise<unknown>;
     remove(flowId: string): Promise<unknown>;
     versions(flowId: string): Promise<unknown>;
+  };
+  aiAgents: {
+    list(params?: unknown): Promise<unknown>;
+    create(payload: unknown): Promise<unknown>;
+    update(agentId: string, payload: unknown): Promise<unknown>;
+    remove(agentId: string): Promise<unknown>;
+    testMessage(agentId: string, payload: unknown): Promise<unknown>;
+    conversations(agentId: string): Promise<unknown>;
+    clearTestMemory(agentId: string, payload?: unknown): Promise<unknown>;
+    knowledgeList(agentId: string): Promise<unknown>;
+    knowledgeCreate(agentId: string, payload: unknown): Promise<unknown>;
+    knowledgeUpload(agentId: string, file: File, onProgress?: (pct: number) => void): Promise<unknown>;
+    knowledgeUpdate(agentId: string, sourceId: string, payload: unknown): Promise<unknown>;
+    knowledgeRemove(agentId: string, sourceId: string): Promise<unknown>;
+    knowledgeReindex(agentId: string, sourceId: string): Promise<unknown>;
   };
   preferences: {
     automationBuilder(): Promise<unknown>;

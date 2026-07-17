@@ -13,6 +13,7 @@ type EmployeeLite = {
   email: string;
   name?: string;
   role?: string;
+  maxActiveLeads?: number | null;
 };
 
 export function CrmEmployeeUpsertModal({
@@ -35,6 +36,7 @@ export function CrmEmployeeUpsertModal({
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [role, setRole] = useState<"employee" | "team_leader">("employee");
+  const [maxActiveLeads, setMaxActiveLeads] = useState("");
 
   useEffect(() => {
     if (!open) return;
@@ -43,6 +45,7 @@ export function CrmEmployeeUpsertModal({
     setName(String(employee?.name || ""));
     setEmail(String(employee?.email || ""));
     setRole((String(employee?.role || "employee") as any) || "employee");
+    setMaxActiveLeads(employee?.maxActiveLeads == null ? "" : String(employee.maxActiveLeads || 0));
   }, [open, employee]);
 
   const canSave = useMemo(() => {
@@ -62,6 +65,7 @@ export function CrmEmployeeUpsertModal({
         email: String(email || "").trim().toLowerCase(),
         name: String(name || ""),
         role,
+        maxActiveLeads: maxActiveLeads === "" ? null : Number(maxActiveLeads || 0),
       };
 
       if (isEdit) await API.crm.updateEmployeeProfile(String(employee!.id), payload);
@@ -140,6 +144,18 @@ export function CrmEmployeeUpsertModal({
                     <option value="employee">employee</option>
                     <option value="team_leader">team_leader</option>
                   </Select>
+                </div>
+                <div className="sm:col-span-2">
+                  <Input
+                    label="Max Active Leads"
+                    value={maxActiveLeads}
+                    onChange={(e) => setMaxActiveLeads(e.target.value.replace(/[^\d]/g, ""))}
+                    placeholder="Blank = unlimited"
+                    disabled={busy}
+                  />
+                  <div className="mt-1 text-[11px] font-semibold text-slate-500">
+                    Used by FIXED_LIMIT routing. Leave blank for no per-agent cap.
+                  </div>
                 </div>
               </div>
             </div>

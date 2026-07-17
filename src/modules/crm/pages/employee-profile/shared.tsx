@@ -7,6 +7,7 @@ export type Employee = {
   role: string;
   status: "ACTIVE" | "BLOCKED" | "DISABLED" | "DELETED";
   assignedChatsCount: number;
+  maxActiveLeads?: number | null;
   lastLoginAt?: string | null;
   lastActivityAt?: string | null;
   createdAt?: string | null;

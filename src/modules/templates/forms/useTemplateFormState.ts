@@ -19,6 +19,34 @@ function hasSequentialIndexes(indexes: number[]) {
   return indexes.every((idx, i) => idx === i + 1);
 }
 
+function placeholderCount(text: string) {
+  return extractVariableIndexes(text).length;
+}
+
+function hasBadVariablePlacement(text: string) {
+  const source = String(text || "");
+  if (!placeholderCount(source)) return false;
+  const trimmed = source.trim();
+  return /^\{\{[1-9]\d*\}\}/.test(trimmed) || /\{\{[1-9]\d*\}\}$/.test(trimmed) || /\{\{[1-9]\d*\}\}\s*\{\{[1-9]\d*\}\}/.test(source);
+}
+
+function hasMalformedVariable(text: string) {
+  const matches = String(text || "").match(/\{\{[^}]*\}\}/g) || [];
+  return matches.some((match) => !/^\{\{[1-9]\d*\}\}$/.test(match));
+}
+
+function validateVariableText(text: string, label: string, max: number, options?: { required?: boolean; allowVariables?: boolean }) {
+  const value = String(text || "");
+  const errors: string[] = [];
+  const allowVariables = options?.allowVariables !== false;
+  if (options?.required && !value.trim()) errors.push(`${label} is required.`);
+  if (value.length > max) errors.push(`${label} must be ${max} characters or less.`);
+  if (hasMalformedVariable(value)) errors.push(`${label} variables must use numeric format like {{1}}.`);
+  if (!allowVariables && placeholderCount(value) > 0) errors.push(`${label} cannot contain variables.`);
+  if (allowVariables && hasBadVariablePlacement(value)) errors.push(`${label} variables cannot be first, last, or adjacent. Add meaningful text around each variable.`);
+  return errors;
+}
+
 export function useTemplateFormState({
   open,
   mode,
@@ -85,8 +113,32 @@ export function useTemplateFormState({
     return (nextCounts.get(nextType) || 0) > (buttonTypeLimit[nextType] ?? 1);
   };
 
+  const validationErrors = useMemo(() => {
+    const errors: string[] = [];
+    const isAuth = category === "authentication";
+    if (!isAuth) {
+      errors.push(...validateVariableText(bodyText, "Body", 1024, { required: true }));
+      if (headerType === "TEXT") {
+        errors.push(...validateVariableText(headerText, "Header", 60, { required: true }));
+        if (headerVariableIndexes.length > 1) errors.push("Header supports only 1 variable.");
+      }
+      if (footerText.trim()) errors.push(...validateVariableText(footerText, "Footer", 60, { allowVariables: false }));
+      ctaButtons.forEach((button, index) => {
+        const label = `Button ${index + 1}`;
+        if (button.text.length > 25) errors.push(`${label} text must be 25 characters or less.`);
+        if (button.type === "URL") {
+          if (button.url.length > 2000) errors.push(`${label} URL must be 2000 characters or less.`);
+          if (hasMalformedVariable(button.url)) errors.push(`${label} URL variable must use numeric format like {{1}}.`);
+          if (placeholderCount(button.url) > 1) errors.push(`${label} URL supports only 1 variable.`);
+        }
+      });
+    }
+    return Array.from(new Set(errors));
+  }, [category, bodyText, headerType, headerText, headerVariableIndexes, footerText, ctaButtons]);
+
   const canCreate = useMemo(() => {
     if (!name.trim()) return false;
+    if (validationErrors.length > 0) return false;
     if (mode !== "edit") {
       const len = name.trim().length;
       if (len < TEMPLATE_NAME_MIN_CHARS || len > TEMPLATE_NAME_MAX_CHARS) return false;
@@ -129,7 +181,7 @@ export function useTemplateFormState({
       }
       return false;
     });
-  }, [name, mode, category, bodyText, headerType, headerText, mediaHandle, locationLatitude, locationLongitude, authAddExpiration, authExpiresMinutes, authAppsValid, headerVariableIndexes, headerVariablesSequential, headerVariableValues, bodyVariablesSequential, variableIndexes, variableValues, ctaButtons]);
+  }, [name, validationErrors, mode, category, bodyText, headerType, headerText, mediaHandle, locationLatitude, locationLongitude, authAddExpiration, authExpiresMinutes, authAppsValid, headerVariableIndexes, headerVariablesSequential, headerVariableValues, bodyVariablesSequential, variableIndexes, variableValues, ctaButtons]);
 
   const clearDraft = () => typeof window !== "undefined" && window.localStorage.removeItem(TEMPLATE_DRAFT_KEY);
   const reset = () => {
@@ -242,7 +294,7 @@ export function useTemplateFormState({
   return {
     state: { name, language, category, bodyText, headerType, headerText, mediaHandle, mediaPreviewUrl, mediaMeta, mediaUploadPct, mediaUploading, mediaUploadError, headerVariableValues, locationName, locationAddress, locationLatitude, locationLongitude, footerText, ctaButtons, ctaError, authOtpType, authAddSecurity, authAddExpiration, authExpiresMinutes, authSupportedApps, flows, flowsLoading, flowsError, variableValues },
     refs: { mediaInputRef, headerTextRef, bodyRef },
-    derived: { variableIndexes, nextVariableIndex, headerVariableIndexes, nextHeaderVariableIndex, bodyVariablesSequential, headerVariablesSequential, ctaLimit, canAddCta, ctaOptions, authRequiresAppSetup, authAppsValid, voiceCallDayOptions, buttonTypeCounts, buttonTypeLimit, canCreate },
+    derived: { variableIndexes, nextVariableIndex, headerVariableIndexes, nextHeaderVariableIndex, bodyVariablesSequential, headerVariablesSequential, ctaLimit, canAddCta, ctaOptions, authRequiresAppSetup, authAppsValid, voiceCallDayOptions, buttonTypeCounts, buttonTypeLimit, validationErrors, canCreate },
     setters: { setName, setLanguage, setCategory, setBodyText, setHeaderType, setHeaderText, setHeaderVariableValues, setLocationName, setLocationAddress, setLocationLatitude, setLocationLongitude, setFooterText, setCtaButtons, setCtaError, setAuthOtpType, setAuthAddSecurity, setAuthAddExpiration, setAuthExpiresMinutes, setAuthSupportedApps, setVariableValues },
     actions: { wouldExceedLimit, refreshFlows, insertAtSelection, wrapSelection, runNativeUndoRedo, clearHeaderMedia, uploadHeaderMedia, submitTemplate },
   };

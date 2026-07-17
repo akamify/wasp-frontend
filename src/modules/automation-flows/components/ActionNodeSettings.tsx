@@ -96,6 +96,18 @@ function apiConfigWarnings(config: FlowNodeConfig, method: string) {
   return warnings;
 }
 
+function parseJsonObject(value: string, label: string) {
+  try {
+    const parsed = JSON.parse(value || "{}");
+    if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) {
+      return { error: `${label} must be a JSON object.` };
+    }
+    return { value: parsed as Record<string, unknown> };
+  } catch {
+    return { error: `${label} JSON is invalid.` };
+  }
+}
+
 function ResponseMappingEditor({
   value,
   onChange,
@@ -148,6 +160,118 @@ export function ActionNodeSettings({
 }: Readonly<ActionNodeSettingsProps>) {
   const [testing, setTesting] = useState(false);
   const [testResult, setTestResult] = useState<unknown>(null);
+  const [sampleContext, setSampleContext] = useState(
+    '{\n  "orderId": "ORD-1001",\n  "productSlug": "cube-jaggery",\n  "static": {\n    "companyName": "Amila Gold",\n    "supportPhone": "+910000000000"\n  }\n}'
+  );
+  const [sampleContact, setSampleContact] = useState(
+    '{\n  "name": "Customer",\n  "phone": "919999999999",\n  "email": "customer@example.com"\n}'
+  );
+  const [sampleAttributes, setSampleAttributes] = useState(
+    '{\n  "orderId": "ORD-1001",\n  "city": "Jaipur"\n}'
+  );
+  if (type === "condition") {
+    return (
+      <>
+        <Select label="Value source" value={configString(config, "sourceType", "contact_attribute")} onChange={(event) => onChange({ ...config, sourceType: event.target.value })}>
+          <option value="contact_attribute">Contact attribute</option>
+          <option value="contact_field">Contact field</option>
+          <option value="context">Flow context</option>
+          <option value="inbound">Inbound message</option>
+          <option value="static">Static variable</option>
+        </Select>
+        <Input label="Source key" value={configString(config, "sourceKey")} onChange={(event) => onChange({ ...config, sourceKey: event.target.value })} placeholder="city, lastAnswer, text" />
+        <Select label="Operator" value={configString(config, "operator", "equals")} onChange={(event) => onChange({ ...config, operator: event.target.value })}>
+          <option value="equals">Equals</option>
+          <option value="not_equals">Does not equal</option>
+          <option value="contains">Contains</option>
+          <option value="not_contains">Does not contain</option>
+          <option value="starts_with">Starts with</option>
+          <option value="ends_with">Ends with</option>
+          <option value="exists">Exists</option>
+          <option value="not_exists">Does not exist</option>
+          <option value="gt">Greater than</option>
+          <option value="gte">Greater than or equal</option>
+          <option value="lt">Less than</option>
+          <option value="lte">Less than or equal</option>
+        </Select>
+        {!["exists", "not_exists"].includes(configString(config, "operator", "equals")) ? (
+          <Input label="Compare value" value={configString(config, "compareValue")} onChange={(event) => onChange({ ...config, compareValue: event.target.value })} placeholder="Jaipur" />
+        ) : null}
+        <p className="rounded-[5px] bg-slate-50 p-3 text-[11px] font-medium leading-5 text-slate-500">
+          Connect the True and False handles to control the next step.
+        </p>
+      </>
+    );
+  }
+  if (type === "delay") {
+    return (
+      <>
+        <div className="grid grid-cols-[1fr_130px] gap-2">
+          <Input label="Delay amount" type="number" min={1} max={1440} value={configNumber(config, "amount", 1)} onChange={(event) => onChange({ ...config, amount: Number(event.target.value) })} />
+          <Select label="Unit" value={configString(config, "unit", "minutes")} onChange={(event) => onChange({ ...config, unit: event.target.value })}>
+            <option value="seconds">Seconds</option>
+            <option value="minutes">Minutes</option>
+            <option value="hours">Hours</option>
+          </Select>
+        </div>
+        <p className="rounded-[5px] bg-amber-50 p-3 text-[11px] font-medium leading-5 text-amber-800">
+          Delays resume through the flow-session worker. Keep long delays inside WhatsApp's 24-hour customer window unless the next message is a template.
+        </p>
+      </>
+    );
+  }
+  if (type === "wait_for_reply") {
+    return (
+      <>
+        <Textarea label="Prompt message (optional)" value={configString(config, "prompt")} onChange={(event) => onChange({ ...config, prompt: event.target.value })} hint="Leave empty if a previous node already asked the question." />
+        <Select label="Expected reply type" value={configString(config, "inputType", "text")} onChange={(event) => onChange({ ...config, inputType: event.target.value })}>
+          <option value="text">Text</option>
+          <option value="number">Number</option>
+          <option value="email">Email</option>
+          <option value="phone">Phone</option>
+        </Select>
+        <Input label="Save to contact attribute" value={configString(config, "saveToAttribute")} onChange={(event) => onChange({ ...config, saveToAttribute: event.target.value })} placeholder="budget, city, email" />
+        <Input label="Timeout minutes" type="number" min={1} max={600} value={configNumber(config, "timeoutMinutes", 30)} onChange={(event) => onChange({ ...config, timeoutMinutes: Number(event.target.value) })} />
+        <p className="rounded-[5px] bg-slate-50 p-3 text-[11px] font-medium leading-5 text-slate-500">
+          Reply handle continues after a valid reply. Timeout handle runs if the customer does not reply in time.
+        </p>
+      </>
+    );
+  }
+  if (type === "variable") {
+    return (
+      <>
+        <Select label="Action" value={configString(config, "action", "set")} onChange={(event) => onChange({ ...config, action: event.target.value })}>
+          <option value="set">Set variable</option>
+          <option value="clear">Clear variable</option>
+        </Select>
+        <Input label="Variable name" value={configString(config, "name")} onChange={(event) => onChange({ ...config, name: event.target.value })} placeholder="leadScore" />
+        {configString(config, "action", "set") !== "clear" ? (
+          <>
+            <Select label="Value type" value={configString(config, "valueType", "string")} onChange={(event) => onChange({ ...config, valueType: event.target.value })}>
+              <option value="string">String</option>
+              <option value="number">Number</option>
+              <option value="boolean">Boolean</option>
+            </Select>
+            <Input label="Value" value={configString(config, "value")} onChange={(event) => onChange({ ...config, value: event.target.value })} placeholder="{{context.lastAnswer}}" />
+          </>
+        ) : null}
+        <p className="rounded-[5px] bg-slate-50 p-3 text-[11px] font-medium leading-5 text-slate-500">
+          Variables are saved in flow context only. Use Set Attribute for permanent contact data.
+        </p>
+      </>
+    );
+  }
+  if (type === "fallback") {
+    return (
+      <>
+        <Textarea label="Fallback message" value={configString(config, "message")} onChange={(event) => onChange({ ...config, message: event.target.value })} />
+        <p className="rounded-[5px] bg-slate-50 p-3 text-[11px] font-medium leading-5 text-slate-500">
+          Select this node as Flow Settings → Fallback node. After sending this message, connect it back to the question/list/buttons node or to handover/end.
+        </p>
+      </>
+    );
+  }
   if (type === "set_tag") {
     return (
       <>
@@ -189,6 +313,14 @@ export function ActionNodeSettings({
       setTestResult({ ok: false, message: warnings.join(" ") });
       return;
     }
+    const contextResult = parseJsonObject(sampleContext, "Sample context");
+    const contactResult = parseJsonObject(sampleContact, "Sample contact");
+    const attributesResult = parseJsonObject(sampleAttributes, "Sample attributes");
+    const sampleError = contextResult.error || contactResult.error || attributesResult.error;
+    if (sampleError) {
+      setTestResult({ ok: false, message: sampleError });
+      return;
+    }
     setTesting(true);
     setTestResult(null);
     try {
@@ -196,20 +328,9 @@ export function ActionNodeSettings({
         flowId,
         nodeId,
         config,
-        sampleContext: {
-          orderId: "ORD-1001",
-          productSlug: "cube-jaggery",
-          static: { companyName: "Amila Gold", supportPhone: "+910000000000" },
-        },
-        sampleContact: {
-          name: "Customer",
-          phone: "919999999999",
-          email: "customer@example.com",
-        },
-        sampleAttributes: {
-          orderId: "ORD-1001",
-          city: "Jaipur",
-        },
+        sampleContext: contextResult.value,
+        sampleContact: contactResult.value,
+        sampleAttributes: attributesResult.value,
       });
       setTestResult(result);
     } catch (error) {
@@ -237,6 +358,14 @@ export function ActionNodeSettings({
       ) : null}
       <Input label="Timeout ms" type="number" min={1000} max={30000} value={configNumber(config, "timeoutMs", 10000)} onChange={(event) => onChange({ ...config, timeoutMs: Number(event.target.value) })} />
       <ResponseMappingEditor value={config.responseMapping} onChange={(responseMapping) => onChange({ ...config, responseMapping })} />
+      <details className="rounded-[5px] border border-slate-200 p-3">
+        <summary className="cursor-pointer text-xs font-bold text-slate-700">Editable test sample data</summary>
+        <div className="mt-3 space-y-3">
+          <Textarea label="Sample context JSON" value={sampleContext} onChange={(event) => setSampleContext(event.target.value)} />
+          <Textarea label="Sample contact JSON" value={sampleContact} onChange={(event) => setSampleContact(event.target.value)} />
+          <Textarea label="Sample attributes JSON" value={sampleAttributes} onChange={(event) => setSampleAttributes(event.target.value)} />
+        </div>
+      </details>
       {warnings.length ? (
         <div className="rounded-[5px] border border-amber-200 bg-amber-50 p-3 text-[11px] font-semibold leading-5 text-amber-800">
           {warnings.map((warning) => <div key={warning}>{warning}</div>)}

@@ -10,6 +10,7 @@ export type RequiredFeatureKey =
   | "walletPageAccess"
   | "linksPageAccess"
   | "automationPageAccess"
+  | "aiAgentsPageAccess"
   | "activityPageAccess"
   | "apiKeysPageAccess"
   | "apiReportsPageAccess";
@@ -33,6 +34,7 @@ export function requiredPlanForPath(pathname: string): RequiredPlan | null {
   if (pathname.startsWith("/app/flows")) return "pro";
   if (pathname.startsWith("/app/links")) return "pro";
   if (pathname.startsWith("/app/automation")) return "pro";
+  if (pathname.startsWith("/app/ai-agents")) return "pro";
   if (pathname.startsWith("/app/activity")) return "pro";
   if (pathname.startsWith("/app/api-keys")) return "pro";
   if (pathname.startsWith("/app/api-reports")) return "pro";
@@ -50,6 +52,7 @@ export function requiredFeatureForPath(pathname: string): RequiredFeatureKey | n
   if (pathname.startsWith("/app/wallet")) return "walletPageAccess";
   if (pathname.startsWith("/app/links")) return "linksPageAccess";
   if (pathname.startsWith("/app/automation")) return "automationPageAccess";
+  if (pathname.startsWith("/app/ai-agents")) return "automationPageAccess";
   if (pathname.startsWith("/app/activity")) return "activityPageAccess";
   if (pathname.startsWith("/app/api-keys")) return "apiKeysPageAccess";
   if (pathname.startsWith("/app/api-reports")) return "apiReportsPageAccess";

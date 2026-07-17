@@ -24,9 +24,9 @@ export const api = axios.create({
   timeout: 20000,
 });
 
-export const TOKEN_KEY = "waspakamify_token";
-export const WORKSPACE_KEY = "waspakamify_workspace_id";
-export const AUTH_STORAGE_EVENT = "waspakamify:auth-storage";
+export const TOKEN_KEY = "aiwizchat_token";
+export const WORKSPACE_KEY = "aiwizchat_workspace_id";
+export const AUTH_STORAGE_EVENT = "aiwizchat:auth-storage";
 let __workspaceResolvePromise = null;
 
 // Coalesce duplicate GET requests and add a tiny cache window to prevent

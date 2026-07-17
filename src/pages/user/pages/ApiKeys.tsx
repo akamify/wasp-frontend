@@ -4,7 +4,7 @@ import { Card } from "@components/ui/Card";
 import { Button } from "@components/ui/Button";
 import { Input } from "@components/ui/Input";
 import { useToast } from "@shared/providers/ToastContext";
-import { Copy, Eye, EyeOff, RefreshCw, Terminal, Globe, ShieldCheck } from "lucide-react";
+import { Copy, Eye, EyeOff, Link2, MousePointerClick, RefreshCw, Server, Terminal, Globe, ShieldCheck } from "lucide-react";
 import { ApiKeysSkeleton } from "@components/ui/Skeletons";
 import { useOtpGuard } from "@shared/hooks/useOtpGuard";
 
@@ -100,6 +100,31 @@ export default function ApiKeysPage() {
 
   const revealDisabled = busy || !hasApiKey || !!apiKey;
   const showMaskedKey = !apiKey && hasApiKey;
+  const pixelSnippet = `<script async src="${API.baseUrl}/public/pixel.js"></script>
+<script>
+  window.aiwiz?.track("purchase", {
+    value: 5000,
+    currency: "INR",
+    orderId: "ORD-1001"
+  });
+</script>`;
+  const serverSnippet = `curl -X POST \\
+  ${API.baseUrl}/api/conversions/events \\
+  -H "X-API-KEY: YOUR_KEY" \\
+  -H "Content-Type: application/json" \\
+  -d '{
+    "event": "purchase",
+    "phone": "+919999999999",
+    "amount": 5000,
+    "currency": "INR",
+    "orderId": "ORD-1001"
+  }'`;
+  const trackedLinkSnippet = `POST ${API.baseUrl}/links
+{
+  "messageId": "YOUR_MESSAGE_ID",
+  "url": "https://client.com/product/shoes",
+  "title": "Blue Sneakers CTA"
+}`;
 
   return (
     <div className="max-w-5xl mx-auto space-y-8 p-4 md:p-8">
@@ -277,6 +302,105 @@ export default function ApiKeysPage() {
               </p>
             </div>
           </Card>
+
+          <div className="grid gap-6 xl:grid-cols-3">
+            <Card className="p-6 border-none shadow-xl shadow-slate-200/50 xl:col-span-1">
+              <div className="flex items-center justify-between gap-3">
+                <div>
+                  <h3 className="text-lg font-black text-slate-900">Analytics Coverage</h3>
+                  <p className="mt-1 text-xs font-bold uppercase tracking-widest text-slate-400">What this key unlocks</p>
+                </div>
+                <div className="rounded-[5px] bg-slate-50 p-2 text-slate-500">
+                  <MousePointerClick size={20} />
+                </div>
+              </div>
+              <div className="mt-5 space-y-3 text-sm font-medium text-slate-600">
+                <div className="rounded-[5px] border border-slate-100 bg-slate-50 px-4 py-3">
+                  Campaign funnel: sent, delivered, read, clicked, converted, revenue, ROI
+                </div>
+                <div className="rounded-[5px] border border-slate-100 bg-slate-50 px-4 py-3">
+                  Customer behavior: click history, purchase history, interest signals, engagement score
+                </div>
+                <div className="rounded-[5px] border border-slate-100 bg-slate-50 px-4 py-3">
+                  Team analytics: assigned chats, conversion count, revenue generated
+                </div>
+              </div>
+            </Card>
+
+            <Card className="p-6 border-none shadow-xl shadow-slate-200/50 xl:col-span-2">
+              <div className="flex items-center justify-between gap-3">
+                <div>
+                  <h3 className="text-lg font-black text-slate-900">Website Pixel</h3>
+                  <p className="mt-1 text-xs font-bold uppercase tracking-widest text-slate-400">Frontend conversion tracking</p>
+                </div>
+                <div className="rounded-[5px] bg-slate-50 p-2 text-slate-500">
+                  <Globe size={20} />
+                </div>
+              </div>
+              <p className="mt-4 text-sm text-slate-600">
+                Install this on the client website after WhatsApp tracked-link redirects. The pixel automatically reads the tracking token and sends attributed events back to your workspace.
+              </p>
+              <div className="mt-4 rounded-[5px] border border-slate-100 bg-slate-50 p-4 text-xs text-slate-700">
+                <pre className="whitespace-pre-wrap">{pixelSnippet}</pre>
+              </div>
+              <div className="mt-3 flex justify-end">
+                <Button variant="ghost" onClick={() => copyToClipboard(pixelSnippet)} className="gap-2">
+                  <Copy size={14} /> Copy Pixel Snippet
+                </Button>
+              </div>
+            </Card>
+          </div>
+
+          <div className="grid gap-6 xl:grid-cols-2">
+            <Card className="p-6 border-none shadow-xl shadow-slate-200/50">
+              <div className="flex items-center justify-between gap-3">
+                <div>
+                  <h3 className="text-lg font-black text-slate-900">Server Conversion API</h3>
+                  <p className="mt-1 text-xs font-bold uppercase tracking-widest text-slate-400">Shopify, CRM, payment callbacks</p>
+                </div>
+                <div className="rounded-[5px] bg-slate-50 p-2 text-slate-500">
+                  <Server size={20} />
+                </div>
+              </div>
+              <p className="mt-4 text-sm text-slate-600">
+                Use this when you want stronger purchase attribution than browser-only tracking. Events can be posted from your backend using the same workspace API key.
+              </p>
+              <div className="mt-4 rounded-[5px] border border-slate-100 bg-slate-50 p-4 text-xs text-slate-700">
+                <pre className="whitespace-pre-wrap">{serverSnippet}</pre>
+              </div>
+              <div className="mt-3 flex justify-end">
+                <Button variant="ghost" onClick={() => copyToClipboard(serverSnippet)} className="gap-2">
+                  <Copy size={14} /> Copy Server Example
+                </Button>
+              </div>
+            </Card>
+
+            <Card className="p-6 border-none shadow-xl shadow-slate-200/50">
+              <div className="flex items-center justify-between gap-3">
+                <div>
+                  <h3 className="text-lg font-black text-slate-900">Tracked Link Flow</h3>
+                  <p className="mt-1 text-xs font-bold uppercase tracking-widest text-slate-400">Per message attribution</p>
+                </div>
+                <div className="rounded-[5px] bg-slate-50 p-2 text-slate-500">
+                  <Link2 size={20} />
+                </div>
+              </div>
+              <p className="mt-4 text-sm text-slate-600">
+                Create links against a specific outbound message so one customer click maps to workspace, campaign, template, message, and contact.
+              </p>
+              <div className="mt-4 rounded-[5px] border border-slate-100 bg-slate-50 p-4 text-xs text-slate-700">
+                <pre className="whitespace-pre-wrap">{trackedLinkSnippet}</pre>
+              </div>
+              <div className="mt-4 rounded-[5px] border border-amber-200 bg-amber-50 px-4 py-3 text-xs font-semibold text-amber-900">
+                Response will return a tracked URL like `${API.baseUrl}/r/{'{trackingToken}'}`. Put that URL inside your WhatsApp CTA instead of the raw client website URL.
+              </div>
+              <div className="mt-3 flex justify-end">
+                <Button variant="ghost" onClick={() => copyToClipboard(trackedLinkSnippet)} className="gap-2">
+                  <Copy size={14} /> Copy Tracking Example
+                </Button>
+              </div>
+            </Card>
+          </div>
         </div>
       )}
     </div>

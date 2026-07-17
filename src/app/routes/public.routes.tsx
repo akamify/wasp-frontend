@@ -10,21 +10,32 @@ import NotFoundPage from "@pages/NotFound";
 import HelpCenterPage from "@pages/public/HelpCenter";
 import RaiseTicketPage from "@pages/public/RaiseTicket";
 import CareersPage from "@pages/public/Careers";
+import PublicPricingPage from "@pages/public/PricingPage";
 import { PublicCmsPage } from "@pages/public/PublicCmsPage";
+import CookiePolicyPage from "@pages/public/CookiePolicy";
+import DataDeletionPage from "@pages/public/DataDeletion";
+import PrivacyPolicyPage from "@pages/public/PrivacyPolicy";
+import TermsOfServicePage from "@pages/public/TermsOfService";
+import AcademyDocsPage from "@pages/public/AcademyDocsPage";
 import EmployeeLoginPage from "@modules/crm/pages/EmployeeLogin";
 import EmployeeResetPasswordPage from "@modules/crm/pages/EmployeeResetPassword";
+
 
 export function publicRoutes() {
   return (
     <>
       <Route path="/" element={<LandingPage />} />
       <Route path="/about" element={<PublicCmsPage slug="about" />} />
-      <Route path="/privacy-policy" element={<PublicCmsPage slug="privacy-policy" />} />
-      <Route path="/terms-of-service" element={<PublicCmsPage slug="terms-of-service" />} />
-      <Route path="/cookie-policy" element={<PublicCmsPage slug="cookie-policy" />} />
+      <Route path="/privacy-policy" element={<PrivacyPolicyPage />} />
+      <Route path="/terms-of-service" element={<TermsOfServicePage />} />
+      <Route path="/cookie-policy" element={<CookiePolicyPage />} />
+      <Route path="/data-deletion" element={<DataDeletionPage />} />
       <Route path="/help-center" element={<HelpCenterPage />} />
       <Route path="/help-center/ticket" element={<RaiseTicketPage />} />
       <Route path="/careers" element={<CareersPage />} />
+      <Route path="/pricing" element={<PublicPricingPage />} />
+      <Route path="/academy" element={<AcademyDocsPage />} />
+      <Route path="/academy/:categorySlug/:articleSlug" element={<AcademyDocsPage />} />
       <Route path="/login" element={<LoginPage />} />
       <Route path="/register" element={<RegisterPage />} />
       <Route path="/forgot-password" element={<ForgotPasswordPage />} />

@@ -53,6 +53,28 @@ const DEFAULT_CONFIGS: Record<FlowNodeType, FlowNodeConfig> = {
     },
     autoContinue: false,
   },
+  condition: {
+    sourceType: "contact_attribute",
+    sourceKey: "",
+    operator: "equals",
+    compareValue: "",
+  },
+  delay: { amount: 1, unit: "minutes" },
+  wait_for_reply: {
+    prompt: "",
+    inputType: "text",
+    saveToAttribute: "",
+    timeoutMinutes: 30,
+  },
+  variable: {
+    action: "set",
+    name: "",
+    value: "",
+    valueType: "string",
+  },
+  fallback: {
+    message: "Sorry, I couldn't understand that. Please try again.",
+  },
   set_tag: { action: "add", tags: [] },
   set_attribute: { attributes: {} },
   api_request: {

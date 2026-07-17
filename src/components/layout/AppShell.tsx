@@ -60,8 +60,8 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   }, []);
   const [isCollapsed, setIsCollapsed] = useState(() => {
     try {
-      return localStorage.getItem("waspakamify_sidebar_collapsed_touched") === "1"
-        ? localStorage.getItem("waspakamify_sidebar_collapsed") === "1"
+      return localStorage.getItem("aiwizchat_sidebar_collapsed_touched") === "1"
+        ? localStorage.getItem("aiwizchat_sidebar_collapsed") === "1"
         : false;
     } catch {
       return false;
@@ -71,7 +71,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     try {
-      localStorage.setItem("waspakamify_sidebar_collapsed", isCollapsed ? "1" : "0");
+      localStorage.setItem("aiwizchat_sidebar_collapsed", isCollapsed ? "1" : "0");
     } catch { }
   }, [isCollapsed]);
 
@@ -79,8 +79,8 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     setIsCollapsed((current) => {
       const next = !current;
       try {
-        localStorage.setItem("waspakamify_sidebar_collapsed_touched", "1");
-        localStorage.setItem("waspakamify_sidebar_collapsed", next ? "1" : "0");
+        localStorage.setItem("aiwizchat_sidebar_collapsed_touched", "1");
+        localStorage.setItem("aiwizchat_sidebar_collapsed", next ? "1" : "0");
       } catch { }
       return next;
     });

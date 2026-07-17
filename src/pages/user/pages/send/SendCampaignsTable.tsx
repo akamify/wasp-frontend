@@ -8,6 +8,7 @@ type Campaign = {
   name: string;
   status: string;
   type?: "broadcast" | "csv" | "api";
+  schedule?: { type?: string; status?: string; nextRunAt?: string; timezone?: string };
   totals?: { total?: number; queued?: number; sent?: number; failed?: number };
   createdAt?: string;
 };
@@ -22,9 +23,9 @@ type Props = {
 
 function statusTone(status: string) {
   const s = String(status || "").toLowerCase();
-  if (["completed", "delivered", "success", "active"].some((x) => s.includes(x))) return "good";
+  if (["completed", "delivered", "success"].some((x) => s.includes(x))) return "good";
   if (["failed", "error"].some((x) => s.includes(x))) return "bad";
-  if (["queued", "running", "sending", "pending"].some((x) => s.includes(x))) return "warn";
+  if (["queued", "running", "sending", "pending", "paused"].some((x) => s.includes(x))) return "warn";
   return "neutral";
 }
 
@@ -36,8 +37,13 @@ function campaignTypeLabel(value?: Campaign["type"]) {
 
 function campaignStatusMessage(c: Campaign) {
   const status = String(c.status || "").toLowerCase();
+  const nextRunAt = c.schedule?.nextRunAt ? new Date(c.schedule.nextRunAt) : null;
+  if (status === "queued" && nextRunAt && !Number.isNaN(nextRunAt.getTime())) {
+    return `Scheduled for ${nextRunAt.toLocaleString()}${c.schedule?.timezone ? ` (${c.schedule.timezone})` : ""}.`;
+  }
   if (status === "queued") return "Campaign is queued and will start shortly.";
   if (status === "running") return "Campaign is live and sending now.";
+  if (status === "paused") return "Campaign is paused. Resume from detail page.";
   if (status === "completed") return (c.totals?.failed || 0) > 0 ? "Completed with some failures." : "Completed successfully.";
   if (status === "canceled" || status === "cancelled") return "Campaign was canceled.";
   return "";

@@ -27,6 +27,22 @@ export type Metrics = {
   updatedAt?: string;
 };
 
+export type CampaignAnalytics = {
+  metrics?: {
+    sent?: number;
+    delivered?: number;
+    read?: number;
+    failed?: number;
+    clicked?: number;
+    converted?: number;
+    revenue?: number;
+    spend?: number;
+    ctr?: number;
+    conversionRate?: number;
+    roi?: number | null;
+  };
+};
+
 export type CampaignMessageItem = {
   id: string;
   phone: string;
