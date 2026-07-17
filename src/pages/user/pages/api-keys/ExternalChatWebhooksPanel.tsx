@@ -194,13 +194,6 @@ export function ExternalChatWebhooksPanel() {
               <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
                 <div className="min-w-0">
                   <div className="break-all text-sm font-black text-slate-800">{item.url}</div>
-                  <div className="mt-2 flex flex-wrap gap-1.5">
-                    {item.events.map((event) => (
-                      <span key={event} className="rounded-[5px] border border-slate-200 bg-white px-2 py-0.5 text-[10px] font-bold text-slate-500">
-                        {event}
-                      </span>
-                    ))}
-                  </div>
                   <div className="mt-2 text-[11px] font-semibold text-slate-500">
                     {item.lastDelivery?.status
                       ? `${item.lastDelivery.status} ${item.lastDelivery.statusCode || ""} ${item.lastDelivery.event || ""}`

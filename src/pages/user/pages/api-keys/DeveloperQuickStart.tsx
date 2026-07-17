@@ -58,6 +58,7 @@ new EventSource("${baseUrl}/external/chat/realtime/stream?token=STREAM_TOKEN")`}
           <div className="text-[10px] font-black uppercase tracking-widest text-slate-500">Webhook Events</div>
           <p className="mt-1 text-xs font-semibold leading-5 text-slate-500">
             Save the webhook secret shown once during endpoint creation. Your receiver must verify X-AiWizChat-Signature before processing inbox events.
+            Message status updates are sent through <span className="font-black text-slate-700">message.status_updated</span> with status values like sent, delivered, read, and failed.
           </p>
           <div className="mt-2 flex flex-wrap gap-2">
             {events.map((event) => (
