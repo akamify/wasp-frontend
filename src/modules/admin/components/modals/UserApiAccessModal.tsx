@@ -92,6 +92,16 @@ export function UserApiAccessModal(props: Props) {
             {workspaceFeature.error}
           </div>
         ) : null}
+        <UserPermissionCard
+          campaignSend={campaignSendEnabled}
+          chatAccess={chatAccessEnabled}
+          busy={busy || workspaceFeature.busy}
+          onEnableCampaignSend={onEnableCampaignSend}
+          onDisableCampaignSend={onDisableCampaignSend}
+          onEnableChat={() => toggleWorkspaceChat(true)}
+          onDisableChat={() => toggleWorkspaceChat(false)}
+          readOnly={!workspaceId}
+        />
         {workspaceId ? <UserCrmCard workspaceId={workspaceId} busy={busy} /> : null}
         <ApiKeyListSection
           apiKeys={data?.apiKeys || []}
