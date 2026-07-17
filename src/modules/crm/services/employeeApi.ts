@@ -20,6 +20,9 @@ function normalizeApiBaseUrl(value: string) {
   const normalized = v.replace(/\/+$/, "");
   try {
     const url = new URL(normalized);
+    if (url.hostname === "api.wasp.akamify.com") {
+      return PRODUCTION_API_BASE_URL;
+    }
     if (!url.pathname || url.pathname === "/") {
       url.pathname = "/api";
       return url.toString().replace(/\/+$/, "");

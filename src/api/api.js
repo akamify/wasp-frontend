@@ -22,6 +22,9 @@ function normalizeApiBaseUrl(value) {
   const normalized = v.replace(/\/+$/, "");
   try {
     const url = new URL(normalized);
+    if (url.hostname === "api.wasp.akamify.com") {
+      return PRODUCTION_API_BASE_URL;
+    }
     if (!url.pathname || url.pathname === "/") {
       url.pathname = "/api";
       return url.toString().replace(/\/+$/, "");
@@ -283,6 +286,9 @@ api.interceptors.response.use(
       422: "Submitted data is invalid.",
       429: "Rate limit hit. Please retry shortly.",
       500: "Something went wrong on server. Please try again.",
+      502: "Backend gateway is unavailable. Please try again after deployment finishes.",
+      503: "Backend service is unavailable. Please try again shortly.",
+      504: "Backend request timed out. Please try again shortly.",
     };
     err.userMessage = isDev
       ? backendMessage || err?.message || "Request failed"
