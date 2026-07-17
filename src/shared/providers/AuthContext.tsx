@@ -160,18 +160,23 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const login = useCallback(async (email: string, password: string) => {
     const res = await API.auth.login({ email, password });
     if (res?.requires2fa) return res;
-    setToken(res.token);
+    const token = String(res?.token || "");
+    if (!token) throw new Error("Missing login token");
+    setToken(token);
     if (res?.workspace?.id) setWorkspaceId(res.workspace.id);
+    setState({ token, user: res.user, workspace: res.workspace || null, loading: false });
 
     // Admin sidebar/page gating depends on permissions which may not be present
-    // on the login response. Hydrate immediately so no refresh is needed.
-    try {
-      const me = await API.auth.me();
-      if (me?.workspace?.id) setWorkspaceId(me.workspace.id);
-      setState({ token: res.token, user: me.user, workspace: me.workspace || null, loading: false });
-    } catch {
-      setState({ token: res.token, user: res.user, workspace: res.workspace || null, loading: false });
-    }
+    // on the login response. Hydrate after the token is accepted, but do not
+    // turn a successful login into a visible failure if this follow-up request
+    // is delayed by deployment or gateway restart.
+    void API.auth.me()
+      .then((me) => {
+        if (getToken() !== token) return;
+        if (me?.workspace?.id) setWorkspaceId(me.workspace.id);
+        setState({ token, user: me.user, workspace: me.workspace || null, loading: false });
+      })
+      .catch(() => {});
     return res;
   }, []);
 
