@@ -36,7 +36,7 @@ export default function AdminLoginPage() {
     try {
       const res = await login(email, password);
       const role = normalizeRole(res?.user?.role);
-      if (role !== "admin") {
+      if (role !== "admin" && role !== "super_admin") {
         setError("This account is not an admin.");
         return;
       }
@@ -46,7 +46,7 @@ export default function AdminLoginPage() {
         setResendCooldown(60);
         return;
       }
-      navigate("/admin", { replace: true });
+      navigate(role === "super_admin" ? "/super-admin" : "/admin", { replace: true });
     } catch (err: any) {
       setError(err?.response?.data?.message || "Admin login failed");
     } finally {
@@ -61,7 +61,7 @@ export default function AdminLoginPage() {
     try {
       const res = await API.auth.verifyLoginOtp({ challengeToken, otp });
       const role = normalizeRole(res?.user?.role);
-      if (role !== "admin") {
+      if (role !== "admin" && role !== "super_admin") {
         setError("This account is not an admin.");
         return;
       }
@@ -69,7 +69,7 @@ export default function AdminLoginPage() {
       if (!token) throw new Error("Missing token");
       setToken(token);
       if (res?.workspace?.id) setWorkspaceId(res.workspace.id);
-      window.location.replace("/admin");
+      window.location.replace(role === "super_admin" ? "/super-admin" : "/admin");
     } catch (err: any) {
       setError(err?.response?.data?.message || "OTP verification failed");
     } finally {

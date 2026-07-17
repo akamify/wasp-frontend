@@ -18,7 +18,7 @@ export default function AdminForgotPasswordPage() {
     setError(null);
     setMessage(null);
     try {
-      const res = await API.auth.forgotPassword({ email });
+      const res = await API.auth.adminForgotPassword({ email });
       setMessage(res?.message || "If the email is valid, a reset link has been sent.");
     } catch (err: any) {
       setError(err?.response?.data?.message || "Failed to request admin password reset");

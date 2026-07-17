@@ -6,12 +6,11 @@ type Props = {
   busy?: boolean;
   onDisable: (keyId: string) => void;
   onEnable: (keyId: string) => void;
-  onSetChatAccess?: (keyId: string, enabled: boolean) => void;
   hideKeys?: boolean;
   onDisableMany?: (keyIds: string[]) => void;
 };
 
-export function ApiKeyListSection({ apiKeys, busy, onDisable, onEnable, onSetChatAccess, hideKeys, onDisableMany }: Props) {
+export function ApiKeyListSection({ apiKeys, busy, onDisable, onEnable, hideKeys, onDisableMany }: Props) {
   const activeKeys = apiKeys.filter((key) => !key.revoked && key.status !== "disabled");
   if (hideKeys) {
     return (
@@ -43,7 +42,6 @@ export function ApiKeyListSection({ apiKeys, busy, onDisable, onEnable, onSetCha
           busy={busy}
           onDisable={onDisable}
           onEnable={onEnable}
-          onSetChatAccess={onSetChatAccess}
         />
       ))}
       {!apiKeys.length ? <div className="text-[11px] text-slate-500">No API keys</div> : null}

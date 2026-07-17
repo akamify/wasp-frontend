@@ -38,7 +38,6 @@ export function UserApiAccessModal(props: Props) {
     onDisableKey,
     onDisableKeys,
     onEnableKey,
-    onSetKeyChatAccess,
     onEnableCampaignSend,
     onDisableCampaignSend,
     onEnableChat,
@@ -74,6 +73,11 @@ export function UserApiAccessModal(props: Props) {
   }, [isOpen, workspaceId]);
 
   async function toggleWorkspaceChat(next: boolean) {
+    const action = next ? "Enable" : "Disable";
+    const message = next
+      ? "Enable External Chat API access for this workspace? This will also enable chat access on active API keys."
+      : "Disable External Chat API access for this workspace? External inbox API calls will be blocked.";
+    if (!window.confirm(`${action} External Chat API Access?\n\n${message}`)) return;
     if (next) {
       await onEnableChat();
       workspaceFeature.setEnabled(true);
@@ -109,7 +113,6 @@ export function UserApiAccessModal(props: Props) {
           onDisable={onDisableKey}
           onDisableMany={onDisableKeys}
           onEnable={onEnableKey}
-          onSetChatAccess={onSetKeyChatAccess}
         />
       </div>
     </Modal>

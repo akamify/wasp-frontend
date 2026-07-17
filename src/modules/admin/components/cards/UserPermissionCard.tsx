@@ -23,7 +23,7 @@ export function UserPermissionCard({
     <div className="rounded-[5px] border border-slate-200 p-3 text-[11px] space-y-3">
       <div className="font-black text-slate-700 mb-1">Workspace API Permissions</div>
       <PermissionRow
-        label="Campaign API Access (Workspace)"
+        label="Campaign API Access"
         enabled={campaignSend}
         busy={busy}
         onEnable={onEnableCampaignSend}
