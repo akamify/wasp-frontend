@@ -7,6 +7,8 @@ import { useToast } from "@shared/providers/ToastContext";
 import { Copy, Eye, EyeOff, Link2, MousePointerClick, RefreshCw, Server, Terminal, Globe, ShieldCheck } from "lucide-react";
 import { ApiKeysSkeleton } from "@components/ui/Skeletons";
 import { useOtpGuard } from "@shared/hooks/useOtpGuard";
+import { DeveloperQuickStart } from "./api-keys/DeveloperQuickStart";
+import { ExternalChatWebhooksPanel } from "./api-keys/ExternalChatWebhooksPanel";
 
 export default function ApiKeysPage() {
   const [apiKey, setApiKey] = useState<string | null>(null);
@@ -401,6 +403,9 @@ export default function ApiKeysPage() {
               </div>
             </Card>
           </div>
+
+          <DeveloperQuickStart baseUrl={API.baseUrl} />
+          <ExternalChatWebhooksPanel />
         </div>
       )}
     </div>

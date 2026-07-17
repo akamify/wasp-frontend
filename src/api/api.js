@@ -27,6 +27,8 @@ export const api = axios.create({
 export const TOKEN_KEY = "aiwizchat_token";
 export const WORKSPACE_KEY = "aiwizchat_workspace_id";
 export const AUTH_STORAGE_EVENT = "aiwizchat:auth-storage";
+const LEGACY_TOKEN_KEYS = ["waspakamify_token"];
+const LEGACY_WORKSPACE_KEYS = ["waspakamify_workspace_id"];
 let __workspaceResolvePromise = null;
 
 // Coalesce duplicate GET requests and add a tiny cache window to prevent
@@ -125,11 +127,23 @@ function workspaceFromToken(token) {
 }
 
 export function getToken() {
-  return localStorage.getItem(TOKEN_KEY) || "";
+  const current = localStorage.getItem(TOKEN_KEY);
+  if (current) return current;
+  for (const key of LEGACY_TOKEN_KEYS) {
+    const legacy = localStorage.getItem(key);
+    if (legacy) return legacy;
+  }
+  return "";
 }
 
 export function getWorkspaceId() {
-  return localStorage.getItem(WORKSPACE_KEY) || "";
+  const current = localStorage.getItem(WORKSPACE_KEY);
+  if (current) return current;
+  for (const key of LEGACY_WORKSPACE_KEYS) {
+    const legacy = localStorage.getItem(key);
+    if (legacy) return legacy;
+  }
+  return "";
 }
 
 export function setWorkspaceId(workspaceId) {
