@@ -2,12 +2,17 @@
 import { API } from "@api/api";
 import { Button } from "@components/ui/Button";
 import { Alert } from "@components/ui/Alert";
-import { Braces, RefreshCcw, Plus } from "lucide-react";
+import { Braces, RefreshCcw, Plus, Upload } from "lucide-react";
 import { cn } from "@shared/utils/cn";
 import { useToast } from "@shared/providers/ToastContext";
 import { ContactFormModal } from "./contacts/ContactFormModal";
 import { ContactsTableCard } from "./contacts/ContactsTableCard";
 import { ContactAnalyticsModal } from "./contacts/ContactAnalyticsModal";
+import {
+  ContactImportModal,
+  parseCsvText,
+  type ImportContactRow,
+} from "./contacts/ContactImportModal";
 import {
   EMPTY_FORM,
   joinTags,
@@ -19,6 +24,7 @@ import type { AttributeDefinition } from "./Attributes";
 export default function ContactsPage() {
   const { toast } = useToast();
   const tableRef = useRef<HTMLDivElement>(null);
+  const importInputRef = useRef<HTMLInputElement>(null);
   const isInitialLoad = useRef(true);
 
   const [contacts, setContacts] = useState<Contact[]>([]);
@@ -37,6 +43,10 @@ export default function ContactsPage() {
   const [analyticsLoading, setAnalyticsLoading] = useState(false);
   const [analyticsError, setAnalyticsError] = useState<string | null>(null);
   const [contactAnalytics, setContactAnalytics] = useState<any | null>(null);
+  const [importModalOpen, setImportModalOpen] = useState(false);
+  const [importFileName, setImportFileName] = useState("");
+  const [importHeaders, setImportHeaders] = useState<string[]>([]);
+  const [importRows, setImportRows] = useState<Record<string, string>[]>([]);
   const [multiSelected, setMultiSelected] = useState<Record<string, boolean>>({});
   const [filter, setFilter] = useState<"all" | "has-tags" | "has-company" | "recent-activity">("all");
   const [sort, setSort] = useState<"name" | "company" | "tags" | "recent" | "oldest">("recent");
@@ -166,6 +176,50 @@ export default function ContactsPage() {
     }
   }
 
+  async function handleImportFile(file?: File | null) {
+    if (!file) return;
+    if (!file.name.toLowerCase().endsWith(".csv")) {
+      toast("Please select a CSV file.", "error");
+      return;
+    }
+    try {
+      const parsed = parseCsvText(await file.text());
+      if (!parsed.headers.length || !parsed.rows.length) {
+        toast("CSV file has no contacts to import.", "error");
+        return;
+      }
+      setImportFileName(file.name);
+      setImportHeaders(parsed.headers);
+      setImportRows(parsed.rows);
+      setImportModalOpen(true);
+    } catch {
+      toast("Could not parse CSV file.", "error");
+    } finally {
+      if (importInputRef.current) importInputRef.current.value = "";
+    }
+  }
+
+  async function saveImportedContacts(payload: {
+    rows: ImportContactRow[];
+    options: { duplicateStrategy: "skip" | "update" | "merge" };
+  }) {
+    setSaving(true);
+    try {
+      const res = await API.contacts.importCsv(payload);
+      const summary = res.summary || {};
+      setImportModalOpen(false);
+      toast(
+        `Imported contacts: ${summary.created || 0} created, ${summary.updated || 0} updated, ${summary.skipped || 0} skipped.`,
+        "success",
+      );
+      await load();
+    } catch (e: any) {
+      toast(e?.response?.data?.message || "Contacts import failed", "error");
+    } finally {
+      setSaving(false);
+    }
+  }
+
   async function exportSelectedCsv() {
     const selectedIds = Object.keys(multiSelected).filter((id) => multiSelected[id]);
     if (!selectedIds.length) return toast("Select contacts to export.", "error");
@@ -218,6 +272,21 @@ export default function ContactsPage() {
           <p className="mt-2 text-sm font-semibold uppercase tracking-widest text-ink-800/60">Manage your customer records and chats</p>
         </div>
         <div className="flex items-center gap-3">
+          <input
+            ref={importInputRef}
+            type="file"
+            accept=".csv,text/csv"
+            className="hidden"
+            onChange={(event) => handleImportFile(event.target.files?.[0])}
+          />
+          <Button
+            variant="ghost"
+            onClick={() => importInputRef.current?.click()}
+            disabled={saving}
+            className="h-10 gap-2 border border-ink-900/10 bg-white"
+          >
+            <Upload size={16} /> Import Contacts
+          </Button>
           <Button variant="ghost" onClick={load} disabled={loading || syncing} className="h-10 gap-2 border border-ink-900/10 bg-white">
             <RefreshCcw size={16} className={cn(syncing && "animate-spin")} /> {syncing ? "Syncing..." : "Refresh"}
           </Button>
@@ -285,6 +354,17 @@ export default function ContactsPage() {
           setAnalyticsError(null);
           setContactAnalytics(null);
         }}
+      />
+
+      <ContactImportModal
+        open={importModalOpen}
+        fileName={importFileName}
+        headers={importHeaders}
+        rows={importRows}
+        definitions={definitions}
+        saving={saving}
+        onClose={() => setImportModalOpen(false)}
+        onImport={saveImportedContacts}
       />
     </div>
   );

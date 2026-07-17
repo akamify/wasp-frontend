@@ -354,6 +354,7 @@ export function buildApiGroupSecondary(api, unwrap, API_BASE_URL) {
       lookupByPhone: (phone) =>
         api.get(`/contacts/lookup/${phone}`).then(unwrap),
       create: (payload) => api.post("/contacts", payload).then(unwrap),
+      importCsv: (payload) => api.post("/contacts/import-csv", payload).then(unwrap),
       update: (id, payload) => api.put(`/contacts/${id}`, payload).then(unwrap),
       patchAttributes: (id, attributes) =>
         api.patch(`/contacts/${id}/attributes`, { attributes }).then(unwrap),
