@@ -14,12 +14,20 @@ const isBrowser = typeof window !== "undefined";
 const isLocalHost =
   isBrowser &&
   (window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1");
-const PRODUCTION_API_BASE_URL = "https://api.wasp.akamify.com/api";
+const PRODUCTION_API_BASE_URL = "https://api.aiwizchat.com/api";
 
 function normalizeApiBaseUrl(value) {
   const v = String(value || "").trim();
   if (!v || v === "/" || v === "./") return "";
-  return v.replace(/\/+$/, "");
+  const normalized = v.replace(/\/+$/, "");
+  try {
+    const url = new URL(normalized);
+    if (!url.pathname || url.pathname === "/") {
+      url.pathname = "/api";
+      return url.toString().replace(/\/+$/, "");
+    }
+  } catch {}
+  return normalized;
 }
 
 const envBaseUrl = normalizeApiBaseUrl(rawEnvBaseUrl);

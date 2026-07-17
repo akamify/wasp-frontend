@@ -35,7 +35,7 @@ export default function AdminResetPasswordPage() {
     setError(null);
     setMessage(null);
     try {
-      await API.auth.adminResetPassword({ token, password });
+      await API.auth.resetPassword({ token, password });
       setMessage("Admin password has been reset. Redirecting to admin login...");
       setTimeout(() => navigate("/admin/login", { replace: true }), 1200);
     } catch (err: any) {
@@ -87,4 +87,3 @@ export default function AdminResetPasswordPage() {
     </div>
   );
 }
-

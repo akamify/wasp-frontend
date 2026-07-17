@@ -216,7 +216,7 @@ export function DashboardPreview() {
                 <i className="h-2.5 w-2.5 rounded-full bg-amber-400" />
                 <i className="h-2.5 w-2.5 rounded-full bg-emerald-400" />
               </div>
-              <span className="text-[10px] font-semibold text-slate-400 md:text-xs">wasp.akamify.com/app</span>
+              <span className="text-[10px] font-semibold text-slate-400 md:text-xs">aiwizchat.com/app</span>
             </div>
             <div className="flex items-center gap-3">
               <span className="hidden items-center gap-1.5 text-[10px] font-black text-emerald-600 sm:flex"><i className="h-2 w-2 rounded-full bg-emerald-500" /> WABA Status</span>

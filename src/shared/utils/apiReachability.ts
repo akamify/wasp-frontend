@@ -1,5 +1,14 @@
 function normalizeBaseUrl(value: string) {
-  return String(value || "").trim().replace(/\/+$/, "");
+  const normalized = String(value || "").trim().replace(/\/+$/, "");
+  if (!normalized) return "";
+  try {
+    const url = new URL(normalized);
+    if (!url.pathname || url.pathname === "/") {
+      url.pathname = "/api";
+      return url.toString().replace(/\/+$/, "");
+    }
+  } catch {}
+  return normalized;
 }
 
 async function checkCorsPath(baseUrl: string, signal: AbortSignal) {
