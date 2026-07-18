@@ -142,6 +142,8 @@ export function LandingNavbar() {
             <img
               src="/logo.png"
               alt={BRAND_NAME}
+              width={500}
+              height={500}
               className="relative z-10 h-full w-full object-contain transition-transform duration-300 group-hover:scale-105"
             />
           </span>

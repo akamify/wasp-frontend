@@ -166,8 +166,12 @@ function HeroYoutubeVideo() {
                 <img
                   src={YOUTUBE_THUMBNAIL_SRC}
                   alt="Akamify WhatsApp automation demo video thumbnail"
+                  width={1280}
+                  height={720}
                   className="h-full w-full select-none object-cover transition-transform duration-700 group-hover:scale-[1.04]"
                   draggable={false}
+                  fetchPriority="high"
+                  decoding="async"
                   onError={(event) => {
                     event.currentTarget.src = `https://i.ytimg.com/vi/${YOUTUBE_VIDEO_ID}/hqdefault.jpg`;
                   }}

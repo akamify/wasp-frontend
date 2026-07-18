@@ -136,8 +136,12 @@ export function AutomationFlow() {
           <div className="relative z-10 rounded-[2rem] border border-slate-200/60 bg-white/40 p-2 shadow-2xl shadow-slate-200/50 backdrop-blur-2xl">
             <div className="rounded-[1.6rem] border border-white bg-slate-50/50 overflow-hidden">
               <img
-                src="/automationflow.png"
+                src="/automationflow.jpg"
                 alt="WhatsApp automation flow builder dashboard"
+                width={1448}
+                height={1086}
+                loading="lazy"
+                decoding="async"
                 className="w-full object-cover"
               />
             </div>

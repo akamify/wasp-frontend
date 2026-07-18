@@ -1,4 +1,5 @@
 User-agent: *
 Allow: /
 
-Sitemap: https://aiwizchat.com/sitemap.xml
+Sitemap: https://www.aiwizchat.com/sitemap.xml
+Allow: /llms.txt

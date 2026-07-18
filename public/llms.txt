@@ -1,0 +1,28 @@
+# Ai Wiz Chat
+
+> Ai Wiz Chat is a WhatsApp Business API platform for campaigns, automation flows, shared inbox conversations, CRM, templates, contact management, and external chat API integrations.
+
+This file provides a concise map of public Ai Wiz Chat resources for AI agents and developer tools. Product pages describe user-facing features, while API and integration docs explain how external systems can connect safely.
+
+## Public Site
+
+- [Homepage](https://www.aiwizchat.com/): Product overview for WhatsApp campaigns, automation, inbox, CRM, and API access.
+- [Pricing](https://www.aiwizchat.com/pricing): Plan and feature access information.
+- [Help Center](https://www.aiwizchat.com/help-center): User guidance for setup, templates, campaigns, contacts, and integrations.
+
+## Developer Resources
+
+- [API Base URL](https://api.aiwizchat.com/): Production API origin for Ai Wiz Chat integrations.
+- [API Health](https://api.aiwizchat.com/api/health): Backend health endpoint.
+- [Documentation Raw Content](https://www.aiwizchat.com/docs/AIWIZCHAT_PUBLIC_DOCS_RAW.md): Raw public documentation source when hosted by the docs site.
+
+## Policies
+
+- [Privacy Policy](https://www.aiwizchat.com/privacy-policy): Platform privacy and data handling policy.
+- [Terms of Service](https://www.aiwizchat.com/terms-of-service): Terms covering account, workspace, messaging, billing, and integration usage.
+- [Data Deletion](https://www.aiwizchat.com/data-deletion): Instructions for requesting personal data deletion.
+
+## Optional
+
+- [Sitemap](https://www.aiwizchat.com/sitemap.xml): Indexable public URLs.
+- [Robots](https://www.aiwizchat.com/robots.txt): Crawling policy.

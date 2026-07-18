@@ -11,7 +11,7 @@ import { TableSkeleton } from "@pages/admin/components/AdminSkeletons";
 import { useAdminList } from "@pages/admin/hooks/useAdminList";
 import { useToast } from "@shared/providers/ToastContext";
 import { cn } from "@shared/utils/cn";
-import { CalendarClock, CheckCircle2, Clock, X, XCircle } from "lucide-react";
+import { CalendarClock, CheckCircle2, X } from "lucide-react";
 
 type LiveDemoStatus = "Pending" | "Confirmed" | "Completed" | "Cancelled";
 
@@ -77,13 +77,13 @@ export default function AdminLiveDemoEnquiriesPage() {
 
   const list = useAdminList<LiveDemoEnquiry>({ fetcher, initialLimit: 25 });
 
-  async function updateStatus(status: Exclude<LiveDemoStatus, "Pending">) {
+  async function completeEnquiry() {
     if (!selected || savingStatus) return;
-    setSavingStatus(status);
+    setSavingStatus("Completed");
     try {
-      const res = await API.admin.updateLiveDemoEnquiryStatus(selected.id, { status });
-      toast("Live demo enquiry updated.", "success");
-      setSelected(res.enquiry || { ...selected, status });
+      const res = await API.admin.updateLiveDemoEnquiryStatus(selected.id, { status: "Completed" });
+      toast("Live demo marked completed and customer email queued.", "success");
+      setSelected(res.enquiry || { ...selected, status: "Completed" });
       list.refresh();
     } catch (err: any) {
       toast(err?.userMessage || err?.response?.data?.message || "Could not update status.", "error");
@@ -172,9 +172,9 @@ export default function AdminLiveDemoEnquiriesPage() {
       )}
 
       {selected ? (
-        <div className="fixed inset-0 z-[900]">
-          <button type="button" className="absolute inset-0 bg-slate-900/30 backdrop-blur-sm" aria-label="Close live demo details" onClick={() => setSelected(null)} />
-          <aside className="absolute right-0 top-0 h-full w-full max-w-xl overflow-y-auto border-l border-slate-200 bg-white p-6 shadow-2xl">
+        <div className="fixed inset-0 z-[900] flex items-center justify-center p-4">
+          <button type="button" className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm" aria-label="Close live demo details" onClick={() => setSelected(null)} />
+          <div className="relative max-h-[90dvh] w-full max-w-3xl overflow-y-auto rounded-[10px] border border-slate-200 bg-white p-6 shadow-2xl">
             <div className="mb-6 flex items-start justify-between gap-4">
               <div>
                 <div className="inline-flex items-center gap-2 rounded-full bg-brand-50 px-3 py-1 text-[10px] font-black uppercase tracking-widest text-brand-700">
@@ -203,24 +203,21 @@ export default function AdminLiveDemoEnquiriesPage() {
               <p className="mt-2 whitespace-pre-wrap text-sm font-semibold leading-6 text-slate-700">{selected.notes}</p>
             </div>
 
-            <div className="mt-6 rounded-[5px] border border-slate-200 bg-white p-4">
-              <div className="mb-3 text-[10px] font-black uppercase tracking-widest text-slate-500">Admin Actions</div>
-              <div className="grid gap-3 sm:grid-cols-3">
-                <Button type="button" onClick={() => updateStatus("Confirmed")} disabled={!!savingStatus} className="gap-2">
-                  <CheckCircle2 size={14} />
-                  Confirm
-                </Button>
-                <Button type="button" variant="outline" onClick={() => updateStatus("Completed")} disabled={!!savingStatus} className="gap-2">
-                  <Clock size={14} />
-                  Complete
-                </Button>
-                <Button type="button" variant="danger" onClick={() => updateStatus("Cancelled")} disabled={!!savingStatus} className="gap-2">
-                  <XCircle size={14} />
-                  Cancel
-                </Button>
-              </div>
+            <div className="mt-6 flex flex-col-reverse gap-3 border-t border-slate-100 pt-4 sm:flex-row sm:justify-end">
+              <Button type="button" variant="outline" onClick={() => setSelected(null)} disabled={!!savingStatus}>
+                Close
+              </Button>
+              <Button
+                type="button"
+                onClick={completeEnquiry}
+                disabled={!!savingStatus || selected.status === "Completed"}
+                className="gap-2"
+              >
+                <CheckCircle2 size={14} />
+                {savingStatus ? "Completing..." : selected.status === "Completed" ? "Completed" : "Complete"}
+              </Button>
             </div>
-          </aside>
+          </div>
         </div>
       ) : null}
     </div>

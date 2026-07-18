@@ -19,7 +19,7 @@ import { LiveDemoBookingModal } from "@components/landing/LiveDemoBookingModal";
 export default function LandingPage() {
   const containerRef = useRef<HTMLDivElement>(null);
   const [demoOpen, setDemoOpen] = useState(false);
-  const origin = typeof window !== "undefined" ? window.location.origin : "https://aiwizchat.com";
+  const origin = typeof window !== "undefined" ? window.location.origin : "https://www.aiwizchat.com";
   const canonicalUrl = `${origin}/`;
   const ogImage = `${origin}/logo.png`;
 
@@ -81,13 +81,15 @@ export default function LandingPage() {
         structuredData={structuredData}
       />
       <LandingNavbar />
-      <HeroSection onBookDemo={() => setDemoOpen(true)} />
-      <BrodcasSection />
-      <Partner />
-      <AutomationFlow />
-      <Features />
-      <UniSection />
-      <Faqs />
+      <main>
+        <HeroSection onBookDemo={() => setDemoOpen(true)} />
+        <BrodcasSection />
+        <Partner />
+        <AutomationFlow />
+        <Features />
+        <UniSection />
+        <Faqs />
+      </main>
       <LandingFooter />
       <LiveDemoBookingModal open={demoOpen} onClose={() => setDemoOpen(false)} />
     </div>
