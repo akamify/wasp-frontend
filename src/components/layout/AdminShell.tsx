@@ -24,6 +24,7 @@ import {
   ChevronRight,
 } from "lucide-react";
 import { BRAND_NAME } from "@shared/config/brand";
+import { setCurrencySymbolOverride } from "@shared/config/currency";
 import { API } from "@api/api";
 import { Button } from "@components/ui/Button";
 import { cn } from "@shared/utils/cn";
@@ -111,6 +112,7 @@ export function AdminShell({
   const { logout, user } = useAuth();
   const location = useLocation();
   const [runtimeBrandName, setRuntimeBrandName] = useState("");
+  const [, setCurrencySettingsVersion] = useState(0);
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
   const [isCollapsed, setIsCollapsed] = useState(() => {
     try {
@@ -137,6 +139,8 @@ export function AdminShell({
       .then((res: any) => {
         if (!mounted) return;
         setRuntimeBrandName(String(res?.settings?.brandName || "").trim());
+        setCurrencySymbolOverride(res?.settings?.currencySymbol);
+        setCurrencySettingsVersion((value) => value + 1);
       })
       .catch(() => {});
     return () => {

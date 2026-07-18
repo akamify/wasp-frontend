@@ -1,10 +1,11 @@
 import { useCallback, useState } from "react";
+import { formatCurrencyFromPaise } from "@shared/config/currency";
 
 export type TabKey = "overview" | "payment-links" | "history";
 
 export function inr(paise?: number | null) {
   if (paise == null) return "-";
-  return `Rs ${Math.round(Number(paise) / 100).toLocaleString("en-IN")}`;
+  return formatCurrencyFromPaise(paise, "₹");
 }
 
 export function toIst(value?: string | null) {

@@ -3,6 +3,7 @@ import { useLocation, useNavigate } from "react-router-dom";
 import { cn } from "@shared/utils/cn";
 import { useAuth } from "@shared/providers/AuthContext";
 import { BRAND_NAME } from "@shared/config/brand";
+import { setCurrencySymbolOverride } from "@shared/config/currency";
 import { API } from "@api/api";
 import { motion, AnimatePresence } from "framer-motion";
 import { NAV_ITEMS, getShellTitle, routeTransitionKey } from "@components/layout/app-shell/constants";
@@ -22,6 +23,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const navigate = useNavigate();
   const location = useLocation();
   const [runtimeBrandName, setRuntimeBrandName] = useState("");
+  const [, setCurrencySettingsVersion] = useState(0);
   const resolvedBrandName = runtimeBrandName || BRAND_NAME;
   const [notifOpen, setNotifOpen] = useState(false);
   const [mobileDrawerOpen, setMobileDrawerOpen] = useState(false);
@@ -52,6 +54,8 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       .then((res: any) => {
         if (!mounted) return;
         setRuntimeBrandName(String(res?.settings?.brandName || "").trim());
+        setCurrencySymbolOverride(res?.settings?.currencySymbol);
+        setCurrencySettingsVersion((value) => value + 1);
       })
       .catch(() => { });
     return () => {

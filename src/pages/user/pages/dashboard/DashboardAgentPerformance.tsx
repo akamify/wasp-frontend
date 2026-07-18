@@ -1,12 +1,8 @@
 import { Card } from "@components/ui/Card";
 import { Badge } from "@components/ui/Badge";
+import { formatCurrencySafe } from "@shared/config/currency";
 
-const formatCurrency = (value: number) =>
-  new Intl.NumberFormat("en-IN", {
-    style: "currency",
-    currency: "INR",
-    maximumFractionDigits: 0,
-  }).format(Number(value || 0));
+const formatCurrency = (value: number) => formatCurrencySafe(Number(value || 0), "INR");
 
 export function DashboardAgentPerformance({ agents }: { agents: any[] }) {
   const rows = Array.isArray(agents) ? agents.slice(0, 5) : [];

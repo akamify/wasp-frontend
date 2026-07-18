@@ -1,5 +1,6 @@
 import { Calendar, Eye, FileText, IndianRupee, Megaphone, MessageCircle, MousePointerClick, Repeat, Send, TrendingDown, TrendingUp, Users, XCircle } from "lucide-react";
 import { Card } from "@components/ui/Card";
+import { formatCurrencySafe } from "@shared/config/currency";
 import { cn } from "@shared/utils/cn";
 
 export function DashboardMetricsGrid({ analytics, sent, delivered, read, contactsUp, contactsGrowth, monthlyUp, monthly }: any) {
@@ -18,7 +19,7 @@ export function DashboardMetricsGrid({ analytics, sent, delivered, read, contact
     { label: "Read", value: read, icon: Eye, trend: Number(analytics?.rates?.readRatePct || 0) >= 20 ? "Good" : "Low", color: "text-green-600", bg: "bg-green-50" },
     { label: "Clicked", value: clicked, icon: MousePointerClick, trend: `${clickRatePct.toFixed(1)}% CTR`, color: "text-amber-700", bg: "bg-amber-50" },
     { label: "Converted", value: converted, icon: Repeat, trend: `${conversionRatePct.toFixed(1)}% CVR`, color: "text-emerald-700", bg: "bg-emerald-50" },
-    { label: "Revenue", value: `Rs ${Math.round(revenue).toLocaleString()}`, icon: IndianRupee, trend: "Attributed", color: "text-cyan-700", bg: "bg-cyan-50" },
+    { label: "Revenue", value: formatCurrencySafe(Math.round(revenue), "₹"), icon: IndianRupee, trend: "Attributed", color: "text-cyan-700", bg: "bg-cyan-50" },
     { label: "Failed", value: Number(analytics?.overview?.failed || 0), icon: XCircle, trend: "Watch", color: "text-red-600", bg: "bg-red-50" },
     { label: "Total Campaigns", value: Number(analytics?.counts?.campaigns || 0), icon: Megaphone, trend: "Live", color: "text-brand-600", bg: "bg-brand-50" },
     { label: "Templates", value: Number(analytics?.counts?.templates || 0), icon: FileText, trend: "Library", color: "text-brand-600", bg: "bg-brand-50" },

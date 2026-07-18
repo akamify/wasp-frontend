@@ -7,7 +7,7 @@ import { Input } from "@components/ui/Input";
 import { Alert } from "@components/ui/Alert";
 import { loadRazorpay } from "@shared/utils/loadRazorpay";
 import { BRAND_NAME } from "@shared/config/brand";
-import { formatCurrencySafe, CURRENCY_SYMBOL, CURRENCY_CODE } from "@shared/config/currency";
+import { formatCurrencySafe, getCurrencySymbol } from "@shared/config/currency";
 import { useToast } from "@shared/providers/ToastContext";
 
 export function RechargeModal({
@@ -29,6 +29,7 @@ export function RechargeModal({
   const parsedAmount = useMemo(() => Number(amount || 0), [amount]);
   const validAmount = Number.isFinite(parsedAmount) && parsedAmount > 0;
   const { toast } = useToast();
+  const currencySymbol = getCurrencySymbol();
 
   async function start() {
     setErr(null);
@@ -118,7 +119,7 @@ export function RechargeModal({
               <div className="rounded-[5px] bg-brand-50 p-4 ring-1 ring-brand-200">
                 <div className="flex items-center justify-between">
                   <div className="text-sm font-bold text-ink-900">Top up amount</div>
-                  <div className="text-xs font-semibold text-ink-900/60">{CURRENCY_SYMBOL || CURRENCY_CODE}</div>
+                  <div className="text-xs font-semibold text-ink-900/60">{currencySymbol}</div>
                 </div>
                 <div className="mt-3 grid gap-3 sm:grid-cols-[1fr_auto] sm:items-end">
                   <Input
@@ -149,7 +150,7 @@ export function RechargeModal({
                       onClick={() => setAmount(String(v))}
                       className="cursor-pointer rounded-[5px] bg-white px-3 py-2 text-sm font-black text-ink-900 ring-1 ring-ink-900/12 hover:bg-ink-900/5"
                     >
-                      <span className="inline-block -mt-0.5">{CURRENCY_SYMBOL || CURRENCY_CODE}</span> {v}
+                      <span className="inline-block -mt-0.5">{currencySymbol}</span> {v}
                     </button>
                   );
                 })}

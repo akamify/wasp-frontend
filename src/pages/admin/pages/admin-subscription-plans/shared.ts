@@ -1,3 +1,5 @@
+import { formatCurrencyFromPaise } from "@shared/config/currency";
+
 export const PLAN_STATUSES = ["draft", "in_review", "published", "archived", "disabled"];
 export const BILLING_CYCLES = ["monthly", "quarterly", "yearly", "lifetime"];
 export const TAX_MODES = ["exclusive", "inclusive", "none"];
@@ -167,7 +169,7 @@ export type FeatureRow = { label: string; type: "page" | "text"; pageAccessKey: 
 export const createRow = (): FeatureRow => ({ label: "", type: "text", pageAccessKey: "", targetType: "", functionalityKey: "", limitKey: "", value: "", included: true, sortOrder: 0, unlimited: false });
 export const defaultFeatures = () => Object.fromEntries(FUNCTIONALITY_KEYS.map((key) => [key, false]));
 export const defaultLimits = () => Object.fromEntries(LIMIT_KEYS.map((key) => [key, "0"]));
-export const inr = (paise?: number | null) => (paise == null ? "-" : `Rs ${Math.round(Number(paise) / 100).toLocaleString("en-IN")}`);
+export const inr = (paise?: number | null) => formatCurrencyFromPaise(paise, "₹");
 export const statusColor = (status: string) => status === "published" ? "text-emerald-700" : status === "in_review" ? "text-amber-700" : status === "disabled" ? "text-rose-700" : status === "archived" ? "text-slate-400" : "text-slate-700";
 export function dedupeBy<T>(items: T[], keyGetter: (item: T) => string) { const seen = new Set<string>(); const out: T[] = []; for (const item of items) { const key = keyGetter(item); if (!key || seen.has(key)) continue; seen.add(key); out.push(item); } return out; }
 export const linesToArray = (value: string) => String(value || "").split("\n").map((line) => line.trim()).filter(Boolean);

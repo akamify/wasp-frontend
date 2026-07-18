@@ -9,6 +9,7 @@ import { AdminTruncate } from "@pages/admin/components/AdminTruncate";
 import { TableSkeleton } from "@pages/admin/components/AdminSkeletons";
 import { useAdminList } from "@pages/admin/hooks/useAdminList";
 import { CreditCard, ArrowUpRight, ArrowDownLeft, Briefcase, User, Server, Calendar, Wallet } from "lucide-react";
+import { formatCurrencySafe } from "@shared/config/currency";
 import { cn } from "@shared/utils/cn";
 
 type Item = any;
@@ -95,7 +96,7 @@ export default function AdminTransactionsLogsPage() {
                           <Wallet size={14} />
                        </div>
                        <span className="text-sm font-black text-slate-900">
-                         {t.currency} {t.amount?.toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                         {formatCurrencySafe(Number(t.amount || 0), String(t.currency || "₹"))}
                        </span>
                     </div>
                   </td>
@@ -145,4 +146,3 @@ export default function AdminTransactionsLogsPage() {
     </div>
   );
 }
-

@@ -1,9 +1,10 @@
 import type { CsvParsed } from "@modules/campaigns/types/campaign-form.types";
+import { formatCurrencySafe } from "@shared/config/currency";
 
-export function formatCurrency(value: unknown, currency = "INR") {
+export function formatCurrency(value: unknown, currency = "₹") {
   const amount = Number(value ?? 0);
-  if (!Number.isFinite(amount)) return `0.00 ${currency}`;
-  return `${amount.toFixed(2)} ${currency}`;
+  if (!Number.isFinite(amount)) return formatCurrencySafe(0, currency);
+  return formatCurrencySafe(amount, currency);
 }
 
 export function digitsOnly(value: string) {

@@ -4,6 +4,7 @@ import { Badge } from "@components/ui/Badge";
 import { Button } from "@components/ui/Button";
 import { Card } from "@components/ui/Card";
 import { Alert } from "@components/ui/Alert";
+import { formatCurrencySafe } from "@shared/config/currency";
 import { BarChart3, MousePointerClick, Receipt, Sparkles, X } from "lucide-react";
 
 type AnalyticsData = {
@@ -44,12 +45,7 @@ type Props = {
   onClose: () => void;
 };
 
-const formatCurrency = (value: number, currency = "INR") =>
-  new Intl.NumberFormat("en-IN", {
-    style: "currency",
-    currency: currency || "INR",
-    maximumFractionDigits: 0,
-  }).format(Number(value || 0));
+const formatCurrency = (value: number, currency = "INR") => formatCurrencySafe(Number(value || 0), currency || "INR");
 
 export function ContactAnalyticsModal({ open, loading, error, data, onClose }: Props) {
   const customer = data?.customer;

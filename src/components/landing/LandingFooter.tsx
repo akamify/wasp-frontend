@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { API } from "@api/api";
 import { BRAND_LEGAL_NAME, BRAND_NAME } from "@shared/config/brand";
+import { setCurrencySymbolOverride } from "@shared/config/currency";
 import { Link } from "react-router-dom";
 import {
   ArrowRight,
@@ -153,6 +154,7 @@ export function LandingFooter() {
       .then((res: any) => {
         if (!active) return;
         const next = res?.settings?.socialLinks || {};
+        setCurrencySymbolOverride(res?.settings?.currencySymbol);
         setSocialLinks({
           twitter: String(next.twitter || fallbackSocialLinks.twitter || ""),
           linkedin: String(next.linkedin || fallbackSocialLinks.linkedin || ""),
