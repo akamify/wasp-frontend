@@ -30,6 +30,8 @@ const faqs = [
   { question: "Is there any setup cost?", answer: "The setup cost depends on your WhatsApp API requirements, message volume, automation flows, team size, integrations, and custom features.", icon: CreditCard },
 ];
 
+export const landingFaqs = faqs.map(({ question, answer }) => ({ question, answer }));
+
 const containerVariants: Variants = {
   hidden: { opacity: 0 },
   visible: { opacity: 1, transition: { staggerChildren: 0.1 } },
