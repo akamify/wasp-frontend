@@ -5,6 +5,8 @@ import { useAuth } from "@shared/providers/AuthContext";
 import { usePlans } from "@modules/billing/hooks/usePlans";
 import { formatCurrencyFromPaise } from "@shared/config/currency";
 import { cn } from "@shared/utils/cn";
+import { LandingNavbar } from "@components/landing/LandingNavbar";
+import { LandingFooter } from "@components/landing/LandingFooter";
 
 function formatPrice(plan: any) {
   const paise = plan?.pricing?.discountedPricePaise;
@@ -110,36 +112,40 @@ export default function PublicPricingPage() {
   const plans = (Array.isArray(items) ? items : []).filter((plan: any) => plan?.publicVisible !== false).sort((a: any, b: any) => Number(a?.sortOrder || 0) - Number(b?.sortOrder || 0));
 
   return (
-    <main className="min-h-screen bg-[linear-gradient(180deg,#f7faf7_0%,#ffffff_45%,#f8fafc_100%)]">
-      <section className="relative overflow-hidden px-4 pb-10 pt-24 md:px-8 md:pb-16 md:pt-28">
-        <div className="absolute left-1/2 top-10 h-72 w-72 -translate-x-1/2 rounded-full bg-emerald-300/20 blur-3xl" />
-        <div className="relative mx-auto max-w-6xl text-center">
-          <div className="mx-auto mb-5 inline-flex items-center gap-2 rounded-full border border-emerald-200 bg-white px-4 py-2 text-xs font-black uppercase tracking-[0.22em] text-emerald-700 shadow-sm"><Sparkles size={14} /> Pricing</div>
-          <h1 className="text-4xl font-black tracking-tight text-slate-950 md:text-6xl">Plans that scale with your WhatsApp growth</h1>
-          <p className="mx-auto mt-5 max-w-2xl text-base font-semibold leading-7 text-slate-600 md:text-lg">Published plans from Super Admin appear here automatically. Users can pick a plan, sign up, and continue purchase from their workspace.</p>
-          <div className="mt-7 flex flex-wrap items-center justify-center gap-3">
-            <Link to={token ? "/app/plan" : "/register"} className="inline-flex h-11 items-center justify-center rounded-xl bg-emerald-600 px-6 text-sm font-black text-white transition-colors hover:bg-emerald-700">Get Started</Link>
-            <Link to="/login" className="inline-flex h-11 items-center justify-center rounded-xl border border-slate-200 bg-white px-6 text-sm font-black text-slate-700 transition-colors hover:bg-slate-50">Already have account?</Link>
+    <div>
+      <LandingNavbar />
+      <main className="min-h-screen bg-[linear-gradient(180deg,#f7faf7_0%,#ffffff_45%,#f8fafc_100%)]">
+        <section className="relative overflow-hidden px-4 pb-10 pt-24 md:px-8 md:pb-16 md:pt-28">
+          <div className="absolute left-1/2 top-10 h-72 w-72 -translate-x-1/2 rounded-full bg-emerald-300/20 blur-3xl" />
+          <div className="relative mx-auto max-w-6xl text-center">
+            <div className="mx-auto mb-5 inline-flex items-center gap-2 rounded-full border border-emerald-200 bg-white px-4 py-2 text-xs font-black uppercase tracking-[0.22em] text-emerald-700 shadow-sm"><Sparkles size={14} /> Pricing</div>
+            <h1 className="text-4xl font-black tracking-tight text-slate-950 md:text-6xl">Plans that scale with your WhatsApp growth</h1>
+            <p className="mx-auto mt-5 max-w-2xl text-base font-semibold leading-7 text-slate-600 md:text-lg">Published plans from Super Admin appear here automatically. Users can pick a plan, sign up, and continue purchase from their workspace.</p>
+            <div className="mt-7 flex flex-wrap items-center justify-center gap-3">
+              <Link to={token ? "/app/plan" : "/register"} className="inline-flex h-11 items-center justify-center rounded-xl bg-emerald-600 px-6 text-sm font-black text-white transition-colors hover:bg-emerald-700">Get Started</Link>
+              <Link to="/login" className="inline-flex h-11 items-center justify-center rounded-xl border border-slate-200 bg-white px-6 text-sm font-black text-slate-700 transition-colors hover:bg-slate-50">Already have account?</Link>
+            </div>
           </div>
-        </div>
-      </section>
+        </section>
 
-      <section className="mx-auto max-w-7xl px-4 pb-16 md:px-8">
-        {loading ? <div className="rounded-2xl border border-slate-200 bg-white p-8 text-center text-sm font-bold text-slate-500">Loading published plans...</div> : null}
-        {!loading && error ? <div className="rounded-2xl border border-rose-200 bg-rose-50 p-8 text-center text-sm font-bold text-rose-700">{error}</div> : null}
-        {!loading && !error && plans.length === 0 ? <div className="rounded-2xl border border-slate-200 bg-white p-8 text-center text-sm font-bold text-slate-500">No plans are published yet. Please check back soon.</div> : null}
-        <div className="grid gap-6 lg:grid-cols-3">{plans.map((plan: any) => <PricingCard key={plan.id || plan.slug} plan={plan} token={token} selected={selectedPlan === plan.slug} />)}</div>
-      </section>
+        <section className="mx-auto max-w-7xl px-4 pb-16 md:px-8">
+          {loading ? <div className="rounded-2xl border border-slate-200 bg-white p-8 text-center text-sm font-bold text-slate-500">Loading published plans...</div> : null}
+          {!loading && error ? <div className="rounded-2xl border border-rose-200 bg-rose-50 p-8 text-center text-sm font-bold text-rose-700">{error}</div> : null}
+          {!loading && !error && plans.length === 0 ? <div className="rounded-2xl border border-slate-200 bg-white p-8 text-center text-sm font-bold text-slate-500">No plans are published yet. Please check back soon.</div> : null}
+          <div className="grid gap-6 lg:grid-cols-3">{plans.map((plan: any) => <PricingCard key={plan.id || plan.slug} plan={plan} token={token} selected={selectedPlan === plan.slug} />)}</div>
+        </section>
 
-      <section className="mx-auto max-w-6xl px-4 pb-20 md:px-8">
-        <div className="grid gap-4 rounded-[28px] border border-slate-200 bg-white p-6 shadow-xl md:grid-cols-[1fr_auto] md:items-center md:p-8">
-          <div>
-            <h2 className="text-2xl font-black text-slate-950">Need help choosing?</h2>
-            <p className="mt-2 text-sm font-semibold text-slate-500">Message charges are billed separately from wallet balance where applicable. For custom onboarding, talk to sales.</p>
+        <section className="mx-auto max-w-6xl px-4 pb-20 md:px-8">
+          <div className="grid gap-4 rounded-[28px] border border-slate-200 bg-white p-6 shadow-xl md:grid-cols-[1fr_auto] md:items-center md:p-8">
+            <div>
+              <h2 className="text-2xl font-black text-slate-950">Need help choosing?</h2>
+              <p className="mt-2 text-sm font-semibold text-slate-500">Message charges are billed separately from wallet balance where applicable. For custom onboarding, talk to sales.</p>
+            </div>
+            <Link to="/help-center/ticket" className="inline-flex h-12 items-center justify-center rounded-xl border border-slate-200 bg-white px-5 text-sm font-black text-slate-700 transition-colors hover:bg-slate-50"><MessageCircle size={18} className="mr-2" />Talk to Sales</Link>
           </div>
-          <Link to="/help-center/ticket" className="inline-flex h-12 items-center justify-center rounded-xl border border-slate-200 bg-white px-5 text-sm font-black text-slate-700 transition-colors hover:bg-slate-50"><MessageCircle size={18} className="mr-2" />Talk to Sales</Link>
-        </div>
-      </section>
-    </main>
+        </section>
+      </main>
+      <LandingFooter />
+    </div>
   );
 }
