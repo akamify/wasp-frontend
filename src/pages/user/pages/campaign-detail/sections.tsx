@@ -82,15 +82,15 @@ export function OverviewCard(props: any) {
           {allowComplete ? <button type="button" className="w-full px-4 py-2.5 text-left text-sm font-semibold text-emerald-700 hover:bg-emerald-50" onClick={() => void runAction("complete")}>Complete</button> : null}
         </div> : null}
       </div></div>
-      {[{ label: "Audience", value: audienceTotal }, { label: "Credit Used", value: creditUsage ? formatCurrencySafe(Number(creditUsage.net || 0), creditUsage.currency || "₹") : "--" }, { label: "Sent", value: counts?.sent || analytics?.sent || 0 }, { label: "Delivered", value: counts?.delivered || analytics?.delivered || 0 }, { label: "Read", value: counts?.read || analytics?.read || 0 }, { label: "Clicked", value: analytics?.clicked || 0 }, { label: "Converted", value: analytics?.converted || 0 }, { label: "Failed", value: counts?.failed || analytics?.failed || 0 }, { label: "Queued", value: counts?.queued || 0 }].map((s) => (
+      {[{ label: "Audience", value: audienceTotal }, { label: "Credit Used", value: creditUsage ? formatCurrencySafe(Number(creditUsage.net || 0), creditUsage.currency || "INR") : "--" }, { label: "Sent", value: counts?.sent || analytics?.sent || 0 }, { label: "Delivered", value: counts?.delivered || analytics?.delivered || 0 }, { label: "Read", value: counts?.read || analytics?.read || 0 }, { label: "Clicked", value: analytics?.clicked || 0 }, { label: "Converted", value: analytics?.converted || 0 }, { label: "Failed", value: counts?.failed || analytics?.failed || 0 }, { label: "Queued", value: counts?.queued || 0 }].map((s) => (
         <div key={s.label} className="flex flex-col items-center text-center min-w-0"><div className="text-[9px] font-bold uppercase tracking-wider text-ink-800/40 mb-1.5 truncate w-full">{s.label}</div><div className="text-base md:text-2xl font-black text-ink-900 truncate w-full">{typeof s.value === "number" ? s.value.toLocaleString() : s.value}</div></div>
       ))}
     </div>
     <div className="mt-8 grid gap-3 rounded-[5px] border border-ink-900/5 bg-slate-50/70 p-4 md:grid-cols-5">
       <MetricPill label="CTR" value={`${Number(analytics?.ctr || 0).toFixed(1)}%`} />
       <MetricPill label="Conversion Rate" value={`${Number(analytics?.conversionRate || 0).toFixed(1)}%`} />
-      <MetricPill label="Revenue" value={formatCurrencySafe(Math.round(revenue), "₹")} />
-      <MetricPill label="Spend" value={formatCurrencySafe(Math.round(spend), "₹")} />
+      <MetricPill label="Revenue" value={formatCurrencySafe(Math.round(revenue), "INR")} />
+      <MetricPill label="Spend" value={formatCurrencySafe(Math.round(spend), "INR")} />
       <MetricPill label="ROI" value={roi === null || roi === undefined ? "--" : `${(Number(roi) * 100).toFixed(0)}%`} />
     </div>
     <div className="mt-8 border-t border-ink-900/5 pt-8"><div className="flex flex-wrap items-center gap-4 mb-4"><div className="flex items-center gap-1.5"><div className="w-2.5 h-2.5 rounded-full bg-emerald-500" /><span className="text-[10px] font-bold text-ink-800/60 uppercase">Sent</span></div><div className="flex items-center gap-1.5"><div className="w-2.5 h-2.5 rounded-full bg-blue-500" /><span className="text-[10px] font-bold text-ink-800/60 uppercase">Delivered</span></div><div className="flex items-center gap-1.5"><div className="w-2.5 h-2.5 rounded-full bg-rose-500" /><span className="text-[10px] font-bold text-ink-800/60 uppercase">Failed</span></div></div>

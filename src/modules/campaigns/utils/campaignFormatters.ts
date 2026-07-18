@@ -1,7 +1,7 @@
 import type { CsvParsed } from "@modules/campaigns/types/campaign-form.types";
 import { formatCurrencySafe } from "@shared/config/currency";
 
-export function formatCurrency(value: unknown, currency = "₹") {
+export function formatCurrency(value: unknown, currency = "INR") {
   const amount = Number(value ?? 0);
   if (!Number.isFinite(amount)) return formatCurrencySafe(0, currency);
   return formatCurrencySafe(amount, currency);

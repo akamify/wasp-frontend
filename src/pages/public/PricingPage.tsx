@@ -3,12 +3,13 @@ import { Link, useLocation } from "react-router-dom";
 import { Card } from "@components/ui/Card";
 import { useAuth } from "@shared/providers/AuthContext";
 import { usePlans } from "@modules/billing/hooks/usePlans";
+import { formatCurrencyFromPaise } from "@shared/config/currency";
 import { cn } from "@shared/utils/cn";
 
 function formatPrice(plan: any) {
   const paise = plan?.pricing?.discountedPricePaise;
   if (paise == null || String(plan?.slug || "").toLowerCase() === "free") return "Free";
-  return `₹${Math.round(Number(paise) / 100).toLocaleString("en-IN")}`;
+  return formatCurrencyFromPaise(paise, "INR");
 }
 
 function cycleText(plan: any) {

@@ -5,11 +5,12 @@ import { Card } from "@components/ui/Card";
 import { Button } from "@components/ui/Button";
 import { Alert } from "@components/ui/Alert";
 import { AdminPagination } from "@pages/admin/components/AdminPagination";
+import { formatCurrencyFromPaise } from "@shared/config/currency";
 import { RefreshCw } from "lucide-react";
 
 function inr(paise?: number | null) {
   if (paise == null) return "-";
-  return `₹${Math.round(Number(paise) / 100).toLocaleString("en-IN")}`;
+  return formatCurrencyFromPaise(paise, "INR");
 }
 
 function ist(value?: string | null) {

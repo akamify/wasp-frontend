@@ -10,6 +10,7 @@ import { PlanCard } from "./plan/PlanCard";
 import { SalesContactModal } from "./plan/SalesContactModal";
 import { loadRazorpay } from "@shared/utils/loadRazorpay";
 import { BRAND_NAME } from "@shared/config/brand";
+import { formatCurrencyFromPaise } from "@shared/config/currency";
 
 type PlanItem = {
   id: string;
@@ -46,7 +47,7 @@ const TABS = [
 
 function inrFromPaise(paise?: number | null) {
   if (paise == null) return "Custom";
-  return `₹${Math.round(Number(paise) / 100).toLocaleString("en-IN")}`;
+  return formatCurrencyFromPaise(paise, "INR");
 }
 
 function formatDate(value?: string | Date | null) {
@@ -55,7 +56,7 @@ function formatDate(value?: string | Date | null) {
 }
 
 function paiseToRupees(value?: number | null) {
-  return `₹${Math.round(Number(value || 0) / 100).toLocaleString("en-IN")}`;
+  return formatCurrencyFromPaise(value || 0, "INR");
 }
 
 function daysRemaining(value?: string | Date | null) {

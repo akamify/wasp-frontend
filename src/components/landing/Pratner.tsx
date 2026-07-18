@@ -22,6 +22,7 @@ const partners = [
   "ThinkSync Vendor",
   "Apex Logistics",
   "Cloud Nine",
+  "Amila Gold",
 ];
 
 const container = {

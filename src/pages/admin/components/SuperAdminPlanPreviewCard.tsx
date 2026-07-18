@@ -1,4 +1,5 @@
 import { Check, X } from "lucide-react";
+import { formatCurrencyFromPaise, formatCurrencySafe } from "@shared/config/currency";
 import { cn } from "@shared/utils/cn";
 
 type Props = {
@@ -38,9 +39,9 @@ export function SuperAdminPlanPreviewCard(props: Props) {
     gold: "bg-amber-500",
     slate: "bg-slate-900",
   };
-  const price = props.discountedPriceRupees && String(props.discountedPriceRupees).trim() ? `₹${Number(props.discountedPriceRupees).toLocaleString("en-IN")}` : "Custom";
+  const price = props.discountedPriceRupees && String(props.discountedPriceRupees).trim() ? formatCurrencySafe(Number(props.discountedPriceRupees), "INR") : "Custom";
   const cycle = props.billingCycle && props.billingCycle !== "lifetime" ? `/${props.billingCycle}` : props.billingCycle === "lifetime" ? " lifetime" : "";
-  const saveText = props.badgeText || (Number(props.discountAmountPaise || 0) > 0 ? `Save ₹${Math.round(Number(props.discountAmountPaise || 0) / 100).toLocaleString("en-IN")}` : "");
+  const saveText = props.badgeText || (Number(props.discountAmountPaise || 0) > 0 ? `Save ${formatCurrencyFromPaise(props.discountAmountPaise || 0, "INR")}` : "");
   const limitChips = [
     props.limits?.messageRatePerSec ? `${props.limits.messageRatePerSec}/sec` : "",
     props.limits?.maxAgents ? `${props.limits.maxAgents} agents` : "",

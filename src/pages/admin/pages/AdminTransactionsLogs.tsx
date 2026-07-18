@@ -96,7 +96,7 @@ export default function AdminTransactionsLogsPage() {
                           <Wallet size={14} />
                        </div>
                        <span className="text-sm font-black text-slate-900">
-                         {formatCurrencySafe(Number(t.amount || 0), String(t.currency || "₹"))}
+                         {formatCurrencySafe(Number(t.amount || 0), String(t.currency || "INR"))}
                        </span>
                     </div>
                   </td>

@@ -5,7 +5,7 @@ export type TabKey = "overview" | "payment-links" | "history";
 
 export function inr(paise?: number | null) {
   if (paise == null) return "-";
-  return formatCurrencyFromPaise(paise, "₹");
+  return formatCurrencyFromPaise(paise, "INR");
 }
 
 export function toIst(value?: string | null) {

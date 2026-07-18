@@ -2,6 +2,7 @@ import { useRef } from "react";
 import { motion, useInView } from "framer-motion";
 
 import { BRAND_NAME } from "@shared/config/brand";
+import { formatCurrencyFromPaise } from "@shared/config/currency";
 import { usePlans } from "@modules/billing/hooks/usePlans";
 import { useAuth } from "@shared/providers/AuthContext";
 import { authAwareHref } from "@shared/utils/authNavigation";
@@ -9,7 +10,7 @@ import { authAwareHref } from "@shared/utils/authNavigation";
 function formatPlanPrice(plan: any) {
   const paise = plan?.pricing?.discountedPricePaise;
   if (paise == null) return "Custom";
-  return `₹${Math.round(Number(paise) / 100).toLocaleString("en-IN")}`;
+  return formatCurrencyFromPaise(paise, "INR");
 }
 
 const logos = ["Digital Adbird", "Maxify Global", "Think Sync", "Mahabali Education"];
