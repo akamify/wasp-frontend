@@ -214,7 +214,7 @@ export function LandingFooter() {
         <div className="grid gap-10 rounded-[2rem] border border-white/80 bg-white/80 p-5 shadow-xl shadow-slate-200/60 backdrop-blur-xl sm:p-7 lg:grid-cols-[1.25fr_1fr_1fr_1fr] lg:p-8">
           {/* Brand */}
           <div className="lg:pr-8">
-            <a href="#" className="group flex w-fit items-center gap-3">
+            <a href="/" className="group flex w-fit items-center gap-3">
               <div className="relative flex h-[52px] w-[52px] shrink-0 items-center justify-center overflow-hidden rounded-2xl border border-emerald-200/70 bg-gradient-to-br from-emerald-50 via-white to-cyan-50 p-1 shadow-[0_12px_35px_rgba(16,185,129,0.18)] transition-all duration-300 group-hover:scale-[1.03]">
                 <div className="absolute inset-0 bg-[radial-gradient(circle_at_25%_15%,rgba(52,211,153,0.35),transparent_35%),radial-gradient(circle_at_80%_80%,rgba(34,211,238,0.28),transparent_35%)]" />
                 <img

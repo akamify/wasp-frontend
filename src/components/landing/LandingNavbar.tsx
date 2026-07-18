@@ -131,22 +131,19 @@ export function LandingNavbar() {
       >
         {/* Brand */}
         <a
-          href="#"
+          href="/"
           onClick={closeMenu}
           className="group flex min-w-0 items-center gap-3"
           aria-label={`${BRAND_NAME} home`}
         >
-          <span className="relative flex h-[62px] w-[62px] shrink-0 items-center justify-center overflow-hidden ">
-            <span className="absolute inset-0" />
-
-            <img
-              src="/logo.png"
-              alt={BRAND_NAME}
-              width={500}
-              height={500}
-              className="relative z-10 h-full w-full object-contain transition-transform duration-300 group-hover:scale-105"
-            />
-          </span>
+          <div className="relative flex h-[52px] w-[52px] shrink-0 items-center justify-center overflow-hidden rounded-2xl border border-emerald-200/70 bg-gradient-to-br from-emerald-50 via-white to-cyan-50 p-1 shadow-[0_12px_35px_rgba(16,185,129,0.18)] transition-all duration-300 group-hover:scale-[1.03]">
+                <div className="absolute inset-0 bg-[radial-gradient(circle_at_25%_15%,rgba(52,211,153,0.35),transparent_35%),radial-gradient(circle_at_80%_80%,rgba(34,211,238,0.28),transparent_35%)]" />
+                <img
+                  src="/logo.png"
+                  alt={BRAND_NAME}
+                  className="relative z-10 h-full w-full rounded-[1.05rem] object-contain transition-transform duration-300 group-hover:scale-105"
+                />
+              </div>
 
           <span className="flex min-w-0 flex-col leading-none">
             <span className="truncate text-[17px] font-black tracking-[-0.03em] text-slate-950">
