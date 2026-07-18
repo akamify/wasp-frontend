@@ -11,6 +11,7 @@ import HelpCenterPage from "@pages/public/HelpCenter";
 import RaiseTicketPage from "@pages/public/RaiseTicket";
 import CareersPage from "@pages/public/Careers";
 import PublicPricingPage from "@pages/public/PricingPage";
+import FeaturesPage from "@pages/public/FeaturesPage";
 import { PublicCmsPage } from "@pages/public/PublicCmsPage";
 import CookiePolicyPage from "@pages/public/CookiePolicy";
 import DataDeletionPage from "@pages/public/DataDeletion";
@@ -26,6 +27,7 @@ export function publicRoutes() {
     <>
       <Route path="/" element={<LandingPage />} />
       <Route path="/about" element={<PublicCmsPage slug="about" />} />
+      <Route path="/features" element={<FeaturesPage />} />
       <Route path="/privacy-policy" element={<PrivacyPolicyPage />} />
       <Route path="/terms-of-service" element={<TermsOfServicePage />} />
       <Route path="/cookie-policy" element={<CookiePolicyPage />} />

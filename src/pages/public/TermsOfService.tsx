@@ -265,27 +265,7 @@ export default function TermsOfServicePage() {
           </div>
         </section>
 
-        <section className="grid gap-6 lg:grid-cols-[0.9fr_1.1fr]">
-          <div className="rounded-3xl border border-slate-200 bg-white/88 p-6 shadow-sm backdrop-blur-xl">
-            <h2 className="text-lg font-black text-slate-950">Important external rules</h2>
-            <p className="mt-2 text-sm leading-6 text-slate-600">
-              Your use of {BRAND_NAME} must stay consistent with official WhatsApp and Meta rules.
-            </p>
-            <div className="mt-5 space-y-3">
-              {officialLinks.map((link) => (
-                <a
-                  key={link.href}
-                  href={link.href}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="flex items-center justify-between gap-3 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-bold text-slate-800 transition-colors hover:border-emerald-200 hover:bg-emerald-50"
-                >
-                  <span>{link.label}</span>
-                  <ExternalLink className="h-4 w-4 shrink-0 text-emerald-600" />
-                </a>
-              ))}
-            </div>
-          </div>
+        <section className="grid gap-6 lg:grid-cols-1">
 
           <div className="rounded-3xl border border-amber-200 bg-amber-50/90 p-6 shadow-sm">
             <h2 className="text-lg font-black text-amber-950">Approval-sensitive reminders</h2>

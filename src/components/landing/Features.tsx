@@ -172,11 +172,11 @@ export function Features() {
                   <p className="mt-2 min-h-[42px] text-xs leading-5 text-slate-500">
                     {feature.text}
                   </p>
-
+{/*
                   <div className="mt-5 flex items-center gap-2 text-xs font-black text-emerald-700 opacity-0 transition-all duration-300 group-hover:translate-x-1 group-hover:opacity-100">
                     Learn more
                     <Send size={13} />
-                  </div>
+                  </div> */}
                 </div>
               </motion.div>
             );

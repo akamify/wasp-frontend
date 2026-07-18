@@ -148,12 +148,8 @@ export function Partner() {
                   </div>
 
                   <div className="relative mt-4 flex items-center justify-between border-t border-slate-100 pt-3">
-                    <span className="text-[10px] font-bold text-slate-400">
+                    <span className="text-[10px] font-bold text-slate-400 hover:text-emerald-600 transition-all duration-300">
                       WhatsApp Growth Partner
-                    </span>
-
-                    <span className="flex h-7 w-7 items-center justify-center rounded-full bg-slate-50 text-slate-500 transition-all duration-300 group-hover:bg-emerald-600 group-hover:text-white">
-                      <ArrowRight size={13} />
                     </span>
                   </div>
                 </div>
