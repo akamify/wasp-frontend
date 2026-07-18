@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from "react";
 import { AlertCircle, CheckCircle2, MessageCircle } from "lucide-react";
 import { API } from "@api/api";
 import { relativeTime } from "@components/layout/app-shell/utils";
+import { getCurrencySymbol } from "@shared/config/currency";
 import type { AppNotification } from "@components/layout/app-shell/types";
 
 export function useAppShellNotifications(notifOpen: boolean) {
@@ -49,7 +50,7 @@ export function useAppShellNotifications(notifOpen: boolean) {
           nextNotifications.push({ id: 3, title: "Delivery Issue", desc: `A message to ${latestFailed?.phone || latestFailed?.to || "recipient"} failed.`, time: latestFailed?.createdAt ? relativeTime(latestFailed.createdAt) : "just now", icon: <AlertCircle size={16} />, color: "text-rose-500", bg: "bg-rose-50", link: `/app/activity?status=failed&search=${encodeURIComponent(latestFailed?.phone || latestFailed?.to || "")}`, _eventTime: eventTime });
         }
         if ((wallet?.balance ?? 0) < 100) {
-          nextNotifications.push({ id: 4, title: "Wallet Low", desc: "Your balance is below ₹100. Recharge now to avoid interruption.", time: "now", icon: <AlertCircle size={16} />, color: "text-amber-500", bg: "bg-amber-50", link: "/app/wallet", _eventTime: Date.now() });
+          nextNotifications.push({ id: 4, title: "Wallet Low", desc: `Your balance is below ${getCurrencySymbol()}100. Recharge now to avoid interruption.`, time: "now", icon: <AlertCircle size={16} />, color: "text-amber-500", bg: "bg-amber-50", link: "/app/wallet", _eventTime: Date.now() });
         }
         setNotifications(nextNotifications.slice(0, 4));
       } catch {

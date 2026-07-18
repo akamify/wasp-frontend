@@ -13,6 +13,7 @@ import {
   Users,
   Wallet,
 } from "lucide-react";
+import { formatCurrencySafe } from "@shared/config/currency";
 
 const metrics = [
   { label: "Contacts", value: "12,840", trend: "+18.4%", icon: Users, color: "text-blue-600", bg: "bg-blue-50" },
@@ -166,7 +167,7 @@ function AccountSidebar() {
         <div className="flex items-center justify-between">
           <div>
             <div className="text-[10px] font-bold uppercase tracking-wider text-slate-500">Wallet Balance</div>
-            <div className="mt-1 text-2xl font-black text-slate-900">₹8,420.50</div>
+            <div className="mt-1 text-2xl font-black text-slate-900">{formatCurrencySafe(8420.5, "INR")}</div>
           </div>
           <div className="rounded-[5px] bg-brand-50 p-2.5 text-brand-700"><Wallet size={20} /></div>
         </div>
