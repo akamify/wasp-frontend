@@ -1,4 +1,7 @@
+import { useEffect, useState } from "react";
+
 const RUPEE_SYMBOL = "\u20b9";
+const listeners = new Set<(symbol: string) => void>();
 
 export const CURRENCY_CODE = (import.meta.env.VITE_CURRENCY_CODE as string) || "INR";
 export const CURRENCY_LOCALE = (import.meta.env.VITE_CURRENCY_LOCALE as string) || (CURRENCY_CODE === "INR" ? "en-IN" : "en-US");
@@ -9,10 +12,22 @@ let runtimeCurrencySymbol = CURRENCY_SYMBOL;
 export function setCurrencySymbolOverride(symbol?: string | null) {
     const next = String(symbol || "").trim();
     runtimeCurrencySymbol = next || CURRENCY_SYMBOL || RUPEE_SYMBOL;
+    listeners.forEach((listener) => listener(runtimeCurrencySymbol));
 }
 
 export function getCurrencySymbol() {
     return runtimeCurrencySymbol || CURRENCY_SYMBOL || RUPEE_SYMBOL;
+}
+
+export function useCurrencySymbol() {
+    const [symbol, setSymbol] = useState(getCurrencySymbol());
+    useEffect(() => {
+        listeners.add(setSymbol);
+        return () => {
+            listeners.delete(setSymbol);
+        };
+    }, []);
+    return symbol;
 }
 
 function isInrCurrency(currency?: string) {

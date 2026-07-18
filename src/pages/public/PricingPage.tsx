@@ -3,7 +3,7 @@ import { Link, useLocation } from "react-router-dom";
 import { Card } from "@components/ui/Card";
 import { useAuth } from "@shared/providers/AuthContext";
 import { usePlans } from "@modules/billing/hooks/usePlans";
-import { formatCurrencyFromPaise } from "@shared/config/currency";
+import { formatCurrencyFromPaise, useCurrencySymbol } from "@shared/config/currency";
 import { cn } from "@shared/utils/cn";
 import { LandingNavbar } from "@components/landing/LandingNavbar";
 import { LandingFooter } from "@components/landing/LandingFooter";
@@ -104,6 +104,7 @@ function PricingCard({ plan, token, selected }: { plan: any; token?: string | nu
 }
 
 export default function PublicPricingPage() {
+  useCurrencySymbol();
   const { token } = useAuth();
   const location = useLocation();
   const { items, loading, error } = usePlans();
@@ -119,7 +120,7 @@ export default function PublicPricingPage() {
           <div className="absolute left-1/2 top-10 h-72 w-72 -translate-x-1/2 rounded-full bg-emerald-300/20 blur-3xl" />
           <div className="relative mx-auto max-w-6xl text-center">
             <div className="mx-auto mb-5 inline-flex items-center gap-2 rounded-full border border-emerald-200 bg-white px-4 py-2 text-xs font-black uppercase tracking-[0.22em] text-emerald-700 shadow-sm"><Sparkles size={14} /> Pricing</div>
-            <h1 className="text-4xl font-black tracking-tight text-slate-950 md:text-6xl">Plans that scale with your WhatsApp growth</h1>
+            <h1 className="text-4xl font-black tracking-tight text-slate-950 md:text-6xl">Plans that scale with your Business growth</h1>
             <p className="mx-auto mt-5 max-w-2xl text-base font-semibold leading-7 text-slate-600 md:text-lg">Published plans from Super Admin appear here automatically. Users can pick a plan, sign up, and continue purchase from their workspace.</p>
             <div className="mt-7 flex flex-wrap items-center justify-center gap-3">
               <Link to={token ? "/app/plan" : "/register"} className="inline-flex h-11 items-center justify-center rounded-xl bg-emerald-600 px-6 text-sm font-black text-white transition-colors hover:bg-emerald-700">Get Started</Link>

@@ -2,7 +2,7 @@ import { useRef } from "react";
 import { motion, useInView } from "framer-motion";
 
 import { BRAND_NAME } from "@shared/config/brand";
-import { formatCurrencyFromPaise } from "@shared/config/currency";
+import { formatCurrencyFromPaise, useCurrencySymbol } from "@shared/config/currency";
 import { usePlans } from "@modules/billing/hooks/usePlans";
 import { useAuth } from "@shared/providers/AuthContext";
 import { authAwareHref } from "@shared/utils/authNavigation";
@@ -16,6 +16,7 @@ function formatPlanPrice(plan: any) {
 const logos = ["Digital Adbird", "Maxify Global", "Think Sync", "Mahabali Education"];
 
 export function CTASection() {
+  useCurrencySymbol();
   const { token, user } = useAuth();
   const startHref = authAwareHref({ token, role: user?.role, guestHref: "/register" });
   const signInHref = authAwareHref({ token, role: user?.role, guestHref: "/login" });
