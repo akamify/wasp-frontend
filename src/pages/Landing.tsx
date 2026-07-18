@@ -74,7 +74,7 @@ export default function LandingPage() {
     <div ref={containerRef} className="landing-root overflow-x-hidden">
       <Seo
         title={`${BRAND_NAME} | WhatsApp Business API, Campaigns & Automation`}
-        description="AiWizChat helps teams send WhatsApp campaigns, build automation flows, manage shared inbox conversations, sync templates, and track customer engagement."
+        description="Ai Wiz Chat helps teams send WhatsApp campaigns, build automation flows, manage shared inbox conversations, sync templates, and track customer engagement."
         canonical={canonicalUrl}
         ogImage={ogImage}
         ogImageAlt={`${BRAND_NAME} WhatsApp marketing platform`}

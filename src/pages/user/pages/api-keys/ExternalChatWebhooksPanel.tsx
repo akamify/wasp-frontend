@@ -156,7 +156,7 @@ export function ExternalChatWebhooksPanel() {
       ) : null}
 
       <div className="mb-4 rounded-[5px] border border-amber-100 bg-amber-50 p-3 text-[12px] font-semibold leading-5 text-amber-900">
-        Webhook signature verification is required for production inbox integrations. AiWizChat signs the exact JSON body with HMAC-SHA256 using the secret shown when the endpoint is created or rotated.
+        Webhook signature verification is required for production inbox integrations. Ai Wiz Chat signs the exact JSON body with HMAC-SHA256 using the secret shown when the endpoint is created or rotated.
       </div>
 
       <div className="grid gap-3 lg:grid-cols-[1fr_auto]">
