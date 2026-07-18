@@ -47,6 +47,10 @@ export function buildApiGroupPrimary(api, unwrap) {
       disable2fa: () => api.post("/auth/2fa/disable").then(unwrap),
       logout: () => api.post("/auth/logout").then(unwrap),
     },
+    liveDemo: {
+      slots: (params) => api.get("/public/live-demo/slots", { params }).then(unwrap),
+      create: (payload) => api.post("/public/live-demo", payload).then(unwrap),
+    },
     crm: {
       workspace: () => api.get("/crm/workspace").then(unwrap),
       dashboard: () => api.get("/crm/dashboard").then(unwrap),

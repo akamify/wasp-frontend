@@ -24,6 +24,7 @@ import AdminPagesPage from "@pages/admin/pages/AdminPages";
 import AdminSupportTicketsPage from "@pages/admin/pages/AdminSupportTickets";
 import AdminCareerApplicationsPage from "@pages/admin/pages/AdminCareerApplications";
 import AdminDocsPage from "@pages/admin/pages/AdminDocs";
+import AdminLiveDemoEnquiriesPage from "@pages/admin/pages/AdminLiveDemoEnquiries";
 
 function inSuperAdmin(page: ReactNode) {
   return <SuperAdminShell>{page}</SuperAdminShell>;
@@ -61,6 +62,7 @@ export function superAdminRoutes() {
       <Route path="/super-admin/pages" element={inSuperAdmin(<AdminPagesPage />)} />
       <Route path="/super-admin/support-tickets" element={inSuperAdmin(<AdminSupportTicketsPage />)} />
       <Route path="/super-admin/career-applications" element={inSuperAdmin(<AdminCareerApplicationsPage />)} />
+      <Route path="/super-admin/live-demo-enquiries" element={inSuperAdmin(<AdminLiveDemoEnquiriesPage />)} />
       <Route path="/super-admin/docs" element={inSuperAdmin(<AdminDocsPage />)} />
       <Route path="/super-admin/docs/create" element={inSuperAdmin(<AdminDocsPage />)} />
       <Route path="/super-admin/docs/:id/edit" element={inSuperAdmin(<AdminDocsPage />)} />

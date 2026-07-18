@@ -30,6 +30,7 @@ const PAGE_COMPONENTS: Record<string, string[]> = {
   "/admin/pages": ["pages.view", "pages.edit"],
   "/admin/support-tickets": ["tickets.view", "tickets.edit", "approval.panel"],
   "/admin/career-applications": ["careers.view", "careers.edit", "approval.panel"],
+  "/admin/live-demo-enquiries": ["live-demo.view", "live-demo.edit", "filters.view"],
 };
 
 const PAGE_ACTIONS: Record<string, string[]> = {
@@ -54,6 +55,7 @@ const PAGE_ACTIONS: Record<string, string[]> = {
   "/admin/pages": ["pages.manage"],
   "/admin/support-tickets": ["tickets.approve", "tickets.manage"],
   "/admin/career-applications": ["careers.approve", "careers.manage"],
+  "/admin/live-demo-enquiries": ["live-demo.manage"],
 };
 
 export default function SuperAdminAdminEditPage() {

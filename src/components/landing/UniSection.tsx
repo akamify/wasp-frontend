@@ -67,7 +67,7 @@ export function UniSection() {
         {/* Right Visual */}
         <motion.div variants={item} className="relative">
           <div className="relative rounded-[2rem] bg-slate-950 p-2 shadow-2xl">
-            <img src="/university.png" alt="Dashboard" className="rounded-[1.8rem] w-full" />
+            <img src="/university.png" alt="Education WhatsApp automation dashboard" className="rounded-[1.8rem] w-full" />
             
             {/* Floating Stats Card */}
             <div className="absolute -left-10 top-1/4 bg-white p-5 rounded-3xl shadow-2xl border border-slate-100 w-48">

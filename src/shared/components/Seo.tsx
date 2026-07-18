@@ -11,6 +11,7 @@ type SeoProps = {
     ogImageAlt?: string;
     ogSiteName?: string;
     twitterCard?: string;
+    structuredData?: Record<string, unknown> | Array<Record<string, unknown>>;
 };
 
 function setMetaTag(selector: string, attributes: Record<string, string>, content?: string) {
@@ -53,6 +54,7 @@ export function Seo({
     ogImageAlt,
     ogSiteName = BRAND_NAME,
     twitterCard = "summary_large_image",
+    structuredData,
 }: SeoProps) {
     useEffect(() => {
         if (title) document.title = title;
@@ -69,8 +71,12 @@ export function Seo({
         }
         setMetaTag('meta[property="og:type"]', { property: "og:type" }, ogType);
         setMetaTag('meta[property="og:site_name"]', { property: "og:site_name" }, ogSiteName);
+        if (canonical) {
+            setMetaTag('meta[property="og:url"]', { property: "og:url" }, canonical);
+        }
         if (ogImage) {
             setMetaTag('meta[property="og:image"]', { property: "og:image" }, ogImage);
+            setMetaTag('meta[name="twitter:image"]', { name: "twitter:image" }, ogImage);
         }
         if (ogImageAlt) {
             setMetaTag('meta[property="og:image:alt"]', { property: "og:image:alt" }, ogImageAlt);
@@ -84,13 +90,27 @@ export function Seo({
             setLinkTag("canonical", canonical);
         }
 
+        const scriptId = "structured-data-jsonld";
+        let script = document.head.querySelector<HTMLScriptElement>(`#${scriptId}`);
+        if (structuredData) {
+            if (!script) {
+                script = document.createElement("script");
+                script.id = scriptId;
+                script.type = "application/ld+json";
+                document.head.appendChild(script);
+            }
+            script.textContent = JSON.stringify(structuredData);
+        } else {
+            script?.remove();
+        }
+
         // Intentionally do not restore previous title on unmount. In a single-page
         // app multiple `Seo` components can mount/unmount and restoring the
         // previous title can cause stale titles to re-appear after navigation.
         // Cleanup is intentionally left empty so the most-recently mounted
         // `Seo` controls the document title.
         return () => { };
-    }, [canonical, description, ogImage, ogImageAlt, ogSiteName, ogType, robots, title, twitterCard]);
+    }, [canonical, description, ogImage, ogImageAlt, ogSiteName, ogType, robots, structuredData, title, twitterCard]);
 
     return null;
 }

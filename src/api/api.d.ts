@@ -41,6 +41,10 @@ export const API: {
     disable2fa(): Promise<any>;
     logout(): Promise<any>;
   };
+  liveDemo: {
+    slots(params?: any): Promise<any>;
+    create(payload: any): Promise<any>;
+  };
   admin: {
     overview(params?: any): Promise<any>;
     users(params?: any): Promise<any>;
@@ -101,6 +105,8 @@ export const API: {
     careerApplications(params?: any): Promise<any>;
     updateCareerApplication(id: string, payload: any): Promise<any>;
     downloadCareerResume(id: string): Promise<Blob>;
+    liveDemoEnquiries(params?: any): Promise<any>;
+    updateLiveDemoEnquiryStatus(id: string, payload: any): Promise<any>;
 
     crmWorkspace(workspaceId: string): Promise<any>;
     crmSetEnabled(workspaceId: string, enabled: boolean): Promise<any>;

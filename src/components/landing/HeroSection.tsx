@@ -210,19 +210,13 @@ function HeroYoutubeVideo() {
   );
 }
 
-export function HeroSection() {
+export function HeroSection({ onBookDemo }: { onBookDemo?: () => void }) {
   const { token, user } = useAuth();
 
   const startHref = authAwareHref({
     token,
     role: user?.role,
     guestHref: "/register",
-  });
-
-  const demoHref = authAwareHref({
-    token,
-    role: user?.role,
-    guestHref: "/login",
   });
 
   return (
@@ -322,8 +316,9 @@ export function HeroSection() {
               />
             </motion.a>
 
-            <motion.a
-              href={demoHref}
+            <motion.button
+              type="button"
+              onClick={onBookDemo}
               whileHover={{ y: -2, scale: 1.02 }}
               whileTap={{ scale: 0.98 }}
               className="group inline-flex h-12 w-full items-center justify-center gap-2.5 rounded-2xl border border-slate-200 bg-white/90 px-6 text-sm font-black text-slate-950 shadow-sm backdrop-blur-xl transition-all duration-300 hover:border-emerald-200 hover:bg-emerald-50 sm:h-14 sm:w-auto sm:gap-3 sm:px-7"
@@ -332,7 +327,7 @@ export function HeroSection() {
                 <Play size={12} fill="currentColor" />
               </span>
               Book Live Demo
-            </motion.a>
+            </motion.button>
           </motion.div>
 
           {/* Trust Line */}

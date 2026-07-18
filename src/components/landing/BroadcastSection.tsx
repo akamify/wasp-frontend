@@ -118,7 +118,7 @@ export function BrodcasSection() {
           <div className="relative w-full max-w-[460px] rounded-3xl bg-slate-100 p-2 shadow-2xl rotate-2 hover:rotate-0 transition-transform duration-500">
             <img
               src="/broadcast.png"
-              alt="Dashboard"
+              alt="WhatsApp broadcast campaign analytics dashboard"
               className="rounded-2xl w-full shadow-inner object-contain"
             />
 

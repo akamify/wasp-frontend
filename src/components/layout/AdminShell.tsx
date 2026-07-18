@@ -5,6 +5,7 @@ import {
   BarChart3,
   Bell,
   Briefcase,
+  CalendarClock,
   CreditCard,
   FileText,
   LayoutDashboard,
@@ -55,6 +56,7 @@ const NAV_ITEMS: AdminShellNavItem[] = [
   { to: "/admin/docs", label: "Docs", kicker: "knowledge", icon: FileText },
   { to: "/admin/support-tickets", label: "Support Tickets", kicker: "helpdesk", icon: Ticket },
   { to: "/admin/career-applications", label: "Careers", kicker: "hiring", icon: Briefcase },
+  { to: "/admin/live-demo-enquiries", label: "Live Demos", kicker: "bookings", icon: CalendarClock },
   { to: "/admin/profile", label: "Profile", kicker: "account", icon: User },
 ];
 

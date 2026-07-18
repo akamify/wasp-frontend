@@ -20,6 +20,7 @@ import AdminProfilePage from "@pages/admin/pages/AdminProfile";
 import AdminPagesPage from "@pages/admin/pages/AdminPages";
 import AdminCareerApplicationsPage from "@pages/admin/pages/AdminCareerApplications";
 import AdminDocsPage from "@pages/admin/pages/AdminDocs";
+import AdminLiveDemoEnquiriesPage from "@pages/admin/pages/AdminLiveDemoEnquiries";
 
 function inAdmin(page: ReactNode) {
   return <AdminShell>{page}</AdminShell>;
@@ -47,6 +48,7 @@ export function adminRoutes() {
       <Route path="/admin/support-tickets" element={inAdmin(<AdminSupportTicketsPage />)} />
       <Route path="/admin/pages" element={inAdmin(<AdminPagesPage />)} />
       <Route path="/admin/career-applications" element={inAdmin(<AdminCareerApplicationsPage />)} />
+      <Route path="/admin/live-demo-enquiries" element={inAdmin(<AdminLiveDemoEnquiriesPage />)} />
       <Route path="/admin/app-update" element={inAdmin(<AdminAppUpdatePage />)} />
       <Route path="/admin/docs" element={inAdmin(<AdminDocsPage />)} />
       <Route path="/admin/docs/create" element={inAdmin(<AdminDocsPage />)} />

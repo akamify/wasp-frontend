@@ -15,7 +15,7 @@ import {
   CreditCard,
 } from "lucide-react";
 
-const faqs = [
+export const landingFaqs = [
   {
     question: "What is a WhatsApp marketing platform?",
     answer:
@@ -108,7 +108,8 @@ export function Faqs() {
 
         {/* FAQ Accordion */}
         <motion.div variants={container} className="space-y-3">
-          {faqs.map((faq, index) => {
+          <h2 className="sr-only">Frequently Asked Questions</h2>
+          {landingFaqs.map((faq, index) => {
             const Icon = faq.icon;
             const isOpen = openIndex === index;
 

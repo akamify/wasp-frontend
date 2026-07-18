@@ -169,6 +169,12 @@ export function buildApiGroupAdmin(api, unwrap) {
         api
           .patch(`/admin/support-tickets/${id}/resolve`, payload || {})
           .then(unwrap),
+      liveDemoEnquiries: (params) =>
+        api.get("/admin/live-demo-enquiries", { params }).then(unwrap),
+      updateLiveDemoEnquiryStatus: (id, payload) =>
+        api
+          .patch(`/admin/live-demo-enquiries/${encodeURIComponent(id)}/status`, payload)
+          .then(unwrap),
       appUpdate: () => api.get("/admin/app-update").then(unwrap),
       changePassword: (payload) =>
         api.put("/admin/settings/password", payload).then(unwrap),

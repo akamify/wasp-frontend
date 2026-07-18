@@ -20,7 +20,7 @@ import { authenticatedHome } from "@shared/utils/authNavigation";
 const navLinks = [
   {
     label: "Features",
-    href: "#features",
+    href: "/features",
     description: "Automation, AI workflows, analytics",
   },
   {

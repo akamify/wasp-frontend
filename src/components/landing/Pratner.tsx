@@ -39,7 +39,7 @@ const item = {
 
 export function Partner() {
   return (
-    <section className="relative overflow-hidden bg-[#fafafa] px-4 py-14 sm:px-6 lg:px-8 lg:py-16">
+    <section className="relative overflow-hidden bg-[#fafafa] px-4 py-14 sm:px-0 sm:py-16">
       {/* Soft Background */}
       <div className="pointer-events-none absolute inset-0">
         <div className="absolute -top-24 left-1/2 h-[300px] w-[300px] -translate-x-1/2 rounded-full bg-emerald-100/80 blur-[110px]" />
@@ -55,7 +55,7 @@ export function Partner() {
         className="relative mx-auto max-w-7xl"
       >
         {/* Header */}
-        <div className="mb-10 flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
+        <div className="mb-10 flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between px-4 sm:px-6 lg:px-8">
           <div className="max-w-2xl">
             <motion.div
               variants={item}
@@ -123,7 +123,7 @@ export function Partner() {
               1024: { slidesPerView: 4.3 },
               1280: { slidesPerView: 5.2 },
             }}
-            className="!overflow-visible py-4"
+            className="!overflow-visible px-4"
           >
             {partners.map((partner, index) => (
               <SwiperSlide key={`${partner}-${index}`}>
