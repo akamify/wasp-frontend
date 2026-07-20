@@ -3,7 +3,7 @@ import { API } from "@api/api";
 import { getErrorMessage } from "./actions";
 
 export function useCampaignFormEffects(ctx: any) {
-  const { isOpen, setLimitsLoading, setMessagingTierRaw, setRemainingQuotaRaw, setWalletBalance, initialType, initialName, initialSelectedPhones, setType, setName, setContactQuery, setSelectedPhones, setAudienceMode, setSelectedTags, setAttributeFilters, setBodyVariableMappings, setMessageType, setTemplateId, setScheduleType, setScheduleDate, setScheduleTime, setScheduleWeekdays, setScheduleTimezone, setScheduleEndDate, setScheduleMaxOccurrences, setTagMatchMode, setHeaderVars, setBodyVars, setOtpCode, setButtonValues, setButtonValueByIndex, setButtonTtlMinutes, setFlowTokens, setFlowActionDataJson, setCsvBusy, setCsvFileName, setCsvText, setCsvPhoneColumn, setCsvBodyMap, setCsvHeaderMap, setCsvButtonMap, setDemoTo, setDemoBusy, selectedTemplate, summary, buttonTtlMinutes, buttonsNeedingValue, csvColumns, type, audienceMode, autoMapCsvIfEmpty, buttonValues, setEstimate, buildRecipientsForCurrentState, templateId, setEstimateLoading, toast, headerMediaOverride, csvText, selectedPhones, selectedTagList, attributeFilters, csvPhoneColumn, csvBodyMap, csvHeaderMap, csvButtonMap, headerVars, bodyVars, resolvedButtonValues, otpCode, flowActionDataJson, flowTokens, tagMatchMode, setWalletBalance: setWalletFromEstimate } = ctx;
+  const { isOpen, setLimitsLoading, setMessagingTierRaw, setRemainingQuotaRaw, setWalletBalance, initialType, initialName, initialSelectedPhones, setType, setName, setContactQuery, setSelectedPhones, setAudienceMode, setSelectedTags, setSelectedListId, setAttributeFilters, setBodyVariableMappings, setMessageType, setTemplateId, setScheduleType, setScheduleDate, setScheduleTime, setScheduleWeekdays, setScheduleTimezone, setScheduleEndDate, setScheduleMaxOccurrences, setTagMatchMode, setHeaderVars, setBodyVars, setOtpCode, setButtonValues, setButtonValueByIndex, setButtonTtlMinutes, setFlowTokens, setFlowActionDataJson, setCsvBusy, setCsvFileName, setCsvText, setCsvPhoneColumn, setCsvBodyMap, setCsvHeaderMap, setCsvButtonMap, setDemoTo, setDemoBusy, selectedTemplate, summary, buttonTtlMinutes, buttonsNeedingValue, csvColumns, type, audienceMode, autoMapCsvIfEmpty, buttonValues, setEstimate, buildRecipientsForCurrentState, templateId, setEstimateLoading, toast, headerMediaOverride, csvText, selectedPhones, selectedTagList, selectedListId, attributeFilters, csvPhoneColumn, csvBodyMap, csvHeaderMap, csvButtonMap, headerVars, bodyVars, resolvedButtonValues, otpCode, flowActionDataJson, flowTokens, tagMatchMode, setWalletBalance: setWalletFromEstimate } = ctx;
 
   useEffect(() => {
     if (!isOpen) return;
@@ -45,6 +45,7 @@ export function useCampaignFormEffects(ctx: any) {
     setScheduleMaxOccurrences("");
     setAudienceMode("manual");
     setSelectedTags({});
+    setSelectedListId("");
     setTagMatchMode("all");
     setAttributeFilters([]);
   }, [isOpen, initialType, initialName, initialSelectedPhones]);
@@ -53,7 +54,7 @@ export function useCampaignFormEffects(ctx: any) {
     if (!isOpen) return;
     const hasSeed = initialType !== undefined || initialName !== undefined || (Array.isArray(initialSelectedPhones) && initialSelectedPhones.length > 0);
     if (!hasSeed) { setType(null); setName(""); setContactQuery(""); setSelectedPhones({}); }
-    setMessageType("template"); setTemplateId(""); setScheduleType("immediate"); setScheduleDate(""); setScheduleTime(""); setScheduleWeekdays([]); setScheduleTimezone("Asia/Kolkata"); setScheduleEndDate(""); setScheduleMaxOccurrences(""); setAudienceMode("manual"); setSelectedTags({}); setTagMatchMode("all"); setAttributeFilters([]); setHeaderVars([]); setBodyVars([]); setBodyVariableMappings([]); setOtpCode(""); setButtonValues([]); setButtonValueByIndex({}); setButtonTtlMinutes([]); setFlowTokens([]); setFlowActionDataJson("{}"); setCsvBusy(false); setCsvFileName(""); setCsvText(""); setCsvPhoneColumn(""); setCsvBodyMap([]); setCsvHeaderMap([]); setCsvButtonMap([]); setDemoTo(""); setDemoBusy(false);
+    setMessageType("template"); setTemplateId(""); setScheduleType("immediate"); setScheduleDate(""); setScheduleTime(""); setScheduleWeekdays([]); setScheduleTimezone("Asia/Kolkata"); setScheduleEndDate(""); setScheduleMaxOccurrences(""); setAudienceMode("manual"); setSelectedTags({}); setSelectedListId(""); setTagMatchMode("all"); setAttributeFilters([]); setHeaderVars([]); setBodyVars([]); setBodyVariableMappings([]); setOtpCode(""); setButtonValues([]); setButtonValueByIndex({}); setButtonTtlMinutes([]); setFlowTokens([]); setFlowActionDataJson("{}"); setCsvBusy(false); setCsvFileName(""); setCsvText(""); setCsvPhoneColumn(""); setCsvBodyMap([]); setCsvHeaderMap([]); setCsvButtonMap([]); setDemoTo(""); setDemoBusy(false);
   }, [isOpen, initialType, initialName, initialSelectedPhones]);
 
   useEffect(() => {
@@ -82,10 +83,12 @@ export function useCampaignFormEffects(ctx: any) {
 
   useEffect(() => {
     if (!isOpen || !type || type === "api" || !templateId) { setEstimate(null); return; }
+    const isSavedListAudience = type === "broadcast" && audienceMode === "list";
     const isTagAudience = type === "broadcast" && audienceMode === "tags";
     const isAttributeAudience = type === "broadcast" && audienceMode === "attributes";
-    const recipients = isTagAudience || isAttributeAudience ? [] : buildRecipientsForCurrentState();
-    if (!isTagAudience && !isAttributeAudience && !recipients.length) { setEstimate(null); return; }
+    const recipients = isSavedListAudience || isTagAudience || isAttributeAudience ? [] : buildRecipientsForCurrentState();
+    if (!isSavedListAudience && !isTagAudience && !isAttributeAudience && !recipients.length) { setEstimate(null); return; }
+    if (isSavedListAudience && !selectedListId) { setEstimate(null); return; }
     if (isTagAudience && !selectedTagList.length) { setEstimate(null); return; }
     if (isAttributeAudience && !attributeFilters.length) { setEstimate(null); return; }
     let alive = true;
@@ -102,8 +105,15 @@ export function useCampaignFormEffects(ctx: any) {
           flowActionData: (() => { try { const parsed = JSON.parse(flowActionDataJson || "{}"); return Array.isArray(parsed) ? parsed : [parsed]; } catch { return []; } })(),
         };
         const res = await API.campaigns.estimate(
-          isTagAudience || isAttributeAudience
-            ? { templateId, audience: isTagAudience ? { mode: "tags", tags: selectedTagList, tagMatch: tagMatchMode, runtime: audienceRuntime } : { mode: "attributes", attributeFilters, runtime: audienceRuntime } }
+          isSavedListAudience || isTagAudience || isAttributeAudience
+            ? {
+                templateId,
+                audience: isSavedListAudience
+                  ? { mode: "list", listId: selectedListId, runtime: audienceRuntime }
+                  : isTagAudience
+                    ? { mode: "tags", tags: selectedTagList, tagMatch: tagMatchMode, runtime: audienceRuntime }
+                    : { mode: "attributes", attributeFilters, runtime: audienceRuntime },
+              }
             : { templateId, recipients }
         );
         if (!alive) return;
@@ -115,5 +125,5 @@ export function useCampaignFormEffects(ctx: any) {
       } finally { if (alive) setEstimateLoading(false); }
     }, 350);
     return () => { alive = false; window.clearTimeout(timer); };
-  }, [isOpen, type, audienceMode, templateId, selectedPhones, selectedTagList, tagMatchMode, attributeFilters, csvText, csvPhoneColumn, csvBodyMap, csvHeaderMap, csvButtonMap, headerVars, bodyVars, resolvedButtonValues, headerMediaOverride, otpCode, flowActionDataJson, buttonTtlMinutes, flowTokens, summary.headerFormat]);
+  }, [isOpen, type, audienceMode, templateId, selectedPhones, selectedTagList, selectedListId, tagMatchMode, attributeFilters, csvText, csvPhoneColumn, csvBodyMap, csvHeaderMap, csvButtonMap, headerVars, bodyVars, resolvedButtonValues, headerMediaOverride, otpCode, flowActionDataJson, buttonTtlMinutes, flowTokens, summary.headerFormat]);
 }

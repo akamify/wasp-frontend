@@ -300,6 +300,20 @@ export function buildApiGroupSecondary(api, unwrap, API_BASE_URL) {
         api.post(`/campaigns/${id}/action`, { action }).then(unwrap),
       create: (payload) => api.post("/campaigns", payload).then(unwrap),
     },
+    audiences: {
+      list: () => api.get("/audiences").then(unwrap),
+      get: (id) => api.get(`/audiences/${encodeURIComponent(id)}`).then(unwrap),
+      create: (payload) => api.post("/audiences", payload).then(unwrap),
+      update: (id, payload) => api.put(`/audiences/${encodeURIComponent(id)}`, payload).then(unwrap),
+      remove: (id) => api.delete(`/audiences/${encodeURIComponent(id)}`).then(unwrap),
+      preview: (id, params) => api.get(`/audiences/${encodeURIComponent(id)}/preview`, { params }).then(unwrap),
+    },
+    savedFilters: {
+      list: () => api.get("/saved-filters").then(unwrap),
+      create: (payload) => api.post("/saved-filters", payload).then(unwrap),
+      update: (id, payload) => api.put(`/saved-filters/${encodeURIComponent(id)}`, payload).then(unwrap),
+      remove: (id) => api.delete(`/saved-filters/${encodeURIComponent(id)}`).then(unwrap),
+    },
     reports: {
       apiCampaigns: (params) =>
         api.get("/reports/api-campaigns", { params }).then(unwrap),
@@ -336,6 +350,12 @@ export function buildApiGroupSecondary(api, unwrap, API_BASE_URL) {
     contacts: {
       list: (params) => api.get("/contacts", { params }).then(unwrap),
       tags: () => api.get("/contacts/tags").then(unwrap),
+      lists: () => api.get("/contacts/lists").then(unwrap),
+      createList: (payload) => api.post("/contacts/lists", payload).then(unwrap),
+      updateList: (id, payload) =>
+        api.patch(`/contacts/lists/${encodeURIComponent(id)}`, payload).then(unwrap),
+      removeList: (id) =>
+        api.delete(`/contacts/lists/${encodeURIComponent(id)}`).then(unwrap),
       attributes: (params) =>
         api.get("/contacts/attributes", { params }).then(unwrap),
       attribute: (key) =>
@@ -371,6 +391,9 @@ export function buildApiGroupSecondary(api, unwrap, API_BASE_URL) {
           .delete(`/contacts/${id}/attributes/${encodeURIComponent(key)}`)
           .then(unwrap),
       remove: (id) => api.delete(`/contacts/${id}`).then(unwrap),
+      filterPreview: (payload) => api.post("/contacts/filter-preview", payload).then(unwrap),
+      exportByFilter: (payload) =>
+        api.post("/contacts/export", payload, { responseType: "blob" }),
       exportCsv: (contactIds) =>
         api.post(
           "/contacts/export-csv",

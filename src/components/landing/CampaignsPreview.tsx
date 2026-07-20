@@ -13,7 +13,7 @@ export function CampaignsPreview({ inView }: { inView: boolean }) {
   const campaigns = useMemo(
     () => (active === "broadcast" ? broadcastCampaigns : active === "csv" ? csvCampaigns : apiCampaigns),
     [active, apiCampaigns],
-  );
+  );  
 
   return (
     <div className="rounded-2xl bg-slate-50 border border-ink-900/10 p-5 overflow-hidden w-full">

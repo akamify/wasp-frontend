@@ -330,6 +330,20 @@ export const API: {
     action(id: string, action: "pause" | "resume" | "stop" | "complete"): Promise<any>;
     create(payload: any): Promise<any>;
   };
+  audiences: {
+    list(): Promise<any>;
+    get(id: string): Promise<any>;
+    create(payload: any): Promise<any>;
+    update(id: string, payload: any): Promise<any>;
+    remove(id: string): Promise<any>;
+    preview(id: string, params?: any): Promise<any>;
+  };
+  savedFilters: {
+    list(): Promise<any>;
+    create(payload: any): Promise<any>;
+    update(id: string, payload: any): Promise<any>;
+    remove(id: string): Promise<any>;
+  };
   reports: {
     apiCampaigns(params?: any): Promise<any>;
     apiCampaign(id: string): Promise<any>;
@@ -352,6 +366,10 @@ export const API: {
   contacts: {
     list(params?: any): Promise<any>;
     tags(): Promise<any>;
+    lists(): Promise<any>;
+    createList(payload: any): Promise<any>;
+    updateList(id: string, payload: any): Promise<any>;
+    removeList(id: string): Promise<any>;
     attributes(params?: any): Promise<any>;
     attribute(key: string): Promise<any>;
     createAttribute(payload: any): Promise<any>;
@@ -366,6 +384,8 @@ export const API: {
     replaceAttributes(id: string, attributes: Record<string, unknown>, preserveLegacy?: boolean): Promise<any>;
     removeAttributeValue(id: string, key: string): Promise<any>;
     remove(id: string): Promise<any>;
+    filterPreview(payload: any): Promise<any>;
+    exportByFilter(payload: any): Promise<any>;
     exportCsv(contactIds: string[]): Promise<any>;
   };
   automation: {

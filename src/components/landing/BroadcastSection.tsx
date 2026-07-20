@@ -113,7 +113,7 @@ export function BrodcasSection() {
         {/* Visual Showcase */}
         <motion.div
           variants={item}
-          className="relative hidden lg:flex justify-center"
+          className="relative lg:flex justify-center"
         >
           <div className="relative w-full max-w-[460px] rounded-3xl bg-slate-100 p-2 shadow-2xl rotate-2 hover:rotate-0 transition-transform duration-500">
             <img

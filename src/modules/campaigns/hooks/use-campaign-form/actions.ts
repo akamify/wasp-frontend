@@ -46,7 +46,7 @@ function zonedDateTimeToUtc(date: string, time: string, timezone: string) {
 export function createCampaignFormActions(ctx: any) {
   const {
     toast, type, selectedTemplate, summary, headerVars, bodyVars, buttonsNeedingValue, buttonValueByIndex, otpCode, csvPhoneColumn, setCsvPhoneColumn, setCsvBodyMap, setCsvHeaderMap, setSelectedPhones, headerMediaOverride, resolvedButtonValues, flowActionDataJson, csvParsed, csvHeaderMap, csvButtonMap, buttonTtlMinutes, flowTokens, csvBodyMap, setHeaderMediaUploading, setHeaderMediaOverride, setHeaderVars, setBusy, messageType, name, templateId, scheduleType, scheduleDate, scheduleTime, scheduleWeekdays, scheduleTimezone, scheduleEndDate, scheduleMaxOccurrences, onSuccess, onClose, estimate,
-    audienceMode, selectedTagList, tagMatchedContacts, tagMatchMode, attributeFilters, bodyVariableMappings,
+    audienceMode, selectedTagList, tagMatchedContacts, selectedListId, tagMatchMode, attributeFilters, bodyVariableMappings,
   } = ctx;
 
   const missingBroadcastInputs = () => {
@@ -210,12 +210,15 @@ export function createCampaignFormActions(ctx: any) {
       };
       const audience = audienceMode === "tags"
         ? { mode: "tags", tags: selectedTagList, tagMatch: tagMatchMode, runtime: audienceRuntime }
+        : audienceMode === "list"
+          ? { mode: "list", listId: selectedListId, runtime: audienceRuntime }
         : audienceMode === "attributes"
           ? { mode: "attributes", attributeFilters, runtime: audienceRuntime }
           : { mode: "manual" };
       if (type === "api" && schedule) throw new Error("Scheduling is only available for broadcast and CSV campaigns");
       if (type === "api") { await API.campaigns.create({ name: campaignName, type, templateId }); toast("API campaign created. Your integration will provide contacts at send time.", "success"); onSuccess(); onClose(); return; }
-      if (type !== "broadcast" && audienceMode !== "manual") throw new Error("Tag and attribute audiences are only available for broadcast campaigns");
+      if (type !== "broadcast" && audienceMode !== "manual") throw new Error("Saved audiences, tags, and attribute audiences are only available for broadcast campaigns");
+      if (audienceMode === "list" && !selectedListId) throw new Error("Select a saved audience");
       if (audienceMode === "tags" && !selectedTagList.length) throw new Error("Select at least one tag");
       if (audienceMode === "attributes" && !attributeFilters.length) throw new Error("Add at least one attribute filter");
       const recipients = audienceMode === "manual" ? buildRecipientsForCurrentState() : [];

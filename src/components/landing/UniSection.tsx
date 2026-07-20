@@ -78,7 +78,7 @@ export function UniSection() {
             />
             
             {/* Floating Stats Card */}
-            <div className="absolute -left-10 top-1/4 bg-white p-5 rounded-3xl shadow-2xl border border-slate-100 w-48">
+            <div className="absolute hidden lg:flex -left-10 top-1/4 bg-white p-5 rounded-3xl shadow-2xl border border-slate-100 w-48">
               <p className="text-[10px] font-bold text-slate-400 uppercase">Conversion Rate</p>
               <p className="text-3xl font-black text-slate-950">+42%</p>
             </div>

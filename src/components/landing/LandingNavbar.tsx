@@ -119,11 +119,11 @@ export function LandingNavbar() {
       initial={{ y: -90, opacity: 0 }}
       animate={{ y: 0, opacity: 1 }}
       transition={{ duration: 0.65, ease: [0.22, 1, 0.36, 1] }}
-      className="fixed inset-x-0 top-0 z-50 px-3 pt-3 sm:px-5"
+      className="fixed inset-x-0 top-0 z-50 px-2 pt-2 sm:px-4"
     >
       <nav
         className={[
-          "mx-auto flex h-[72px] max-w-7xl items-center justify-between rounded-2xl px-4 transition-all duration-300 sm:px-5 lg:px-6",
+          "mx-auto flex h-[72px] max-w-8xl items-center justify-between rounded-2xl px-2 transition-all duration-300 sm:px-2 lg:px-3",
           scrolled
             ? "border border-slate-200/80 bg-white/82 shadow-[0_24px_90px_rgba(15,23,42,0.14)] backdrop-blur-2xl"
             : "border border-white/60 bg-white/58 shadow-[0_18px_70px_rgba(15,23,42,0.08)] backdrop-blur-xl",
