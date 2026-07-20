@@ -22,48 +22,56 @@ const features = [
     text: "Send WhatsApp campaigns to imported contacts with approved templates.",
     icon: Megaphone,
     tag: "Marketing",
+    highlighted: true,
   },
   {
     title: "Drag & Drop Flow",
     text: "Build automation journeys visually without writing code.",
     icon: GitBranch,
     tag: "No-Code",
+    highlighted: true,
   },
   {
     title: "Smart Chat Bot",
     text: "Reply instantly, qualify leads, and guide users automatically.",
     icon: Bot,
     tag: "Automation",
+    highlighted: true,
   },
   {
     title: "Template Messaging",
     text: "Use approved templates for offers, reminders, updates, and follow-ups.",
     icon: MessageSquareText,
     tag: "WhatsApp API",
+    highlighted: true,
   },
   {
     title: "CTA Buttons",
     text: "Add quick reply, call, website, and form buttons to increase actions.",
     icon: MousePointerClick,
     tag: "Conversion",
+    highlighted: true,
   },
   {
     title: "Campaign Scheduling",
     text: "Schedule seasonal, festival, and reminder campaigns in advance.",
     icon: CalendarClock,
     tag: "Planning",
+    highlighted: true,
   },
   {
     title: "Contact Import",
     text: "Upload contacts, segment users, and launch targeted broadcasts.",
     icon: UsersRound,
     tag: "Audience",
+    highlighted: true,
   },
   {
     title: "Analytics Tracking",
     text: "Track campaign reach, replies, clicks, and customer engagement.",
     icon: BarChart3,
     tag: "Reports",
+    highlighted: true,
   },
 ];
 
@@ -71,13 +79,21 @@ const container = {
   hidden: { opacity: 0 },
   show: {
     opacity: 1,
-    transition: { staggerChildren: 0.07 },
+    transition: {
+      staggerChildren: 0.07,
+    },
   },
 };
 
 const item = {
-  hidden: { opacity: 0, y: 14 },
-  show: { opacity: 1, y: 0 },
+  hidden: {
+    opacity: 0,
+    y: 14,
+  },
+  show: {
+    opacity: 1,
+    y: 0,
+  },
 };
 
 export function Features() {
@@ -86,7 +102,9 @@ export function Features() {
       {/* Background */}
       <div className="pointer-events-none absolute inset-0 -z-10">
         <div className="absolute left-1/2 top-0 h-[320px] w-[320px] -translate-x-1/2 rounded-full bg-emerald-100/80 blur-[110px]" />
+
         <div className="absolute bottom-0 right-0 h-[280px] w-[280px] rounded-full bg-lime-100/80 blur-[110px]" />
+
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_1px_1px,#16a34a_1px,transparent_0)] bg-[size:34px_34px] opacity-[0.05]" />
       </div>
 
@@ -94,7 +112,10 @@ export function Features() {
         variants={container}
         initial="hidden"
         whileInView="show"
-        viewport={{ once: true, amount: 0.25 }}
+        viewport={{
+          once: true,
+          amount: 0.25,
+        }}
         className="mx-auto w-full max-w-7xl"
       >
         {/* Header */}
@@ -131,9 +152,9 @@ export function Features() {
           variants={container}
           className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4"
         >
-          {features.map((feature, index) => {
+          {features.map((feature) => {
             const Icon = feature.icon;
-            const isHighlighted = index === 0 || index === 1 || index === 2;
+            const isHighlighted = feature.highlighted;
 
             return (
               <motion.div
@@ -172,11 +193,13 @@ export function Features() {
                   <p className="mt-2 min-h-[42px] text-xs leading-5 text-slate-500">
                     {feature.text}
                   </p>
-{/*
+
+                  {/*
                   <div className="mt-5 flex items-center gap-2 text-xs font-black text-emerald-700 opacity-0 transition-all duration-300 group-hover:translate-x-1 group-hover:opacity-100">
                     Learn more
                     <Send size={13} />
-                  </div> */}
+                  </div>
+                  */}
                 </div>
               </motion.div>
             );
@@ -188,17 +211,20 @@ export function Features() {
           variants={item}
           className="mx-auto mt-8 flex max-w-4xl flex-wrap items-center justify-center gap-3 rounded-3xl border border-slate-200 bg-white/80 p-3 shadow-sm backdrop-blur-xl"
         >
-          {["Official API", "Fast Setup", "No-Code Builder", "Smart Reports"].map(
-            (label) => (
-              <span
-                key={label}
-                className="inline-flex items-center gap-2 rounded-full bg-slate-50 px-3 py-2 text-xs font-bold text-slate-600"
-              >
-                <Zap size={13} className="text-emerald-600" />
-                {label}
-              </span>
-            )
-          )}
+          {[
+            "Official API",
+            "Fast Setup",
+            "No-Code Builder",
+            "Smart Reports",
+          ].map((label) => (
+            <span
+              key={label}
+              className="inline-flex items-center gap-2 rounded-full bg-slate-50 px-3 py-2 text-xs font-bold text-slate-600"
+            >
+              <Zap size={13} className="text-emerald-600" />
+              {label}
+            </span>
+          ))}
         </motion.div>
       </motion.div>
     </section>

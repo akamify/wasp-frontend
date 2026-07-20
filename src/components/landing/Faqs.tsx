@@ -170,10 +170,10 @@ export function Faqs() {
 
       {/* FAQ Layout */}
       <div className="mx-auto max-w-6xl">
-        <div className="grid grid-cols-1 items-start gap-10 lg:grid-cols-12">
+        <div className="grid grid-cols-1 items-start gap-10 lg:grid-cols-1">
 
           {/* Contact Support */}
-          <div className="h-fit lg:col-span-4">
+          {/* <div className="h-fit lg:col-span-4">
             <div className="sticky top-24">
               <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-xl shadow-slate-200/50">
                 <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-2xl bg-slate-900 text-white">
@@ -198,7 +198,7 @@ export function Faqs() {
                 </button>
               </div>
             </div>
-          </div>
+          </div> */}
 
           {/* FAQ List */}
           <div className="lg:col-span-8">
