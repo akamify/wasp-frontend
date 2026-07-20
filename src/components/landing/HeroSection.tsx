@@ -291,16 +291,14 @@ function HeroYoutubeVideo() {
               >
                 <img
                   src={YOUTUBE_THUMBNAIL_SRC}
-                  alt="WhatsApp automation dashboard product demo"
+                  alt="Akamify WhatsApp automation demo video thumbnail"
                   className="
                     h-full w-full select-none object-cover
                     transition-transform duration-700
                     group-hover:scale-[1.035]
                   "
-                  alt="Akamify WhatsApp automation demo video thumbnail"
                   width={1280}
                   height={720}
-                  className="h-full w-full select-none object-cover transition-transform duration-700 group-hover:scale-[1.04]"
                   draggable={false}
                   fetchPriority="high"
                   decoding="async"
@@ -641,27 +639,6 @@ export function HeroSection({ onBookDemo }: { onBookDemo?: () => void }) {
               />
             </motion.a>
 
-            <motion.a
-              href={demoHref}
-              whileHover={{
-                y: -2,
-                scale: 1.015,
-              }}
-              whileTap={{
-                scale: 0.98,
-              }}
-              className="
-                group inline-flex h-12 w-full
-                items-center justify-center gap-2.5
-                rounded-2xl border border-slate-200
-                bg-white/90 px-6
-                text-sm font-black text-slate-950
-                shadow-sm backdrop-blur-xl
-                transition-all duration-300
-                hover:border-emerald-200
-                hover:bg-emerald-50
-                sm:h-14 sm:w-auto sm:min-w-[180px]
-              "
             <motion.button
               type="button"
               onClick={onBookDemo}
