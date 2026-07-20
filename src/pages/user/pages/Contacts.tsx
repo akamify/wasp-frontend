@@ -1,10 +1,18 @@
-﻿import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { API } from "@api/api";
 import { Button } from "@components/ui/Button";
 import { Alert } from "@components/ui/Alert";
-import { Braces, RefreshCcw, Plus } from "lucide-react";
+import { Input } from "@shared/ui/Input";
+import { Modal } from "@shared/ui/Modal";
+import { Textarea } from "@shared/ui/Textarea";
+import { RefreshCcw, Plus, Layers3 } from "lucide-react";
 import { cn } from "@shared/utils/cn";
 import { useToast } from "@shared/providers/ToastContext";
+import { FilterBuilder } from "@modules/audiences/components/FilterBuilder";
+import { DEFAULT_AUDIENCE_GROUP } from "@modules/audiences/constants";
+import type { AudienceFieldDefinition, AudienceGroup } from "@modules/audiences/types";
+import { Select } from "@shared/ui/Select";
 import { ContactFormModal } from "./contacts/ContactFormModal";
 import { ContactsTableCard } from "./contacts/ContactsTableCard";
 import { ContactAnalyticsModal } from "./contacts/ContactAnalyticsModal";
@@ -18,10 +26,16 @@ import type { AttributeDefinition } from "./Attributes";
 
 export default function ContactsPage() {
   const { toast } = useToast();
+  const navigate = useNavigate();
   const tableRef = useRef<HTMLDivElement>(null);
   const isInitialLoad = useRef(true);
 
   const [contacts, setContacts] = useState<Contact[]>([]);
+  const [advancedContacts, setAdvancedContacts] = useState<Contact[]>([]);
+  const [fieldCatalog, setFieldCatalog] = useState<AudienceFieldDefinition[]>([]);
+  const [filterTree, setFilterTree] = useState<AudienceGroup>(DEFAULT_AUDIENCE_GROUP);
+  const [previewTotal, setPreviewTotal] = useState(0);
+  const [previewLoading, setPreviewLoading] = useState(false);
   const [definitions, setDefinitions] = useState<AttributeDefinition[]>([]);
   const [loading, setLoading] = useState(true);
   const [syncing, setSyncing] = useState(false);
@@ -40,11 +54,19 @@ export default function ContactsPage() {
   const [multiSelected, setMultiSelected] = useState<Record<string, boolean>>({});
   const [filter, setFilter] = useState<"all" | "has-tags" | "has-company" | "recent-activity">("all");
   const [sort, setSort] = useState<"name" | "company" | "tags" | "recent" | "oldest">("recent");
+  const [saveAudienceOpen, setSaveAudienceOpen] = useState(false);
+  const [saveAudienceMode, setSaveAudienceMode] = useState<"dynamic" | "static">("dynamic");
+  const [saveAudienceName, setSaveAudienceName] = useState("");
+  const [saveAudienceDescription, setSaveAudienceDescription] = useState("");
+  const [saveAudienceBusy, setSaveAudienceBusy] = useState(false);
 
   const pageSize = 25;
-  const totalPages = Math.max(1, Math.ceil(total / pageSize));
-  const allSelected = contacts.length > 0 && contacts.every((c) => multiSelected[c._id]);
-  const someSelected = contacts.some((c) => multiSelected[c._id]);
+  const hasAdvancedFilters = filterTree.conditions.length > 0;
+  const displayedContacts = hasAdvancedFilters ? advancedContacts : contacts;
+  const displayedTotal = hasAdvancedFilters ? previewTotal : total;
+  const totalPages = Math.max(1, Math.ceil(displayedTotal / pageSize));
+  const allSelected = displayedContacts.length > 0 && displayedContacts.every((c) => multiSelected[c._id]);
+  const someSelected = displayedContacts.some((c) => multiSelected[c._id]);
   const selectedCount = Object.values(multiSelected).filter(Boolean).length;
 
   async function load() {
@@ -52,12 +74,14 @@ export default function ContactsPage() {
     if (isFirst) setLoading(true);
     setSyncing(true);
     try {
-      const [res, attributesResult] = await Promise.all([
+      const [res, attributesResult, savedFiltersResult] = await Promise.all([
         API.contacts.list({ page, limit: pageSize, search: search || undefined }),
         API.contacts.attributes({ includeInactive: true }),
+        API.savedFilters.list(),
       ]);
       setContacts(res.contacts || []);
       setDefinitions(attributesResult.definitions || []);
+      setFieldCatalog(Array.isArray(savedFiltersResult?.fieldCatalog) ? savedFiltersResult.fieldCatalog : []);
       setTotal(Number(res.total || 0));
       if (!isFirst) toast("Contacts refreshed", "success");
     } catch (e: any) {
@@ -77,7 +101,28 @@ export default function ContactsPage() {
     if (tableRef.current && page > 1) tableRef.current.scrollIntoView({ behavior: "smooth", block: "start" });
   }, [page]);
 
-  const processedContacts = contacts
+  useEffect(() => {
+    if (!fieldCatalog.length || !hasAdvancedFilters) {
+      setAdvancedContacts([]);
+      setPreviewTotal(0);
+      return;
+    }
+    const handle = window.setTimeout(async () => {
+      setPreviewLoading(true);
+      try {
+        const preview = await API.contacts.filterPreview({ filterTree, page, limit: pageSize });
+        setAdvancedContacts(preview.contacts || []);
+        setPreviewTotal(Number(preview.total || 0));
+      } catch (e: any) {
+        toast(e?.response?.data?.message || "Failed to preview contacts", "error");
+      } finally {
+        setPreviewLoading(false);
+      }
+    }, 350);
+    return () => window.clearTimeout(handle);
+  }, [fieldCatalog, hasAdvancedFilters, filterTree, page, toast]);
+
+  const processedContacts = displayedContacts
     .filter((c) => {
       if (filter === "has-tags") return c.tags && c.tags.length > 0;
       if (filter === "has-company") return c.company && c.company.trim();
@@ -157,6 +202,7 @@ export default function ContactsPage() {
     try {
       await Promise.all(selectedIds.map((id) => API.contacts.remove(id)));
       setContacts((curr) => curr.filter((c) => !multiSelected[c._id]));
+      setAdvancedContacts((curr) => curr.filter((c) => !multiSelected[c._id]));
       setMultiSelected({});
       toast(`${selectedIds.length} contacts deleted.`, "success");
     } catch {
@@ -195,6 +241,31 @@ export default function ContactsPage() {
     await load();
   }
 
+  async function saveAudienceDefinition(e: React.FormEvent) {
+    e.preventDefault();
+    const contactIds = Object.keys(multiSelected).filter((id) => multiSelected[id]);
+    if (saveAudienceMode === "static" && !contactIds.length) {
+      return toast("Select contacts first for a static audience.", "error");
+    }
+    setSaveAudienceBusy(true);
+    try {
+      await API.audiences.create(
+        saveAudienceMode === "dynamic"
+          ? { name: saveAudienceName, description: saveAudienceDescription, type: "dynamic", filterTree }
+          : { name: saveAudienceName, description: saveAudienceDescription, type: "static", contactIds }
+      );
+      toast("Audience saved.", "success");
+      setSaveAudienceOpen(false);
+      setSaveAudienceName("");
+      setSaveAudienceDescription("");
+      setSaveAudienceMode("dynamic");
+    } catch (e: any) {
+      toast(e?.response?.data?.message || "Failed to save audience", "error");
+    } finally {
+      setSaveAudienceBusy(false);
+    }
+  }
+
   async function openAnalytics(contact: Contact) {
     setAnalyticsOpen(true);
     setAnalyticsLoading(true);
@@ -215,7 +286,7 @@ export default function ContactsPage() {
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div className="p-2">
           <h1 className="text-4xl font-black tracking-tight text-ink-900">Audience</h1>
-          <p className="mt-2 text-sm font-semibold uppercase tracking-widest text-ink-800/60">Manage your customer records and chats</p>
+          <p className="mt-2 text-sm font-semibold uppercase tracking-widest text-ink-800/60">Manage your customer records, live filters, and saved segments</p>
         </div>
         <div className="flex items-center gap-3">
           <Button variant="ghost" onClick={load} disabled={loading || syncing} className="h-10 gap-2 border border-ink-900/10 bg-white">
@@ -227,19 +298,30 @@ export default function ContactsPage() {
 
       {error ? <Alert>{error}</Alert> : null}
 
+      <FilterBuilder value={filterTree} fieldCatalog={fieldCatalog} matchCount={displayedTotal} loading={previewLoading} onChange={setFilterTree} />
+
+      <div className="flex flex-wrap items-center justify-end gap-3">
+        <Button variant="ghost" onClick={() => navigate("/app/audiences")} className="h-10 gap-2 border border-ink-900/10 bg-white">
+          <Layers3 size={16} /> Open Audience Manager
+        </Button>
+        <Button onClick={() => setSaveAudienceOpen(true)} className="h-10 gap-2">
+          <Layers3 size={16} /> Save Audience
+        </Button>
+      </div>
+
       <ContactsTableCard
-        loading={loading}
+        loading={loading || previewLoading}
         syncing={syncing}
         saving={saving}
         search={search}
         filter={filter}
         sort={sort}
-        contacts={contacts}
+        contacts={displayedContacts}
         definitions={definitions.filter((definition) => definition.active && definition.visible)}
         processedContacts={processedContacts}
         page={page}
         totalPages={totalPages}
-        total={total}
+        total={displayedTotal}
         allSelected={allSelected}
         someSelected={someSelected}
         selectedCount={selectedCount}
@@ -251,7 +333,7 @@ export default function ContactsPage() {
         onSortChange={setSort}
         onToggleAll={(checked) => {
           const next: Record<string, boolean> = {};
-          if (checked) contacts.forEach((c) => (next[c._id] = true));
+          if (checked) displayedContacts.forEach((c) => (next[c._id] = true));
           setMultiSelected(next);
         }}
         onToggleOne={(id) => setMultiSelected((p) => ({ ...p, [id]: !p[id] }))}
@@ -286,7 +368,69 @@ export default function ContactsPage() {
           setContactAnalytics(null);
         }}
       />
+
+      <Modal
+        open={saveAudienceOpen}
+        onClose={() => {
+          if (saveAudienceBusy) return;
+          setSaveAudienceOpen(false);
+          setSaveAudienceName("");
+          setSaveAudienceDescription("");
+          setSaveAudienceMode("dynamic");
+        }}
+        title="Save Audience"
+        className="max-w-xl"
+      >
+        <form onSubmit={saveAudienceDefinition} className="space-y-4">
+          <Select label="Audience type" value={saveAudienceMode} onChange={(event) => setSaveAudienceMode(event.target.value as "dynamic" | "static")}>
+            <option value="dynamic">Dynamic Audience</option>
+            <option value="static">Static List</option>
+          </Select>
+          <div className="rounded-[5px] border border-ink-900/10 bg-slate-50 p-4">
+            <div className="text-sm font-black text-ink-900">
+              {saveAudienceMode === "dynamic" ? `${displayedTotal.toLocaleString()} live matches` : `${selectedCount.toLocaleString()} contacts selected`}
+            </div>
+            <div className="mt-1 text-xs text-ink-800/60">
+              {saveAudienceMode === "dynamic"
+                ? "Dynamic audiences store the filter rules and refresh automatically when contact data changes."
+                : "Static lists store the currently selected contacts only."}
+            </div>
+          </div>
+          <Input
+            label="Audience name"
+            value={saveAudienceName}
+            onChange={(event) => setSaveAudienceName(event.target.value)}
+            placeholder="VIP customers - July"
+            maxLength={120}
+            required
+          />
+          <Textarea
+            label="Description"
+            value={saveAudienceDescription}
+            onChange={(event) => setSaveAudienceDescription(event.target.value)}
+            placeholder="Optional notes about this audience."
+            maxLength={500}
+          />
+          <div className="flex justify-end gap-3">
+            <Button
+              type="button"
+              variant="ghost"
+              onClick={() => {
+                setSaveAudienceOpen(false);
+                setSaveAudienceName("");
+                setSaveAudienceDescription("");
+                setSaveAudienceMode("dynamic");
+              }}
+              disabled={saveAudienceBusy}
+            >
+              Cancel
+            </Button>
+            <Button type="submit" disabled={saveAudienceBusy || !saveAudienceName.trim() || (saveAudienceMode === "static" && !selectedCount)}>
+              {saveAudienceBusy ? "Saving..." : "Save audience"}
+            </Button>
+          </div>
+        </form>
+      </Modal>
     </div>
   );
 }
-

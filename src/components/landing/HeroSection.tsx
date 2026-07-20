@@ -403,7 +403,7 @@ export function HeroSection() {
       className="
         relative isolate overflow-hidden
         bg-[#fbfdfb]
-        pb-8 pt-[82px]
+        pb-8 pt-[88px]
         sm:pb-12 sm:pt-28
         lg:pt-[7.5rem]
       "

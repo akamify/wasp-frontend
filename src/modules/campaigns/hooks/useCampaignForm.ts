@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { API } from "@api/api";
 
-import type { CampaignAttributeDefinition, CampaignAttributeFilter, CampaignAudienceMode, CampaignContact, CampaignEstimate, CampaignScheduleType, CampaignType, CampaignVariableMapping, CampaignWalletBalance } from "@modules/campaigns/types/campaign-form.types";
+import type { CampaignAttributeDefinition, CampaignAttributeFilter, CampaignAudienceMode, CampaignContact, CampaignContactList, CampaignEstimate, CampaignScheduleType, CampaignType, CampaignVariableMapping, CampaignWalletBalance } from "@modules/campaigns/types/campaign-form.types";
 import { digitsOnly, parseCsvText } from "@modules/campaigns/utils/campaignFormatters";
 import { createCampaignFormActions } from "@modules/campaigns/hooks/use-campaign-form/actions";
 import { useCampaignFormEffects } from "@modules/campaigns/hooks/use-campaign-form/effects";
@@ -50,6 +50,8 @@ export function useCampaignForm(props: CampaignCreateModalProps) {
   const [audienceMode, setAudienceMode] = useState<CampaignAudienceMode>("manual");
   const [selectedTags, setSelectedTags] = useState<Record<string, true>>({});
   const [tagMatchMode, setTagMatchMode] = useState<"any" | "all">("all");
+  const [savedLists, setSavedLists] = useState<CampaignContactList[]>([]);
+  const [selectedListId, setSelectedListId] = useState("");
   const [attributeDefinitions, setAttributeDefinitions] = useState<CampaignAttributeDefinition[]>([]);
   const [attributeFilters, setAttributeFilters] = useState<CampaignAttributeFilter[]>([]);
 
@@ -82,7 +84,23 @@ export function useCampaignForm(props: CampaignCreateModalProps) {
 
   useEffect(() => {
     if (!isOpen) return;
-    API.contacts.attributes().then((result) => setAttributeDefinitions((result.definitions || []).filter((definition: CampaignAttributeDefinition) => definition.active && definition.visible))).catch(() => setAttributeDefinitions([]));
+    Promise.allSettled([API.contacts.attributes(), API.contacts.lists()])
+      .then(([attributesResult, listsResult]) => {
+        if (attributesResult.status === "fulfilled") {
+          setAttributeDefinitions((attributesResult.value.definitions || []).filter((definition: CampaignAttributeDefinition) => definition.active && definition.visible));
+        } else {
+          setAttributeDefinitions([]);
+        }
+        if (listsResult.status === "fulfilled") {
+          setSavedLists(Array.isArray(listsResult.value?.lists) ? listsResult.value.lists : []);
+        } else {
+          setSavedLists([]);
+        }
+      })
+      .catch(() => {
+        setAttributeDefinitions([]);
+        setSavedLists([]);
+      });
   }, [isOpen]);
 
   useEffect(() => {
@@ -156,6 +174,7 @@ export function useCampaignForm(props: CampaignCreateModalProps) {
 
   const audienceCount = useMemo(() => {
     if (type === "csv") return csvParsed.rows.length;
+    if (type === "broadcast" && audienceMode === "list") return estimate?.totalRecipients || 0;
     if (type === "broadcast" && audienceMode === "tags") return tagMatchedContacts.length;
     if (type === "broadcast" && audienceMode === "attributes") return estimate?.totalRecipients || 0;
     if (type === "broadcast") return Object.keys(selectedPhones).length;
@@ -204,7 +223,7 @@ export function useCampaignForm(props: CampaignCreateModalProps) {
   const actions = createCampaignFormActions({
     toast, type, selectedTemplate, summary, headerVars, bodyVars, buttonsNeedingValue, buttonValueByIndex, otpCode,
     csvPhoneColumn, setCsvPhoneColumn, setCsvBodyMap, setCsvHeaderMap, selectedPhones, setSelectedPhones,
-    audienceMode, selectedTagList, tagMatchedContacts, setSelectedTags, attributeFilters, bodyVariableMappings,
+    audienceMode, selectedTagList, tagMatchedContacts, setSelectedTags, selectedListId, attributeFilters, bodyVariableMappings,
     headerMediaOverride, resolvedButtonValues, flowActionDataJson, csvParsed, csvHeaderMap, csvButtonMap, buttonTtlMinutes,
     flowTokens, csvBodyMap, setHeaderMediaUploading, setHeaderMediaOverride, setHeaderVars, setBusy, messageType,
     name, templateId, scheduleType, scheduleDate, scheduleTime, scheduleWeekdays, scheduleTimezone, scheduleEndDate, scheduleMaxOccurrences, onSuccess, onClose, estimate, demoTo, csvPreviewData, csvFirstRow,
@@ -213,7 +232,7 @@ export function useCampaignForm(props: CampaignCreateModalProps) {
 
   useCampaignFormEffects({
     isOpen, setLimitsLoading, setMessagingTierRaw, setRemainingQuotaRaw, setWalletBalance, initialType, initialName,
-    initialSelectedPhones, setType, setName, setContactQuery, setSelectedPhones, setAudienceMode, setSelectedTags, setMessageType, setTemplateId,
+    initialSelectedPhones, setType, setName, setContactQuery, setSelectedPhones, setAudienceMode, setSelectedTags, setSelectedListId, setMessageType, setTemplateId,
     setAttributeFilters, setBodyVariableMappings,
     setScheduleType, setScheduleDate, setScheduleTime, setScheduleWeekdays, setScheduleTimezone, setScheduleEndDate, setScheduleMaxOccurrences, setTagMatchMode,
     setHeaderVars, setBodyVars, setOtpCode, setButtonValues, setButtonValueByIndex, setButtonTtlMinutes,
@@ -223,7 +242,7 @@ export function useCampaignForm(props: CampaignCreateModalProps) {
     buildRecipientsForCurrentState: actions.buildRecipientsForCurrentState, templateId, setEstimateLoading, toast,
     headerMediaOverride, csvText, selectedPhones, selectedTagList, csvPhoneColumn, csvBodyMap, csvHeaderMap, csvButtonMap, headerVars,
     bodyVars, resolvedButtonValues, otpCode, flowActionDataJson, flowTokens,
-    attributeFilters,
+    attributeFilters, selectedListId,
   });
 
   return {
@@ -251,7 +270,7 @@ export function useCampaignForm(props: CampaignCreateModalProps) {
         : [...current, weekday].sort((a, b) => a - b)
     ),
     templateId, setTemplateId, approvedTemplates, selectedPhones,
-    audienceMode, setAudienceMode, availableTags, selectedTags, setSelectedTags, selectedTagList, tagMatchedContacts,
+    audienceMode, setAudienceMode, availableTags, savedLists, selectedTags, setSelectedTags, selectedListId, setSelectedListId, selectedTagList, tagMatchedContacts,
     tagMatchMode, setTagMatchMode,
     attributeDefinitions, attributeFilters, setAttributeFilters, bodyVariableMappings, setBodyVariableMappings,
     contactQuery, setContactQuery, filteredContacts, toggleSelectedPhone: actions.toggleSelectedPhone, toggleSelectedTag: actions.toggleSelectedTag, summary,

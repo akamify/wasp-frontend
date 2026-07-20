@@ -27,6 +27,7 @@ export function requiredPlanForPath(pathname: string): RequiredPlan | null {
     pathname.startsWith("/app/templates") ||
     pathname.startsWith("/app/send") ||
     pathname.startsWith("/app/contacts") ||
+    pathname.startsWith("/app/audiences") ||
     pathname.startsWith("/app/conversations") ||
     pathname.startsWith("/app/wallet")
   ) return null;
@@ -46,6 +47,7 @@ export function requiredFeatureForPath(pathname: string): RequiredFeatureKey | n
   if (pathname.startsWith("/app/templates")) return "templatesPageAccess";
   if (pathname.startsWith("/app/send")) return "campaignsPageAccess";
   if (pathname.startsWith("/app/contacts")) return "contactsPageAccess";
+  if (pathname.startsWith("/app/audiences")) return "contactsPageAccess";
   if (pathname.startsWith("/app/conversations")) return "inboxPageAccess";
   if (pathname.startsWith("/app/crm")) return "crmPageAccess";
   if (pathname.startsWith("/app/flows")) return "flowsPageAccess";

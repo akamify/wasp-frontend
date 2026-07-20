@@ -47,9 +47,12 @@ export default function CampaignCreateModal(props: CampaignCreateModalProps) {
     audienceMode,
     setAudienceMode,
     availableTags,
+    savedLists,
     selectedTags,
+    selectedListId,
     tagMatchedContacts,
     tagMatchMode,
+    setSelectedListId,
     setTagMatchMode,
     attributeDefinitions,
     attributeFilters,
@@ -160,15 +163,18 @@ export default function CampaignCreateModal(props: CampaignCreateModalProps) {
                       selectedPhones={selectedPhones}
                       audienceMode={audienceMode}
                       availableTags={availableTags}
+                      savedLists={savedLists}
                       selectedTags={selectedTags}
+                      selectedListId={selectedListId}
                       tagMatchMode={tagMatchMode}
-                      tagMatchedCount={audienceMode === "tags" && estimate?.totalRecipients !== undefined ? estimate.totalRecipients : tagMatchedContacts.length}
+                      tagMatchedCount={audienceMode !== "manual" && estimate?.totalRecipients !== undefined ? estimate.totalRecipients : tagMatchedContacts.length}
                       contactQuery={contactQuery}
                       filteredContacts={filteredContacts}
                       onAudienceModeChange={setAudienceMode}
                       onContactQueryChange={setContactQuery}
                       onTogglePhone={toggleSelectedPhone}
                       onToggleTag={toggleSelectedTag}
+                      onSelectedListIdChange={setSelectedListId}
                       onTagMatchModeChange={setTagMatchMode}
                       attributeDefinitions={attributeDefinitions}
                       attributeFilters={attributeFilters}

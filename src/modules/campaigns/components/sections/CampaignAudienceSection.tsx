@@ -1,14 +1,16 @@
 import { Card } from "@components/ui/Card";
 import { Input } from "@components/ui/Input";
 import { Select } from "@components/ui/Select";
-import type { CampaignAttributeDefinition, CampaignAttributeFilter, CampaignAudienceMode, CampaignContact } from "@modules/campaigns/types/campaign-form.types";
+import type { CampaignAttributeDefinition, CampaignAttributeFilter, CampaignAudienceMode, CampaignContact, CampaignContactList } from "@modules/campaigns/types/campaign-form.types";
 
 type CampaignAudienceSectionProps = {
   lockRecipients?: boolean;
   selectedPhones: Record<string, true>;
   audienceMode: CampaignAudienceMode;
   availableTags: string[];
+  savedLists: CampaignContactList[];
   selectedTags: Record<string, true>;
+  selectedListId: string;
   tagMatchMode: "any" | "all";
   tagMatchedCount: number;
   contactQuery: string;
@@ -17,6 +19,7 @@ type CampaignAudienceSectionProps = {
   onContactQueryChange: (value: string) => void;
   onTogglePhone: (phone: string) => void;
   onToggleTag: (tag: string) => void;
+  onSelectedListIdChange: (value: string) => void;
   onTagMatchModeChange: (value: "any" | "all") => void;
   attributeDefinitions: CampaignAttributeDefinition[];
   attributeFilters: CampaignAttributeFilter[];
@@ -28,7 +31,9 @@ export function CampaignAudienceSection({
   selectedPhones,
   audienceMode,
   availableTags,
+  savedLists,
   selectedTags,
+  selectedListId,
   tagMatchMode,
   tagMatchedCount,
   contactQuery,
@@ -37,6 +42,7 @@ export function CampaignAudienceSection({
   onContactQueryChange,
   onTogglePhone,
   onToggleTag,
+  onSelectedListIdChange,
   onTagMatchModeChange,
   attributeDefinitions,
   attributeFilters,
@@ -76,17 +82,44 @@ export function CampaignAudienceSection({
         <div className="mt-4 grid gap-3 md:grid-cols-[180px_minmax(0,1fr)]">
           <Select label="Audience type" value={audienceMode} onChange={(event) => onAudienceModeChange(event.target.value as CampaignAudienceMode)}>
             <option value="manual">Manual</option>
+            <option value="list">Saved list</option>
             <option value="tags">By tags</option>
             <option value="attributes">Attribute filters</option>
           </Select>
           {audienceMode === "manual" ? (
             <Input label="Search contacts" value={contactQuery} onChange={(event) => onContactQueryChange(event.target.value)} placeholder="Search name, phone, company, or tag" />
+          ) : audienceMode === "list" ? (
+            <div className="grid gap-3 md:grid-cols-[minmax(0,1fr)_160px]">
+              <Select label="Saved audience" value={selectedListId} onChange={(event) => onSelectedListIdChange(event.target.value)}>
+                <option value="">Select saved list</option>
+                {savedLists.map((list) => (
+                  <option key={list._id} value={list._id}>
+                    {list.name} ({Number(list.totalContacts || 0).toLocaleString()})
+                  </option>
+                ))}
+              </Select>
+              <div className="rounded-[5px] border border-ink-900/10 bg-slate-50 px-4 py-3">
+                <div className="text-xs font-black uppercase tracking-widest text-ink-800/45">Audience size</div>
+                <div className="mt-1 text-sm font-black text-ink-900">{tagMatchedCount.toLocaleString()} contacts</div>
+              </div>
+            </div>
           ) : audienceMode === "tags" ? (
             <div className="rounded-[5px] border border-ink-900/10 bg-slate-50 px-4 py-3">
               <div className="text-xs font-black uppercase tracking-widest text-ink-800/45">Matched contacts</div>
               <div className="mt-1 text-sm font-black text-ink-900">{tagMatchedCount.toLocaleString()} contacts</div>
             </div>
           ) : <div className="rounded-[5px] border border-ink-900/10 bg-slate-50 px-4 py-3 text-xs font-semibold text-ink-800/60">Contacts must match all selected attribute filters.</div>}
+        </div>
+      ) : null}
+
+      {!lockRecipients && audienceMode === "list" ? (
+        <div className="mt-4 rounded-[5px] border border-ink-900/10 bg-white p-4">
+          <div className="text-sm font-semibold text-ink-900">
+            {selectedListId
+              ? (savedLists.find((item) => item._id === selectedListId)?.description || "This broadcast will use the contacts stored in the selected saved audience.")
+              : "Choose a saved audience created from your contacts page."}
+          </div>
+          {!savedLists.length ? <div className="mt-2 text-sm text-ink-800/70">No saved audiences found yet.</div> : null}
         </div>
       ) : null}
 
