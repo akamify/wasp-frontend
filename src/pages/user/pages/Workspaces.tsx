@@ -106,7 +106,7 @@ export default function WorkspacesPage() {
         )) : items.map((workspace) => (
           <div key={workspace.id} className="rounded-[5px] space-y-3 border border-slate-200 bg-white p-3 px-4">
             <div className="text-lg font-black">{workspace.name}</div>
-            <div className="flex items-center gap-7">
+            <div className="flex items-center gap-5 md:gap-10">
               <div className="text-sm flex items-start flex-col gap-2">Plan {workspace.plan ? <div className="text-sm text-slate-500">{workspace.plan}</div> : null}</div>
               <div className="text-sm flex items-start flex-col gap-2 font-500">Created <div className="text-sm text-slate-500">{new Date(workspace.createdAt).toLocaleDateString()}</div> </div>
             </div>
