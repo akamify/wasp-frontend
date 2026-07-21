@@ -119,12 +119,13 @@ export function LiveDemoBookingModal({ open, onClose }: Props) {
           <Input label="Full Name" value={form.name} onChange={(e) => update("name", e.target.value)} required />
           <Input label="Email" type="email" value={form.email} onChange={(e) => update("email", e.target.value)} required />
           <Input label="Phone" value={form.phone} onChange={(e) => update("phone", e.target.value)} required />
-          <Select label="Platform" value={form.platform} onChange={(e) => update("platform", e.target.value)}>
-            <option value="Google Meet">Google Meet</option>
-            <option value="Zoom">Zoom</option>
-          </Select>
           <Input label="Date" type="date" min={todayIsoDate()} value={form.date} onChange={(e) => update("date", e.target.value)} required />
         </div>
+
+        <Select label="Platform" value={form.platform} onChange={(e) => update("platform", e.target.value)}>
+          <option value="Google Meet">Google Meet</option>
+          <option value="Zoom">Zoom</option>
+        </Select>
 
         <div className="space-y-2">
           <div className="flex items-center justify-between gap-3">
@@ -175,11 +176,11 @@ export function LiveDemoBookingModal({ open, onClose }: Props) {
         </p>
 
         <div className="flex flex-col-reverse gap-3 border-t border-slate-100 pt-4 sm:flex-row sm:justify-end">
-          <Button type="button" variant="outline" onClick={onClose} disabled={submitting}>
+          <Button type="button" className="cursor-pointer" variant="outline" onClick={onClose} disabled={submitting}>
             Cancel
           </Button>
-          <Button type="submit" disabled={submitting || loadingSlots}>
-            {submitting ? "Submitting..." : "Save Demo Enquiry"}
+          <Button type="submit" className="cursor-pointer" disabled={submitting || loadingSlots}>
+            {submitting ? "Booking..." : "Book Live Demo"}
           </Button>
         </div>
       </form>

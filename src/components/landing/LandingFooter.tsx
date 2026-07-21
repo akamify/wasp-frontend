@@ -37,7 +37,7 @@ const footerLinks: Record<
     { label: "Privacy Policy", to: "/privacy-policy" },
     { label: "Terms of Service", to: "/terms-of-service" },
     { label: "Cookie Policy", to: "/cookie-policy" },
-    { label: "Data Deletion", to: "/data-deletion" },
+    // { label: "Data Deletion", to: "/data-deletion" },
   ],
   Resources: [
     { label: "Help Center", to: "/help-center" },
@@ -212,7 +212,7 @@ export function LandingFooter() {
         </div>
 
         {/* Main Footer */}
-        <div className="grid gap-10 rounded-[2rem] border border-white/80 bg-white/80 p-5 shadow-xl shadow-slate-200/60 backdrop-blur-xl sm:p-7 lg:grid-cols-[1.25fr_1fr_1fr_1fr] lg:p-8">
+        <div className="grid gap-10 rounded-[4px] border border-white/80 bg-white/80 p-5 shadow-xl shadow-slate-200/60 backdrop-blur-xl sm:p-7 lg:grid-cols-[1.25fr_1fr_1fr_1fr] lg:p-8">
           {/* Brand */}
           <div className="lg:pr-8">
             <a href="/" className="group flex w-fit items-center gap-3">
