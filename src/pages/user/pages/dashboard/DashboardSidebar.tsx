@@ -8,7 +8,7 @@ import { whatsappProfilePictureUrl } from "@shared/utils/whatsappProfile";
 export function DashboardSidebar({ snapshot, onView, onEdit, onRecharge }: any) {
   const profilePictureUrl = whatsappProfilePictureUrl(snapshot?.meta?.businessProfile);
   return (
-    <div className="space-y-8 lg:sticky lg:top-6 self-start">
+    <div className="space-y-8 lg:sticky lg:top-0 self-start">
       <Card className="relative overflow-hidden group rounded-[5px]">
         <div className="absolute top-0 right-0 w-32 h-32 bg-brand-500/5 blur-3xl rounded-full -mr-16 -mt-16" />
         <div className="p-6">
