@@ -229,14 +229,7 @@ function HeroYoutubeVideo() {
         "
       >
         <div className="overflow-hidden rounded-[17px] bg-slate-950 sm:rounded-[23px]">
-          <div
-            className="
-              flex items-center justify-between
-              border-b border-white/10
-              bg-slate-950 px-3 py-2.5
-              sm:px-5 sm:py-3.5
-            "
-          >
+          {/* <div className="flex items-center justify-between border-b border-white/10 bg-slate-950 px-3 py-2.5 sm:px-5 sm:py-3.5">
             <div className="flex items-center gap-1.5">
               <span className="h-2 w-2 rounded-full bg-red-400 sm:h-2.5 sm:w-2.5" />
               <span className="h-2 w-2 rounded-full bg-amber-400 sm:h-2.5 sm:w-2.5" />
@@ -258,7 +251,7 @@ function HeroYoutubeVideo() {
               <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-emerald-400" />
               Product Preview
             </div>
-          </div>
+          </div> */}
 
           <div className="relative aspect-video overflow-hidden bg-slate-950">
             {isPlaying ? (
