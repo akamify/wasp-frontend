@@ -1,5 +1,5 @@
 import { AnimatePresence, motion } from "framer-motion";
-import { Bell, CreditCard, Globe, LogOut, Settings, User } from "lucide-react";
+import { Bell, BookOpen, CreditCard, ExternalLink, Globe, LogOut, Settings, User } from "lucide-react";
 import type { RefObject } from "react";
 import { cn } from "@shared/utils/cn";
 import { WorkspaceStatusBar } from "@components/layout/WorkspaceStatusBar";
@@ -21,6 +21,7 @@ export function DesktopTopBar({
   logout,
   notifRef,
   profileMenuRef,
+  docsUrl,
 }: {
   pathname: string;
   workspace: any;
@@ -36,6 +37,7 @@ export function DesktopTopBar({
   logout: () => void;
   notifRef: RefObject<HTMLDivElement | null>;
   profileMenuRef: RefObject<HTMLDivElement | null>;
+  docsUrl: string;
 }) {
   return (
     <header className="hidden lg:flex h-16 items-center justify-between px-8 bg-white/80 backdrop-blur-xl border-b border-slate-200 z-[130] shrink-0">
@@ -48,6 +50,18 @@ export function DesktopTopBar({
         </button>
       </div>
       <div className="flex items-center gap-4">
+        <a
+          href={docsUrl}
+          target="_blank"
+          rel="noreferrer"
+          className="inline-flex items-center gap-2 px-3 py-2 rounded-[5px] border border-slate-200 bg-white text-[10px] font-black uppercase tracking-widest text-slate-600 shadow-sm hover:border-brand-200 hover:bg-brand-50 hover:text-brand-700 transition-colors"
+          aria-label="Open documentation"
+          title="Open documentation"
+        >
+          <BookOpen size={14} />
+          Docs
+          <ExternalLink size={12} />
+        </a>
         <WorkspaceStatusBar className="!border-none !bg-transparent !p-0 !backdrop-blur-none" />
         <div className="h-6 w-px bg-slate-200" />
         <div className="relative" ref={notifRef}>

@@ -1,9 +1,9 @@
 import { AnimatePresence, motion } from "framer-motion";
-import { Bell, Menu } from "lucide-react";
+import { Bell, BookOpen, Menu } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { cn } from "@shared/utils/cn";
 
-export function MobileTopBar({ onMenuOpen, workspaceName, brandName, notifications, lastReadAt, markAllRead, navigate }: any) {
+export function MobileTopBar({ onMenuOpen, workspaceName, brandName, notifications, lastReadAt, markAllRead, navigate, docsUrl }: any) {
   const [notifOpen, setNotifOpen] = useState(false);
   const notifRef = useRef<HTMLDivElement | null>(null);
   useEffect(() => {
@@ -18,6 +18,16 @@ export function MobileTopBar({ onMenuOpen, workspaceName, brandName, notificatio
       <button onClick={onMenuOpen} className="p-2 hover:bg-slate-100 rounded-[5px] active:scale-95 transition-all"><Menu size={22} className="text-slate-700" /></button>
       <div className="flex flex-col items-center"><span className="text-[10px] font-black text-brand-600 uppercase tracking-tighter leading-none">{brandName}</span><span className="text-xs font-bold truncate max-w-[140px] text-slate-800">{workspaceName || "Workspace"}</span></div>
       <div className="flex items-center gap-1">
+        <a
+          href={docsUrl}
+          target="_blank"
+          rel="noreferrer"
+          className="p-2 rounded-[5px] text-slate-500 hover:bg-slate-100 hover:text-brand-600 active:scale-95 transition-all"
+          aria-label="Open documentation"
+          title="Open documentation"
+        >
+          <BookOpen size={19} />
+        </a>
         <div className="relative" ref={notifRef}>
           <button onClick={() => setNotifOpen(!notifOpen)} className={cn("p-2 rounded-[5px] relative transition-all active:scale-95", notifOpen ? "bg-brand-50 text-brand-600" : "text-slate-500 hover:bg-slate-100")}>
             <Bell size={20} />

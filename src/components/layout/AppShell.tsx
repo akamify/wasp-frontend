@@ -6,7 +6,7 @@ import { BRAND_NAME } from "@shared/config/brand";
 import { setCurrencySymbolOverride } from "@shared/config/currency";
 import { API } from "@api/api";
 import { motion, AnimatePresence } from "framer-motion";
-import { NAV_ITEMS, getShellTitle, routeTransitionKey } from "@components/layout/app-shell/constants";
+import { NAV_ITEMS, getDocsUrlForPath, getShellTitle, routeTransitionKey } from "@components/layout/app-shell/constants";
 import { MobileBottomTabs } from "@components/layout/app-shell/MobileBottomTabs";
 import { MobileTopBar } from "@components/layout/app-shell/MobileTopBar";
 import { MobileDrawer } from "@components/layout/app-shell/MobileDrawer";
@@ -100,6 +100,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const { requiredPlan, featureNeedsPro, isPlanAccessBlocked, isAccessCheckPending } = useAppShellBilling(location.pathname);
   const shellTitle = getShellTitle(location.pathname, NAV_ITEMS as any);
   const pageTitle = `${shellTitle} | ${resolvedBrandName}`;
+  const docsUrl = getDocsUrlForPath(location.pathname);
 
   // Auto-scroll active nav item into view in sidebar
   useEffect(() => {
@@ -146,6 +147,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           lastReadAt={lastReadAt}
           markAllRead={markAllRead}
           navigate={navigate}
+          docsUrl={docsUrl}
         />
       ) : null}
 
@@ -193,6 +195,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           logout={logout}
           notifRef={notifRef}
           profileMenuRef={profileMenuRef}
+          docsUrl={docsUrl}
         />
 
         {/* Scrollable Content Container */}

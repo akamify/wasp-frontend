@@ -28,6 +28,38 @@ export const MOBILE_TABS = [
   { to: "/app/contacts", label: "Contacts", icon: Users, end: false },
 ];
 
+const DOCS_BASE_URL = String(import.meta.env.VITE_DOCS_BASE_URL || "https://docs.aiwizchat.com").replace(/\/+$/, "");
+
+const PAGE_DOC_LINKS = [
+  { prefix: "/app/meta", path: "/whatsapp-business-account-connect" },
+  { prefix: "/app/templates", path: "/template-creation-approval" },
+  { prefix: "/app/send", path: "/campaigns#create-campaign" },
+  { prefix: "/app/contacts", path: "/contacts#import-contacts" },
+  { prefix: "/app/audiences", path: "/contacts#audiences" },
+  { prefix: "/app/attributes", path: "/contacts#contact-attributes" },
+  { prefix: "/app/conversations", path: "/external-chat-api-integration#realtime-stream" },
+  { prefix: "/app/crm", path: "/crm-access" },
+  { prefix: "/app/flows", path: "/automation-flow-builder" },
+  { prefix: "/app/automation", path: "/automation-flow-builder" },
+  { prefix: "/app/wallet", path: "/wallet-and-billing" },
+  { prefix: "/app/plan", path: "/plans-and-billing" },
+  { prefix: "/app/links", path: "/tracked-links" },
+  { prefix: "/app/ai-agents", path: "/ai-agents" },
+  { prefix: "/app/activity", path: "/activity-logs" },
+  { prefix: "/app/api-keys", path: "/external-chat-api-integration#base-path" },
+  { prefix: "/app/api-reports", path: "/external-chat-api-integration#rate-limits" },
+  { prefix: "/app", path: "/getting-started" },
+];
+
+export function getDocsUrlForPath(pathname: string) {
+  const currentPath = pathname || "/app";
+  const match = PAGE_DOC_LINKS.find((item) => (
+    item.prefix === "/app" ? currentPath === "/app" : currentPath.startsWith(item.prefix)
+  ));
+  const docsPath = match?.path || "/getting-started";
+  return `${DOCS_BASE_URL}${docsPath.startsWith("/") ? docsPath : `/${docsPath}`}`;
+}
+
 export function getShellTitle(pathname: string, items: typeof NAV_ITEMS) {
   const active = items.find((item) => item.to === "/app" ? pathname === item.to : pathname.startsWith(item.to));
   return active?.label || "Workspace";
