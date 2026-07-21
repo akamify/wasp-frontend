@@ -60,7 +60,7 @@ export function Modal({
               <X size={18} />
             </button>
           </div>
-          <div className="max-h-[calc(100vh-9rem)] overflow-y-auto p-5">{children}</div>
+          <div className="modal-scroll-area max-h-[calc(100vh-9rem)] overflow-y-auto p-5">{children}</div>
         </div>
       </div>
     </div>,

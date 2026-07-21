@@ -62,8 +62,10 @@ export default function LandingPage() {
 
   useEffect(() => {
     document.documentElement.style.scrollBehavior = "smooth";
+    document.documentElement.classList.add("landing-scrollbar-hidden");
     return () => {
       document.documentElement.style.scrollBehavior = "";
+      document.documentElement.classList.remove("landing-scrollbar-hidden");
     };
   }, []);
 

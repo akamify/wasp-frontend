@@ -113,7 +113,7 @@ export function LiveDemoBookingModal({ open, onClose }: Props) {
   }
 
   return (
-    <Modal open={open} onClose={onClose} title="Book Live Demo" className="max-w-3xl">
+    <Modal open={open} onClose={onClose} title="Book Live Demo" className="max-w-3xl scroll-none">
       <form onSubmit={submit} className="space-y-5">
         <div className="grid gap-4 md:grid-cols-2">
           <Input label="Full Name" value={form.name} onChange={(e) => update("name", e.target.value)} required />
