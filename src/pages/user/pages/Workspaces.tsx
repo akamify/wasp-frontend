@@ -77,9 +77,11 @@ export default function WorkspacesPage() {
         )) : items.map((workspace) => (
           <div key={workspace.id} className="rounded-[5px] space-y-3 border border-slate-200 bg-white p-3 px-4">
             <div className="text-lg font-black">{workspace.name}</div>
-            <div className="text-sm flex items-center gap-2">Plan: {workspace.plan ? <div className="text-sm text-slate-500">{workspace.plan}</div> : null}</div>
-            <div className="text-sm flex items-center gap-2 font-500">Created: <div className="text-sm text-slate-500">{new Date(workspace.createdAt).toLocaleDateString()}</div> </div>
-            <Button variant="outline" className="mt-4 w-full cursor-pointer" disabled={openingId === workspace.id} onClick={() => void openWorkspace(workspace.id)}>{openingId === workspace.id ? "Opening..." : "Open"}</Button>
+            <div className="flex items-center justify-between flex-row">
+              <div className="text-sm flex items-center flex-col gap-2">Plan: {workspace.plan ? <div className="text-sm text-slate-500">{workspace.plan}</div> : null}</div>
+              <div className="text-sm flex items-center flex-col gap-2 font-500">Created: <div className="text-sm text-slate-500">{new Date(workspace.createdAt).toLocaleDateString()}</div> </div>
+            </div>
+            <Button variant="outline" className="mt-4 w-full cursor-pointer" disabled={openingId === workspace.id} onClick={() => void openWorkspace(workspace.id)}>{openingId === workspace.id ? "Viewing..." : "View"}</Button>
           </div>
         ))}
       </div>
