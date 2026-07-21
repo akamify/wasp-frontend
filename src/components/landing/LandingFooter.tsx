@@ -33,15 +33,16 @@ const footerLinks: Record<
     { label: "Features", to: "/features" },
     { label: "Pricing", to: "/pricing" },
   ],
+  Resources: [
+    { label: "Docs", to: "https://docs.aiwizchat.com" },
+    { label: "Careers", to: "/careers" },
+    { label: "Help Center", to: "/help-center" },
+  ],
   Legal: [
     { label: "Privacy Policy", to: "/privacy-policy" },
     { label: "Terms of Service", to: "/terms-of-service" },
     { label: "Cookie Policy", to: "/cookie-policy" },
     // { label: "Data Deletion", to: "/data-deletion" },
-  ],
-  Resources: [
-    { label: "Help Center", to: "/help-center" },
-    { label: "Careers", to: "/careers" },
   ],
 };
 

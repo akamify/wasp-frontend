@@ -38,6 +38,11 @@ const navLinks = [
     href: "/pricing",
     description: "Simple plans for every team",
   },
+  {
+    label: "Docs",
+    href: "https://docs.aiwizchat.com",
+    description: "Simple plans for every team",
+  },
 ];
 
 const topVariants = {
