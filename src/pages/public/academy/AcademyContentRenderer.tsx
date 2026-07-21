@@ -20,6 +20,11 @@ function slugHeading(value: string) {
     .replace(/^-|-$/g, "");
 }
 
+function stableSectionId(block: any, fallbackText = "") {
+  const explicitId = String(block?.sectionId || block?.anchorId || block?.id || "").trim();
+  return slugHeading(explicitId || fallbackText);
+}
+
 function textFromNode(node: ReactNode): string {
   if (typeof node === "string" || typeof node === "number") return String(node);
   if (Array.isArray(node)) return node.map(textFromNode).join("");
@@ -200,7 +205,7 @@ function ContentBlock({ block, onOpenLightbox }: { block: any; onOpenLightbox: (
   if (type === "heading") {
     const level = Math.min(4, Math.max(1, Number(block?.level || 2)));
     const text = String(block?.value || "");
-    const id = text.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+    const id = stableSectionId(block, text);
     if (level === 1) return <h1 id={id} className="text-4xl font-black tracking-tight text-slate-950 dark:text-white">{text}</h1>;
     if (level === 2) return <h2 id={id} className="scroll-mt-24 border-t border-slate-100 pt-6 text-2xl font-black tracking-tight text-slate-950 dark:border-slate-800 dark:text-white">{text}</h2>;
     if (level === 3) return <h3 id={id} className="scroll-mt-24 text-xl font-black text-slate-900 dark:text-slate-100">{text}</h3>;

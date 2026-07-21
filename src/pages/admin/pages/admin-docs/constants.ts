@@ -2,6 +2,8 @@ export const EMPTY_DOC = {
   id: "",
   title: "",
   slug: "",
+  pageKey: "",
+  targetSectionId: "",
   description: "",
   content: "",
   contentBlocks: [] as any[],
@@ -20,6 +22,27 @@ export const EMPTY_DOC = {
   isPopular: false,
   isFeatured: false,
 };
+
+export const DOC_PAGE_KEY_OPTIONS = [
+  { value: "", label: "No dashboard page" },
+  { value: "dashboard", label: "Dashboard" },
+  { value: "whatsapp-setup", label: "WhatsApp Setup" },
+  { value: "templates", label: "Templates" },
+  { value: "campaigns", label: "Campaigns" },
+  { value: "contacts", label: "Contacts" },
+  { value: "audiences", label: "Audiences" },
+  { value: "attributes", label: "Attributes" },
+  { value: "inbox", label: "Inbox" },
+  { value: "crm", label: "CRM" },
+  { value: "automation", label: "Automation" },
+  { value: "wallet", label: "Wallet" },
+  { value: "plans", label: "Plans & Billing" },
+  { value: "tracked-links", label: "Tracked Links" },
+  { value: "ai-agents", label: "AI Agents" },
+  { value: "activity", label: "Activity" },
+  { value: "external-chat-api", label: "External Chat API" },
+  { value: "api-reports", label: "API Reports" },
+] as const;
 
 export const TOOLBAR = [
   { label: "Text", title: "Text Block" },

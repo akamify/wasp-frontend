@@ -19,6 +19,11 @@ function slugHeading(value: string) {
     .replace(/^-|-$/g, "");
 }
 
+function stableSectionId(block: any, fallbackText = "") {
+  const explicitId = String(block?.sectionId || block?.anchorId || block?.id || "").trim();
+  return slugHeading(explicitId || fallbackText);
+}
+
 function headingItemsFromArticle(article: any) {
   const blocks = Array.isArray(article?.contentBlocks) ? article.contentBlocks : [];
   const blockHeadings = blocks.flatMap((block: any) => {
@@ -27,7 +32,7 @@ function headingItemsFromArticle(article: any) {
       const title = String(block?.value || "");
       return [
         {
-          id: slugHeading(title),
+          id: stableSectionId(block, title),
           title,
           level: Number(block?.level || 2),
         },

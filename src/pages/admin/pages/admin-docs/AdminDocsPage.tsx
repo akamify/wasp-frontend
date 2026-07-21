@@ -8,7 +8,7 @@ import { Select } from "@components/ui/Select";
 import { Textarea } from "@components/ui/Textarea";
 import { useAuth } from "@shared/providers/AuthContext";
 import { useToast } from "@shared/providers/ToastContext";
-import { EMPTY_DOC, TOOLBAR, detectBlockLabel, slugify, splitBlocks } from "./constants";
+import { DOC_PAGE_KEY_OPTIONS, EMPTY_DOC, TOOLBAR, detectBlockLabel, slugify, splitBlocks } from "./constants";
 import { EditorScreen } from "./EditorScreen";
 import { ListScreen } from "./ListScreen";
 
@@ -52,8 +52,14 @@ function blockToSnippet(block: any) {
 function snippetToBlock(snippet: string, label: string) {
   const text = String(snippet || "").trim();
   const lines = text.split("\n");
-  if (/^###\s+/.test(text)) return { type: "heading", level: 3, value: text.replace(/^###\s+/, "") };
-  if (/^#\s+/.test(text)) return { type: "heading", level: 1, value: text.replace(/^#\s+/, "") };
+  if (/^###\s+/.test(text)) {
+    const value = text.replace(/^###\s+/, "");
+    return { type: "heading", level: 3, value, id: slugify(value) };
+  }
+  if (/^#\s+/.test(text)) {
+    const value = text.replace(/^#\s+/, "");
+    return { type: "heading", level: 1, value, id: slugify(value) };
+  }
   if (/^!\[([^\]]*)\]\(([^)]+)\)/.test(text)) {
     const match = text.match(/^!\[([^\]]*)\]\(([^)]+)\)/);
     return { type: "image", caption: match?.[1] || "", url: match?.[2] || "" };
@@ -252,8 +258,14 @@ export default function AdminDocsPage() {
   function saveToolBlock() {
     if (!activeTool) return; const label = activeTool.title;
     if (activeTool.label === "Text") return insertSnippet(toolForm.text || "Write text...", label, { type: "text", value: toolForm.text || "Write text..." }), setActiveTool(null);
-    if (activeTool.label === "H") return insertSnippet(`# ${toolForm.text || "Heading"}`, label, { type: "heading", level: 1, value: toolForm.text || "Heading" }), setActiveTool(null);
-    if (activeTool.label === "Sec") return insertSnippet(`### ${toolForm.text || "Section Title"}`, label, { type: "heading", level: 3, value: toolForm.text || "Section Title" }), setActiveTool(null);
+    if (activeTool.label === "H") {
+      const value = toolForm.text || "Heading";
+      return insertSnippet(`# ${value}`, label, { type: "heading", level: 1, value, id: slugify(value) }), setActiveTool(null);
+    }
+    if (activeTool.label === "Sec") {
+      const value = toolForm.text || "Section Title";
+      return insertSnippet(`### ${value}`, label, { type: "heading", level: 3, value, id: slugify(value) }), setActiveTool(null);
+    }
     if (activeTool.label === "List") {
       const items = String(toolForm.listItems || "")
         .split("\n")
@@ -301,6 +313,8 @@ export default function AdminDocsPage() {
           section: String(editing.category || "general").trim() || "general",
           itemOrder: normalizedOrder,
         },
+        pageKey: String(editing.pageKey || "").trim(),
+        targetSectionId: String(editing.targetSectionId || "").trim(),
         seo: { ...(editing.seo || {}), metaTitle: String(editing.title || ""), metaDescription: String(editing.description || ""), ogImage: "" },
       };
       payload.tags = Array.isArray(editing.tags) ? editing.tags : String(editing.tags || "").split(",").map((x: string) => x.trim()).filter(Boolean);
@@ -365,7 +379,7 @@ export default function AdminDocsPage() {
 
   return (
     <>
-      {isEditorRoute ? <EditorScreen navigate={navigate} saveDoc={saveDoc} saving={saving} editing={editing} canCreate={canCreate} canEdit={canEdit} setEditing={setEditing} slugify={slugify} TOOLBAR={TOOLBAR} setActiveTool={setActiveTool} addedBlocks={addedBlocks} syncBlocks={syncBlocks} liveContent={liveContent} editorMode={editorMode} onEditorModeChange={onEditorModeChange} rawContent={rawContent} onRawContentChange={onRawContentChange} canUseRaw={user?.role === "super_admin" || user?.role === "admin"} availableCategories={availableCategories} /> : <ListScreen query={query} setQuery={setQuery} load={load} loading={loading} navigate={navigate} docsBasePath={docsBasePath} canCreate={canCreate} error={error} filtered={filtered} openPreview={openPreview} canEdit={canEdit} canDelete={canDelete} setDeleteTarget={setDeleteTarget} brandModal={brandModal} setBrandModal={setBrandModal} brandSettings={brandSettings} setBrandSettings={setBrandSettings} uploadBrandLogo={uploadBrandLogo} brandUploading={brandUploading} brandUploadPct={brandUploadPct} saveBrandSettings={saveBrandSettings} brandSaving={brandSaving} deleteTarget={deleteTarget} confirmDelete={confirmDelete} setPreviewDoc={setPreviewDoc} previewLoading={previewLoading} previewDoc={previewDoc} categories={categories} openCategories={() => { setCategoryForm({ id: "", name: "", slug: "", order: getNextCategoryOrder(categories), icon: "BookOpen", description: "", audience: "business, marketing", isPublished: true }); setCategoryModalOpen(true); }} openFeedback={() => setFeedbackModalOpen(true)} feedbackSummary={feedbackSummary} />}
+      {isEditorRoute ? <EditorScreen navigate={navigate} saveDoc={saveDoc} saving={saving} editing={editing} canCreate={canCreate} canEdit={canEdit} setEditing={setEditing} slugify={slugify} TOOLBAR={TOOLBAR} setActiveTool={setActiveTool} addedBlocks={addedBlocks} syncBlocks={syncBlocks} liveContent={liveContent} editorMode={editorMode} onEditorModeChange={onEditorModeChange} rawContent={rawContent} onRawContentChange={onRawContentChange} canUseRaw={user?.role === "super_admin" || user?.role === "admin"} availableCategories={availableCategories} pageKeyOptions={DOC_PAGE_KEY_OPTIONS} /> : <ListScreen query={query} setQuery={setQuery} load={load} loading={loading} navigate={navigate} docsBasePath={docsBasePath} canCreate={canCreate} error={error} filtered={filtered} openPreview={openPreview} canEdit={canEdit} canDelete={canDelete} setDeleteTarget={setDeleteTarget} brandModal={brandModal} setBrandModal={setBrandModal} brandSettings={brandSettings} setBrandSettings={setBrandSettings} uploadBrandLogo={uploadBrandLogo} brandUploading={brandUploading} brandUploadPct={brandUploadPct} saveBrandSettings={saveBrandSettings} brandSaving={brandSaving} deleteTarget={deleteTarget} confirmDelete={confirmDelete} setPreviewDoc={setPreviewDoc} previewLoading={previewLoading} previewDoc={previewDoc} categories={categories} openCategories={() => { setCategoryForm({ id: "", name: "", slug: "", order: getNextCategoryOrder(categories), icon: "BookOpen", description: "", audience: "business, marketing", isPublished: true }); setCategoryModalOpen(true); }} openFeedback={() => setFeedbackModalOpen(true)} feedbackSummary={feedbackSummary} />}
       <Modal isOpen={!!activeTool} onClose={() => setActiveTool(null)} title={activeTool ? `Add ${activeTool.title}` : ""}>
         {activeTool ? <div className="space-y-3">{["Text", "H", "Sec", "B", "I"].includes(activeTool.label) ? <Input label="Text" value={toolForm.text} onChange={(e) => setToolForm((p: any) => ({ ...p, text: e.target.value }))} /> : null}{activeTool.label === "List" ? <Textarea label="List Items" rows={6} value={toolForm.listItems} onChange={(e) => setToolForm((p: any) => ({ ...p, listItems: e.target.value }))} placeholder={"First item\nSecond item\nThird item"} /> : null}{activeTool.label === "Table" ? <><Input label="Columns" value={toolForm.tableColumns} onChange={(e) => setToolForm((p: any) => ({ ...p, tableColumns: e.target.value }))} placeholder="Issue, Reason, Fix" /><Textarea label="Rows" rows={6} value={toolForm.tableRows} onChange={(e) => setToolForm((p: any) => ({ ...p, tableRows: e.target.value }))} placeholder={"Rejected, Name mismatch, Match business name\nPending, Verification review, Wait for Meta"} /></> : null}{activeTool.label === "Link" ? <><Input label="Text" value={toolForm.text} onChange={(e) => setToolForm((p: any) => ({ ...p, text: e.target.value }))} /><Input label="URL" value={toolForm.url} onChange={(e) => setToolForm((p: any) => ({ ...p, url: e.target.value }))} /></> : null}{["Code", "JSON", "Bash", "Mermaid"].includes(activeTool.label) ? <><Input label="Language" value={toolForm.language} onChange={(e) => setToolForm((p: any) => ({ ...p, language: e.target.value }))} /><Textarea label="Code" rows={8} value={toolForm.code} onChange={(e) => setToolForm((p: any) => ({ ...p, code: e.target.value }))} /></> : null}{activeTool.label === "Resp" ? <><Input label="Response Title" value={toolForm.responseTitle} onChange={(e) => setToolForm((p: any) => ({ ...p, responseTitle: e.target.value }))} /><Input label="Status" value={toolForm.responseStatus} onChange={(e) => setToolForm((p: any) => ({ ...p, responseStatus: e.target.value }))} /><Textarea label="Response JSON" rows={8} value={toolForm.responseBody} onChange={(e) => setToolForm((p: any) => ({ ...p, responseBody: e.target.value }))} /></> : null}{activeTool.label === "Callout" ? <><Select label="Type" value={toolForm.calloutType} onChange={(e) => setToolForm((p: any) => ({ ...p, calloutType: e.target.value }))}><option value="info">info</option><option value="warning">warning</option><option value="success">success</option><option value="error">error</option></Select><Input label="Title" value={toolForm.calloutTitle} onChange={(e) => setToolForm((p: any) => ({ ...p, calloutTitle: e.target.value }))} /><Textarea label="Description" rows={5} value={toolForm.calloutDescription} onChange={(e) => setToolForm((p: any) => ({ ...p, calloutDescription: e.target.value }))} /></> : null}{activeTool.label === "Key" ? <><Input label="Title" value={toolForm.keyTitle} onChange={(e) => setToolForm((p: any) => ({ ...p, keyTitle: e.target.value }))} /><Textarea label="Description" rows={4} value={toolForm.keyDescription} onChange={(e) => setToolForm((p: any) => ({ ...p, keyDescription: e.target.value }))} /></> : null}{activeTool.label === "Step" ? <><Input label="Step Title" value={toolForm.title} onChange={(e) => setToolForm((p: any) => ({ ...p, title: e.target.value }))} /><Textarea label="Step Description" rows={3} value={toolForm.description} onChange={(e) => setToolForm((p: any) => ({ ...p, description: e.target.value }))} /><Input label="Button Text" value={toolForm.buttonText} onChange={(e) => setToolForm((p: any) => ({ ...p, buttonText: e.target.value }))} /><Input label="Button URL" value={toolForm.url} onChange={(e) => setToolForm((p: any) => ({ ...p, url: e.target.value }))} /></> : null}{["Image", "Video", "API"].includes(activeTool.label) ? <><Input label="Title" value={toolForm.title} onChange={(e) => setToolForm((p: any) => ({ ...p, title: e.target.value }))} /><Textarea label="Description" rows={3} value={toolForm.description} onChange={(e) => setToolForm((p: any) => ({ ...p, description: e.target.value }))} /><Input label={activeTool.label === "API" ? "Endpoint / URL" : "Media URL"} value={toolForm.url} onChange={(e) => setToolForm((p: any) => ({ ...p, url: e.target.value }))} /><div className="rounded-[5px] border border-slate-200 bg-slate-50 p-3"><div className="mb-2 text-xs font-black uppercase tracking-widest text-slate-500">Upload Media</div><label htmlFor="docs-media-upload"><input id="docs-media-upload" type="file" className="hidden" onChange={(e) => uploadDocsMedia(e.target.files?.[0] || null)} /><span className="inline-flex h-9 cursor-pointer items-center rounded-[5px] border border-slate-200 bg-white px-3 text-xs font-bold text-slate-700">{mediaUploading ? `Uploading ${mediaUploadPct}%` : "Upload file"}</span></label>{lastUploadedMedia ? <div className="mt-2 break-all text-[11px] text-slate-500">{lastUploadedMedia}</div> : null}</div></> : null}<div className="flex justify-end gap-2"><Button variant="ghost" type="button" onClick={() => setActiveTool(null)}>Cancel</Button><Button type="button" onClick={saveToolBlock}>Save</Button></div></div> : null}
       </Modal>

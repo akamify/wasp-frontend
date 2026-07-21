@@ -7,7 +7,7 @@ import { TableSkeleton } from "@pages/admin/components/AdminSkeletons";
 import { MarkdownPreview } from "./MarkdownPreview";
 
 export function EditorScreen(props: any) {
-  const { navigate, saveDoc, saving, editing, canCreate, canEdit, setEditing, slugify, TOOLBAR, setActiveTool, addedBlocks, syncBlocks, liveContent, editorMode, onEditorModeChange, rawContent, onRawContentChange, canUseRaw, availableCategories } = props;
+  const { navigate, saveDoc, saving, editing, canCreate, canEdit, setEditing, slugify, TOOLBAR, setActiveTool, addedBlocks, syncBlocks, liveContent, editorMode, onEditorModeChange, rawContent, onRawContentChange, canUseRaw, availableCategories, pageKeyOptions } = props;
   const moveBlock = (fromIndex: number, toIndex: number) => {
     if (toIndex < 0 || toIndex >= addedBlocks.length) return;
     const next = [...addedBlocks];
@@ -28,6 +28,16 @@ export function EditorScreen(props: any) {
               <Input label="Title" value={editing.title} onChange={(e) => setEditing((p: any) => ({ ...p, title: e.target.value }))} />
               <Input label="Slug" value={editing.slug} onChange={(e) => setEditing((p: any) => ({ ...p, slug: slugify(e.target.value) }))} />
               <Input label="Description" value={editing.description} onChange={(e) => setEditing((p: any) => ({ ...p, description: e.target.value }))} />
+              <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
+                <Select label="Dashboard Page Key" value={editing.pageKey || ""} onChange={(e) => setEditing((p: any) => ({ ...p, pageKey: e.target.value }))}>
+                  {(Array.isArray(pageKeyOptions) ? pageKeyOptions : []).map((option: any) => (
+                    <option key={option.value} value={option.value}>
+                      {option.label}
+                    </option>
+                  ))}
+                </Select>
+                <Input label="Target Section ID" value={editing.targetSectionId || ""} onChange={(e) => setEditing((p: any) => ({ ...p, targetSectionId: slugify(e.target.value) }))} />
+              </div>
               <Input label="Tags (comma separated)" value={Array.isArray(editing.tags) ? editing.tags.join(", ") : String(editing.tags || "")} onChange={(e) => setEditing((p: any) => ({ ...p, tags: e.target.value }))} />
               <Input label="Keywords (comma separated)" value={Array.isArray(editing.keywords) ? editing.keywords.join(", ") : String(editing.keywords || "")} onChange={(e) => setEditing((p: any) => ({ ...p, keywords: e.target.value }))} />
               <Input label="Audience (comma separated)" value={Array.isArray(editing.audience) ? editing.audience.join(", ") : String(editing.audience || "")} onChange={(e) => setEditing((p: any) => ({ ...p, audience: e.target.value }))} />
