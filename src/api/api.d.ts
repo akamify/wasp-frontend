@@ -202,6 +202,7 @@ export const API: {
     academyArticle(categorySlug: string, articleSlug: string): Promise<any>;
     academyRelated(categorySlug: string, articleSlug: string): Promise<any>;
     academySearch(params?: any): Promise<any>;
+    docsLinks(): Promise<any>;
     submitDocsFeedback(payload: any): Promise<any>;
     createSupportTicket(payload: any): Promise<any>;
     applyCareer(payload: any, file: any, onProgress?: (pct: number) => void): Promise<any>;

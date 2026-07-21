@@ -37,7 +37,7 @@ export function DesktopTopBar({
   logout: () => void;
   notifRef: RefObject<HTMLDivElement | null>;
   profileMenuRef: RefObject<HTMLDivElement | null>;
-  docsUrl: string;
+  docsUrl: string | null;
 }) {
   return (
     <header className="hidden lg:flex h-16 items-center justify-between px-8 bg-white/80 backdrop-blur-xl border-b border-slate-200 z-[130] shrink-0">
@@ -50,18 +50,20 @@ export function DesktopTopBar({
         </button>
       </div>
       <div className="flex items-center gap-4">
-        <a
-          href={docsUrl}
-          target="_blank"
-          rel="noreferrer"
-          className="inline-flex items-center gap-2 px-3 py-2 rounded-[5px] border border-slate-200 bg-white text-[10px] font-black uppercase tracking-widest text-slate-600 shadow-sm hover:border-brand-200 hover:bg-brand-50 hover:text-brand-700 transition-colors"
-          aria-label="Open documentation"
-          title="Open documentation"
-        >
-          <BookOpen size={14} />
-          Docs
-          <ExternalLink size={12} />
-        </a>
+        {docsUrl ? (
+          <a
+            href={docsUrl}
+            target="_blank"
+            rel="noreferrer"
+            className="inline-flex items-center gap-2 px-3 py-2 rounded-[5px] border border-slate-200 bg-white text-[10px] font-black uppercase tracking-widest text-slate-600 shadow-sm hover:border-brand-200 hover:bg-brand-50 hover:text-brand-700 transition-colors"
+            aria-label="Open documentation"
+            title="Open documentation"
+          >
+            <BookOpen size={14} />
+            Docs
+            <ExternalLink size={12} />
+          </a>
+        ) : null}
         <WorkspaceStatusBar className="!border-none !bg-transparent !p-0 !backdrop-blur-none" />
         <div className="h-6 w-px bg-slate-200" />
         <div className="relative" ref={notifRef}>

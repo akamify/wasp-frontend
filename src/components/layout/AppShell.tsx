@@ -6,7 +6,8 @@ import { BRAND_NAME } from "@shared/config/brand";
 import { setCurrencySymbolOverride } from "@shared/config/currency";
 import { API } from "@api/api";
 import { motion, AnimatePresence } from "framer-motion";
-import { NAV_ITEMS, getDocsUrlForPath, getShellTitle, routeTransitionKey } from "@components/layout/app-shell/constants";
+import { NAV_ITEMS, resolveDocsUrlForPath, getShellTitle, routeTransitionKey } from "@components/layout/app-shell/constants";
+import type { DocsLinkItem } from "@components/layout/app-shell/constants";
 import { MobileBottomTabs } from "@components/layout/app-shell/MobileBottomTabs";
 import { MobileTopBar } from "@components/layout/app-shell/MobileTopBar";
 import { MobileDrawer } from "@components/layout/app-shell/MobileDrawer";
@@ -23,6 +24,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const navigate = useNavigate();
   const location = useLocation();
   const [runtimeBrandName, setRuntimeBrandName] = useState("");
+  const [docsLinks, setDocsLinks] = useState<DocsLinkItem[]>([]);
   const [, setCurrencySettingsVersion] = useState(0);
   const resolvedBrandName = runtimeBrandName || BRAND_NAME;
   const [notifOpen, setNotifOpen] = useState(false);
@@ -58,6 +60,21 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         setCurrencySettingsVersion((value) => value + 1);
       })
       .catch(() => { });
+    return () => {
+      mounted = false;
+    };
+  }, []);
+  useEffect(() => {
+    let mounted = true;
+    API.public
+      .docsLinks()
+      .then((res: any) => {
+        if (!mounted) return;
+        setDocsLinks(Array.isArray(res?.docs) ? res.docs : []);
+      })
+      .catch(() => {
+        if (mounted) setDocsLinks([]);
+      });
     return () => {
       mounted = false;
     };
@@ -100,7 +117,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const { requiredPlan, featureNeedsPro, isPlanAccessBlocked, isAccessCheckPending } = useAppShellBilling(location.pathname);
   const shellTitle = getShellTitle(location.pathname, NAV_ITEMS as any);
   const pageTitle = `${shellTitle} | ${resolvedBrandName}`;
-  const docsUrl = getDocsUrlForPath(location.pathname);
+  const docsUrl = resolveDocsUrlForPath(location.pathname, docsLinks);
 
   // Auto-scroll active nav item into view in sidebar
   useEffect(() => {
@@ -201,7 +218,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         {/* Scrollable Content Container */}
         <main
           className={cn(
-            "flex-1 min-h-0 custom-scrollbar relative z-10 lg:pt-0 lg:pb-0",
+            "flex-1 min-h-0 custom-scrollbar relative z-10 lg:pt-2 lg:px-3",
             hideMobileBars ? "overflow-hidden pt-0 pb-0" : "overflow-y-auto pt-14 pb-[68px]"
           )}
         >

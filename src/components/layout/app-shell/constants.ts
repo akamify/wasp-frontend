@@ -30,34 +30,176 @@ export const MOBILE_TABS = [
 
 const DOCS_BASE_URL = String(import.meta.env.VITE_DOCS_BASE_URL || "https://docs.aiwizchat.com").replace(/\/+$/, "");
 
-const PAGE_DOC_LINKS = [
-  { prefix: "/app/meta", path: "/whatsapp-business-account-connect" },
-  { prefix: "/app/templates", path: "/template-creation-approval" },
-  { prefix: "/app/send", path: "/campaigns#create-campaign" },
-  { prefix: "/app/contacts", path: "/contacts#import-contacts" },
-  { prefix: "/app/audiences", path: "/contacts#audiences" },
-  { prefix: "/app/attributes", path: "/contacts#contact-attributes" },
-  { prefix: "/app/conversations", path: "/external-chat-api-integration#realtime-stream" },
-  { prefix: "/app/crm", path: "/crm-access" },
-  { prefix: "/app/flows", path: "/automation-flow-builder" },
-  { prefix: "/app/automation", path: "/automation-flow-builder" },
-  { prefix: "/app/wallet", path: "/wallet-and-billing" },
-  { prefix: "/app/plan", path: "/plans-and-billing" },
-  { prefix: "/app/links", path: "/tracked-links" },
-  { prefix: "/app/ai-agents", path: "/ai-agents" },
-  { prefix: "/app/activity", path: "/activity-logs" },
-  { prefix: "/app/api-keys", path: "/external-chat-api-integration#base-path" },
-  { prefix: "/app/api-reports", path: "/external-chat-api-integration#rate-limits" },
-  { prefix: "/app", path: "/getting-started" },
+type DocsSection = {
+  id?: string;
+  title?: string;
+};
+
+export type DocsLinkItem = {
+  slug?: string;
+  title?: string;
+  description?: string;
+  category?: string;
+  sections?: DocsSection[];
+};
+
+type PageDocsRule = {
+  prefix: string;
+  docSlugs?: string[];
+  docKeywords: string[];
+  sectionIds?: string[];
+  sectionKeywords?: string[];
+};
+
+const PAGE_DOC_RULES: PageDocsRule[] = [
+  {
+    prefix: "/app/meta",
+    docSlugs: ["connect-whatsapp-business-account"],
+    docKeywords: ["connect whatsapp", "whatsapp business account", "embedded signup", "meta"],
+    sectionIds: ["connect-whatsapp"],
+    sectionKeywords: ["connect whatsapp"],
+  },
+  {
+    prefix: "/app/templates",
+    docSlugs: ["whatsapp-templates"],
+    docKeywords: ["whatsapp templates", "templates overview", "template lifecycle"],
+    sectionIds: ["template-lifecycle"],
+    sectionKeywords: ["template lifecycle", "create template"],
+  },
+  {
+    prefix: "/app/send",
+    docSlugs: ["campaigns"],
+    docKeywords: ["campaigns", "campaigns overview", "create campaign"],
+    sectionIds: ["create-campaign"],
+    sectionKeywords: ["create campaign"],
+  },
+  {
+    prefix: "/app/contacts",
+    docSlugs: ["contacts"],
+    docKeywords: ["contacts", "csv contact import"],
+    sectionIds: ["csv-contact-import", "import-contacts"],
+    sectionKeywords: ["csv contact import", "import contacts"],
+  },
+  {
+    prefix: "/app/audiences",
+    docSlugs: ["contacts", "public-feature-list"],
+    docKeywords: ["contacts", "audiences", "public feature list"],
+    sectionIds: ["audiences"],
+    sectionKeywords: ["audiences"],
+  },
+  {
+    prefix: "/app/attributes",
+    docSlugs: ["contacts"],
+    docKeywords: ["contacts", "contact attributes"],
+    sectionIds: ["contact-attributes"],
+    sectionKeywords: ["contact attributes"],
+  },
+  {
+    prefix: "/app/conversations",
+    docSlugs: ["sending-messages-from-inbox"],
+    docKeywords: ["sending messages from inbox", "inbox sending"],
+    sectionIds: ["inbox-sending"],
+    sectionKeywords: ["inbox sending"],
+  },
+  {
+    prefix: "/app/crm",
+    docSlugs: ["crm-access"],
+    docKeywords: ["crm access", "crm overview"],
+    sectionIds: ["crm-overview"],
+    sectionKeywords: ["crm overview"],
+  },
+  {
+    prefix: "/app/flows",
+    docSlugs: ["automation-flows"],
+    docKeywords: ["automation flows", "automation overview"],
+    sectionIds: ["automation-overview"],
+    sectionKeywords: ["automation overview"],
+  },
+  {
+    prefix: "/app/automation",
+    docSlugs: ["automation-flows"],
+    docKeywords: ["automation flows", "supported nodes"],
+    sectionIds: ["supported-nodes"],
+    sectionKeywords: ["supported nodes"],
+  },
+  {
+    prefix: "/app/wallet",
+    docSlugs: ["wallet-and-billing"],
+    docKeywords: ["wallet and billing", "wallet overview"],
+    sectionIds: ["wallet-overview"],
+    sectionKeywords: ["wallet overview"],
+  },
+  {
+    prefix: "/app/plan",
+    docSlugs: ["plans-paid-features-and-upgrade-flow"],
+    docKeywords: ["plans paid features", "paid features", "upgrade flow"],
+    sectionIds: ["paid-features"],
+    sectionKeywords: ["paid features"],
+  },
+  {
+    prefix: "/app/links",
+    docSlugs: ["reports-and-analytics"],
+    docKeywords: ["reports and analytics", "tracked links"],
+    sectionIds: ["reports-overview"],
+    sectionKeywords: ["reports overview", "tracked links"],
+  },
+  {
+    prefix: "/app/activity",
+    docSlugs: ["reports-and-analytics"],
+    docKeywords: ["reports and analytics", "activity logs"],
+    sectionIds: ["reports-overview"],
+    sectionKeywords: ["reports overview", "activity logs"],
+  },
+  {
+    prefix: "/app/api-keys",
+    docSlugs: ["external-chat-api-integration", "external-chat-api-access"],
+    docKeywords: ["external chat api", "api keys", "api integration"],
+    sectionIds: ["base-path"],
+    sectionKeywords: ["base path", "authentication"],
+  },
+  {
+    prefix: "/app/api-reports",
+    docSlugs: ["external-chat-api-integration", "reports-and-analytics"],
+    docKeywords: ["external chat api", "message status updates", "reports and analytics"],
+    sectionIds: ["message-status-updates"],
+    sectionKeywords: ["message status updates"],
+  },
+  {
+    prefix: "/app",
+    docSlugs: ["get-started"],
+    docKeywords: ["get started", "recommended setup checklist"],
+    sectionIds: ["get-started-with-ai-wiz-chat"],
+    sectionKeywords: ["get started"],
+  },
 ];
 
-export function getDocsUrlForPath(pathname: string) {
+function normalizeComparable(value: string | undefined) {
+  return String(value || "").trim().toLowerCase();
+}
+
+function includesAny(value: string, keywords: string[] | undefined) {
+  const normalized = normalizeComparable(value);
+  return (keywords || []).some((keyword) => normalized.includes(normalizeComparable(keyword)));
+}
+
+export function resolveDocsUrlForPath(pathname: string, docs: DocsLinkItem[]) {
   const currentPath = pathname || "/app";
-  const match = PAGE_DOC_LINKS.find((item) => (
+  const rule = PAGE_DOC_RULES.find((item) => (
     item.prefix === "/app" ? currentPath === "/app" : currentPath.startsWith(item.prefix)
   ));
-  const docsPath = match?.path || "/getting-started";
-  return `${DOCS_BASE_URL}${docsPath.startsWith("/") ? docsPath : `/${docsPath}`}`;
+  if (!rule || !Array.isArray(docs) || !docs.length) return null;
+
+  const doc = docs.find((item) => (rule.docSlugs || []).includes(normalizeComparable(item.slug)))
+    || docs.find((item) => includesAny(`${item.slug || ""} ${item.title || ""} ${item.description || ""} ${item.category || ""}`, rule.docKeywords));
+
+  if (!doc?.slug) return null;
+
+  const sections = Array.isArray(doc.sections) ? doc.sections : [];
+  const section = sections.find((item) => (rule.sectionIds || []).includes(normalizeComparable(item.id)))
+    || sections.find((item) => includesAny(`${item.id || ""} ${item.title || ""}`, rule.sectionKeywords));
+
+  const hash = section?.id ? `#${section.id}` : "";
+  return `${DOCS_BASE_URL}/${String(doc.slug).replace(/^\/+/, "")}${hash}`;
 }
 
 export function getShellTitle(pathname: string, items: typeof NAV_ITEMS) {

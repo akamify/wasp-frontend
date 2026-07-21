@@ -14,6 +14,7 @@ export function buildApiGroupSecondary(api, unwrap, API_BASE_URL) {
           .get(`/public/academy/${encodeURIComponent(categorySlug)}/${encodeURIComponent(articleSlug)}/related`)
           .then(unwrap),
       academySearch: (params) => api.get("/public/academy/search", { params }).then(unwrap),
+      docsLinks: () => api.get("/public/docs/links", { cacheTtlMs: 60000 }).then(unwrap),
       submitDocsFeedback: (payload) => api.post("/public/docs/feedback", payload).then(unwrap),
       createSupportTicket: (payload) =>
         api.post("/public/support-tickets", payload).then(unwrap),
