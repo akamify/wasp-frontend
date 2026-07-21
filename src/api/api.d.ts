@@ -207,6 +207,20 @@ export const API: {
     createSupportTicket(payload: any): Promise<any>;
     applyCareer(payload: any, file: any, onProgress?: (pct: number) => void): Promise<any>;
   };
+  ecommerce: {
+    platforms(): Promise<any>;
+    stores(params?: any): Promise<any>;
+    createStore(payload: any): Promise<any>;
+    updateStore(storeId: string, payload: any): Promise<any>;
+    reconnectStore(storeId: string): Promise<any>;
+    pauseStore(storeId: string): Promise<any>;
+    resumeStore(storeId: string): Promise<any>;
+    disconnectStore(storeId: string): Promise<any>;
+    deleteStore(storeId: string): Promise<any>;
+    health(storeId: string): Promise<any>;
+    webhooks(storeId: string): Promise<any>;
+    events(storeId: string, params?: any): Promise<any>;
+  };
   workspaces: {
     list(): Promise<any>;
     create(payload: any): Promise<any>;

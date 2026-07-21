@@ -38,6 +38,7 @@ export const DOC_PAGE_KEY_OPTIONS = [
   { value: "wallet", label: "Wallet" },
   { value: "plans", label: "Plans & Billing" },
   { value: "tracked-links", label: "Tracked Links" },
+  { value: "ecommerce", label: "Ecommerce Integrations" },
   { value: "ai-agents", label: "AI Agents" },
   { value: "activity", label: "Activity" },
   { value: "external-chat-api", label: "External Chat API" },

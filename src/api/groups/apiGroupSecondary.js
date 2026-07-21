@@ -83,6 +83,29 @@ export function buildApiGroupSecondary(api, unwrap, API_BASE_URL) {
           .get(`/workspaces/${encodeURIComponent(workspaceId)}/wallet`)
           .then(unwrap),
     },
+    ecommerce: {
+      platforms: () => api.get("/ecommerce/integrations/platforms").then(unwrap),
+      stores: (params) => api.get("/ecommerce/stores", { params }).then(unwrap),
+      createStore: (payload) => api.post("/ecommerce/stores", payload).then(unwrap),
+      updateStore: (storeId, payload) =>
+        api.patch(`/ecommerce/stores/${encodeURIComponent(storeId)}`, payload).then(unwrap),
+      reconnectStore: (storeId) =>
+        api.post(`/ecommerce/stores/${encodeURIComponent(storeId)}/reconnect`, {}).then(unwrap),
+      pauseStore: (storeId) =>
+        api.post(`/ecommerce/stores/${encodeURIComponent(storeId)}/pause`, {}).then(unwrap),
+      resumeStore: (storeId) =>
+        api.post(`/ecommerce/stores/${encodeURIComponent(storeId)}/resume`, {}).then(unwrap),
+      disconnectStore: (storeId) =>
+        api.post(`/ecommerce/stores/${encodeURIComponent(storeId)}/disconnect`, {}).then(unwrap),
+      deleteStore: (storeId) =>
+        api.delete(`/ecommerce/stores/${encodeURIComponent(storeId)}`).then(unwrap),
+      health: (storeId) =>
+        api.get(`/ecommerce/stores/${encodeURIComponent(storeId)}/health`).then(unwrap),
+      webhooks: (storeId) =>
+        api.get(`/ecommerce/stores/${encodeURIComponent(storeId)}/webhooks`).then(unwrap),
+      events: (storeId, params) =>
+        api.get(`/ecommerce/stores/${encodeURIComponent(storeId)}/events`, { params }).then(unwrap),
+    },
     credentials: {
       getWhatsApp: () => api.get("/credentials/whatsapp").then(unwrap),
       upsertWhatsApp: (payload) =>

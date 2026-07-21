@@ -1,4 +1,4 @@
-import { Bot, BriefcaseBusiness, CreditCard, FileSearch, FileText, History, Key, LayoutDashboard, Link2, ListFilter, MessageSquare, Send, Terminal, Users, Wallet, Workflow, Zap, Layers3 } from "lucide-react";
+import { Bot, BriefcaseBusiness, CreditCard, FileSearch, FileText, History, Key, LayoutDashboard, Link2, ListFilter, MessageSquare, Send, ShoppingBag, Terminal, Users, Wallet, Workflow, Zap, Layers3 } from "lucide-react";
 
 export const NAV_ITEMS = [
   { to: "/app", label: "Dashboard", kicker: "overview", icon: LayoutDashboard, pageKey: "dashboard" },
@@ -14,6 +14,7 @@ export const NAV_ITEMS = [
   { to: "/app/wallet", label: "Wallet", kicker: "credits", icon: Wallet, pageKey: "wallet" },
   { to: "/app/plan", label: "Plans & Billing", kicker: "subscription", icon: CreditCard, pageKey: "plans" },
   { to: "/app/links", label: "Tracked links", kicker: "analytics", icon: Link2, pageKey: "tracked-links" },
+  { to: "/app/ecommerce", label: "Ecommerce", kicker: "stores", icon: ShoppingBag, pageKey: "ecommerce" },
   { to: "/app/automation", label: "Automation", kicker: "chat flows", icon: Zap, pageKey: "automation" },
   { to: "/app/ai-agents", label: "AI Agents", kicker: "assistants", icon: Bot, pageKey: "ai-agents" },
   { to: "/app/activity", label: "Activity", kicker: "audit logs", icon: History, pageKey: "activity" },

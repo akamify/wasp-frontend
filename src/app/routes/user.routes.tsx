@@ -36,6 +36,7 @@ import WalletPage from "@pages/user/pages/Wallet";
 import FlowsPage from "@pages/user/pages/Flows";
 import FlowsCreatePage from "@pages/user/pages/FlowsCreate";
 import WorkspacesPage from "@pages/user/pages/Workspaces";
+import EcommerceIntegrationsPage from "@modules/ecommerce/pages/EcommerceIntegrationsPage";
 
 function inApp(page: ReactNode) {
   return <AppShell>{page}</AppShell>;
@@ -61,6 +62,7 @@ export function userRoutes() {
         <Route path="/app/crm/settings" element={inApp(<CrmSettingsPage />)} />
       </Route>
       <Route path="/app/links" element={inApp(<LinksPage />)} />
+      <Route path="/app/ecommerce/:platform?" element={inApp(<EcommerceIntegrationsPage />)} />
       <Route path="/app/automation" element={inApp(<AutomationFlowsPage />)} />
       <Route path="/app/automation/events" element={inApp(<AutomationEventTestPage />)} />
       <Route path="/app/automation/:flowId" element={inApp(<FlowBuilderPage />)} />
