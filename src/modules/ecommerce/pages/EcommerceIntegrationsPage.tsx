@@ -41,19 +41,11 @@ type StoreForm = {
   consumerSecret: string;
 };
 
-type ShopifyForm = {
-  shop: string;
-};
-
 const EMPTY_FORM: StoreForm = {
   storeName: "",
   storeUrl: "",
   consumerKey: "",
   consumerSecret: "",
-};
-
-const EMPTY_SHOPIFY_FORM: ShopifyForm = {
-  shop: "",
 };
 
 const PLATFORM_LABELS: Record<string, string> = {
@@ -113,8 +105,6 @@ export default function EcommerceIntegrationsPage() {
   const [form, setForm] = useState<StoreForm>(EMPTY_FORM);
   const [fieldErrors, setFieldErrors] = useState<Partial<Record<keyof StoreForm, string>>>({});
   const [shopifyModalOpen, setShopifyModalOpen] = useState(false);
-  const [shopifyForm, setShopifyForm] = useState<ShopifyForm>(EMPTY_SHOPIFY_FORM);
-  const [shopifyError, setShopifyError] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [actionBusy, setActionBusy] = useState("");
   const [confirmAction, setConfirmAction] = useState<null | { title: string; body: string; cta: string; danger?: boolean; run: () => Promise<void> }>(null);
@@ -182,8 +172,6 @@ export default function EcommerceIntegrationsPage() {
 
   function openCreate() {
     if (isShopify) {
-      setShopifyForm(EMPTY_SHOPIFY_FORM);
-      setShopifyError("");
       setShopifyModalOpen(true);
       return;
     }
@@ -201,8 +189,6 @@ export default function EcommerceIntegrationsPage() {
   }
 
   function openShopifyCreate() {
-    setShopifyForm(EMPTY_SHOPIFY_FORM);
-    setShopifyError("");
     setShopifyModalOpen(true);
   }
 
@@ -239,21 +225,14 @@ export default function EcommerceIntegrationsPage() {
     }
   }
 
-  async function submitShopify(storeId?: string) {
-    const shop = shopifyForm.shop.trim();
-    if (!shop) {
-      setShopifyError("Shopify store domain is required.");
-      return;
-    }
+  async function submitShopify() {
     setSubmitting(true);
-    setShopifyError("");
     try {
-      const res = await API.ecommerce.startShopifyConnect({ shop, ...(storeId ? { storeId } : {}) });
+      const res = await API.ecommerce.startShopifyConnect({});
       if (!res?.authorizationUrl) throw new Error("Shopify authorization URL was not returned.");
       window.location.assign(res.authorizationUrl);
     } catch (err) {
       const message = extractError(err, "Failed to start Shopify authorization.");
-      setShopifyError(message);
       toast(message, "error");
       setSubmitting(false);
     }
@@ -386,11 +365,8 @@ export default function EcommerceIntegrationsPage() {
         ) : (
           <ShopifyAuthModal
             open={shopifyModalOpen}
-            form={shopifyForm}
-            error={shopifyError}
             submitting={submitting}
             onClose={() => !submitting && setShopifyModalOpen(false)}
-            onChange={setShopifyForm}
             onSubmit={() => submitShopify()}
           />
         )}
@@ -437,11 +413,8 @@ export default function EcommerceIntegrationsPage() {
       />
       <ShopifyAuthModal
         open={shopifyModalOpen}
-        form={shopifyForm}
-        error={shopifyError}
         submitting={submitting}
         onClose={() => !submitting && setShopifyModalOpen(false)}
-        onChange={setShopifyForm}
         onSubmit={() => submitShopify()}
       />
     </div>
@@ -573,30 +546,18 @@ function StoreModal(props: {
 
 function ShopifyAuthModal(props: {
   open: boolean;
-  form: ShopifyForm;
-  error: string;
   submitting: boolean;
   onClose: () => void;
-  onChange: (form: ShopifyForm) => void;
   onSubmit: () => void;
 }) {
-  const setShop = (value: string) => props.onChange({ ...props.form, shop: value });
   return (
     <Modal isOpen={props.open} onClose={props.onClose} title="Connect Shopify Store" className="max-w-xl">
       <div className="space-y-4">
         <p className="text-sm font-semibold leading-6 text-slate-600">
-          AI Wiz Chat will redirect you to Shopify to authorize ecommerce access for this workspace. The app requests only store, order, product and customer read access needed for webhook event sync.
+          You'll be redirected to Shopify to authorize AI Wiz Chat to access the permissions required for ecommerce integration.
         </p>
-        <Input
-          label="Shopify Store Domain"
-          value={props.form.shop}
-          onChange={(event) => setShop(event.target.value)}
-          placeholder="your-store.myshopify.com"
-          autoComplete="off"
-          hint={props.error || "Use the store's myshopify.com domain. Tokens are issued by Shopify and never shown in Ai Wiz Chat."}
-        />
         <div className="rounded-[5px] border border-slate-100 bg-slate-50 p-3 text-xs font-semibold text-slate-600">
-          After authorization, AI Wiz Chat verifies the store identity, checks granted scopes, configures managed webhooks and stores the per-store token encrypted.
+          Shopify identifies the store during authorization. AI Wiz Chat then verifies the store, checks granted scopes, configures managed webhooks, and stores the per-store authorization securely.
         </div>
         <div className="flex justify-end gap-2">
           <Button variant="ghost" disabled={props.submitting} onClick={props.onClose}>Cancel</Button>
