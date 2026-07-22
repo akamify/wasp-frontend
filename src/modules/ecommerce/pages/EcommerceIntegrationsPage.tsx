@@ -105,6 +105,9 @@ export default function EcommerceIntegrationsPage() {
   const [form, setForm] = useState<StoreForm>(EMPTY_FORM);
   const [fieldErrors, setFieldErrors] = useState<Partial<Record<keyof StoreForm, string>>>({});
   const [shopifyModalOpen, setShopifyModalOpen] = useState(false);
+  const [shopifyShopDomain, setShopifyShopDomain] = useState("");
+  const [shopifyRequiresShopContext, setShopifyRequiresShopContext] = useState(false);
+  const [shopifyFieldError, setShopifyFieldError] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [actionBusy, setActionBusy] = useState("");
   const [confirmAction, setConfirmAction] = useState<null | { title: string; body: string; cta: string; danger?: boolean; run: () => Promise<void> }>(null);
@@ -189,6 +192,9 @@ export default function EcommerceIntegrationsPage() {
   }
 
   function openShopifyCreate() {
+    setShopifyShopDomain("");
+    setShopifyRequiresShopContext(false);
+    setShopifyFieldError("");
     setShopifyModalOpen(true);
   }
 
@@ -226,9 +232,20 @@ export default function EcommerceIntegrationsPage() {
   }
 
   async function submitShopify() {
+    setShopifyFieldError("");
+    if (shopifyRequiresShopContext && !shopifyShopDomain.trim()) {
+      setShopifyFieldError("Enter your Shopify store handle or myshopify.com domain.");
+      return;
+    }
     setSubmitting(true);
     try {
-      const res = await API.ecommerce.startShopifyConnect({});
+      const payload = shopifyRequiresShopContext ? { shopDomain: shopifyShopDomain.trim() } : {};
+      const res = await API.ecommerce.startShopifyConnect(payload);
+      if (res?.requiresShopContext) {
+        setShopifyRequiresShopContext(true);
+        setSubmitting(false);
+        return;
+      }
       if (!res?.authorizationUrl) throw new Error("Shopify authorization URL was not returned.");
       window.location.assign(res.authorizationUrl);
     } catch (err) {
@@ -366,7 +383,11 @@ export default function EcommerceIntegrationsPage() {
           <ShopifyAuthModal
             open={shopifyModalOpen}
             submitting={submitting}
+            requiresShopContext={shopifyRequiresShopContext}
+            shopDomain={shopifyShopDomain}
+            fieldError={shopifyFieldError}
             onClose={() => !submitting && setShopifyModalOpen(false)}
+            onShopDomainChange={setShopifyShopDomain}
             onSubmit={() => submitShopify()}
           />
         )}
@@ -414,7 +435,11 @@ export default function EcommerceIntegrationsPage() {
       <ShopifyAuthModal
         open={shopifyModalOpen}
         submitting={submitting}
+        requiresShopContext={shopifyRequiresShopContext}
+        shopDomain={shopifyShopDomain}
+        fieldError={shopifyFieldError}
         onClose={() => !submitting && setShopifyModalOpen(false)}
+        onShopDomainChange={setShopifyShopDomain}
         onSubmit={() => submitShopify()}
       />
     </div>
@@ -547,7 +572,11 @@ function StoreModal(props: {
 function ShopifyAuthModal(props: {
   open: boolean;
   submitting: boolean;
+  requiresShopContext: boolean;
+  shopDomain: string;
+  fieldError: string;
   onClose: () => void;
+  onShopDomainChange: (value: string) => void;
   onSubmit: () => void;
 }) {
   return (
@@ -556,8 +585,19 @@ function ShopifyAuthModal(props: {
         <p className="text-sm font-semibold leading-6 text-slate-600">
           You'll be redirected to Shopify to authorize AI Wiz Chat to access the permissions required for ecommerce integration.
         </p>
+        {props.requiresShopContext ? (
+          <Input
+            label="Shopify store handle"
+            value={props.shopDomain}
+            onChange={(e) => props.onShopDomainChange(e.target.value)}
+            placeholder="your-store or your-store.myshopify.com"
+            hint={props.fieldError || "Development Shopify apps need a store context before OAuth can start. Do not enter API keys, secrets, tokens, or custom storefront domains."}
+          />
+        ) : null}
         <div className="rounded-[5px] border border-slate-100 bg-slate-50 p-3 text-xs font-semibold text-slate-600">
-          Shopify identifies the store during authorization. AI Wiz Chat then verifies the store, checks granted scopes, configures managed webhooks, and stores the per-store authorization securely.
+          {props.requiresShopContext
+            ? "AI Wiz Chat uses this only to open Shopify's authorization screen. The final store identity is verified again from Shopify before anything is saved."
+            : "Shopify identifies the store during authorization. AI Wiz Chat then verifies the store, checks granted scopes, configures managed webhooks, and stores the per-store authorization securely."}
         </div>
         <div className="flex justify-end gap-2">
           <Button variant="ghost" disabled={props.submitting} onClick={props.onClose}>Cancel</Button>
