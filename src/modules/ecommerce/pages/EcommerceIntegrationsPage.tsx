@@ -147,6 +147,10 @@ export default function EcommerceIntegrationsPage() {
     if (status === "connected") {
       toast(`Shopify store connected${params.get("store") ? `: ${params.get("store")}` : ""}`, "success");
       load(true);
+    } else if (status === "needs_store_context") {
+      setShopifyRequiresShopContext(true);
+      setShopifyModalOpen(true);
+      toast(params.get("message") || "This Shopify app needs a store context before authorization can start.", "error");
     } else if (status === "error") {
       toast(params.get("message") || "Shopify connection failed", "error");
     }
