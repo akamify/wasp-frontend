@@ -87,6 +87,8 @@ export function buildApiGroupSecondary(api, unwrap, API_BASE_URL) {
       platforms: () => api.get("/ecommerce/integrations/platforms").then(unwrap),
       stores: (params) => api.get("/ecommerce/stores", { params }).then(unwrap),
       createStore: (payload) => api.post("/ecommerce/stores", payload).then(unwrap),
+      startShopifyConnect: (payload) =>
+        api.post("/ecommerce/shopify/connect/start", payload).then(unwrap),
       updateStore: (storeId, payload) =>
         api.patch(`/ecommerce/stores/${encodeURIComponent(storeId)}`, payload).then(unwrap),
       reconnectStore: (storeId) =>

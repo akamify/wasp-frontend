@@ -211,6 +211,7 @@ export const API: {
     platforms(): Promise<any>;
     stores(params?: any): Promise<any>;
     createStore(payload: any): Promise<any>;
+    startShopifyConnect(payload: any): Promise<any>;
     updateStore(storeId: string, payload: any): Promise<any>;
     reconnectStore(storeId: string): Promise<any>;
     pauseStore(storeId: string): Promise<any>;

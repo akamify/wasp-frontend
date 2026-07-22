@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { useNavigate, useParams } from "react-router-dom";
+import { useLocation, useNavigate, useParams } from "react-router-dom";
 import { API } from "@api/api";
 import { Badge } from "@components/ui/Badge";
 import { Button } from "@components/ui/Button";
@@ -41,11 +41,24 @@ type StoreForm = {
   consumerSecret: string;
 };
 
+type ShopifyForm = {
+  shop: string;
+};
+
 const EMPTY_FORM: StoreForm = {
   storeName: "",
   storeUrl: "",
   consumerKey: "",
   consumerSecret: "",
+};
+
+const EMPTY_SHOPIFY_FORM: ShopifyForm = {
+  shop: "",
+};
+
+const PLATFORM_LABELS: Record<string, string> = {
+  woocommerce: "WooCommerce",
+  shopify: "Shopify",
 };
 
 function statusTone(status: string): "good" | "warn" | "bad" | "neutral" | "brand" {
@@ -81,9 +94,13 @@ function validateForm(form: StoreForm, editing: boolean) {
 
 export default function EcommerceIntegrationsPage() {
   const navigate = useNavigate();
+  const location = useLocation();
   const { platform } = useParams();
   const selectedPlatform = String(platform || "").toLowerCase();
+  const isPlatformView = selectedPlatform === "woocommerce" || selectedPlatform === "shopify";
   const isWooCommerce = selectedPlatform === "woocommerce";
+  const isShopify = selectedPlatform === "shopify";
+  const platformLabel = PLATFORM_LABELS[selectedPlatform] || "";
   const { toast } = useToast();
 
   const [platforms, setPlatforms] = useState<EcommercePlatform[]>([]);
@@ -95,6 +112,9 @@ export default function EcommerceIntegrationsPage() {
   const [editingStore, setEditingStore] = useState<EcommerceStore | null>(null);
   const [form, setForm] = useState<StoreForm>(EMPTY_FORM);
   const [fieldErrors, setFieldErrors] = useState<Partial<Record<keyof StoreForm, string>>>({});
+  const [shopifyModalOpen, setShopifyModalOpen] = useState(false);
+  const [shopifyForm, setShopifyForm] = useState<ShopifyForm>(EMPTY_SHOPIFY_FORM);
+  const [shopifyError, setShopifyError] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [actionBusy, setActionBusy] = useState("");
   const [confirmAction, setConfirmAction] = useState<null | { title: string; body: string; cta: string; danger?: boolean; run: () => Promise<void> }>(null);
@@ -107,8 +127,8 @@ export default function EcommerceIntegrationsPage() {
     setRefreshing(true);
     setError("");
     try {
-      if (isWooCommerce) {
-        const res = await API.ecommerce.stores({ platform: "woocommerce" });
+      if (isPlatformView) {
+        const res = await API.ecommerce.stores({ platform: selectedPlatform });
         setStores(Array.isArray(res?.stores) ? res.stores : []);
       } else {
         const res = await API.ecommerce.platforms();
@@ -120,11 +140,25 @@ export default function EcommerceIntegrationsPage() {
       setLoading(false);
       setRefreshing(false);
     }
-  }, [isWooCommerce]);
+  }, [isPlatformView, selectedPlatform]);
 
   useEffect(() => {
     load();
   }, [load]);
+
+  useEffect(() => {
+    if (!isShopify) return;
+    const params = new URLSearchParams(location.search);
+    const status = params.get("shopifyStatus");
+    if (!status) return;
+    if (status === "connected") {
+      toast(`Shopify store connected${params.get("store") ? `: ${params.get("store")}` : ""}`, "success");
+      load(true);
+    } else if (status === "error") {
+      toast(params.get("message") || "Shopify connection failed", "error");
+    }
+    navigate("/app/ecommerce/shopify", { replace: true });
+  }, [isShopify, load, location.search, navigate, toast]);
 
   const wooPlatform = useMemo(() => {
     return platforms.find((item) => item.platform === "woocommerce") || {
@@ -136,7 +170,23 @@ export default function EcommerceIntegrationsPage() {
     };
   }, [platforms]);
 
+  const shopifyPlatform = useMemo(() => {
+    return platforms.find((item) => item.platform === "shopify") || {
+      platform: "shopify",
+      name: "Shopify",
+      description: "Authorize Shopify stores and manage ecommerce webhook event sync.",
+      connectedStores: 0,
+      statusSummary: {},
+    };
+  }, [platforms]);
+
   function openCreate() {
+    if (isShopify) {
+      setShopifyForm(EMPTY_SHOPIFY_FORM);
+      setShopifyError("");
+      setShopifyModalOpen(true);
+      return;
+    }
     setEditingStore(null);
     setForm(EMPTY_FORM);
     setFieldErrors({});
@@ -148,6 +198,12 @@ export default function EcommerceIntegrationsPage() {
     setForm({ storeName: store.storeName || "", storeUrl: store.storeUrl || "", consumerKey: "", consumerSecret: "" });
     setFieldErrors({});
     setModalOpen(true);
+  }
+
+  function openShopifyCreate() {
+    setShopifyForm(EMPTY_SHOPIFY_FORM);
+    setShopifyError("");
+    setShopifyModalOpen(true);
   }
 
   async function submitStore() {
@@ -183,6 +239,26 @@ export default function EcommerceIntegrationsPage() {
     }
   }
 
+  async function submitShopify(storeId?: string) {
+    const shop = shopifyForm.shop.trim();
+    if (!shop) {
+      setShopifyError("Shopify store domain is required.");
+      return;
+    }
+    setSubmitting(true);
+    setShopifyError("");
+    try {
+      const res = await API.ecommerce.startShopifyConnect({ shop, ...(storeId ? { storeId } : {}) });
+      if (!res?.authorizationUrl) throw new Error("Shopify authorization URL was not returned.");
+      window.location.assign(res.authorizationUrl);
+    } catch (err) {
+      const message = extractError(err, "Failed to start Shopify authorization.");
+      setShopifyError(message);
+      toast(message, "error");
+      setSubmitting(false);
+    }
+  }
+
   async function runStoreAction(store: EcommerceStore, label: string, action: () => Promise<unknown>, success: string) {
     setActionBusy(`${store.id}:${label}`);
     try {
@@ -192,6 +268,22 @@ export default function EcommerceIntegrationsPage() {
     } catch (err) {
       toast(extractError(err, "Store action failed."), "error");
     } finally {
+      setActionBusy("");
+    }
+  }
+
+  async function reconnectStore(store: EcommerceStore) {
+    setActionBusy(`${store.id}:reconnect`);
+    try {
+      const res = await API.ecommerce.reconnectStore(store.id);
+      if (res?.requiresAuthorization && res?.authorization?.authorizationUrl) {
+        window.location.assign(res.authorization.authorizationUrl);
+        return;
+      }
+      toast("Reconnect check completed", "success");
+      await load(true);
+    } catch (err) {
+      toast(extractError(err, "Reconnect failed."), "error");
       setActionBusy("");
     }
   }
@@ -210,7 +302,7 @@ export default function EcommerceIntegrationsPage() {
     }
   }
 
-  if (isWooCommerce) {
+  if (isPlatformView) {
     return (
       <div className="space-y-6 p-4 md:p-8">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
@@ -218,15 +310,17 @@ export default function EcommerceIntegrationsPage() {
             <button type="button" onClick={() => navigate("/app/ecommerce")} className="mb-3 inline-flex items-center gap-2 text-xs font-black uppercase tracking-widest text-slate-500 hover:text-slate-900">
               <ArrowLeft size={14} /> Ecommerce Integrations
             </button>
-            <h1 className="text-2xl font-black text-slate-900">WooCommerce</h1>
-            <p className="mt-1 text-sm text-slate-500">Manage connected WooCommerce stores, credentials and webhook health.</p>
+            <h1 className="text-2xl font-black text-slate-900">{platformLabel}</h1>
+            <p className="mt-1 text-sm text-slate-500">
+              Manage connected {platformLabel} stores, authorization and webhook health.
+            </p>
           </div>
           <div className="flex flex-wrap gap-2">
             <Button variant="outline" className="cursor-pointer" onClick={() => load(true)} disabled={refreshing}>
               <RefreshCw size={16} className={cn(refreshing && "animate-spin cursor-pointer")} /> Refresh
             </Button>
             <Button onClick={openCreate}>
-              <Plus size={16} /> Add WooCommerce Store
+              <Plus size={16} /> Add {platformLabel} Store
             </Button>
           </div>
         </div>
@@ -234,15 +328,15 @@ export default function EcommerceIntegrationsPage() {
         {error ? <div className="rounded-[5px] border border-rose-100 bg-rose-50 px-4 py-3 text-sm font-bold text-rose-700">{error}</div> : null}
 
         {loading ? (
-          <Card className="p-8 text-sm font-semibold text-slate-500">Loading WooCommerce stores...</Card>
+          <Card className="p-8 text-sm font-semibold text-slate-500">Loading {platformLabel} stores...</Card>
         ) : stores.length === 0 ? (
           <Card className="p-8">
             <div className="flex flex-col items-start gap-4 sm:flex-row sm:items-center sm:justify-between">
               <div>
-                <div className="text-lg font-black text-slate-900">No WooCommerce stores connected.</div>
+                <div className="text-lg font-black text-slate-900">No {platformLabel} stores connected.</div>
                 <p className="mt-1 text-sm text-slate-500">Connect your first store to prepare ecommerce event sync.</p>
               </div>
-              <Button onClick={openCreate}><Plus size={16} /> Connect WooCommerce Store</Button>
+              <Button onClick={openCreate}><Plus size={16} /> Connect {platformLabel} Store</Button>
             </div>
           </Card>
         ) : (
@@ -254,18 +348,18 @@ export default function EcommerceIntegrationsPage() {
                 busyKey={actionBusy}
                 onManage={() => openDetails(store)}
                 onEdit={() => openEdit(store)}
-                onReconnect={() => runStoreAction(store, "reconnect", () => API.ecommerce.reconnectStore(store.id), "Reconnect check completed")}
+                onReconnect={() => reconnectStore(store)}
                 onPause={() => runStoreAction(store, "pause", () => API.ecommerce.pauseStore(store.id), "Store event processing paused")}
                 onResume={() => runStoreAction(store, "resume", () => API.ecommerce.resumeStore(store.id), "Store event processing resumed")}
                 onDisconnect={() => setConfirmAction({
-                  title: "Disconnect WooCommerce Store",
+                  title: `Disconnect ${platformLabel} Store`,
                   body: "This stops ecommerce event processing and disables AI Wiz-managed webhook tracking for this store. Historical data is preserved.",
                   cta: "Disconnect",
                   danger: true,
                   run: () => runStoreAction(store, "disconnect", () => API.ecommerce.disconnectStore(store.id), "Store disconnected"),
                 })}
                 onDelete={() => setConfirmAction({
-                  title: "Delete WooCommerce Store",
+                  title: `Delete ${platformLabel} Store`,
                   body: "This permanently removes the store connection record and encrypted credentials. Contacts and unrelated CRM history are not deleted.",
                   cta: "Delete Store",
                   danger: true,
@@ -276,16 +370,30 @@ export default function EcommerceIntegrationsPage() {
           </div>
         )}
 
-        <StoreModal
-          open={modalOpen}
-          editing={!!editingStore}
-          form={form}
-          fieldErrors={fieldErrors}
-          submitting={submitting}
-          onClose={() => !submitting && setModalOpen(false)}
-          onChange={setForm}
-          onSubmit={submitStore}
-        />
+        {isWooCommerce || editingStore ? (
+          <StoreModal
+            open={modalOpen}
+            editing={!!editingStore}
+            platformName={platformLabel}
+            credentialFields={isWooCommerce}
+            form={form}
+            fieldErrors={fieldErrors}
+            submitting={submitting}
+            onClose={() => !submitting && setModalOpen(false)}
+            onChange={setForm}
+            onSubmit={submitStore}
+          />
+        ) : (
+          <ShopifyAuthModal
+            open={shopifyModalOpen}
+            form={shopifyForm}
+            error={shopifyError}
+            submitting={submitting}
+            onClose={() => !submitting && setShopifyModalOpen(false)}
+            onChange={setShopifyForm}
+            onSubmit={() => submitShopify()}
+          />
+        )}
         <ConfirmModal confirm={confirmAction} busy={!!actionBusy} onClose={() => setConfirmAction(null)} />
         <DetailsModal store={detailsStore} events={events} loading={eventsLoading} onClose={() => setDetailsStore(null)} />
       </div>
@@ -312,17 +420,29 @@ export default function EcommerceIntegrationsPage() {
 
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
         <PlatformCard platform={wooPlatform} loading={loading} onOpen={() => navigate("/app/ecommerce/woocommerce")} onAdd={openCreate} />
+        <PlatformCard platform={shopifyPlatform} loading={loading} onOpen={() => navigate("/app/ecommerce/shopify")} onAdd={openShopifyCreate} />
       </div>
 
       <StoreModal
         open={modalOpen}
         editing={false}
+        platformName="WooCommerce"
+        credentialFields
         form={form}
         fieldErrors={fieldErrors}
         submitting={submitting}
         onClose={() => !submitting && setModalOpen(false)}
         onChange={setForm}
         onSubmit={submitStore}
+      />
+      <ShopifyAuthModal
+        open={shopifyModalOpen}
+        form={shopifyForm}
+        error={shopifyError}
+        submitting={submitting}
+        onClose={() => !submitting && setShopifyModalOpen(false)}
+        onChange={setShopifyForm}
+        onSubmit={() => submitShopify()}
       />
     </div>
   );
@@ -415,6 +535,8 @@ function InfoLine({ label, value }: { label: string; value: string }) {
 function StoreModal(props: {
   open: boolean;
   editing: boolean;
+  platformName: string;
+  credentialFields?: boolean;
   form: StoreForm;
   fieldErrors: Partial<Record<keyof StoreForm, string>>;
   submitting: boolean;
@@ -422,21 +544,63 @@ function StoreModal(props: {
   onChange: (form: StoreForm) => void;
   onSubmit: () => void;
 }) {
-  const { form, fieldErrors, editing, submitting } = props;
+  const { form, fieldErrors, editing, submitting, credentialFields = true, platformName } = props;
   const set = (key: keyof StoreForm, value: string) => props.onChange({ ...form, [key]: value });
   return (
-    <Modal isOpen={props.open} onClose={props.onClose} title={editing ? "Edit WooCommerce Store" : "Connect WooCommerce Store"} className="max-w-xl">
+    <Modal isOpen={props.open} onClose={props.onClose} title={editing ? `Edit ${platformName} Store` : `Connect ${platformName} Store`} className="max-w-xl">
       <div className="space-y-4">
         <Input label="Store Name" value={form.storeName} onChange={(e) => set("storeName", e.target.value)} hint={fieldErrors.storeName || "Use a recognizable internal store name."} />
-        <Input label="Store URL" value={form.storeUrl} disabled={editing} onChange={(e) => set("storeUrl", e.target.value)} placeholder="https://store.example.com" hint={fieldErrors.storeUrl || "Must be a public HTTPS WooCommerce store URL."} />
-        <Input label="Consumer Key" value={form.consumerKey} onChange={(e) => set("consumerKey", e.target.value)} autoComplete="off" hint={fieldErrors.consumerKey || (editing ? "Leave blank unless updating credentials." : "WooCommerce REST API consumer key with read/write access.")} />
-        <Input label="Consumer Secret" type="password" value={form.consumerSecret} onChange={(e) => set("consumerSecret", e.target.value)} autoComplete="new-password" hint={fieldErrors.consumerSecret || "Secret is submitted once and never returned by the API."} />
+        {credentialFields ? (
+          <>
+            <Input label="Store URL" value={form.storeUrl} disabled={editing} onChange={(e) => set("storeUrl", e.target.value)} placeholder="https://store.example.com" hint={fieldErrors.storeUrl || "Must be a public HTTPS WooCommerce store URL."} />
+            <Input label="Consumer Key" value={form.consumerKey} onChange={(e) => set("consumerKey", e.target.value)} autoComplete="off" hint={fieldErrors.consumerKey || (editing ? "Leave blank unless updating credentials." : "WooCommerce REST API consumer key with read/write access.")} />
+            <Input label="Consumer Secret" type="password" value={form.consumerSecret} onChange={(e) => set("consumerSecret", e.target.value)} autoComplete="new-password" hint={fieldErrors.consumerSecret || "Secret is submitted once and never returned by the API."} />
+          </>
+        ) : null}
         <div className="rounded-[5px] border border-slate-100 bg-slate-50 p-3 text-xs font-semibold text-slate-600">
-          Connecting validates API access, provisions AI Wiz-managed webhooks, encrypts credentials, and returns only sanitized store metadata.
+          {credentialFields
+            ? "Connecting validates API access, provisions AI Wiz-managed webhooks, encrypts credentials, and returns only sanitized store metadata."
+            : "Only safe store metadata can be edited here. Shopify authorization is managed through Shopify reconnect."}
         </div>
         <div className="flex justify-end gap-2">
           <Button variant="ghost" disabled={submitting} onClick={props.onClose}>Cancel</Button>
           <Button disabled={submitting} onClick={props.onSubmit}>{submitting ? (editing ? "Saving..." : "Connecting...") : editing ? "Save Changes" : "Connect Store"}</Button>
+        </div>
+      </div>
+    </Modal>
+  );
+}
+
+function ShopifyAuthModal(props: {
+  open: boolean;
+  form: ShopifyForm;
+  error: string;
+  submitting: boolean;
+  onClose: () => void;
+  onChange: (form: ShopifyForm) => void;
+  onSubmit: () => void;
+}) {
+  const setShop = (value: string) => props.onChange({ ...props.form, shop: value });
+  return (
+    <Modal isOpen={props.open} onClose={props.onClose} title="Connect Shopify Store" className="max-w-xl">
+      <div className="space-y-4">
+        <p className="text-sm font-semibold leading-6 text-slate-600">
+          AI Wiz Chat will redirect you to Shopify to authorize ecommerce access for this workspace. The app requests only store, order, product and customer read access needed for webhook event sync.
+        </p>
+        <Input
+          label="Shopify Store Domain"
+          value={props.form.shop}
+          onChange={(event) => setShop(event.target.value)}
+          placeholder="your-store.myshopify.com"
+          autoComplete="off"
+          hint={props.error || "Use the store's myshopify.com domain. Tokens are issued by Shopify and never shown in Ai Wiz Chat."}
+        />
+        <div className="rounded-[5px] border border-slate-100 bg-slate-50 p-3 text-xs font-semibold text-slate-600">
+          After authorization, AI Wiz Chat verifies the store identity, checks granted scopes, configures managed webhooks and stores the per-store token encrypted.
+        </div>
+        <div className="flex justify-end gap-2">
+          <Button variant="ghost" disabled={props.submitting} onClick={props.onClose}>Cancel</Button>
+          <Button disabled={props.submitting} onClick={props.onSubmit}>{props.submitting ? "Redirecting..." : "Continue to Shopify"}</Button>
         </div>
       </div>
     </Modal>
@@ -458,8 +622,9 @@ function ConfirmModal({ confirm, busy, onClose }: { confirm: null | { title: str
 }
 
 function DetailsModal({ store, events, loading, onClose }: { store: EcommerceStore | null; events: any[]; loading: boolean; onClose: () => void }) {
+  const title = `${PLATFORM_LABELS[String(store?.platform || "")] || "Ecommerce"} Store Details`;
   return (
-    <Modal isOpen={!!store} onClose={onClose} title="WooCommerce Store Details" className="max-w-3xl">
+    <Modal isOpen={!!store} onClose={onClose} title={title} className="max-w-3xl">
       {store ? (
         <div className="space-y-5">
           <div className="grid gap-3 sm:grid-cols-2">
