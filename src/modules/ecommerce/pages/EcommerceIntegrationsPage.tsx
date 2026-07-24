@@ -8,7 +8,7 @@ import { Input } from "@components/ui/Input";
 import { Modal } from "@components/ui/Modal";
 import { useToast } from "@shared/providers/ToastContext";
 import { cn } from "@shared/utils/cn";
-import { ArrowLeft, ExternalLink, MoreVertical, Plus, RefreshCw, ShoppingBag, Store, Trash2 } from "lucide-react";
+import { ArrowLeft, Copy, ExternalLink, MoreVertical, Plus, RefreshCw, ShoppingBag, Store, Trash2 } from "lucide-react";
 
 type EcommercePlatform = {
   platform: string;
@@ -34,6 +34,18 @@ type EcommerceStore = {
   disconnectedAt?: string | null;
 };
 
+type CustomCredentials = {
+  apiKey?: string;
+  webhookSecret?: string;
+  signing?: {
+    algorithm?: string;
+    signatureHeader?: string;
+    timestampHeader?: string;
+    signingString?: string;
+  };
+  endpointUrl?: string;
+};
+
 type StoreForm = {
   storeName: string;
   storeUrl: string;
@@ -51,12 +63,13 @@ const EMPTY_FORM: StoreForm = {
 const PLATFORM_LABELS: Record<string, string> = {
   woocommerce: "WooCommerce",
   shopify: "Shopify",
+  custom: "Custom Store",
 };
 
 function statusTone(status: string): "good" | "warn" | "bad" | "neutral" | "brand" {
   if (status === "connected") return "good";
-  if (status === "paused" || status === "connecting" || status === "reconnecting" || status === "degraded") return "warn";
-  if (status === "connection_error" || status === "disconnected") return "bad";
+  if (status === "paused" || status === "suspended" || status === "connecting" || status === "reconnecting" || status === "degraded") return "warn";
+  if (status === "connection_error" || status === "disconnected" || status === "revoked") return "bad";
   return "neutral";
 }
 
@@ -72,13 +85,13 @@ function extractError(error: unknown, fallback: string) {
   return err?.response?.data?.message || err?.userMessage || err?.message || fallback;
 }
 
-function validateForm(form: StoreForm, editing: boolean) {
+function validateForm(form: StoreForm, editing: boolean, credentialFields = true) {
   const errors: Partial<Record<keyof StoreForm, string>> = {};
   if (!form.storeName.trim()) errors.storeName = "Store name is required.";
   if (!editing && !/^https:\/\/[^/\s]+/i.test(form.storeUrl.trim())) errors.storeUrl = "Enter a valid HTTPS store URL.";
-  if (!editing && !form.consumerKey.trim()) errors.consumerKey = "Consumer key is required.";
-  if (!editing && !form.consumerSecret.trim()) errors.consumerSecret = "Consumer secret is required.";
-  if (editing && (form.consumerKey.trim() || form.consumerSecret.trim()) && (!form.consumerKey.trim() || !form.consumerSecret.trim())) {
+  if (credentialFields && !editing && !form.consumerKey.trim()) errors.consumerKey = "Consumer key is required.";
+  if (credentialFields && !editing && !form.consumerSecret.trim()) errors.consumerSecret = "Consumer secret is required.";
+  if (credentialFields && editing && (form.consumerKey.trim() || form.consumerSecret.trim()) && (!form.consumerKey.trim() || !form.consumerSecret.trim())) {
     errors.consumerSecret = "Enter both consumer key and consumer secret to update credentials.";
   }
   return errors;
@@ -89,9 +102,10 @@ export default function EcommerceIntegrationsPage() {
   const location = useLocation();
   const { platform } = useParams();
   const selectedPlatform = String(platform || "").toLowerCase();
-  const isPlatformView = selectedPlatform === "woocommerce" || selectedPlatform === "shopify";
+  const isPlatformView = selectedPlatform === "woocommerce" || selectedPlatform === "shopify" || selectedPlatform === "custom";
   const isWooCommerce = selectedPlatform === "woocommerce";
   const isShopify = selectedPlatform === "shopify";
+  const isCustom = selectedPlatform === "custom";
   const platformLabel = PLATFORM_LABELS[selectedPlatform] || "";
   const { toast } = useToast();
 
@@ -114,6 +128,9 @@ export default function EcommerceIntegrationsPage() {
   const [detailsStore, setDetailsStore] = useState<EcommerceStore | null>(null);
   const [events, setEvents] = useState<any[]>([]);
   const [eventsLoading, setEventsLoading] = useState(false);
+  const [customCredentials, setCustomCredentials] = useState<CustomCredentials | null>(null);
+  const [rotateStore, setRotateStore] = useState<EcommerceStore | null>(null);
+  const [rotateOtp, setRotateOtp] = useState("");
 
   const load = useCallback(async (silent = false) => {
     if (!silent) setLoading(true);
@@ -177,6 +194,16 @@ export default function EcommerceIntegrationsPage() {
     };
   }, [platforms]);
 
+  const customPlatform = useMemo(() => {
+    return platforms.find((item) => item.platform === "custom") || {
+      platform: "custom",
+      name: "Custom Store",
+      description: "Connect a custom website with signed ecommerce webhooks.",
+      connectedStores: 0,
+      statusSummary: {},
+    };
+  }, [platforms]);
+
   function openCreate() {
     if (isShopify) {
       setShopifyModalOpen(true);
@@ -203,28 +230,37 @@ export default function EcommerceIntegrationsPage() {
   }
 
   async function submitStore() {
-    const errors = validateForm(form, !!editingStore);
+    const credentialFields = isWooCommerce || (!!editingStore && editingStore.platform === "woocommerce");
+    const errors = validateForm(form, !!editingStore, credentialFields);
     setFieldErrors(errors);
     if (Object.keys(errors).length) return;
     setSubmitting(true);
     try {
       if (editingStore) {
         const payload: Record<string, string> = { storeName: form.storeName.trim() };
-        if (form.consumerKey.trim() || form.consumerSecret.trim()) {
+        if (credentialFields && (form.consumerKey.trim() || form.consumerSecret.trim())) {
           payload.consumerKey = form.consumerKey.trim();
           payload.consumerSecret = form.consumerSecret.trim();
         }
         await API.ecommerce.updateStore(editingStore.id, payload);
         toast("Store updated", "success");
       } else {
-        await API.ecommerce.createStore({
-          platform: "woocommerce",
+        const res = await API.ecommerce.createStore({
+          platform: isCustom ? "custom" : "woocommerce",
           storeName: form.storeName.trim(),
           storeUrl: form.storeUrl.trim(),
-          consumerKey: form.consumerKey.trim(),
-          consumerSecret: form.consumerSecret.trim(),
+          ...(isCustom ? {} : {
+            consumerKey: form.consumerKey.trim(),
+            consumerSecret: form.consumerSecret.trim(),
+          }),
         });
-        toast("WooCommerce store connected", "success");
+        if (isCustom && res?.credentials) {
+          setCustomCredentials({
+            ...res.credentials,
+            endpointUrl: `${API.baseUrl.replace(/\/+$/, "")}/ecommerce/webhooks/custom/${encodeURIComponent(res.store?.id || "")}`,
+          });
+        }
+        toast(isCustom ? "Custom store connected" : "WooCommerce store connected", "success");
       }
       setModalOpen(false);
       await load(true);
@@ -270,6 +306,61 @@ export default function EcommerceIntegrationsPage() {
     } finally {
       setActionBusy("");
     }
+  }
+
+  async function sendCustomTestEvent(store: EcommerceStore) {
+    await runStoreAction(
+      store,
+      "test",
+      () => API.ecommerce.sendCustomTestEvent(store.id, {
+        topic: "order.created",
+        payload: { source: "dashboard_test", orderId: `test_${Date.now()}` },
+      }),
+      "Custom test event queued",
+    );
+  }
+
+  async function requestRotateSecret(store: EcommerceStore) {
+    setActionBusy(`${store.id}:rotate`);
+    try {
+      await API.ecommerce.requestCustomSecretOtp(store.id);
+      setRotateStore(store);
+      setRotateOtp("");
+      toast("OTP sent for webhook secret rotation", "success");
+    } catch (err) {
+      toast(extractError(err, "Failed to send OTP."), "error");
+    } finally {
+      setActionBusy("");
+    }
+  }
+
+  async function submitRotateSecret() {
+    if (!rotateStore) return;
+    if (!/^\d{6}$/.test(rotateOtp)) {
+      toast("Enter the 6-digit OTP.", "error");
+      return;
+    }
+    setActionBusy(`${rotateStore.id}:rotate`);
+    try {
+      const res = await API.ecommerce.rotateCustomSecret(rotateStore.id, { otp: rotateOtp });
+      setCustomCredentials({
+        ...res.credentials,
+        endpointUrl: `${API.baseUrl.replace(/\/+$/, "")}/ecommerce/webhooks/custom/${encodeURIComponent(rotateStore.id)}`,
+      });
+      setRotateStore(null);
+      setRotateOtp("");
+      toast("Webhook secret rotated", "success");
+      await load(true);
+    } catch (err) {
+      toast(extractError(err, "Failed to rotate webhook secret."), "error");
+    } finally {
+      setActionBusy("");
+    }
+  }
+
+  async function copyToClipboard(value: string, label = "Copied") {
+    await navigator.clipboard.writeText(value);
+    toast(label, "success");
   }
 
   async function reconnectStore(store: EcommerceStore) {
@@ -351,6 +442,15 @@ export default function EcommerceIntegrationsPage() {
                 onReconnect={() => reconnectStore(store)}
                 onPause={() => runStoreAction(store, "pause", () => API.ecommerce.pauseStore(store.id), "Store event processing paused")}
                 onResume={() => runStoreAction(store, "resume", () => API.ecommerce.resumeStore(store.id), "Store event processing resumed")}
+                onTest={store.platform === "custom" ? () => sendCustomTestEvent(store) : undefined}
+                onRotateSecret={store.platform === "custom" ? () => requestRotateSecret(store) : undefined}
+                onRevoke={store.platform === "custom" ? () => setConfirmAction({
+                  title: "Revoke Custom Store Credentials",
+                  body: "This invalidates the custom API key and webhook secret. Incoming website events will be rejected until a new custom store is created.",
+                  cta: "Revoke",
+                  danger: true,
+                  run: () => runStoreAction(store, "revoke", () => API.ecommerce.revokeStore(store.id), "Custom store credentials revoked"),
+                }) : undefined}
                 onDisconnect={() => setConfirmAction({
                   title: `Disconnect ${platformLabel} Store`,
                   body: "This stops ecommerce event processing and disables AI Wiz-managed webhook tracking for this store. Historical data is preserved.",
@@ -370,12 +470,13 @@ export default function EcommerceIntegrationsPage() {
           </div>
         )}
 
-        {isWooCommerce || editingStore ? (
+        {!isShopify || editingStore ? (
           <StoreModal
             open={modalOpen}
             editing={!!editingStore}
             platformName={platformLabel}
-            credentialFields={isWooCommerce}
+            credentialFields={isWooCommerce || editingStore?.platform === "woocommerce"}
+            showStoreUrl={!editingStore}
             form={form}
             fieldErrors={fieldErrors}
             submitting={submitting}
@@ -397,6 +498,15 @@ export default function EcommerceIntegrationsPage() {
         )}
         <ConfirmModal confirm={confirmAction} busy={!!actionBusy} onClose={() => setConfirmAction(null)} />
         <DetailsModal store={detailsStore} events={events} loading={eventsLoading} onClose={() => setDetailsStore(null)} />
+        <CustomCredentialsModal credentials={customCredentials} onClose={() => setCustomCredentials(null)} onCopy={copyToClipboard} />
+        <RotateSecretModal
+          store={rotateStore}
+          otp={rotateOtp}
+          busy={actionBusy.endsWith(":rotate")}
+          onOtpChange={setRotateOtp}
+          onClose={() => !actionBusy && setRotateStore(null)}
+          onSubmit={submitRotateSecret}
+        />
       </div>
     );
   }
@@ -422,6 +532,7 @@ export default function EcommerceIntegrationsPage() {
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
         <PlatformCard platform={wooPlatform} loading={loading} onOpen={() => navigate("/app/ecommerce/woocommerce")} onAdd={openCreate} />
         <PlatformCard platform={shopifyPlatform} loading={loading} onOpen={() => navigate("/app/ecommerce/shopify")} onAdd={openShopifyCreate} />
+        <PlatformCard platform={customPlatform} loading={loading} onOpen={() => navigate("/app/ecommerce/custom")} onAdd={() => navigate("/app/ecommerce/custom")} />
       </div>
 
       <StoreModal
@@ -429,6 +540,7 @@ export default function EcommerceIntegrationsPage() {
         editing={false}
         platformName="WooCommerce"
         credentialFields
+        showStoreUrl
         form={form}
         fieldErrors={fieldErrors}
         submitting={submitting}
@@ -484,6 +596,9 @@ function StoreCard(props: {
   onReconnect: () => void;
   onPause: () => void;
   onResume: () => void;
+  onTest?: () => void;
+  onRotateSecret?: () => void;
+  onRevoke?: () => void;
   onDisconnect: () => void;
   onDelete: () => void;
 }) {
@@ -518,11 +633,14 @@ function StoreCard(props: {
         <Button size="sm" onClick={props.onManage}><MoreVertical size={14} /> Manage</Button>
         <Button size="sm" variant="outline" onClick={props.onEdit}>Edit</Button>
         <Button size="sm" variant="outline" disabled={busy} onClick={props.onReconnect}>Reconnect</Button>
-        {store.status === "paused" ? (
-          <Button size="sm" variant="outline" disabled={busy} onClick={props.onResume}>Resume</Button>
+        {store.status === "paused" || store.status === "suspended" ? (
+          <Button size="sm" variant="outline" disabled={busy} onClick={props.onResume}>{store.platform === "custom" ? "Reactivate" : "Resume"}</Button>
         ) : (
-          <Button size="sm" variant="outline" disabled={busy} onClick={props.onPause}>Pause</Button>
+          <Button size="sm" variant="outline" disabled={busy} onClick={props.onPause}>{store.platform === "custom" ? "Suspend" : "Pause"}</Button>
         )}
+        {props.onTest ? <Button size="sm" variant="outline" disabled={busy} onClick={props.onTest}>Send Test</Button> : null}
+        {props.onRotateSecret ? <Button size="sm" variant="outline" disabled={busy} onClick={props.onRotateSecret}>Rotate Secret</Button> : null}
+        {props.onRevoke ? <Button size="sm" variant="danger" disabled={busy} onClick={props.onRevoke}>Revoke</Button> : null}
         <Button size="sm" variant="danger" disabled={busy} onClick={props.onDisconnect}>Disconnect</Button>
         <Button size="sm" variant="danger" disabled={busy} onClick={props.onDelete}><Trash2 size={14} /> Delete</Button>
       </div>
@@ -539,6 +657,7 @@ function StoreModal(props: {
   editing: boolean;
   platformName: string;
   credentialFields?: boolean;
+  showStoreUrl?: boolean;
   form: StoreForm;
   fieldErrors: Partial<Record<keyof StoreForm, string>>;
   submitting: boolean;
@@ -546,15 +665,17 @@ function StoreModal(props: {
   onChange: (form: StoreForm) => void;
   onSubmit: () => void;
 }) {
-  const { form, fieldErrors, editing, submitting, credentialFields = true, platformName } = props;
+  const { form, fieldErrors, editing, submitting, credentialFields = true, showStoreUrl = true, platformName } = props;
   const set = (key: keyof StoreForm, value: string) => props.onChange({ ...form, [key]: value });
   return (
     <Modal isOpen={props.open} onClose={props.onClose} title={editing ? `Edit ${platformName} Store` : `Connect ${platformName} Store`} className="max-w-xl">
       <div className="space-y-4">
         <Input label="Store Name" value={form.storeName} onChange={(e) => set("storeName", e.target.value)} hint={fieldErrors.storeName || "Use a recognizable internal store name."} />
+        {showStoreUrl ? (
+          <Input label="Store URL" value={form.storeUrl} disabled={editing} onChange={(e) => set("storeUrl", e.target.value)} placeholder="https://store.example.com" hint={fieldErrors.storeUrl || "Must be a public HTTPS website URL. This is metadata; webhook security uses the API key and HMAC secret."} />
+        ) : null}
         {credentialFields ? (
           <>
-            <Input label="Store URL" value={form.storeUrl} disabled={editing} onChange={(e) => set("storeUrl", e.target.value)} placeholder="https://store.example.com" hint={fieldErrors.storeUrl || "Must be a public HTTPS WooCommerce store URL."} />
             <Input label="Consumer Key" value={form.consumerKey} onChange={(e) => set("consumerKey", e.target.value)} autoComplete="off" hint={fieldErrors.consumerKey || (editing ? "Leave blank unless updating credentials." : "WooCommerce REST API consumer key with read/write access.")} />
             <Input label="Consumer Secret" type="password" value={form.consumerSecret} onChange={(e) => set("consumerSecret", e.target.value)} autoComplete="new-password" hint={fieldErrors.consumerSecret || "Secret is submitted once and never returned by the API."} />
           </>
@@ -562,7 +683,9 @@ function StoreModal(props: {
         <div className="rounded-[5px] border border-slate-100 bg-slate-50 p-3 text-xs font-semibold text-slate-600">
           {credentialFields
             ? "Connecting validates API access, provisions AI Wiz-managed webhooks, encrypts credentials, and returns only sanitized store metadata."
-            : "Only safe store metadata can be edited here. Shopify authorization is managed through Shopify reconnect."}
+            : editing
+              ? "Only safe store metadata can be edited here. Credentials and webhook secrets are managed with dedicated actions."
+              : "AI Wiz Chat will generate a custom API key and webhook signing secret. Save them now; they are shown only once."}
         </div>
         <div className="flex justify-end gap-2">
           <Button variant="ghost" disabled={submitting} onClick={props.onClose}>Cancel</Button>
@@ -620,6 +743,72 @@ function ConfirmModal({ confirm, busy, onClose }: { confirm: null | { title: str
         <div className="flex justify-end gap-2">
           <Button variant="ghost" disabled={busy} onClick={onClose}>Cancel</Button>
           <Button variant={confirm?.danger ? "danger" : "primary"} disabled={busy} onClick={async () => { if (!confirm) return; await confirm.run(); onClose(); }}>{confirm?.cta || "Confirm"}</Button>
+        </div>
+      </div>
+    </Modal>
+  );
+}
+
+function CustomCredentialsModal({ credentials, onClose, onCopy }: { credentials: CustomCredentials | null; onClose: () => void; onCopy: (value: string, label?: string) => Promise<void> }) {
+  return (
+    <Modal isOpen={!!credentials} onClose={onClose} title="Custom Store Credentials" className="max-w-2xl">
+      {credentials ? (
+        <div className="space-y-4">
+          <div className="rounded-[5px] border border-amber-100 bg-amber-50 p-3 text-sm font-bold text-amber-800">
+            Save these values now. The API key and webhook secret are shown only once.
+          </div>
+          <SecretLine label="Webhook endpoint" value={credentials.endpointUrl || ""} onCopy={onCopy} />
+          {credentials.apiKey ? <SecretLine label="API key" value={credentials.apiKey} onCopy={onCopy} /> : null}
+          {credentials.webhookSecret ? <SecretLine label="Webhook secret" value={credentials.webhookSecret} onCopy={onCopy} /> : null}
+          <div className="rounded-[5px] border border-slate-100 bg-slate-50 p-3 text-xs font-semibold text-slate-600">
+            Sign each JSON request with HMAC-SHA256 using <span className="font-black">timestamp.rawBody</span>. Send headers <span className="font-black">Authorization: Bearer API_KEY</span>, <span className="font-black">X-Webhook-Timestamp</span>, and <span className="font-black">X-Webhook-Signature</span>.
+          </div>
+          <div className="flex justify-end">
+            <Button onClick={onClose}>Done</Button>
+          </div>
+        </div>
+      ) : null}
+    </Modal>
+  );
+}
+
+function SecretLine({ label, value, onCopy }: { label: string; value: string; onCopy: (value: string, label?: string) => Promise<void> }) {
+  return (
+    <div className="rounded-[5px] border border-slate-100 p-3">
+      <div className="mb-1 text-[10px] font-black uppercase tracking-widest text-slate-400">{label}</div>
+      <div className="flex items-center gap-2">
+        <code className="min-w-0 flex-1 break-all rounded-[5px] bg-slate-950 px-3 py-2 text-xs font-bold text-white">{value}</code>
+        <Button type="button" size="sm" variant="outline" onClick={() => void onCopy(value, `${label} copied`)}>
+          <Copy size={14} /> Copy
+        </Button>
+      </div>
+    </div>
+  );
+}
+
+function RotateSecretModal(props: {
+  store: EcommerceStore | null;
+  otp: string;
+  busy: boolean;
+  onOtpChange: (value: string) => void;
+  onClose: () => void;
+  onSubmit: () => void;
+}) {
+  return (
+    <Modal isOpen={!!props.store} onClose={props.onClose} title="Rotate Webhook Secret" className="max-w-lg">
+      <div className="space-y-4">
+        <p className="text-sm font-semibold leading-6 text-slate-600">
+          Enter the OTP sent to your account email. Rotating the secret invalidates the old webhook signature secret immediately.
+        </p>
+        <Input
+          label="OTP"
+          value={props.otp}
+          onChange={(e) => props.onOtpChange(e.target.value.replace(/[^\d]/g, "").slice(0, 6))}
+          placeholder="123456"
+        />
+        <div className="flex justify-end gap-2">
+          <Button variant="ghost" disabled={props.busy} onClick={props.onClose}>Cancel</Button>
+          <Button disabled={props.busy || !/^\d{6}$/.test(props.otp)} onClick={props.onSubmit}>{props.busy ? "Rotating..." : "Rotate Secret"}</Button>
         </div>
       </div>
     </Modal>

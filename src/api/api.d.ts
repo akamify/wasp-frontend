@@ -217,6 +217,10 @@ export const API: {
     pauseStore(storeId: string): Promise<any>;
     resumeStore(storeId: string): Promise<any>;
     disconnectStore(storeId: string): Promise<any>;
+    revokeStore(storeId: string): Promise<any>;
+    requestCustomSecretOtp(storeId: string): Promise<any>;
+    rotateCustomSecret(storeId: string, payload: any): Promise<any>;
+    sendCustomTestEvent(storeId: string, payload?: any): Promise<any>;
     deleteStore(storeId: string): Promise<any>;
     health(storeId: string): Promise<any>;
     webhooks(storeId: string): Promise<any>;

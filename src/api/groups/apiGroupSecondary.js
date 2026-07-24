@@ -99,6 +99,14 @@ export function buildApiGroupSecondary(api, unwrap, API_BASE_URL) {
         api.post(`/ecommerce/stores/${encodeURIComponent(storeId)}/resume`, {}).then(unwrap),
       disconnectStore: (storeId) =>
         api.post(`/ecommerce/stores/${encodeURIComponent(storeId)}/disconnect`, {}).then(unwrap),
+      revokeStore: (storeId) =>
+        api.post(`/ecommerce/stores/${encodeURIComponent(storeId)}/revoke`, {}).then(unwrap),
+      requestCustomSecretOtp: (storeId) =>
+        api.post(`/ecommerce/stores/${encodeURIComponent(storeId)}/custom/secret/request-otp`, {}).then(unwrap),
+      rotateCustomSecret: (storeId, payload) =>
+        api.post(`/ecommerce/stores/${encodeURIComponent(storeId)}/custom/secret/rotate`, payload).then(unwrap),
+      sendCustomTestEvent: (storeId, payload) =>
+        api.post(`/ecommerce/stores/${encodeURIComponent(storeId)}/custom/test-event`, payload || {}).then(unwrap),
       deleteStore: (storeId) =>
         api.delete(`/ecommerce/stores/${encodeURIComponent(storeId)}`).then(unwrap),
       health: (storeId) =>
