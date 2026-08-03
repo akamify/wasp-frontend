@@ -57,6 +57,9 @@ export default function MetaConnectPage() {
   const [embeddedConnection, setEmbeddedConnection] = useState<any>(null);
   const [profileImageBroken, setProfileImageBroken] = useState(false);
   const [registrationPin, setRegistrationPin] = useState("");
+  const [pinModalOpen, setPinModalOpen] = useState(false);
+  const [diagnostics, setDiagnostics] = useState<any>(null);
+  const [diagnosticsLoading, setDiagnosticsLoading] = useState(false);
   const authCodeRef = useRef<string | null>(null);
 
   const signupDetailsRef = useRef<{
@@ -231,6 +234,19 @@ export default function MetaConnectPage() {
     setProfileImageBroken(false);
   }, [embeddedConnection?.businessProfile?.profilePictureUrl]);
 
+  useEffect(() => {
+    const stage = String(
+      embeddedConnection?.lifecycleState || embeddedConnection?.onboardingStage || "",
+    );
+    if (stage === "PIN_REQUIRED") {
+      setPinModalOpen(true);
+      return;
+    }
+    if (["READY", "READY_WITH_WARNINGS", "FAILED", "EXPIRED"].includes(stage)) {
+      setPinModalOpen(false);
+    }
+  }, [embeddedConnection?.lifecycleState, embeddedConnection?.onboardingStage]);
+
   const connectWhatsApp = useCallback(async () => {
     setEmbeddedBusy(true);
     setEmbeddedError("");
@@ -289,7 +305,8 @@ export default function MetaConnectPage() {
           }
           if (result?.requiresPinSetup) {
             clearApiGetCache();
-            toast("Meta connected. Complete phone registration to finish setup.", "warning");
+            setPinModalOpen(true);
+            toast("Business connected. Enter your registration PIN to finish onboarding.", "warning");
             signupActiveRef.current = false;
             clearMessageListener();
             await loadStatus();
@@ -304,7 +321,7 @@ export default function MetaConnectPage() {
             });
           });
           clearApiGetCache();
-          toast("WhatsApp connected successfully", "success");
+          toast("WhatsApp is ready to send messages.", "success");
           signupActiveRef.current = false;
           clearMessageListener();
           await loadStatus();
@@ -513,8 +530,71 @@ export default function MetaConnectPage() {
     }
   }, [loadStatus, toast]);
 
+  const runDiagnostics = useCallback(async () => {
+    setDiagnosticsLoading(true);
+    setEmbeddedError("");
+    try {
+      const result = await API.meta.subscriptionHealth();
+      setDiagnostics(result);
+      toast(
+        result?.healthy ? "Diagnostics completed" : "Diagnostics found issues",
+        result?.healthy ? "success" : "warning",
+      );
+    } catch (e: any) {
+      const message =
+        e?.response?.data?.message || "Diagnostics could not be completed";
+      setEmbeddedError(message);
+      toast(message, "error");
+    } finally {
+      setDiagnosticsLoading(false);
+    }
+  }, [toast]);
+
+  const retryCurrentStage = useCallback(async () => {
+    const stage = String(
+      embeddedConnection?.lifecycleState || embeddedConnection?.onboardingStage || "",
+    );
+    if (["PIN_REQUIRED", "FAILED", "REGISTERING", "PHONE_REGISTERED", "EXPIRED"].includes(stage)) {
+      setPinModalOpen(true);
+      return;
+    }
+    if (["METADATA_SYNCING", "SYNC_WARNING"].includes(stage)) {
+      await refreshConnectionMetadata();
+      return;
+    }
+    if (stage === "TEMPLATE_SYNCING") {
+      try {
+        setEmbeddedBusy(true);
+        await API.templates.refreshWhatsApp();
+        toast("Template sync retried", "success");
+        await loadStatus();
+      } catch (e: any) {
+        const message =
+          e?.response?.data?.message || "Template sync retry failed";
+        setEmbeddedError(message);
+        toast(message, "error");
+      } finally {
+        setEmbeddedBusy(false);
+      }
+    }
+  }, [embeddedConnection?.lifecycleState, embeddedConnection?.onboardingStage, loadStatus, refreshConnectionMetadata, toast]);
+
   const connectionStatusMessage =
-    embeddedConnection?.connectionStatus === "reauthorization_required"
+    lifecycleState === "PIN_REQUIRED"
+      ? "Meta account and business are connected, but the phone still needs Cloud API registration."
+      : lifecycleState === "REGISTERING"
+        ? "Your phone is being registered with WhatsApp Cloud API."
+        : lifecycleState === "PHONE_REGISTERED"
+          ? "Phone registration succeeded. Final onboarding checks are still running."
+          : lifecycleState === "METADATA_SYNCING"
+            ? "Syncing business profile, phone health and messaging limits from Meta."
+            : lifecycleState === "TEMPLATE_SYNCING"
+              ? "Syncing approved templates for the active WhatsApp Business Account."
+              : lifecycleState === "READY_WITH_WARNINGS"
+                ? "WhatsApp is ready, but some non-blocking sync warnings still need review."
+                : lifecycleState === "EXPIRED"
+                  ? "The 14-day registration window expired. Restart Embedded Signup to continue."
+                  : embeddedConnection?.connectionStatus === "reauthorization_required"
       ? "Meta authorization expired or was revoked. Reconnect WhatsApp to restore live phone and profile metadata."
       : embeddedConnection?.connectionStatus === "PENDING_REGISTRATION"
         ? "Meta account is linked, but the phone is not registered on Cloud API yet."
@@ -537,6 +617,10 @@ export default function MetaConnectPage() {
     needsRegistration
       ? "Do not treat this number as connected until registration reaches READY."
       : null;
+  const registrationHelp =
+    lifecycleState === "PIN_REQUIRED"
+      ? "Use the existing 6-digit two-step verification PIN if this number already had one. Otherwise choose a new 6-digit PIN to register it on Cloud API."
+      : embeddedConnection?.registrationRecommendedAction || null;
   const businessProfile = embeddedConnection?.businessProfile || {};
   const authorizationRequired =
     embeddedConnection?.authorizationRequired === true ||
@@ -565,16 +649,22 @@ export default function MetaConnectPage() {
       icon: <PlugZap size={17} />,
     },
     {
-      key: "SELECT_BUSINESS",
-      title: "Select business",
-      description: "Confirm the shared WABA for this workspace",
+      key: "BUSINESS_CONNECTED",
+      title: "Business connected",
+      description: "Confirm the shared WhatsApp Business Account",
       icon: <Building2 size={17} />,
     },
     {
-      key: "VERIFY_PHONE",
-      title: "Verify phone",
-      description: "Confirm the sending number from Meta",
+      key: "PHONE_VERIFIED",
+      title: "Phone discovered",
+      description: "Confirm the sending number returned by Meta",
       icon: <Phone size={17} />,
+    },
+    {
+      key: "ENTER_PIN",
+      title: "Registration PIN",
+      description: "Enter the 6-digit PIN required for Cloud API registration",
+      icon: <ShieldCheck size={17} />,
     },
     {
       key: "REGISTER_PHONE",
@@ -593,6 +683,12 @@ export default function MetaConnectPage() {
       title: "Sync templates",
       description: "Refresh approved templates for the active WABA",
       icon: <Workflow size={17} />,
+    },
+    {
+      key: "VERIFY_CONNECTION",
+      title: "Final verification",
+      description: "Run final checks for token, webhook and messaging readiness",
+      icon: <Globe size={17} />,
     },
     {
       key: "READY",
@@ -790,21 +886,6 @@ export default function MetaConnectPage() {
 
                     {needsRegistration ? (
                       <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
-                        <input
-                          value={registrationPin}
-                          onChange={(event) =>
-                            setRegistrationPin(
-                              String(event.target.value || "")
-                                .replace(/\D/g, "")
-                                .slice(0, 6),
-                            )
-                          }
-                          inputMode="numeric"
-                          maxLength={6}
-                          type="password"
-                          placeholder="6-digit PIN"
-                          className="h-12 min-w-[170px] rounded-xl border border-white/25 bg-white/10 px-4 text-sm font-bold text-white placeholder:text-white/60 focus:border-white/60 focus:outline-none"
-                        />
                         <Button
                           type="button"
                           variant="outline"
@@ -816,16 +897,29 @@ export default function MetaConnectPage() {
                             "disabled:pointer-events-none disabled:opacity-60",
                             "[&_svg]:!text-amber-950",
                           )}
-                          onClick={() => void completePhoneRegistration()}
-                          disabled={!canCompleteRegistration || registrationPin.length !== 6}
+                          onClick={() => setPinModalOpen(true)}
+                          disabled={embeddedBusy}
                         >
                           <ShieldCheck size={16} />
                           <span>
-                            {String(embeddedConnection?.registrationStatus || "") === "FAILED"
-                              ? "Retry registration"
-                              : "Register phone"}
+                            {lifecycleState === "PIN_REQUIRED"
+                              ? "Enter PIN"
+                              : String(embeddedConnection?.registrationStatus || "") === "FAILED"
+                                ? "Retry registration"
+                                : "Continue setup"}
                           </span>
                         </Button>
+                        {["FAILED", "SYNC_WARNING", "TEMPLATE_SYNCING", "EXPIRED"].includes(lifecycleState) ? (
+                          <Button
+                            type="button"
+                            variant="outline"
+                            className="h-12 min-w-[170px] justify-center rounded-xl border-white/20 bg-white/8 px-5 font-black text-white transition hover:border-white/40 hover:bg-white/12"
+                            onClick={() => void retryCurrentStage()}
+                            disabled={embeddedBusy}
+                          >
+                            Retry current stage
+                          </Button>
+                        ) : null}
                       </div>
                     ) : authorizationRequired ? (
                       <Button
@@ -1171,6 +1265,7 @@ export default function MetaConnectPage() {
 
               {connectionStatusMessage ||
               registrationWarning ||
+              registrationHelp ||
               (Array.isArray(embeddedConnection?.metadataWarnings) &&
                 embeddedConnection.metadataWarnings.length) ? (
                 <div className="mt-5 space-y-3">
@@ -1188,6 +1283,13 @@ export default function MetaConnectPage() {
                       body={registrationWarning}
                     />
                   ) : null}
+                  {registrationHelp ? (
+                    <StatusNotice
+                      tone="slate"
+                      title="What to do next"
+                      body={registrationHelp}
+                    />
+                  ) : null}
                   {Array.isArray(embeddedConnection?.metadataWarnings) &&
                   embeddedConnection.metadataWarnings.length ? (
                     <StatusNotice
@@ -1200,11 +1302,68 @@ export default function MetaConnectPage() {
               ) : null}
             </Card>
 
+            <Card className="rounded-[2px] border border-slate-200/90 bg-white p-5 shadow-[0_20px_60px_-44px_rgba(15,23,42,0.52)] sm:p-6">
+              <SectionHeading
+                eyebrow="Connection health"
+                title="Live health checks"
+                description="Clear readiness checks so your team always knows whether WhatsApp is truly ready to send."
+                action={
+                  <Button
+                    variant="outline"
+                    className="h-10 rounded-xl border-slate-200 bg-white px-3.5 font-bold transition-all duration-200 hover:-translate-y-0.5 hover:border-slate-300 hover:bg-slate-50 hover:shadow-sm"
+                    onClick={() => void runDiagnostics()}
+                    disabled={diagnosticsLoading}
+                  >
+                    <Activity size={15} className={cn(diagnosticsLoading && "animate-spin")} />
+                    Run diagnostics
+                  </Button>
+                }
+              />
+              <div className="mt-5 grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+                <HealthItem label="Meta connected" healthy={["PIN_REQUIRED", "REGISTERING", "PHONE_REGISTERED", "METADATA_SYNCING", "TEMPLATE_SYNCING", "READY", "READY_WITH_WARNINGS"].includes(lifecycleState)} pending={!embeddedConnection} />
+                <HealthItem label="Webhook status" healthy={embeddedConnection?.webhookSubscribed === true} pending={!embeddedConnection} />
+                <HealthItem label="Registration status" healthy={String(embeddedConnection?.registrationStatus || "") === "COMPLETED"} pending={String(embeddedConnection?.registrationStatus || "") !== "FAILED" && String(embeddedConnection?.registrationStatus || "") !== "EXPIRED" && String(embeddedConnection?.registrationStatus || "") !== "COMPLETED"} />
+                <HealthItem label="Business verification" healthy={String(embeddedConnection?.codeVerificationStatus || "").toUpperCase() === "VERIFIED"} pending={!embeddedConnection?.codeVerificationStatus} />
+                <HealthItem label="Display name" healthy={["APPROVED", "AVAILABLE_WITHOUT_REVIEW"].includes(String(embeddedConnection?.nameStatus || "").toUpperCase())} pending={!embeddedConnection?.nameStatus} />
+                <HealthItem label="Phone readiness" healthy={["READY", "READY_WITH_WARNINGS"].includes(lifecycleState)} pending={!embeddedConnection} />
+                <HealthItem label="Messaging limit" healthy={Boolean(embeddedConnection?.messagingLimitTier)} pending={!embeddedConnection?.messagingLimitTier} />
+                <HealthItem label="Quality rating" healthy={Boolean(embeddedConnection?.qualityRating)} pending={!embeddedConnection?.qualityRating} />
+                <HealthItem label="Token status" healthy={embeddedConnection?.authorizationRequired !== true} pending={!embeddedConnection} />
+              </div>
+              {diagnostics ? (
+                <div className="mt-5 rounded-[16px] border border-slate-200 bg-slate-50 p-4">
+                  <div className="flex flex-wrap items-center justify-between gap-3">
+                    <div>
+                      <p className="text-[11px] font-black uppercase tracking-[0.18em] text-slate-400">Diagnostics result</p>
+                      <p className="mt-1 text-base font-black text-slate-950">
+                        {diagnostics.healthy ? "All critical checks passed" : "Action required before messaging is ready"}
+                      </p>
+                    </div>
+                    <span className={cn(
+                      "inline-flex rounded-full px-3 py-1 text-[11px] font-black uppercase tracking-[0.16em]",
+                      diagnostics.healthy ? "bg-emerald-100 text-emerald-700" : "bg-amber-100 text-amber-800",
+                    )}>
+                      {diagnostics.healthy ? "Healthy" : "Issues found"}
+                    </span>
+                  </div>
+                  <div className="mt-4 grid gap-2 md:grid-cols-2">
+                    {(Array.isArray(diagnostics?.issues) ? diagnostics.issues : []).length ? (
+                      (diagnostics.issues || []).map((issue: string, index: number) => (
+                        <StatusNotice key={`${issue}-${index}`} tone="amber" title="Issue" body={issue} />
+                      ))
+                    ) : (
+                      <StatusNotice tone="slate" title="Summary" body="Diagnostics did not find any blocking issue." />
+                    )}
+                  </div>
+                </div>
+              ) : null}
+            </Card>
+
             <Card className="rounded-[2px] border border-slate-200/90 bg-white p-5 shadow-[0_20px_60px_-44px_rgba(15,23,42,0.52)] transition-shadow duration-300 hover:shadow-[0_26px_70px_-48px_rgba(15,23,42,0.58)] sm:p-6">
               <SectionHeading
                 eyebrow="How setup works"
-                title="Complete onboarding in four steps"
-                description="The embedded flow handles authorization and links the selected WhatsApp assets to this workspace."
+                title="Enterprise onboarding flow"
+                description="Only the READY stage means WhatsApp can send messages from this workspace."
               />
               <div className="mt-5 grid gap-3 md:grid-cols-2">
                 {[
@@ -1215,18 +1374,18 @@ export default function MetaConnectPage() {
                   ],
                   [
                     "02",
-                    "Choose your business",
-                    "Select or create the Meta business and WhatsApp Business Account.",
+                    "Connect your business",
+                    "Approve the Meta business and WhatsApp Business Account you want to share.",
                   ],
                   [
                     "03",
-                    "Attach a phone number",
-                    "Select the number that will send templates, campaigns and replies.",
+                    "Complete phone registration",
+                    "Enter the 6-digit registration PIN so Meta can register the phone on Cloud API.",
                   ],
                   [
                     "04",
-                    "Sync the workspace",
-                    "The account, phone metadata and templates are refreshed automatically.",
+                    "Finish sync and verification",
+                    "Business profile, templates and final connection checks run automatically before READY.",
                   ],
                 ].map(([number, title, description]) => (
                   <div
@@ -1255,6 +1414,72 @@ export default function MetaConnectPage() {
           </main>
         </div>
       </div>
+      {pinModalOpen ? (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/55 px-4 backdrop-blur-sm">
+          <div className="w-full max-w-lg rounded-[24px] border border-slate-200 bg-white p-6 shadow-[0_30px_90px_-35px_rgba(15,23,42,0.45)]">
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <p className="text-[11px] font-black uppercase tracking-[0.2em] text-slate-400">Registration PIN</p>
+                <h3 className="mt-2 text-2xl font-black tracking-tight text-slate-950">Finish WhatsApp phone registration</h3>
+                <p className="mt-2 text-sm font-medium leading-6 text-slate-500">
+                  Meta requires a 6-digit registration PIN before this phone can be activated on Cloud API. Use the existing PIN if this number already had two-step verification enabled. Otherwise choose a new 6-digit PIN for this phone.
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setPinModalOpen(false)}
+                className="rounded-full border border-slate-200 px-3 py-1 text-xs font-black text-slate-500 transition hover:border-slate-300 hover:text-slate-700"
+              >
+                Close
+              </button>
+            </div>
+            <div className="mt-5 rounded-[18px] border border-amber-200 bg-amber-50 p-4 text-sm font-medium leading-6 text-amber-900">
+              This step registers the phone number with WhatsApp Cloud API. Until it succeeds, the number may appear in Meta but will still remain pending for messaging.
+            </div>
+            <div className="mt-5">
+              <label className="text-[11px] font-black uppercase tracking-[0.18em] text-slate-400">6-digit PIN</label>
+              <input
+                value={registrationPin}
+                onChange={(event) =>
+                  setRegistrationPin(
+                    String(event.target.value || "")
+                      .replace(/\D/g, "")
+                      .slice(0, 6),
+                  )
+                }
+                inputMode="numeric"
+                maxLength={6}
+                type="password"
+                autoFocus
+                placeholder="Enter 6-digit PIN"
+                className="mt-2 h-12 w-full rounded-xl border border-slate-200 bg-white px-4 text-sm font-bold text-slate-950 placeholder:text-slate-400 focus:border-emerald-400 focus:outline-none"
+              />
+              <p className="mt-2 text-xs font-medium text-slate-500">
+                PIN is masked, cleared after submit, and stored encrypted on the backend.
+              </p>
+            </div>
+            <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:justify-end">
+              <Button
+                type="button"
+                variant="outline"
+                className="h-11 rounded-xl border-slate-200 bg-white px-4 font-bold text-slate-700"
+                onClick={() => setPinModalOpen(false)}
+                disabled={embeddedBusy}
+              >
+                Not now
+              </Button>
+              <Button
+                type="button"
+                className="h-11 rounded-xl px-5 font-black"
+                onClick={() => void completePhoneRegistration()}
+                disabled={!canCompleteRegistration || registrationPin.length !== 6}
+              >
+                {embeddedBusy ? "Registering..." : "Register phone"}
+              </Button>
+            </div>
+          </div>
+        </div>
+      ) : null}
     </div>
   );
 }
