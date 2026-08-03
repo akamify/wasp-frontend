@@ -31,13 +31,14 @@ export function useAppShellBilling(pathname: string) {
     const requiredPlan = requiredPlanForPath(pathname);
     const requiredFeature = requiredFeatureForPath(pathname);
     const features = billingCurrent?.effective?.features || {};
-    const hasProAccess = Boolean(features?.crmAccess || features?.externalChatApiAccess || features?.automationAccess);
+    const hasProAccess = Boolean(features?.crmPageAccess || features?.externalChatApiAccess || features?.automationPageAccess || features?.aiAgentsPageAccess);
     const isBlockedByPlan = !billingLoading && requiredPlan !== null && requiredPlan === "pro" && !hasProAccess;
     const proFeatureKeys: RequiredFeatureKey[] = [
       "crmPageAccess",
       "flowsPageAccess",
       "linksPageAccess",
       "automationPageAccess",
+      "aiAgentsPageAccess",
       "activityPageAccess",
       "apiKeysPageAccess",
       "apiReportsPageAccess",

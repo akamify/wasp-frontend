@@ -124,17 +124,30 @@ export function buildApiGroupSecondary(api, unwrap, API_BASE_URL) {
     },
     templates: {
       list: (params) => api.get("/templates", { params }).then(unwrap),
+      library: (params) => api.get("/templates/library", { params }).then(unwrap),
+      libraryAnalytics: (params) => api.get("/templates/library/analytics", { params }).then(unwrap),
+      libraryPacks: (params) => api.get("/templates/library/packs", { params }).then(unwrap),
+      installLibraryPack: (packKey) => api.post(`/templates/library/packs/${encodeURIComponent(packKey)}/install`).then(unwrap),
+      trackLibraryEvent: (id, payload) => api.post(`/templates/library/${id}/track`, payload).then(unwrap),
+      favoriteLibrary: (id) => api.post(`/templates/library/${id}/favorite`).then(unwrap),
+      unfavoriteLibrary: (id) => api.delete(`/templates/library/${id}/favorite`).then(unwrap),
       approved: () => api.get("/templates/approved").then(unwrap),
       create: (payload) =>
         api.post("/templates", payload, { timeout: 180000 }).then(unwrap),
+      createDraft: (payload) => api.post("/templates/drafts", payload).then(unwrap),
       get: (id) => api.get(`/templates/${id}`).then(unwrap),
       update: (id, payload) =>
         api.put(`/templates/${id}`, payload).then(unwrap),
+      updateDraft: (id, payload) =>
+        api.patch(`/templates/drafts/${id}`, payload).then(unwrap),
       remove: (id) => api.delete(`/templates/${id}`).then(unwrap),
       submit: (id) =>
         api
           .post(`/templates/${id}/submit`, null, { timeout: 180000 })
           .then(unwrap),
+      duplicate: (id) => api.post(`/templates/${id}/duplicate`).then(unwrap),
+      history: (id) => api.get(`/templates/${id}/history`).then(unwrap),
+      restoreVersion: (id, versionId) => api.post(`/templates/${id}/restore/${versionId}`).then(unwrap),
       status: (id) => api.get(`/templates/${id}/status`).then(unwrap),
       syncMeta: (payload) =>
         api.post("/templates/sync-meta", payload || {}).then(unwrap),
@@ -310,6 +323,8 @@ export function buildApiGroupSecondary(api, unwrap, API_BASE_URL) {
       get: () => api.get("/wallet").then(unwrap),
       createRechargeOrder: (payload) =>
         api.post("/wallet/recharge/order", payload).then(unwrap),
+      verifyRechargePayment: (payload) =>
+        api.post("/wallet/recharge/verify", payload).then(unwrap),
       history: (params) => api.get("/wallet/history", { params }).then(unwrap),
     },
     campaigns: {
@@ -379,6 +394,8 @@ export function buildApiGroupSecondary(api, unwrap, API_BASE_URL) {
       list: (params) => api.get("/conversations", { params }).then(unwrap),
       get: (phone) => api.get(`/conversations/${phone}`).then(unwrap),
       read: (phone) => api.post(`/conversations/${phone}/read`).then(unwrap),
+      takeOver: (phone, payload) => api.post(`/conversations/${phone}/take-over`, payload || {}).then(unwrap),
+      returnToAi: (phone, payload) => api.post(`/conversations/${phone}/return-to-ai`, payload || {}).then(unwrap),
       clear: (phone) => api.delete(`/conversations/${phone}`).then(unwrap),
     },
     contacts: {
@@ -470,6 +487,25 @@ export function buildApiGroupSecondary(api, unwrap, API_BASE_URL) {
         api.get(`/flows/${encodeURIComponent(flowId)}/versions`).then(unwrap),
     },
     aiAgents: {
+      addonStatus: () => api.get("/ai-agents/addon").then(unwrap),
+      purchaseAddon: () => api.post("/ai-agents/addon/purchase", {}).then(unwrap),
+      dashboard: (params) => api.get("/ai-agents/dashboard", { params }).then(unwrap),
+      addonTransactions: (params) => api.get("/ai-agents/addon/transactions", { params }).then(unwrap),
+      billingSummary: (params) => api.get("/ai-agents/billing/summary", { params }).then(unwrap),
+      billingStatements: (params) => api.get("/ai-agents/billing/statements", { params }).then(unwrap),
+      billingStatement: (periodKey) => api.get(`/ai-agents/billing/statements/${encodeURIComponent(periodKey)}`).then(unwrap),
+      billingStatementDownload: (periodKey) =>
+        api.get(`/ai-agents/billing/statements/${encodeURIComponent(periodKey)}/download`, { responseType: "blob" }).then((r) => r.data),
+      billingTimeline: (params) => api.get("/ai-agents/billing/timeline", { params }).then(unwrap),
+      billingAnalytics: (params) => api.get("/ai-agents/billing/analytics", { params }).then(unwrap),
+      billingUsageExplorer: (params) => api.get("/ai-agents/billing/usage-explorer", { params }).then(unwrap),
+      billingBudget: () => api.get("/ai-agents/billing/budget").then(unwrap),
+      billingBudgetUpdate: (payload) => api.put("/ai-agents/billing/budget", payload).then(unwrap),
+      billingReports: (params) => api.get("/ai-agents/billing/reports", { params }).then(unwrap),
+      billingReportDownload: (params) =>
+        api.get("/ai-agents/billing/reports", { params: { ...(params || {}), format: "csv" }, responseType: "blob" }).then((r) => r.data),
+      purchaseTopup: (payload) => api.post("/ai-agents/addon/topups", payload).then(unwrap),
+      adjustCredits: (payload) => api.post("/ai-agents/addon/transactions/adjust", payload).then(unwrap),
       list: (params) => api.get("/ai-agents", { params }).then(unwrap),
       create: (payload) => api.post("/ai-agents", payload).then(unwrap),
       update: (agentId, payload) =>

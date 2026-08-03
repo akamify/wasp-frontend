@@ -11,6 +11,7 @@ import CrmSettingsPage from "@modules/crm/pages/CrmSettings";
 import DashboardPage from "@pages/user/pages/Dashboard";
 import MetaConnectPage from "@pages/user/pages/Meta";
 import TemplatesPage from "@pages/user/pages/Templates";
+import TemplateLibraryPage from "@pages/user/pages/TemplateLibrary";
 import SendPage from "@pages/user/pages/Send";
 import CampaignDetailPage from "@pages/user/pages/CampaignDetail";
 import ContactsPage from "@pages/user/pages/Contacts";
@@ -21,6 +22,7 @@ import LinksPage from "@pages/user/pages/Links";
 import AutomationEventTestPage from "@pages/user/pages/Automation";
 import AutomationFlowsPage from "@modules/automation-flows/pages/AutomationFlowsPage";
 import FlowBuilderPage from "@modules/automation-flows/pages/FlowBuilderPage";
+import { RequireAiAgents } from "@modules/ai-agents/components/RequireAiAgents";
 import AiAgentsPage from "@modules/ai-agents/pages/AiAgentsPage";
 import AiAgentTestPage from "@modules/ai-agents/pages/AiAgentTestPage";
 import AiAgentKnowledgePage from "@modules/ai-agents/pages/AiAgentKnowledgePage";
@@ -48,6 +50,7 @@ export function userRoutes() {
       <Route path="/app" element={inApp(<DashboardPage />)} />
       <Route path="/app/meta" element={inApp(<MetaConnectPage />)} />
       <Route path="/app/templates" element={inApp(<TemplatesPage />)} />
+      <Route path="/app/template-library" element={inApp(<TemplateLibraryPage />)} />
       <Route path="/app/send" element={inApp(<SendPage />)} />
       <Route path="/app/send/:id" element={inApp(<CampaignDetailPage />)} />
       <Route path="/app/contacts" element={inApp(<ContactsPage />)} />
@@ -66,9 +69,11 @@ export function userRoutes() {
       <Route path="/app/automation" element={inApp(<AutomationFlowsPage />)} />
       <Route path="/app/automation/events" element={inApp(<AutomationEventTestPage />)} />
       <Route path="/app/automation/:flowId" element={inApp(<FlowBuilderPage />)} />
-      <Route path="/app/ai-agents" element={inApp(<AiAgentsPage />)} />
-      <Route path="/app/ai-agents/:agentId/knowledge" element={inApp(<AiAgentKnowledgePage />)} />
-      <Route path="/app/ai-agents/:agentId/test" element={inApp(<AiAgentTestPage />)} />
+      <Route element={<RequireAiAgents />}>
+        <Route path="/app/ai-agents" element={inApp(<AiAgentsPage />)} />
+        <Route path="/app/ai-agents/:agentId/knowledge" element={inApp(<AiAgentKnowledgePage />)} />
+        <Route path="/app/ai-agents/:agentId/test" element={inApp(<AiAgentTestPage />)} />
+      </Route>
       <Route path="/app/settings" element={inApp(<SettingsPage />)} />
       <Route path="/app/profile" element={inApp(<ProfilePage />)} />
       <Route path="/app/plan" element={inApp(<PlanPage />)} />

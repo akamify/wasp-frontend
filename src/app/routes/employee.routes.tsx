@@ -12,7 +12,7 @@ export function employeeRoutes() {
       <Route
         path="/employee/inbox"
         element={
-          <EmployeeShell>
+          <EmployeeShell>     
             <EmployeeInboxPage />
           </EmployeeShell>
         }

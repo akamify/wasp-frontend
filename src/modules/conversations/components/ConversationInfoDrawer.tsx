@@ -1,22 +1,44 @@
 import { AnimatePresence, motion } from "framer-motion";
 import { createPortal } from "react-dom";
-import { Edit3, Languages, Mail, StickyNote, Tag, X, ListFilter } from "lucide-react";
+import { Edit3, Languages, ListFilter, Mail, StickyNote, Tag, X } from "lucide-react";
+import { AI_STATES } from "@modules/conversations/constants/aiState";
 import type { Conversation } from "@modules/conversations/types/conversations.types";
 import { formatDurationShort } from "@modules/conversations/utils/timeFormat";
 import { cn } from "@shared/utils/cn";
+
+type ConversationEventItem = {
+  id: string;
+  type: string;
+  actor?: { kind?: string; nameSnapshot?: string } | null;
+  payload?: any;
+  createdAt?: string;
+};
 
 type Props = {
   activeConversation: Conversation | null;
   contactDetail: any | null;
   customerServiceWindowOpen: boolean;
+  events?: ConversationEventItem[];
   phone: string;
   showMobile: boolean;
   windowRemainingMs: number;
   onCloseMobile: () => void;
   onEdit: () => void;
+  onOpenTimeline?: () => void;
 };
 
-export function ConversationInfoDrawer({ activeConversation, contactDetail, customerServiceWindowOpen, phone, showMobile, windowRemainingMs, onCloseMobile, onEdit }: Props) {
+export function ConversationInfoDrawer({
+  activeConversation,
+  contactDetail,
+  customerServiceWindowOpen,
+  events,
+  phone,
+  showMobile,
+  windowRemainingMs,
+  onCloseMobile,
+  onEdit,
+  onOpenTimeline,
+}: Props) {
   const mobileDrawer = createPortal(
     <AnimatePresence>
       {showMobile && activeConversation ? (
@@ -39,9 +61,11 @@ export function ConversationInfoDrawer({ activeConversation, contactDetail, cust
               activeConversation={activeConversation}
               contactDetail={contactDetail}
               customerServiceWindowOpen={customerServiceWindowOpen}
+              events={events}
               phone={phone}
               windowRemainingMs={windowRemainingMs}
               onEdit={onEdit}
+              onOpenTimeline={onOpenTimeline}
               mobile
             />
           </motion.div>
@@ -59,9 +83,11 @@ export function ConversationInfoDrawer({ activeConversation, contactDetail, cust
             activeConversation={activeConversation}
             contactDetail={contactDetail}
             customerServiceWindowOpen={customerServiceWindowOpen}
+            events={events}
             phone={phone}
             windowRemainingMs={windowRemainingMs}
             onEdit={onEdit}
+            onOpenTimeline={onOpenTimeline}
           />
         </div>
       ) : null}
@@ -73,7 +99,17 @@ export function ConversationInfoDrawer({ activeConversation, contactDetail, cust
 
 type ContactInfoBodyProps = Omit<Props, "onCloseMobile" | "showMobile"> & { mobile?: boolean };
 
-function ContactInfoBody({ activeConversation, contactDetail, customerServiceWindowOpen, phone, windowRemainingMs, onEdit, mobile }: ContactInfoBodyProps) {
+function ContactInfoBody({
+  activeConversation,
+  contactDetail,
+  customerServiceWindowOpen,
+  events,
+  phone,
+  windowRemainingMs,
+  onEdit,
+  onOpenTimeline,
+  mobile,
+}: ContactInfoBodyProps) {
   return (
     <div className={`${mobile ? "overflow-y-auto custom-scrollbar" : ""} p-6 flex flex-col`}>
       <div className="flex items-center gap-3 min-w-0">
@@ -101,9 +137,162 @@ function ContactInfoBody({ activeConversation, contactDetail, customerServiceWin
           </span>
         </div>
       </div>
+      {activeConversation?.aiState ? (
+        <div className="mt-5 rounded-[12px] border border-slate-100 bg-white p-4">
+          <div className="text-[10px] font-black uppercase tracking-widest text-slate-400">AI ownership</div>
+          <div className="mt-2 flex flex-wrap items-center gap-2">
+            <span
+              className={cn(
+                "rounded-full px-3 py-1 text-[10px] font-black uppercase tracking-wider",
+                activeConversation.aiState === AI_STATES.HANDOVER_PENDING
+                  ? "bg-amber-100 text-amber-700"
+                  : activeConversation.aiState === AI_STATES.HUMAN_ACTIVE
+                    ? "bg-sky-100 text-sky-700"
+                    : activeConversation.aiState === AI_STATES.PAUSED
+                      ? "bg-slate-200 text-slate-700"
+                    : "bg-emerald-100 text-emerald-700"
+              )}
+            >
+              {activeConversation.aiState === AI_STATES.HANDOVER_PENDING
+                ? "Handover pending"
+                : activeConversation.aiState === AI_STATES.HUMAN_ACTIVE
+                  ? "Human takeover"
+                  : activeConversation.aiState === AI_STATES.PAUSED
+                    ? "AI paused"
+                  : "AI active"}
+            </span>
+          </div>
+          {activeConversation.aiHandoverReason ? (
+            <div className="mt-3 text-xs font-semibold text-slate-600">
+              Reason: <span className="font-bold text-slate-900">{activeConversation.aiHandoverReason}</span>
+            </div>
+          ) : null}
+          {activeConversation.aiAgentName || activeConversation.aiRuntime ? (
+            <div className="mt-4 grid gap-2 rounded-[10px] bg-slate-50 p-3">
+              {activeConversation.aiAgentName ? (
+                <div className="flex items-center justify-between gap-3 text-xs">
+                  <span className="font-black uppercase tracking-widest text-slate-400">Agent</span>
+                  <span className="font-bold text-slate-900">{activeConversation.aiAgentName}</span>
+                </div>
+              ) : null}
+              {activeConversation.aiRuntime?.runtimeStatus ? (
+                <div className="flex items-center justify-between gap-3 text-xs">
+                  <span className="font-black uppercase tracking-widest text-slate-400">Runtime</span>
+                  <span className="font-bold text-slate-900">{activeConversation.aiRuntime.runtimeStatus}</span>
+                </div>
+              ) : null}
+              {activeConversation.aiRuntime?.confidence !== undefined ? (
+                <div className="flex items-center justify-between gap-3 text-xs">
+                  <span className="font-black uppercase tracking-widest text-slate-400">Confidence</span>
+                  <span className="font-bold text-slate-900">{Number(activeConversation.aiRuntime.confidence || 0).toFixed(2)}</span>
+                </div>
+              ) : null}
+              {activeConversation.aiRuntime?.creditsUsed !== undefined ? (
+                <div className="flex items-center justify-between gap-3 text-xs">
+                  <span className="font-black uppercase tracking-widest text-slate-400">Credits Used</span>
+                  <span className="font-bold text-slate-900">{activeConversation.aiRuntime.creditsUsed}</span>
+                </div>
+              ) : null}
+              {activeConversation.aiRuntime?.processedAt ? (
+                <div className="flex items-center justify-between gap-3 text-xs">
+                  <span className="font-black uppercase tracking-widest text-slate-400">Last AI Reply</span>
+                  <span className="font-bold text-slate-900">{new Date(activeConversation.aiRuntime.processedAt).toLocaleString()}</span>
+                </div>
+              ) : null}
+            </div>
+          ) : null}
+        </div>
+      ) : null}
+      <ConversationTimeline events={events || []} onOpenTimeline={onOpenTimeline} />
       <ContactInfoFields contactDetail={contactDetail} />
     </div>
   );
+}
+
+function ConversationTimeline({
+  events,
+  onOpenTimeline,
+}: {
+  events: ConversationEventItem[];
+  onOpenTimeline?: () => void;
+}) {
+  const items = Array.isArray(events) ? events.slice(0, 8) : [];
+  return (
+    <div className="mt-5 rounded-[12px] border border-slate-100 bg-white p-4">
+      <div className="flex items-center justify-between gap-3">
+        <div className="text-[10px] font-black uppercase tracking-widest text-slate-400">Recent activity</div>
+        {onOpenTimeline ? (
+          <button
+            type="button"
+            onClick={onOpenTimeline}
+            className="text-[10px] font-black uppercase tracking-widest text-brand-700 hover:text-brand-800"
+          >
+            View full timeline
+          </button>
+        ) : null}
+      </div>
+      <div className="mt-3 space-y-3">
+        {items.length ? (
+          items.map((event) => {
+            const actorLabel = event.actor?.nameSnapshot || event.actor?.kind || "system";
+            const createdLabel = event.createdAt ? new Date(event.createdAt).toLocaleString() : "";
+            return (
+              <div key={event.id} className="rounded-[8px] bg-slate-50 px-3 py-2">
+                <div className="text-xs font-black text-slate-900">{eventTitle(event)}</div>
+                {eventSubtitle(event) ? <div className="mt-1 text-[11px] font-semibold text-slate-600">{eventSubtitle(event)}</div> : null}
+                <div className="mt-1 text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                  {actorLabel} {" • "} {createdLabel}
+                </div>
+              </div>
+            );
+          })
+        ) : (
+          <div className="text-sm font-semibold text-slate-500">No recent activity.</div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function eventTitle(event: { type: string; payload?: any }) {
+  switch (String(event.type || "")) {
+    case "ai_handover_requested":
+      return "AI requested handover";
+    case "ai_handover_taken_over":
+      return "Human takeover started";
+    case "ai_returned":
+      return "Conversation returned to AI";
+    case "assigned":
+      return "Assigned to employee";
+    case "reassigned":
+      return "Reassigned";
+    case "unassigned":
+      return "Unassigned";
+    default:
+      return String(event.type || "Activity")
+        .replace(/_/g, " ")
+        .replace(/\b\w/g, (value) => value.toUpperCase());
+  }
+}
+
+function eventSubtitle(event: { type: string; payload?: any }) {
+  const payload = event.payload || {};
+  if (event.type === "ai_handover_requested") return payload.reason ? `Reason: ${payload.reason}` : "";
+  if (event.type === "ai_handover_taken_over") {
+    return payload.assignedEmployeeId
+      ? `Employee assigned: ${payload.assignedEmployeeName || payload.assignedEmployeeId}`
+      : payload.reason
+        ? `Reason: ${payload.reason}`
+        : "";
+  }
+  if (event.type === "ai_returned") return payload.reason ? `Note: ${payload.reason}` : "";
+  if (event.type === "assigned" || event.type === "reassigned") {
+    const employeeLabel = payload.toEmployeeName || payload.assignedEmployeeName || payload.toEmployeeId || "";
+    if (employeeLabel && payload.reason) return `Assigned to ${employeeLabel} • ${payload.reason}`;
+    if (employeeLabel) return `Assigned to ${employeeLabel}`;
+    return payload.reason ? `Reason: ${payload.reason}` : "";
+  }
+  return "";
 }
 
 function ContactInfoFields({ contactDetail }: { contactDetail: any | null }) {

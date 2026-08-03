@@ -44,6 +44,7 @@ export function ctaOptionsForCategory(category: TemplateCategory) {
 
 export function statusTone(status: string): "neutral" | "good" | "warn" | "bad" {
   const normalized = String(status || "").toLowerCase();
+  if (normalized === "draft") return "neutral";
   if (normalized === "approved") return "good";
   if (normalized === "pending" || normalized === "paused") return "warn";
   if (normalized === "rejected" || normalized === "disabled") return "bad";

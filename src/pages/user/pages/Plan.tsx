@@ -65,6 +65,16 @@ function daysRemaining(value?: string | Date | null) {
   return Math.max(0, Math.ceil(ms / (24 * 60 * 60 * 1000)));
 }
 
+function billingErrorMessage(error: any, fallback: string) {
+  return (
+    error?.response?.data?.providerError ||
+    error?.response?.data?.details?.providerError ||
+    error?.response?.data?.message ||
+    error?.message ||
+    fallback
+  );
+}
+
 export default function PlanPage() {
   const { workspace, user, refreshMe } = useAuth();
   const { toast } = useToast();
@@ -72,6 +82,7 @@ export default function PlanPage() {
 
   const [selectedPlan, setSelectedPlan] = useState<string | null>(null);
   const [paymentProcessing, setPaymentProcessing] = useState(false);
+  const [fallbackPlanId, setFallbackPlanId] = useState<string | null>(null);
   const [currentModalOpen, setCurrentModalOpen] = useState(false);
   const [currentDetails, setCurrentDetails] = useState<any>(null);
   const [historyRows, setHistoryRows] = useState<any[]>([]);
@@ -107,7 +118,7 @@ export default function PlanPage() {
             description: plan?.description || "",
             features: Array.isArray(plan?.displayFeatures) ? plan.displayFeatures : [],
             notIncluded: Array.isArray(plan?.unavailableFeatures) ? plan.unavailableFeatures : [],
-            cta: plan?.buttonText || (plan?.planType === "custom" ? "Contact Sales" : "Buy Now"),
+            cta: plan?.buttonText || (plan?.planType === "custom" ? "Contact Sales" : "Start Subscription"),
             planType: plan?.planType || "basic",
             recommended: Boolean(plan?.recommended),
             isCurrentPlan,
@@ -117,10 +128,10 @@ export default function PlanPage() {
             actionLabel: isScheduledTarget
               ? "Scheduled"
               : relation === "upgrade"
-                ? "Upgrade"
+                ? "Start Subscription"
                 : relation === "downgrade"
                   ? "Schedule Downgrade"
-                  : plan?.buttonText || "Buy Now",
+                  : plan?.buttonText || "Start Subscription",
             actionDisabled: isScheduledTarget || Boolean(scheduledChange?.planSlug && relation === "downgrade"),
             actionHint: isScheduledTarget
               ? `Switches on ${formatDate(scheduledChange.effectiveAt)}`
@@ -146,6 +157,11 @@ export default function PlanPage() {
       { key: "templates", label: "Templates", data: usage.templates },
       { key: "employees", label: "Agents", data: usage.employees },
       { key: "campaigns", label: "Campaigns", data: usage.campaigns },
+      { key: "apiKeys", label: "API Keys", data: usage.apiKeys },
+      { key: "webhooks", label: "Webhooks", data: usage.webhooks },
+      { key: "flows", label: "Flows", data: usage.flows },
+      { key: "storage", label: "Storage (MB)", data: usage.storage, decimals: 2, suffix: " MB" },
+      { key: "dailyMessages", label: "Daily Messages", data: usage.dailyMessages },
     ];
   }, [currentDetails]);
 
@@ -156,7 +172,19 @@ export default function PlanPage() {
       API.billing.invoices({ limit: 20 }),
       API.billing.timeline({ limit: 30 }),
     ]);
-    if (current.status === "fulfilled") setCurrentDetails(current.value || null);
+    if (current.status === "fulfilled") {
+      const nextCurrent = current.value || null;
+      setCurrentDetails(nextCurrent);
+      const subscription = nextCurrent?.subscription || null;
+      if (
+        subscription?.autoRenewEnabled ||
+        subscription?.pendingMandateSetup?.razorpaySubscriptionId ||
+        subscription?.fallbackMode === "pending_mandate" ||
+        subscription?.planSlug
+      ) {
+        setFallbackPlanId(null);
+      }
+    }
     if (history.status === "fulfilled") setHistoryRows(history.value?.data?.items || []);
     if (invoices.status === "fulfilled") setInvoiceRows(invoices.value?.data?.items || []);
     if (timeline.status === "fulfilled") setTimelineRows(timeline.value?.data?.items || []);
@@ -174,7 +202,7 @@ export default function PlanPage() {
       await refreshSubscriptionState();
       toast(`${plan.name} downgrade scheduled for period end`, "success");
     } catch (err: any) {
-      toast(err?.response?.data?.message || err?.message || "Failed to schedule downgrade", "error");
+      toast(billingErrorMessage(err, "Failed to schedule downgrade"), "error");
     } finally {
       setPaymentProcessing(false);
     }
@@ -187,7 +215,7 @@ export default function PlanPage() {
       await refreshSubscriptionState();
       toast("Scheduled plan change cancelled", "success");
     } catch (err: any) {
-      toast(err?.response?.data?.message || err?.message || "Failed to cancel scheduled change", "error");
+      toast(billingErrorMessage(err, "Failed to cancel scheduled change"), "error");
     } finally {
       setPaymentProcessing(false);
     }
@@ -231,7 +259,7 @@ export default function PlanPage() {
         razorpay.open();
       });
     } catch (err: any) {
-      const message = err?.response?.data?.message || err?.message || "Renewal payment failed";
+      const message = billingErrorMessage(err, "Renewal payment failed");
       toast(message, message === "Payment cancelled" ? "info" : "error");
     } finally {
       setPaymentProcessing(false);
@@ -273,7 +301,7 @@ export default function PlanPage() {
         razorpay.open();
       });
     } catch (err: any) {
-      const message = err?.response?.data?.message || err?.message || "Auto-renew setup failed";
+      const message = billingErrorMessage(err, "Auto-renew setup failed");
       toast(message, message === "Auto-renew setup cancelled" ? "info" : "error");
     } finally {
       setPaymentProcessing(false);
@@ -287,13 +315,97 @@ export default function PlanPage() {
       await refreshSubscriptionState();
       toast("Auto-renew disabled", "success");
     } catch (err: any) {
-      toast(err?.response?.data?.message || err?.message || "Failed to disable auto-renew", "error");
+      toast(billingErrorMessage(err, "Failed to disable auto-renew"), "error");
     } finally {
       setPaymentProcessing(false);
     }
   }
 
   async function handlePlanAction(selected: PlanItem) {
+    return handlePlanPurchase(selected, "autopay");
+  }
+
+  async function launchPlanCheckout(selected: PlanItem, mode: "autopay" | "one_time") {
+    const checkout = await API.billing.checkout({ planId: selected.id, durationMonths: 1, mode, fallbackAllowed: true });
+    const data = checkout?.data || checkout;
+    await loadRazorpay();
+    if (!window.Razorpay) throw new Error("Razorpay checkout unavailable");
+
+    if (data.checkoutKind === "subscription_mandate") {
+      const verification = await new Promise<any>((resolve, reject) => {
+        const razorpay = new window.Razorpay({
+          key: data.publicKey,
+          name: BRAND_NAME,
+          description: `${data.plan?.name || selected.name} subscription mandate`,
+          subscription_id: data.razorpaySubscriptionId,
+          prefill: { name: user?.name || "", email: user?.email || "", contact: user?.phone || "" },
+          notes: { workspaceId: workspace?.id || "", planSlug: selected.slug, checkoutMode: "subscription_mandate" },
+          handler: async (response: any) => {
+            try {
+              const result = await API.billing.verifyPayment({
+                razorpay_subscription_id: response.razorpay_subscription_id,
+                razorpay_payment_id: response.razorpay_payment_id,
+                razorpay_signature: response.razorpay_signature,
+              });
+              resolve(result);
+            } catch (verificationError) {
+              reject(verificationError);
+            }
+          },
+          modal: { ondismiss: () => reject(new Error("Auto-renew setup cancelled")) },
+        });
+        razorpay.open();
+      });
+
+      await refreshSubscriptionState();
+      const result = verification?.data || verification;
+      const purchaseState = result?.purchaseState || result?.subscription?.purchaseState || "";
+      if (purchaseState === "mandate_pending") {
+        toast("Mandate received. We are finalizing auto-renew in the background.", "info");
+      } else {
+        toast(`${selected.name} activated successfully with auto renew`, "success");
+      }
+      return;
+    }
+
+    const verification = await new Promise<any>((resolve, reject) => {
+      const razorpay = new window.Razorpay({
+        key: data.publicKey,
+        amount: data.amount,
+        currency: data.currency || "INR",
+        name: BRAND_NAME,
+        description: `${data.plan?.name || selected.name} subscription`,
+        order_id: data.orderId,
+        prefill: { name: user?.name || "", email: user?.email || "", contact: user?.phone || "" },
+        notes: { workspaceId: workspace?.id || "", planSlug: selected.slug, checkoutMode: "one_time_order" },
+        handler: async (response: any) => {
+          try {
+            const result = await API.billing.verifyPayment({
+              razorpay_order_id: response.razorpay_order_id,
+              razorpay_payment_id: response.razorpay_payment_id,
+              razorpay_signature: response.razorpay_signature,
+            });
+            resolve(result);
+          } catch (verificationError) {
+            reject(verificationError);
+          }
+        },
+        modal: { ondismiss: () => reject(new Error("Payment cancelled")) },
+      });
+      razorpay.open();
+    });
+
+    await refreshSubscriptionState();
+    const result = verification?.data || verification;
+    const purchaseState = result?.purchaseState || result?.subscription?.purchaseState || "";
+    if (purchaseState === "activated_manual_renew") {
+      toast("Subscription is active, but auto renew is off. You can enable it later with a supported mandate.", "success");
+    } else {
+      toast(`${selected.name} activated successfully`, "success");
+    }
+  }
+
+  async function handlePlanPurchase(selected: PlanItem, mode: "autopay" | "one_time") {
     if (selected?.planType === "custom") {
       setSelectedPlan(selected.name);
       return;
@@ -310,42 +422,20 @@ export default function PlanPage() {
 
     setPaymentProcessing(true);
     try {
-      const checkout = await API.billing.checkout({ planId: selected.id, durationMonths: 1 });
-      const data = checkout?.data || checkout;
-      await loadRazorpay();
-      if (!window.Razorpay) throw new Error("Razorpay checkout unavailable");
-
-      await new Promise<void>((resolve, reject) => {
-        const razorpay = new window.Razorpay({
-          key: data.publicKey,
-          amount: data.amount,
-          currency: data.currency || "INR",
-          name: BRAND_NAME,
-          description: `${data.plan?.name || selected.name} subscription`,
-          order_id: data.orderId,
-          prefill: { name: user?.name || "", email: user?.email || "", contact: user?.phone || "" },
-          notes: { workspaceId: workspace?.id || "", planSlug: selected.slug },
-          handler: async (response: any) => {
-            try {
-              await API.billing.verifyPayment({
-                razorpay_order_id: response.razorpay_order_id,
-                razorpay_payment_id: response.razorpay_payment_id,
-                razorpay_signature: response.razorpay_signature,
-              });
-              await refreshSubscriptionState();
-              toast(`${selected.name} activated successfully`, "success");
-              resolve();
-            } catch (verificationError) {
-              reject(verificationError);
-            }
-          },
-          modal: { ondismiss: () => reject(new Error("Payment cancelled")) },
-        });
-        razorpay.open();
-      });
+      await launchPlanCheckout(selected, mode);
+      setFallbackPlanId(null);
     } catch (err: any) {
-      const message = err?.response?.data?.message || err?.message || "Payment initialization failed";
-      toast(message, message === "Payment cancelled" ? "info" : "error");
+      const message = billingErrorMessage(err, "Payment initialization failed");
+      if (mode === "autopay") {
+        setFallbackPlanId(selected.id);
+        const infoMessage =
+          message === "Auto-renew setup cancelled"
+            ? "Auto-renew was not completed. You can continue without auto renew if needed."
+            : message;
+        toast(infoMessage, message === "Auto-renew setup cancelled" ? "info" : "error");
+      } else {
+        toast(message, message === "Payment cancelled" ? "info" : "error");
+      }
     } finally {
       setPaymentProcessing(false);
     }
@@ -485,7 +575,13 @@ export default function PlanPage() {
               <div className="mt-2 text-sm font-bold text-slate-700">
                 {renewalDue ? `Payment due for ${renewalDue.targetPlan?.name}` : scheduledChange ? `${scheduledChange.planName} scheduled` : "No pending changes"}
               </div>
-              <div className="mt-1 text-xs font-semibold text-slate-500">Upgrades instant; paid downgrades activate only after renewal payment.</div>
+              <div className="mt-1 text-xs font-semibold text-slate-500">
+                {currentDetails?.subscription?.fallbackMode === "manual_renew"
+                  ? "This subscription is active in manual-renew mode until a recurring mandate is added."
+                  : currentDetails?.subscription?.fallbackMode === "pending_mandate"
+                    ? "Your mandate setup is in progress. Auto renew will turn on after confirmation/webhook sync."
+                  : "Upgrades start in recurring mode; fallback manual checkout is available if mandate setup is not completed."}
+              </div>
             </Card>
           </div>
           <Card className="border-slate-200 p-5">
@@ -499,6 +595,11 @@ export default function PlanPage() {
                   <span className="rounded-[3px] bg-blue-50 px-3 py-1 text-[10px] font-black uppercase tracking-wider text-blue-700">
                     Mandate: {autoRenew.mandateStatus || "not_setup"}
                   </span>
+                  {autoRenew.pendingMandateSetup ? (
+                    <span className="rounded-[3px] bg-violet-50 px-3 py-1 text-[10px] font-black uppercase tracking-wider text-violet-700">
+                      {autoRenew.pendingMandateSetup.replaceExisting ? "Payment method update pending" : "Mandate setup pending"}
+                    </span>
+                  ) : null}
                   {autoRenew.renewalStatus ? (
                     <span className="rounded-[3px] bg-amber-50 px-3 py-1 text-[10px] font-black uppercase tracking-wider text-amber-700">
                       {String(autoRenew.renewalStatus).replaceAll("_", " ")}
@@ -515,8 +616,14 @@ export default function PlanPage() {
                     <div className="mt-1 font-black text-slate-900">{autoRenew.paymentMethod?.label || "No mandate setup"}</div>
                   </div>
                   <div>
-                    <div className="text-[10px] font-black uppercase tracking-widest text-slate-400">Attempts</div>
-                    <div className="mt-1 font-black text-slate-900">{Number(autoRenew.renewalAttempts || 0)}</div>
+                    <div className="text-[10px] font-black uppercase tracking-widest text-slate-400">Billing Mode</div>
+                    <div className="mt-1 font-black text-slate-900">
+                      {autoRenew.fallbackMode === "manual_renew"
+                        ? "Manual Renew"
+                        : autoRenew.fallbackMode === "pending_mandate"
+                          ? "Mandate Pending"
+                          : "Recurring"}
+                    </div>
                   </div>
                 </div>
               </div>
@@ -542,8 +649,10 @@ export default function PlanPage() {
               key={plan.id || plan.name}
               plan={plan}
               paymentProcessing={paymentProcessing}
+              showFallbackAction={fallbackPlanId === plan.id}
               onCurrentPlanClick={() => setCurrentModalOpen(true)}
               onActionClick={handlePlanAction}
+              onFallbackClick={(fallbackPlan) => handlePlanPurchase(fallbackPlan, "one_time")}
             />
           ))}
         </div>

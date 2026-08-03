@@ -51,7 +51,7 @@ export function TemplatesListToolbar(props: Props) {
             />
           </div>
           <div className="flex w-full items-center gap-1 overflow-x-auto rounded-[5px] border border-ink-900/5 bg-slate-50 p-1 lg:w-auto">
-            {["all", "approved", "pending", "rejected"].map((f) => (
+            {["all", "draft", "approved", "pending", "rejected", "paused", "disabled"].map((f) => (
               <button
                 key={f}
                 onClick={() => setStatusFilter(f)}

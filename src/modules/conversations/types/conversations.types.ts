@@ -1,10 +1,38 @@
+import type { AiState } from "@modules/conversations/constants/aiState";
+
 export type Conversation = {
   _id?: string;
   phone: string;
+  workspaceId?: string;
   lastMessageAt?: string;
   lastInboundAt?: string | null;
   lastMessagePreview?: string;
   unreadCount?: number;
+  aiState?: AiState | null;
+  aiHandoverAt?: string | null;
+  aiHandoverReason?: string | null;
+  aiLastReplyAt?: string | null;
+  aiAgentId?: string | null;
+  aiAgentName?: string | null;
+  assignedEmployeeId?: string | null;
+  assignedHuman?: string | null;
+  aiRuntime?: {
+    executionKey?: string | null;
+    provider?: string | null;
+    model?: string | null;
+    runtimeStatus?: string | null;
+    action?: string | null;
+    confidence?: number;
+    creditsUsed?: number;
+    inputTokens?: number;
+    outputTokens?: number;
+    totalTokens?: number;
+    latencyMs?: number;
+    processedAt?: string | null;
+    handoverReason?: string | null;
+    assignedHuman?: string | null;
+  } | null;
+  employeeUnreadCount?: number;
   contact?: { name?: string; company?: string } | null;
 };
 

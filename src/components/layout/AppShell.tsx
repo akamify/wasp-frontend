@@ -111,6 +111,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const notifRef = useRef<HTMLDivElement | null>(null);
   const profileMenuRef = useRef<HTMLDivElement | null>(null);
   const sidebarProfileMenuRef = useRef<HTMLDivElement | null>(null);
+  const mainScrollRef = useRef<HTMLElement | null>(null);
   const [profileMenuOpen, setProfileMenuOpen] = useState(false);
   const [sidebarProfileMenuOpen, setSidebarProfileMenuOpen] = useState(false);
   const { notifications, lastReadAt, markAllRead } = useAppShellNotifications(notifOpen);
@@ -143,6 +144,16 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
+
+  useEffect(() => {
+    const frame = window.requestAnimationFrame(() => {
+      if (mainScrollRef.current) {
+        mainScrollRef.current.scrollTo({ top: 0, left: 0, behavior: "auto" });
+      }
+      window.scrollTo({ top: 0, left: 0, behavior: "auto" });
+    });
+    return () => window.cancelAnimationFrame(frame);
+  }, [location.pathname]);
 
   return (
     <div className="min-h-dvh bg-[#F8FAFC] text-slate-900 font-sans antialiased flex overflow-hidden">
@@ -217,6 +228,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
         {/* Scrollable Content Container */}
         <main
+          ref={mainScrollRef}
           className={cn(
             "flex-1 min-h-0 custom-scrollbar relative z-10 lg:pt-2 lg:px-3",
             hideMobileBars ? "overflow-hidden pt-0 pb-0" : "overflow-y-auto pt-14 pb-[68px]"

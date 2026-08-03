@@ -65,6 +65,8 @@ export default function CampaignCreateModal(props: CampaignCreateModalProps) {
     summary,
     headerVars,
     setHeaderVars,
+    headerLocation,
+    setHeaderLocation,
     bodyVars,
     setBodyVars,
     bodyVariableMappings,
@@ -186,6 +188,7 @@ export default function CampaignCreateModal(props: CampaignCreateModalProps) {
                     <CampaignTemplateVariablesSection
                       summary={summary}
                       headerVars={headerVars}
+                      headerLocation={headerLocation}
                       bodyVars={bodyVars}
                       otpCode={otpCode}
                       buttonsNeedingValue={buttonsNeedingValue}
@@ -195,6 +198,7 @@ export default function CampaignCreateModal(props: CampaignCreateModalProps) {
                       flowActionDataJson={flowActionDataJson}
                       headerMediaUploading={headerMediaUploading}
                       onHeaderVarsChange={setHeaderVars}
+                      onHeaderLocationChange={setHeaderLocation}
                       onBodyVarsChange={setBodyVars}
                       attributeDefinitions={attributeDefinitions}
                       bodyVariableMappings={bodyVariableMappings}

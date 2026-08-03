@@ -5,12 +5,9 @@ import { AnimatePresence, motion } from "framer-motion";
 import {
   ArrowRight,
   Bot,
-  ChevronDown,
   LayoutDashboard,
   LogIn,
-  Menu,
   Sparkles,
-  X,
 } from "lucide-react";
 
 import { BRAND_NAME } from "@shared/config/brand";
@@ -90,7 +87,10 @@ export function LandingNavbar() {
     const onMouseDown = (event: MouseEvent) => {
       if (!navRef.current) return;
 
-      if (event.target instanceof Node && !navRef.current.contains(event.target)) {
+      if (
+        event.target instanceof Node &&
+        !navRef.current.contains(event.target)
+      ) {
         setMenuOpen(false);
       }
     };
@@ -135,32 +135,13 @@ export function LandingNavbar() {
         ].join(" ")}
       >
         {/* Brand */}
-        <a
-          href="/"
-          onClick={closeMenu}
-          className="group flex min-w-0 items-center gap-3"
-          aria-label={`${BRAND_NAME} home`}
-        >
-          <div className="relative flex h-[52px] w-[52px] shrink-0 items-center justify-center overflow-hidden rounded-2xl border border-emerald-200/70 bg-gradient-to-br from-emerald-50 via-white to-cyan-50 p-1 shadow-[0_12px_35px_rgba(16,185,129,0.18)] transition-all duration-300 group-hover:scale-[1.03]">
-            <div className="absolute inset-0 bg-[radial-gradient(circle_at_25%_15%,rgba(52,211,153,0.35),transparent_35%),radial-gradient(circle_at_80%_80%,rgba(34,211,238,0.28),transparent_35%)]" />
-            <img
-              src="/logo.png"
-              alt={BRAND_NAME}
-              className="relative z-10 h-full w-full rounded-[1.05rem] object-contain transition-transform duration-300 group-hover:scale-105"
-            />
-          </div>
-
-          <span className="flex min-w-0 flex-col leading-none">
-            <span className="truncate text-[17px] font-black tracking-[-0.03em] text-slate-950">
-              {BRAND_NAME}
-            </span>
-
-            <span className="mt-1 hidden items-center gap-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-emerald-600 sm:flex">
-              <Sparkles className="h-3 w-3" />
-              AI Workspace
-            </span>
-          </span>
-        </a>
+        <div className="flex items-center">
+          <img
+            src="/fnl.png"
+            alt="AIWizChat"
+            className="h-10 w-auto"
+          />
+        </div>
 
         {/* Desktop Navigation */}
         <div className="hidden items-center gap-1 rounded-2xl border border-slate-200/70 bg-slate-950/[0.025] p-1 md:flex">
@@ -223,7 +204,9 @@ export function LandingNavbar() {
           aria-label={menuOpen ? "Close menu" : "Open menu"}
           aria-expanded={menuOpen}
         >
-          <span className="sr-only">{menuOpen ? "Close menu" : "Open menu"}</span>
+          <span className="sr-only">
+            {menuOpen ? "Close menu" : "Open menu"}
+          </span>
 
           <span className="flex h-5 w-5 flex-col items-center justify-center gap-1.5">
             <motion.span

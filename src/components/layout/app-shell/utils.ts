@@ -25,6 +25,7 @@ export function requiredPlanForPath(pathname: string): RequiredPlan | null {
     pathname === "/app" ||
     pathname.startsWith("/app/dashboard") ||
     pathname.startsWith("/app/templates") ||
+    pathname.startsWith("/app/template-library") ||
     pathname.startsWith("/app/send") ||
     pathname.startsWith("/app/contacts") ||
     pathname.startsWith("/app/audiences") ||
@@ -35,7 +36,6 @@ export function requiredPlanForPath(pathname: string): RequiredPlan | null {
   if (pathname.startsWith("/app/flows")) return "pro";
   if (pathname.startsWith("/app/links")) return "pro";
   if (pathname.startsWith("/app/automation")) return "pro";
-  if (pathname.startsWith("/app/ai-agents")) return "pro";
   if (pathname.startsWith("/app/activity")) return "pro";
   if (pathname.startsWith("/app/api-keys")) return "pro";
   if (pathname.startsWith("/app/api-reports")) return "pro";
@@ -45,6 +45,7 @@ export function requiredPlanForPath(pathname: string): RequiredPlan | null {
 export function requiredFeatureForPath(pathname: string): RequiredFeatureKey | null {
   if (pathname === "/app" || pathname.startsWith("/app/dashboard")) return "dashboardPageAccess";
   if (pathname.startsWith("/app/templates")) return "templatesPageAccess";
+  if (pathname.startsWith("/app/template-library")) return "templatesPageAccess";
   if (pathname.startsWith("/app/send")) return "campaignsPageAccess";
   if (pathname.startsWith("/app/contacts")) return "contactsPageAccess";
   if (pathname.startsWith("/app/audiences")) return "contactsPageAccess";
@@ -54,7 +55,6 @@ export function requiredFeatureForPath(pathname: string): RequiredFeatureKey | n
   if (pathname.startsWith("/app/wallet")) return "walletPageAccess";
   if (pathname.startsWith("/app/links")) return "linksPageAccess";
   if (pathname.startsWith("/app/automation")) return "automationPageAccess";
-  if (pathname.startsWith("/app/ai-agents")) return "automationPageAccess";
   if (pathname.startsWith("/app/activity")) return "activityPageAccess";
   if (pathname.startsWith("/app/api-keys")) return "apiKeysPageAccess";
   if (pathname.startsWith("/app/api-reports")) return "apiReportsPageAccess";

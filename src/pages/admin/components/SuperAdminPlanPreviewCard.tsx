@@ -41,13 +41,18 @@ export function SuperAdminPlanPreviewCard(props: Props) {
   };
   const price = props.discountedPriceRupees && String(props.discountedPriceRupees).trim() ? formatCurrencySafe(Number(props.discountedPriceRupees), "INR") : "Custom";
   const cycle = props.billingCycle && props.billingCycle !== "lifetime" ? `/${props.billingCycle}` : props.billingCycle === "lifetime" ? " lifetime" : "";
-  const saveText = props.badgeText || (Number(props.discountAmountPaise || 0) > 0 ? `Save ${formatCurrencyFromPaise(props.discountAmountPaise || 0, "INR")}` : "");
+  const saveText = props.badgeText || (Number(props.discountAmountPaise || 0) > 0 ? `Save ₹${Math.round(Number(props.discountAmountPaise || 0) / 100).toLocaleString("en-IN")}` : "");
+  const limitChip = (value: any, label: string, suffix = "") => {
+    if (value === null) return `Unlimited ${label}`;
+    if (!value) return "";
+    return `${value}${suffix} ${label}`.trim();
+  };
   const limitChips = [
-    props.limits?.messageRatePerSec ? `${props.limits.messageRatePerSec}/sec` : "",
-    props.limits?.maxAgents ? `${props.limits.maxAgents} agents` : "",
-    props.limits?.maxTags ? `${props.limits.maxTags} tags` : "",
-    props.limits?.maxCustomAttributes ? `${props.limits.maxCustomAttributes} attrs` : "",
-    props.limits?.maxWebhooks ? `${props.limits.maxWebhooks} webhooks` : "",
+    limitChip(props.limits?.messageRatePerSec, "speed", "/sec"),
+    limitChip(props.limits?.maxAgents, "agents"),
+    limitChip(props.limits?.maxTags, "tags"),
+    limitChip(props.limits?.maxCustomAttributes, "attrs"),
+    limitChip(props.limits?.maxWebhooks, "webhooks"),
   ].filter(Boolean);
 
   return (

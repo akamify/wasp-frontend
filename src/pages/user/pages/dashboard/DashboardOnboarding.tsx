@@ -1,110 +1,342 @@
+import { useMemo, useState, type KeyboardEvent, type ReactNode } from "react";
 import { Link } from "react-router-dom";
-import { ArrowRight, CheckCircle2, ChevronDown, ChevronUp, Circle, Zap } from "lucide-react";
+import {
+  ArrowRight,
+  CheckCircle2,
+  ChevronDown,
+  Circle,
+  Sparkles,
+  Zap,
+} from "lucide-react";
 import { Card } from "@components/ui/Card";
 import { cn } from "@shared/utils/cn";
+
+type DashboardOnboardingStep = {
+  id: string | number;
+  label: string;
+  href: string;
+  done?: boolean;
+  description?: string;
+  icon?: ReactNode;
+};
+
+type DashboardOnboardingProps = {
+  steps: DashboardOnboardingStep[];
+
+  /**
+   * Optional controlled state.
+   * Is prop ko omit karoge to component default open rahega.
+   */
+  stepsExpanded?: boolean;
+
+  /**
+   * Controlled mode toggle handler.
+   */
+  onToggle?: () => void;
+
+  /**
+   * Uncontrolled mode initial state.
+   * Default: true
+   */
+  defaultExpanded?: boolean;
+};
 
 export function DashboardOnboarding({
   steps,
   stepsExpanded,
   onToggle,
-}: {
-  steps: any[];
-  stepsExpanded: boolean;
-  onToggle: () => void;
-}) {
-  const completedSteps = steps.filter((s) => s.done).length;
+  defaultExpanded = true,
+}: DashboardOnboardingProps) {
+  const [internalExpanded, setInternalExpanded] = useState(defaultExpanded);
+
+  const isControlled = typeof stepsExpanded === "boolean";
+  const expanded = isControlled ? stepsExpanded : internalExpanded;
+
   const totalSteps = steps.length;
-  const progressPercentage = (completedSteps / totalSteps) * 100;
+
+  const completedSteps = useMemo(
+    () => steps.filter((step) => Boolean(step.done)).length,
+    [steps],
+  );
+
+  const progressPercentage =
+    totalSteps > 0 ? Math.round((completedSteps / totalSteps) * 100) : 0;
+
+  const allCompleted = totalSteps > 0 && completedSteps === totalSteps;
+
+  const toggleExpanded = () => {
+    if (isControlled) {
+      onToggle?.();
+      return;
+    }
+
+    setInternalExpanded((current) => !current);
+  };
 
   return (
-    <Card 
+    <Card
       className={cn(
-        "relative overflow-hidden border border-slate-100 bg-white shadow-sm transition-all duration-300 rounded-xl", 
-        !stepsExpanded && "p-4"
+        "relative isolate overflow-hidden rounded-[2px]",
+        "border border-slate-200/90 bg-white",
+        "shadow-[0_18px_50px_-40px_rgba(15,23,42,0.55)]",
+        "transition-all duration-300",
+        expanded
+          ? "shadow-[0_22px_60px_-42px_rgba(15,23,42,0.6)]"
+          : "hover:border-slate-300",
       )}
     >
-      <div className={cn("p-6", !stepsExpanded && "p-0")}>
-        {/* Header Section */}
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="p-2.5 bg-emerald-50 rounded-lg text-emerald-600 ring-4 ring-emerald-50/50">
-              <Zap size={18} fill="currentColor" />
+      {/* Decorative background */}
+      <div
+        aria-hidden="true"
+        className="pointer-events-none absolute inset-0 -z-10"
+      >
+        <div className="absolute left-0 top-0 h-28 w-72 bg-[radial-gradient(circle_at_top_left,rgba(16,185,129,0.09),transparent_70%)]" />
+        <div className="absolute right-0 top-0 size-40 rounded-full bg-emerald-100/30 blur-3xl" />
+      </div>
+
+      {/* Header */}
+      <button
+        type="button"
+        onClick={toggleExpanded}
+        aria-expanded={expanded}
+        aria-controls="dashboard-onboarding-steps"
+        className={cn(
+          "group flex w-full items-center justify-between gap-4 p-4 text-left",
+          "transition-colors duration-200",
+          "hover:bg-slate-50/60 focus:outline-none",
+          "focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-emerald-500",
+          expanded && "border-b border-slate-100 sm:p-5",
+        )}
+      >
+        <div className="flex min-w-0 items-center gap-3.5">
+          <div
+            className={cn(
+              "flex size-11 shrink-0 items-center justify-center rounded-[2px]",
+              allCompleted
+                ? "bg-emerald-500 text-white"
+                : "bg-emerald-50 text-emerald-700",
+            )}
+          >
+            {allCompleted ? (
+              <CheckCircle2 size={20} />
+            ) : (
+              <Zap size={19} fill="currentColor" />
+            )}
+          </div>
+
+          <div className="min-w-0">
+            <div className="flex flex-wrap items-center gap-2">
+              <h2 className="text-sm font-black tracking-tight text-slate-950 sm:text-base">
+                Quick Setup Guide
+              </h2>
+
+              {allCompleted ? (
+                <span className="inline-flex items-center gap-1 rounded-[2px] bg-emerald-50 px-2 py-1 text-[9px] font-black uppercase tracking-[0.14em] text-emerald-700">
+                  <CheckCircle2 size={11} />
+                  Completed
+                </span>
+              ) : (
+                <span className="hidden items-center gap-1 rounded-[2px] bg-slate-100 px-2 py-1 text-[9px] font-black uppercase tracking-[0.14em] text-slate-500 sm:inline-flex">
+                  <Sparkles size={11} />
+                  Getting started
+                </span>
+              )}
             </div>
-            <div>
-              <h3 className="text-sm font-bold text-slate-900 tracking-tight">Quick Setup Guide</h3>
-              <div className="flex items-center gap-3 mt-1">
-                <p className="text-xs text-slate-500 font-medium whitespace-nowrap">
-                  {completedSteps} of {totalSteps} completed
-                </p>
-                {/* Modern subtle progress indicator */}
-                <div className="w-24 h-1.5 bg-slate-100 rounded-full overflow-hidden hidden sm:block">
-                  <div 
-                    className="h-full bg-emerald-500 transition-all duration-500 ease-out rounded-full" 
-                    style={{ width: `${progressPercentage}%` }}
-                  />
-                </div>
+
+            <div className="mt-1.5 flex min-w-0 flex-wrap items-center gap-x-3 gap-y-2">
+              <p className="whitespace-nowrap text-xs font-semibold text-slate-500">
+                {completedSteps} of {totalSteps} completed
+              </p>
+
+              <div
+                className="hidden h-1.5 w-28 overflow-hidden rounded-full bg-slate-100 sm:block"
+                role="progressbar"
+                aria-label="Setup completion"
+                aria-valuemin={0}
+                aria-valuemax={100}
+                aria-valuenow={progressPercentage}
+              >
+                <div
+                  className="h-full rounded-full bg-emerald-500 transition-[width] duration-700 ease-out"
+                  style={{ width: `${progressPercentage}%` }}
+                />
               </div>
+
+              <span className="text-[10px] font-black text-emerald-700">
+                {progressPercentage}%
+              </span>
             </div>
           </div>
-          <button 
-            onClick={onToggle} 
-            className="p-2 hover:bg-slate-50 border border-transparent hover:border-slate-100 rounded-lg transition-all text-slate-400 hover:text-slate-600"
-          >
-            {stepsExpanded ? <ChevronUp size={18} /> : <ChevronDown size={18} />}
-          </button>
         </div>
 
-        {/* Steps Grid */}
-        {stepsExpanded && (
-          <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 mt-6">
-            {steps.map((step, idx) => (
-              <Link 
-                key={step.id} 
-                to={step.done ? "#" : step.href} 
-                className={cn(
-                  "group relative flex flex-col justify-between p-4 rounded-xl border transition-all duration-200 active:scale-[0.98]", 
-                  step.done 
-                    ? "bg-slate-50/60 border-slate-100 text-slate-400 pointer-events-none" 
-                    : "bg-white border-slate-200 hover:border-emerald-500 hover:shadow-md hover:shadow-emerald-500/5"
-                )}
-              >
-                <div>
-                  <div className="flex items-center justify-between mb-4">
-                    {step.done ? (
-                      <div className="p-0.5 bg-emerald-500 rounded-full text-white">
-                        <CheckCircle2 size={14} className="stroke-[3]" />
-                      </div>
-                    ) : (
-                      <div className="text-slate-300 group-hover:text-emerald-500 transition-colors">
-                        <Circle size={14} className="stroke-[2.5]" />
-                      </div>
-                    )}
-                    <span className="text-[10px] font-bold tracking-wider text-slate-400/70">
-                      STEP 0{idx + 1}
-                    </span>
-                  </div>
-                  
-                  <div className={cn(
-                    "text-xs font-semibold leading-snug transition-colors", 
-                    step.done ? "text-slate-400 line-through decoration-slate-200" : "text-slate-800 group-hover:text-emerald-600"
-                  )}>
-                    {step.label}
-                  </div>
-                </div>
+        <span
+          className={cn(
+            "flex size-9 shrink-0 items-center justify-center rounded-[2px]",
+            "border border-slate-200 bg-white text-slate-500 shadow-sm",
+            "transition-all duration-300",
+            "group-hover:border-slate-300 group-hover:text-slate-700",
+          )}
+        >
+          <ChevronDown
+            size={17}
+            className={cn(
+              "transition-transform duration-300",
+              expanded && "rotate-180",
+            )}
+          />
+        </span>
+      </button>
 
-                {!step.done && (
-                  <div className="flex justify-end mt-4">
-                    <ArrowRight 
-                      size={14} 
-                      className="text-emerald-500 opacity-0 -translate-x-2 group-hover:opacity-100 group-hover:translate-x-0 transition-all duration-200" 
-                    />
-                  </div>
-                )}
-              </Link>
-            ))}
-          </div>
+      {/* Animated expandable content */}
+      <div
+        id="dashboard-onboarding-steps"
+        aria-hidden={!expanded}
+        className={cn(
+          "grid transition-[grid-template-rows,opacity] duration-300 ease-out",
+          expanded
+            ? "grid-rows-[1fr] opacity-100"
+            : "grid-rows-[0fr] opacity-0",
         )}
+      >
+        <div className="min-h-0 overflow-hidden">
+          <div className="p-4 sm:p-5">
+            {totalSteps > 0 ? (
+              <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
+                {steps.map((step, index) => (
+                  <OnboardingStepCard
+                    key={step.id}
+                    step={step}
+                    index={index}
+                  />
+                ))}
+              </div>
+            ) : (
+              <div className="rounded-[2px] border border-dashed border-slate-200 bg-slate-50 px-4 py-8 text-center">
+                <p className="text-sm font-bold text-slate-700">
+                  No setup steps available
+                </p>
+
+                <p className="mt-1 text-xs font-medium text-slate-500">
+                  Setup tasks will appear here when they are available.
+                </p>
+              </div>
+            )}
+          </div>
+        </div>
       </div>
     </Card>
+  );
+}
+
+function OnboardingStepCard({
+  step,
+  index,
+}: {
+  step: DashboardOnboardingStep;
+  index: number;
+}) {
+  if (step.done) {
+    return (
+      <div
+        className={cn(
+          "relative flex min-h-[150px] min-w-0 flex-col justify-between",
+          "rounded-[2px] border border-emerald-100 bg-emerald-50/45 p-4",
+        )}
+      >
+        <StepCardContent step={step} index={index} />
+      </div>
+    );
+  }
+
+  return (
+    <Link
+      to={step.href}
+      className={cn(
+        "group relative flex min-h-[150px] min-w-0 flex-col justify-between",
+        "rounded-[2px] border border-slate-200 bg-white p-4",
+        "transition-all duration-200",
+        "hover:-translate-y-0.5 hover:border-emerald-300",
+        "hover:shadow-[0_18px_42px_-30px_rgba(16,185,129,0.5)]",
+        "focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500",
+        "active:translate-y-0",
+      )}
+    >
+      <StepCardContent step={step} index={index} />
+
+      <div className="mt-5 flex items-center justify-between gap-3">
+        <span className="text-[10px] font-black uppercase tracking-[0.14em] text-emerald-700">
+          Continue setup
+        </span>
+
+        <span className="flex size-8 items-center justify-center rounded-[2px] bg-emerald-50 text-emerald-700 transition-all duration-200 group-hover:bg-emerald-500 group-hover:text-white">
+          <ArrowRight
+            size={15}
+            className="transition-transform duration-200 group-hover:translate-x-0.5"
+          />
+        </span>
+      </div>
+    </Link>
+  );
+}
+
+function StepCardContent({
+  step,
+  index,
+}: {
+  step: DashboardOnboardingStep;
+  index: number;
+}) {
+  return (
+    <div>
+      <div className="flex items-start justify-between gap-3">
+        <div
+          className={cn(
+            "flex size-9 shrink-0 items-center justify-center rounded-[2px]",
+            step.done
+              ? "bg-emerald-500 text-white"
+              : "bg-slate-100 text-slate-500",
+          )}
+        >
+          {step.done ? (
+            <CheckCircle2 size={17} />
+          ) : step.icon ? (
+            step.icon
+          ) : (
+            <Circle size={16} />
+          )}
+        </div>
+
+        <span
+          className={cn(
+            "text-[9px] font-black uppercase tracking-[0.17em]",
+            step.done ? "text-emerald-600" : "text-slate-400",
+          )}
+        >
+          Step {String(index + 1).padStart(2, "0")}
+        </span>
+      </div>
+
+      <h3
+        className={cn(
+          "mt-4 text-sm font-black leading-5",
+          step.done ? "text-slate-700" : "text-slate-900",
+        )}
+      >
+        {step.label}
+      </h3>
+
+      {step.description ? (
+        <p className="mt-1.5 text-xs font-medium leading-5 text-slate-500">
+          {step.description}
+        </p>
+      ) : null}
+
+      {step.done ? (
+        <div className="mt-4 inline-flex items-center gap-1.5 text-[10px] font-black uppercase tracking-[0.14em] text-emerald-700">
+          <CheckCircle2 size={13} />
+          Completed
+        </div>
+      ) : null}
+    </div>
   );
 }

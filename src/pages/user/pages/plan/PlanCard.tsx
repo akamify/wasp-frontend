@@ -28,11 +28,21 @@ type Props = {
   plan: Plan;
   horizontal?: boolean;
   paymentProcessing: boolean;
+  showFallbackAction?: boolean;
   onCurrentPlanClick: () => void;
   onActionClick: (plan: any) => void;
+  onFallbackClick?: (plan: any) => void;
 };
 
-export function PlanCard({ plan, horizontal = false, paymentProcessing, onCurrentPlanClick, onActionClick }: Props) {
+export function PlanCard({
+  plan,
+  horizontal = false,
+  paymentProcessing,
+  showFallbackAction = false,
+  onCurrentPlanClick,
+  onActionClick,
+  onFallbackClick,
+}: Props) {
   const isFreePlan = plan.slug === "free";
   const showRecommendedStyle = plan.recommended && !isFreePlan;
 
@@ -98,7 +108,22 @@ export function PlanCard({ plan, horizontal = false, paymentProcessing, onCurren
               <>{plan.actionLabel || plan.cta} <ArrowRight size={16} /></>
             )}
           </Button>
+          {showFallbackAction && !plan.isCurrentPlan && plan.planType !== "custom" ? (
+            <Button
+              variant="outline"
+              className="mt-3 w-full"
+              onClick={() => onFallbackClick?.(plan)}
+              disabled={paymentProcessing}
+            >
+              Continue Without Auto Renew
+            </Button>
+          ) : null}
           {plan.actionHint ? <p className="mt-2 text-center text-[11px] font-semibold text-slate-500">{plan.actionHint}</p> : null}
+          {!plan.isCurrentPlan && !isFreePlan ? (
+            <p className="mt-2 text-center text-[11px] font-semibold text-slate-500">
+              Auto Renew is enabled when your payment method supports recurring mandates.
+            </p>
+          ) : null}
         </div>
 
         <div className="mt-6 border-t border-slate-200 pt-6 md:mt-0 md:border-t-0 md:pt-0">

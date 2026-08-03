@@ -3,7 +3,7 @@ import { API } from "@api/api";
 import { getErrorMessage } from "./actions";
 
 export function useCampaignFormEffects(ctx: any) {
-  const { isOpen, setLimitsLoading, setMessagingTierRaw, setRemainingQuotaRaw, setWalletBalance, initialType, initialName, initialSelectedPhones, setType, setName, setContactQuery, setSelectedPhones, setAudienceMode, setSelectedTags, setSelectedListId, setAttributeFilters, setBodyVariableMappings, setMessageType, setTemplateId, setScheduleType, setScheduleDate, setScheduleTime, setScheduleWeekdays, setScheduleTimezone, setScheduleEndDate, setScheduleMaxOccurrences, setTagMatchMode, setHeaderVars, setBodyVars, setOtpCode, setButtonValues, setButtonValueByIndex, setButtonTtlMinutes, setFlowTokens, setFlowActionDataJson, setCsvBusy, setCsvFileName, setCsvText, setCsvPhoneColumn, setCsvBodyMap, setCsvHeaderMap, setCsvButtonMap, setDemoTo, setDemoBusy, selectedTemplate, summary, buttonTtlMinutes, buttonsNeedingValue, csvColumns, type, audienceMode, autoMapCsvIfEmpty, buttonValues, setEstimate, buildRecipientsForCurrentState, templateId, setEstimateLoading, toast, headerMediaOverride, csvText, selectedPhones, selectedTagList, selectedListId, attributeFilters, csvPhoneColumn, csvBodyMap, csvHeaderMap, csvButtonMap, headerVars, bodyVars, resolvedButtonValues, otpCode, flowActionDataJson, flowTokens, tagMatchMode, setWalletBalance: setWalletFromEstimate } = ctx;
+  const { isOpen, setLimitsLoading, setMessagingTierRaw, setRemainingQuotaRaw, setWalletBalance, initialType, initialName, initialSelectedPhones, setType, setName, setContactQuery, setSelectedPhones, setAudienceMode, setSelectedTags, setSelectedListId, setAttributeFilters, setBodyVariableMappings, setMessageType, setTemplateId, setScheduleType, setScheduleDate, setScheduleTime, setScheduleWeekdays, setScheduleTimezone, setScheduleEndDate, setScheduleMaxOccurrences, setTagMatchMode, setHeaderVars, setHeaderLocation, setBodyVars, setOtpCode, setButtonValues, setButtonValueByIndex, setButtonTtlMinutes, setFlowTokens, setFlowActionDataJson, setCsvBusy, setCsvFileName, setCsvText, setCsvPhoneColumn, setCsvBodyMap, setCsvHeaderMap, setCsvButtonMap, setDemoTo, setDemoBusy, selectedTemplate, summary, buttonTtlMinutes, buttonsNeedingValue, csvColumns, type, audienceMode, autoMapCsvIfEmpty, buttonValues, setEstimate, buildRecipientsForCurrentState, templateId, setEstimateLoading, toast, headerMediaOverride, headerLocation, csvText, selectedPhones, selectedTagList, selectedListId, attributeFilters, csvPhoneColumn, csvBodyMap, csvHeaderMap, csvButtonMap, headerVars, bodyVars, resolvedButtonValues, otpCode, flowActionDataJson, flowTokens, tagMatchMode, setWalletBalance: setWalletFromEstimate } = ctx;
 
   useEffect(() => {
     if (!isOpen) return;
@@ -54,12 +54,24 @@ export function useCampaignFormEffects(ctx: any) {
     if (!isOpen) return;
     const hasSeed = initialType !== undefined || initialName !== undefined || (Array.isArray(initialSelectedPhones) && initialSelectedPhones.length > 0);
     if (!hasSeed) { setType(null); setName(""); setContactQuery(""); setSelectedPhones({}); }
-    setMessageType("template"); setTemplateId(""); setScheduleType("immediate"); setScheduleDate(""); setScheduleTime(""); setScheduleWeekdays([]); setScheduleTimezone("Asia/Kolkata"); setScheduleEndDate(""); setScheduleMaxOccurrences(""); setAudienceMode("manual"); setSelectedTags({}); setSelectedListId(""); setTagMatchMode("all"); setAttributeFilters([]); setHeaderVars([]); setBodyVars([]); setBodyVariableMappings([]); setOtpCode(""); setButtonValues([]); setButtonValueByIndex({}); setButtonTtlMinutes([]); setFlowTokens([]); setFlowActionDataJson("{}"); setCsvBusy(false); setCsvFileName(""); setCsvText(""); setCsvPhoneColumn(""); setCsvBodyMap([]); setCsvHeaderMap([]); setCsvButtonMap([]); setDemoTo(""); setDemoBusy(false);
+    setMessageType("template"); setTemplateId(""); setScheduleType("immediate"); setScheduleDate(""); setScheduleTime(""); setScheduleWeekdays([]); setScheduleTimezone("Asia/Kolkata"); setScheduleEndDate(""); setScheduleMaxOccurrences(""); setAudienceMode("manual"); setSelectedTags({}); setSelectedListId(""); setTagMatchMode("all"); setAttributeFilters([]); setHeaderVars([]); setHeaderLocation({ latitude: "", longitude: "", name: "", address: "" }); setBodyVars([]); setBodyVariableMappings([]); setOtpCode(""); setButtonValues([]); setButtonValueByIndex({}); setButtonTtlMinutes([]); setFlowTokens([]); setFlowActionDataJson("{}"); setCsvBusy(false); setCsvFileName(""); setCsvText(""); setCsvPhoneColumn(""); setCsvBodyMap([]); setCsvHeaderMap([]); setCsvButtonMap([]); setDemoTo(""); setDemoBusy(false);
   }, [isOpen, initialType, initialName, initialSelectedPhones]);
 
   useEffect(() => {
     if (!isOpen || !selectedTemplate) return;
     setHeaderVars((prev: string[]) => prev.length === summary.headerVariableCount ? prev : Array.from({ length: summary.headerVariableCount }, (_, i) => prev[i] || ""));
+    if (summary.headerFormat === "LOCATION") {
+      const parsed = (selectedTemplate.components || []).find((component: any) => String(component?.type || "").toUpperCase() === "HEADER" && String(component?.format || "").toUpperCase() === "LOCATION");
+      const example = parsed?.example?.header_handle?.[0] || {};
+      setHeaderLocation((prev: any) => ({
+        latitude: prev.latitude || String(example?.latitude || ""),
+        longitude: prev.longitude || String(example?.longitude || ""),
+        name: prev.name || String(example?.name || ""),
+        address: prev.address || String(example?.address || ""),
+      }));
+    } else {
+      setHeaderLocation({ latitude: "", longitude: "", name: "", address: "" });
+    }
     setBodyVars((prev: string[]) => prev.length === summary.bodyVariableCount ? prev : Array.from({ length: summary.bodyVariableCount }, (_, i) => prev[i] || ""));
     if (summary.voiceCallButtons.length > 0 && buttonTtlMinutes.length === 0) setButtonTtlMinutes(summary.voiceCallButtons.map(() => 43200));
     setCsvBodyMap((prev: string[]) => prev.length === summary.bodyVariableCount ? prev : Array.from({ length: summary.bodyVariableCount }, (_, i) => prev[i] || ""));
@@ -98,6 +110,14 @@ export function useCampaignFormEffects(ctx: any) {
         const audienceRuntime = {
           variables: bodyVars,
           headerVariables: summary.headerFormat !== "TEXT" && headerMediaOverride ? [headerMediaOverride, ...headerVars.slice(1)] : headerVars,
+          headerLocation: summary.headerFormat === "LOCATION"
+            ? {
+                latitude: Number(headerLocation.latitude),
+                longitude: Number(headerLocation.longitude),
+                name: headerLocation.name.trim(),
+                address: headerLocation.address.trim(),
+              }
+            : undefined,
           otpCode: String(otpCode || "").trim() || undefined,
           buttonValues: resolvedButtonValues,
           buttonTtlMinutes,
@@ -125,5 +145,5 @@ export function useCampaignFormEffects(ctx: any) {
       } finally { if (alive) setEstimateLoading(false); }
     }, 350);
     return () => { alive = false; window.clearTimeout(timer); };
-  }, [isOpen, type, audienceMode, templateId, selectedPhones, selectedTagList, selectedListId, tagMatchMode, attributeFilters, csvText, csvPhoneColumn, csvBodyMap, csvHeaderMap, csvButtonMap, headerVars, bodyVars, resolvedButtonValues, headerMediaOverride, otpCode, flowActionDataJson, buttonTtlMinutes, flowTokens, summary.headerFormat]);
+  }, [isOpen, type, audienceMode, templateId, selectedPhones, selectedTagList, selectedListId, tagMatchMode, attributeFilters, csvText, csvPhoneColumn, csvBodyMap, csvHeaderMap, csvButtonMap, headerVars, headerLocation, bodyVars, resolvedButtonValues, headerMediaOverride, otpCode, flowActionDataJson, buttonTtlMinutes, flowTokens, summary.headerFormat]);
 }

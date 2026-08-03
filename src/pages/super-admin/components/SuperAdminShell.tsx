@@ -3,6 +3,7 @@ import {
   BarChart3,
   Bell,
   Boxes,
+  Bot,
   Briefcase,
   CalendarClock,
   CreditCard,
@@ -39,6 +40,7 @@ const SUPER_ADMIN_NAV_ITEMS: AdminShellNavItem[] = [
   { to: "/super-admin/admins", label: "Admin Management", kicker: "rbac", icon: Users },
   { to: "/super-admin/docs", label: "Docs", kicker: "knowledge", icon: FileText },
   { to: "/super-admin/platform-settings", label: "Platform Settings", kicker: "global config", icon: Shield },
+  { to: "/super-admin/ai-addons", label: "AI Add-ons", kicker: "plans", icon: Bot },
   { to: "/super-admin/profile", label: "Profile", kicker: "root account", icon: UserCircle2 },
 ];
 

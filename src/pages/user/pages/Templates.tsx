@@ -6,9 +6,14 @@ import { useToast } from "@shared/providers/ToastContext";
 import { TemplateForm } from "@pages/user/templates/TemplateForm";
 import { TemplatePreview } from "@pages/user/templates/TemplatePreview";
 import { TemplatesList } from "@pages/user/templates/TemplatesList";
+import { TemplateSubmitConfirmModal } from "@modules/templates/components/TemplateSubmitConfirmModal";
+import { TemplateRejectionModal } from "@modules/templates/components/TemplateRejectionModal";
+import { TemplateHistoryModal } from "@modules/templates/components/TemplateHistoryModal";
+import { useTemplatePreviewBrand } from "@modules/templates/hooks/useTemplatePreviewBrand";
+import { buildTemplateSubmissionChecks } from "@modules/templates/utils/submissionChecks";
 import { parseComponentsForPreview, truncateTemplateName } from "@pages/user/templates/helpers";
-import type { TemplateItem } from "@pages/user/templates/types";
-import { Pencil, X, } from "lucide-react";
+import type { TemplateItem, TemplateVersionItem } from "@pages/user/templates/types";
+import { Pencil, X, Copy, SendHorizonal, CircleAlert, History } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
 export default function TemplatesPage() {
@@ -21,12 +26,20 @@ export default function TemplatesPage() {
   const { toast } = useToast();
   const isInitialLoad = useRef(true);
   const [creating, setCreating] = useState(false);
+  const [savingDraft, setSavingDraft] = useState(false);
   const [busyId, setBusyId] = useState<string | null>(null);
   const [showCreatePanel, setShowCreatePanel] = useState(false);
   const [showEditPanel, setShowEditPanel] = useState(false);
   const [selectedTemplate, setSelectedTemplate] = useState<TemplateItem | null>(null);
   const [editingTemplate, setEditingTemplate] = useState<TemplateItem | null>(null);
+  const [submitTarget, setSubmitTarget] = useState<TemplateItem | null>(null);
+  const [rejectionTarget, setRejectionTarget] = useState<TemplateItem | null>(null);
+  const [historyTarget, setHistoryTarget] = useState<TemplateItem | null>(null);
+  const [historyVersions, setHistoryVersions] = useState<TemplateVersionItem[]>([]);
+  const [historyLoading, setHistoryLoading] = useState(false);
+  const [restoringVersionId, setRestoringVersionId] = useState<string | null>(null);
   const [searchParams, setSearchParams] = useSearchParams();
+  const previewBrand = useTemplatePreviewBrand();
 
 
   const languageOptions = useMemo(() => {
@@ -121,6 +134,19 @@ export default function TemplatesPage() {
     } finally { setCreating(false); }
   }, [loadTemplates, setSearchParams]);
 
+  const handleCreateDraft = useCallback(async (payload: any) => {
+    setSavingDraft(true);
+    try {
+      await API.templates.createDraft(payload);
+      toast("Draft saved successfully.", "success");
+      await loadTemplates();
+      setSearchParams({});
+    } catch (e: any) {
+      const message = e?.response?.data?.message || "Failed to save draft";
+      toast(message, "error");
+    } finally { setSavingDraft(false); }
+  }, [loadTemplates, setSearchParams, toast]);
+
   const handleEdit = useCallback(async (payload: any) => {
     if (!editingTemplate) return;
     setCreating(true);
@@ -139,6 +165,40 @@ export default function TemplatesPage() {
       toast(message, "error");
     } finally { setCreating(false); }
   }, [editingTemplate, loadTemplates, setSearchParams]);
+
+  const handleEditDraft = useCallback(async (payload: any) => {
+    if (!editingTemplate) return;
+    setSavingDraft(true);
+    try {
+      await API.templates.updateDraft(editingTemplate._id, payload);
+      toast("Draft updated successfully.", "success");
+      setShowEditPanel(false);
+      setEditingTemplate(null);
+      setSearchParams({});
+      await loadTemplates();
+    } catch (e: any) {
+      const message = e?.response?.data?.message || "Failed to update draft";
+      toast(message, "error");
+    } finally { setSavingDraft(false); }
+  }, [editingTemplate, loadTemplates, setSearchParams, toast]);
+
+  const handleSubmitDraft = useCallback(async (payload: any) => {
+    if (!editingTemplate) return;
+    setCreating(true);
+    try {
+      await API.templates.updateDraft(editingTemplate._id, payload);
+      await API.templates.submit(editingTemplate._id);
+      toast("Draft submitted to Meta successfully.", "success");
+      setShowEditPanel(false);
+      setEditingTemplate(null);
+      setSelectedTemplate(null);
+      setSearchParams({});
+      await loadTemplates();
+    } catch (e: any) {
+      const message = e?.response?.data?.message || e?.response?.data?.details?.metaDebug?.meta?.error_user_msg || "Failed to submit draft";
+      toast(message, "error");
+    } finally { setCreating(false); }
+  }, [editingTemplate, loadTemplates, setSearchParams, toast]);
 
   const openEditForTemplate = useCallback((template: TemplateItem) => {
     setSearchParams({ edit: template._id });
@@ -169,16 +229,64 @@ export default function TemplatesPage() {
     return { category: selectedTemplate.category, ...parsed };
   }, [selectedTemplate]);
 
+  const submitTargetValidation = useMemo(
+    () => buildTemplateSubmissionChecks(submitTarget || { category: "utility", components: [] }),
+    [submitTarget]
+  );
+
+  const openSubmitConfirmation = useCallback((template: TemplateItem) => {
+    setSubmitTarget(template);
+  }, []);
+
+  const confirmSubmitTarget = useCallback(async () => {
+    if (!submitTarget) return;
+    const successMessage = submitTarget.status === "rejected" ? "Template resubmitted to Meta." : "Draft submitted to Meta.";
+    await runRowAction(submitTarget._id, () => API.templates.submit(submitTarget._id), successMessage, "Submit failed");
+    setSubmitTarget(null);
+  }, [runRowAction, submitTarget]);
+
+  const openHistory = useCallback(async (template: TemplateItem) => {
+    setHistoryTarget(template);
+    setHistoryLoading(true);
+    try {
+      const response = await API.templates.history(template._id);
+      setHistoryVersions(Array.isArray(response?.versions) ? response.versions : []);
+    } catch (e: any) {
+      toast(e?.response?.data?.message || "Failed to load version history", "error");
+      setHistoryTarget(null);
+      setHistoryVersions([]);
+    } finally {
+      setHistoryLoading(false);
+    }
+  }, [toast]);
+
+  const restoreVersion = useCallback(async (version: TemplateVersionItem) => {
+    if (!historyTarget) return;
+    setRestoringVersionId(version._id);
+    try {
+      await API.templates.restoreVersion(historyTarget._id, version._id);
+      toast(`Version ${version.versionNumber} restored successfully.`, "success");
+      await openHistory(historyTarget);
+      await loadTemplates();
+      const fresh = await API.templates.get(historyTarget._id).catch(() => null);
+      if (fresh?.template?._id) setSelectedTemplate(fresh.template);
+    } catch (e: any) {
+      toast(e?.response?.data?.message || "Failed to restore version", "error");
+    } finally {
+      setRestoringVersionId(null);
+    }
+  }, [historyTarget, loadTemplates, openHistory, toast]);
+
   return (
     <div className=" p-2 md:p-2 relative">
       {/* Main List */}
       <div className="relative">
         {showCreatePanel ? (
-          <TemplateForm open={showCreatePanel} creating={creating} languageOptions={languageOptions} onClose={() => setSearchParams({})} onCreate={handleCreate} />
+          <TemplateForm open={showCreatePanel} creating={creating} savingDraft={savingDraft} languageOptions={languageOptions} onClose={() => setSearchParams({})} onCreate={handleCreate} onSaveDraft={handleCreateDraft} />
         ) : showEditPanel && editingTemplate ? (
-          <TemplateForm open={showEditPanel} creating={creating} mode="edit" initialTemplate={{ name: editingTemplate.name, language: editingTemplate.language, category: editingTemplate.category, components: editingTemplate.components || [] }} languageOptions={languageOptions} onClose={() => setSearchParams({})} onCreate={handleEdit} />
+          <TemplateForm open={showEditPanel} creating={creating} savingDraft={savingDraft} mode="edit" initialStatus={editingTemplate.status} initialTemplate={{ name: editingTemplate.name, language: editingTemplate.language, category: editingTemplate.category, components: editingTemplate.components || [] }} languageOptions={languageOptions} onClose={() => setSearchParams({})} onCreate={handleEdit} onSaveDraft={editingTemplate.status === "draft" ? handleEditDraft : undefined} onSubmitDraft={editingTemplate.status === "draft" ? handleSubmitDraft : undefined} />
         ) : (
-          <TemplatesList templates={templates} loading={loading} syncing={syncing} onRefresh={loadTemplates} busyId={busyId} selectedId={selectedTemplate?._id || null} onOpenAdd={() => setSearchParams({ create: "1" })} onSelectTemplate={selectTemplate} onEdit={openEditForTemplate} onSyncStatus={(id) => runRowAction(id, () => API.templates.status(id), "Status synced.", "Sync failed")} onDelete={(t) => { if (confirm(`Delete "${t.name}"?`)) runRowAction(t._id, () => API.templates.remove(t._id), "Deleted.", "Delete failed"); }} />
+          <TemplatesList templates={templates} loading={loading} syncing={syncing} onRefresh={loadTemplates} busyId={busyId} selectedId={selectedTemplate?._id || null} onOpenAdd={() => setSearchParams({ create: "1" })} onSelectTemplate={selectTemplate} onEdit={openEditForTemplate} onDuplicate={(t) => runRowAction(t._id, () => API.templates.duplicate(t._id), "Draft duplicated.", "Duplicate failed")} onSubmitDraft={openSubmitConfirmation} onResubmitRejected={openSubmitConfirmation} onViewRejectedDetails={(t) => setRejectionTarget(t)} onSyncStatus={(id) => runRowAction(id, () => API.templates.status(id), "Status synced.", "Sync failed")} onDelete={(t) => { if (confirm(`Delete "${t.name}"?`)) runRowAction(t._id, () => API.templates.remove(t._id), "Deleted.", "Delete failed"); }} />
         )}
       </div>
 
@@ -203,6 +311,52 @@ export default function TemplatesPage() {
                     <Button
                       variant="ghost"
                       size="sm"
+                      onClick={() => runRowAction(selectedTemplate._id, () => API.templates.duplicate(selectedTemplate._id), "Draft duplicated.", "Duplicate failed")}
+                      className="h-9 px-3 rounded-[5px] text-slate-600 font-black text-[10px] uppercase tracking-widest hover:bg-white-900 transition-all"
+                    >
+                      <Copy size={14} className="mr-2" /> Duplicate
+                    </Button>
+                    {selectedTemplate.status === "draft" ? (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => openSubmitConfirmation(selectedTemplate)}
+                        className="h-9 px-3 rounded-[5px] text-emerald-700 font-black text-[10px] uppercase tracking-widest hover:bg-white-900 transition-all"
+                      >
+                        <SendHorizonal size={14} className="mr-2" /> Submit
+                      </Button>
+                    ) : null}
+                    {selectedTemplate.status === "rejected" ? (
+                      <>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => setRejectionTarget(selectedTemplate)}
+                          className="h-9 px-3 rounded-[5px] text-rose-700 font-black text-[10px] uppercase tracking-widest hover:bg-white-900 transition-all"
+                        >
+                          <CircleAlert size={14} className="mr-2" /> Rejected
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => openSubmitConfirmation(selectedTemplate)}
+                          className="h-9 px-3 rounded-[5px] text-emerald-700 font-black text-[10px] uppercase tracking-widest hover:bg-white-900 transition-all"
+                        >
+                          <SendHorizonal size={14} className="mr-2" /> Resubmit
+                        </Button>
+                      </>
+                    ) : null}
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => void openHistory(selectedTemplate)}
+                      className="h-9 px-3 rounded-[5px] text-slate-600 font-black text-[10px] uppercase tracking-widest hover:bg-white-900 transition-all"
+                    >
+                      <History size={14} className="mr-2" /> History
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="sm"
                       onClick={() => openEditForTemplate(selectedTemplate)}
                       className="h-9 px-3 rounded-[5px] text-slate-600 font-black text-[10px] uppercase tracking-widest hover:bg-white-900 transition-all"
                     >
@@ -214,13 +368,49 @@ export default function TemplatesPage() {
                   </div>
                 </div>
                 <div className="max-w-sm mx-auto">
-                  <TemplatePreview {...previewData} variableValues={{}} />
+                  <TemplatePreview {...previewData} variableValues={{}} previewBrand={previewBrand} />
                 </div>
               </div>
             </motion.div>
           </>
         )}
       </AnimatePresence>
+      <TemplateSubmitConfirmModal
+        open={!!submitTarget}
+        busy={busyId === submitTarget?._id}
+        templateName={submitTarget?.name || ""}
+        checks={submitTargetValidation.checks}
+        onClose={() => setSubmitTarget(null)}
+        onConfirm={() => void confirmSubmitTarget()}
+      />
+      <TemplateRejectionModal
+        open={!!rejectionTarget}
+        template={rejectionTarget}
+        busy={busyId === rejectionTarget?._id}
+        onClose={() => setRejectionTarget(null)}
+        onFix={(template) => {
+          setRejectionTarget(null);
+          openEditForTemplate(template);
+        }}
+        onResubmit={(template) => {
+          setRejectionTarget(null);
+          openSubmitConfirmation(template);
+        }}
+      />
+      <TemplateHistoryModal
+        open={!!historyTarget}
+        template={historyTarget}
+        versions={historyVersions}
+        loading={historyLoading}
+        restoringVersionId={restoringVersionId}
+        onClose={() => {
+          setHistoryTarget(null);
+          setHistoryVersions([]);
+        }}
+        onRestore={(version) => {
+          void restoreVersion(version);
+        }}
+      />
     </div>
   );
 }

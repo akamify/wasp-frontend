@@ -141,7 +141,7 @@ export default function AiAgentTestPage() {
               <div className="flex h-full min-h-80 flex-col items-center justify-center text-center">
                 <div className="flex h-14 w-14 items-center justify-center rounded-[12px] bg-brand-50 text-brand-700"><BrainCircuit size={27} /></div>
                 <h3 className="mt-4 font-black text-slate-900">Send a test message</h3>
-                <p className="mt-2 max-w-md text-sm font-medium text-slate-500">The runtime will build prompt, call provider/manual adapter, apply guardrails, save memory, and log usage.</p>
+                <p className="mt-2 max-w-md text-sm font-medium text-slate-500">The runtime will build prompt, call Gemini, apply guardrails, save memory, and log usage.</p>
               </div>
             ) : null}
             {messages.map((message, index) => (
@@ -174,8 +174,8 @@ export default function AiAgentTestPage() {
           <Card className="p-5">
             <h2 className="text-lg font-black text-slate-900">Runtime Result</h2>
             <div className="mt-4 space-y-3 text-sm">
-              <Info label="Provider" value={lastMeta?.provider || agent?.modelProvider || "-"} />
-              <Info label="Model" value={lastMeta?.model || agent?.modelName || "manual-test"} />
+              <Info label="Provider" value={lastMeta?.provider || "gemini"} />
+              <Info label="Model" value={lastMeta?.model || agent?.modelName || "gemini-1.5-flash"} />
               <Info label="Action" value={lastMeta?.action || "-"} />
               <Info label="Confidence" value={lastMeta ? `${Math.round(lastMeta.confidence * 100)}%` : "-"} />
               <Info label="Credits" value={lastMeta?.usage?.creditsUsed ? String(lastMeta.usage.creditsUsed) : "-"} />

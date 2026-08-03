@@ -1,6 +1,7 @@
 import { Button } from "@components/ui/Button";
 import { Card } from "@components/ui/Card";
 import { Input } from "@components/ui/Input";
+import type { FormEvent, ReactNode } from "react";
 import { newCtaButton } from "@modules/templates/utils/helpers";
 import { TemplatePreview } from "@modules/templates/components/TemplatePreview";
 import { AuthenticationTemplateSection } from "@modules/templates/components/sections/AuthenticationTemplateSection";
@@ -9,29 +10,96 @@ import { TemplateBasicsSection } from "@modules/templates/components/sections/Te
 import { TemplateFormHeader } from "@modules/templates/components/sections/TemplateFormHeader";
 import { TemplateHeaderSection } from "@modules/templates/components/sections/TemplateHeaderSection";
 import { TemplateCtaSection } from "@modules/templates/components/sections/TemplateCtaSection";
+import { TemplateSubmitConfirmModal } from "@modules/templates/components/TemplateSubmitConfirmModal";
+import { useTemplatePreviewBrand } from "@modules/templates/hooks/useTemplatePreviewBrand";
 import { useTemplateFormState } from "@modules/templates/forms/useTemplateFormState";
-import type { TemplateCategory } from "@modules/templates/types/templates.types";
+import type { TemplateCategory, TemplateStatus } from "@modules/templates/types/templates.types";
+import { buildTemplateSubmissionChecks } from "@modules/templates/utils/submissionChecks";
+import { useMemo, useState } from "react";
 
 type Props = {
   open: boolean;
   creating: boolean;
+  savingDraft?: boolean;
   languageOptions: string[];
+  ownerType?: "system" | "workspace";
+  submissionMode?: "meta" | "local";
+  extraFields?: ReactNode;
+  transformPayload?: (payload: { name: string; language: string; category: TemplateCategory; components: any[] }) => any;
   mode?: "create" | "edit";
   initialTemplate?: { name: string; language: string; category: TemplateCategory; components: any[] } | null;
+  initialStatus?: TemplateStatus | null;
   onClose: () => void;
-  onCreate: (payload: { name: string; language: string; category: TemplateCategory; components: any[] }) => Promise<void>;
+  onCreate: (payload: any) => Promise<void>;
+  onSaveDraft?: (payload: any) => Promise<void>;
+  onSubmitDraft?: (payload: any) => Promise<void>;
 };
 
-export function TemplateForm({ open, creating, languageOptions, mode = "create", initialTemplate = null, onClose, onCreate }: Props) {
-  const vm = useTemplateFormState({ open, mode, initialTemplate });
+export function TemplateForm({
+  open,
+  creating,
+  savingDraft = false,
+  languageOptions,
+  ownerType = "workspace",
+  submissionMode = "meta",
+  extraFields,
+  transformPayload,
+  mode = "create",
+  initialTemplate = null,
+  initialStatus = null,
+  onClose,
+  onCreate,
+  onSaveDraft,
+  onSubmitDraft,
+}: Props) {
+  const previewBrand = useTemplatePreviewBrand();
+  const vm = useTemplateFormState({ open, mode, initialTemplate, ownerType, submissionMode });
   const { state, refs, derived, setters, actions } = vm;
+  const isDraftTemplate = initialStatus === "draft";
+  const isMetaSubmission = submissionMode === "meta";
+  const [confirmOpen, setConfirmOpen] = useState(false);
   if (!open) return null;
 
+  const baseSubmissionPayload = actions.buildPayload();
+  const submissionPayload = baseSubmissionPayload ? (transformPayload ? transformPayload(baseSubmissionPayload) : baseSubmissionPayload) : null;
+  const submissionValidation = useMemo(
+    () => buildTemplateSubmissionChecks(baseSubmissionPayload || { category: state.category, components: [] }, submissionMode),
+    [baseSubmissionPayload, state.category, submissionMode]
+  );
+
+  const handleSaveDraft = async () => {
+    const payload = actions.buildPayload();
+    if (!payload || !onSaveDraft) return;
+    await onSaveDraft(payload);
+    actions.resetForm();
+    onClose();
+  };
+
+  const handlePrimarySubmit = async (e: FormEvent) => {
+    e.preventDefault();
+    if (!submissionPayload) return;
+    if (isMetaSubmission) setConfirmOpen(true);
+    else await confirmPrimarySubmit();
+  };
+
+  const confirmPrimarySubmit = async () => {
+    if (!submissionPayload) return;
+    if (isDraftTemplate && onSubmitDraft) {
+      await onSubmitDraft(submissionPayload);
+    } else {
+      await onCreate(submissionPayload);
+    }
+    setConfirmOpen(false);
+    actions.resetForm();
+    onClose();
+  };
+
   return (
-    <Card className="p-6 md:p-10 bg-white shadow-2xl border-none">
-      <TemplateFormHeader mode={mode} onClose={onClose} />
-      <div className="grid gap-8 lg:grid-cols-[1fr_360px]">
-        <form className="grid gap-5" onSubmit={(e) => actions.submitTemplate(e, onCreate, onClose)}>
+    <>
+      <Card className="p-6 md:p-10 bg-white shadow-2xl border-none">
+        <TemplateFormHeader mode={mode} ownerType={ownerType} onClose={onClose} />
+        <div className="grid gap-8 lg:grid-cols-[1fr_360px]">
+        <form className="grid gap-5" onSubmit={handlePrimarySubmit}>
           <TemplateBasicsSection category={state.category} language={state.language} languageOptions={languageOptions} mode={mode} name={state.name} onCategoryChange={setters.setCategory} onLanguageChange={setters.setLanguage} onNameChange={setters.setName} />
 
           {state.category === "authentication" ? (
@@ -50,6 +118,8 @@ export function TemplateForm({ open, creating, languageOptions, mode = "create",
             <TemplateCtaSection ctaButtons={state.ctaButtons} ctaLimit={derived.ctaLimit} canAddCta={derived.canAddCta} ctaError={state.ctaError} setCtaError={setters.setCtaError} ctaOptions={derived.ctaOptions} buttonTypeCounts={derived.buttonTypeCounts} buttonTypeLimit={derived.buttonTypeLimit} wouldExceedLimit={actions.wouldExceedLimit} setCtaButtons={setters.setCtaButtons} newCtaButton={newCtaButton} flows={state.flows} flowsLoading={state.flowsLoading} flowsError={state.flowsError} refreshFlows={actions.refreshFlows} voiceCallDayOptions={derived.voiceCallDayOptions} />
           ) : null}
 
+          {extraFields ? <div className="grid gap-4">{extraFields}</div> : null}
+
           {derived.validationErrors.length > 0 ? (
             <div className="rounded-[5px] border border-amber-200 bg-amber-50 px-4 py-3 text-xs font-semibold text-amber-900">
               <div className="mb-2 text-[11px] font-black uppercase tracking-[0.16em] text-amber-800/75">Fix before submitting</div>
@@ -62,9 +132,40 @@ export function TemplateForm({ open, creating, languageOptions, mode = "create",
           ) : null}
 
           <div className="mt-2 flex justify-end">
-            <Button type="submit" className="rounded-[5px] px-8 py-2.5 shadow-none w-full sm:w-auto" disabled={!derived.canCreate || creating}>
-              {creating ? "Submitting..." : "Submit Template"}
-            </Button>
+            <div className="flex w-full flex-col gap-3 sm:w-auto sm:flex-row">
+              {onSaveDraft ? (
+                <Button
+                  type="button"
+                  variant="ghost"
+                  className="rounded-[5px] px-8 py-2.5 shadow-none w-full sm:w-auto border border-slate-200"
+                  disabled={!derived.canCreate || creating || savingDraft}
+                  onClick={() => void handleSaveDraft()}
+                >
+                  {savingDraft
+                    ? "Saving Draft..."
+                    : mode === "edit" && isDraftTemplate
+                      ? "Update Draft"
+                      : "Save Draft"}
+                </Button>
+              ) : null}
+              <Button type="submit" className="rounded-[5px] px-8 py-2.5 shadow-none w-full sm:w-auto" disabled={!derived.canCreate || creating || savingDraft}>
+                {creating
+                  ? isMetaSubmission
+                    ? isDraftTemplate && onSubmitDraft
+                      ? "Submitting to Meta..."
+                      : "Submitting..."
+                    : mode === "edit"
+                      ? "Saving..."
+                      : "Creating..."
+                  : isMetaSubmission
+                    ? isDraftTemplate && onSubmitDraft
+                      ? "Submit to Meta"
+                      : "Submit Template"
+                    : mode === "edit"
+                      ? "Save Template"
+                      : "Create Template"}
+              </Button>
+            </div>
           </div>
         </form>
 
@@ -83,9 +184,20 @@ export function TemplateForm({ open, creating, languageOptions, mode = "create",
             ctaButtons={state.ctaButtons}
             variableValues={state.variableValues}
             authConfig={state.category === "authentication" ? { otpType: state.authOtpType, addSecurityRecommendation: state.authAddSecurity, includeExpirationWarning: state.authAddExpiration, expiresInMinutes: state.authAddExpiration ? Number(state.authExpiresMinutes) || 10 : undefined } : null}
+            previewBrand={previewBrand}
           />
         </div>
-      </div>
-    </Card>
+        </div>
+      </Card>
+      <TemplateSubmitConfirmModal
+        open={confirmOpen}
+        busy={creating}
+        templateName={state.name}
+        checks={submissionValidation.checks}
+        mode={submissionMode}
+        onClose={() => setConfirmOpen(false)}
+        onConfirm={() => void confirmPrimarySubmit()}
+      />
+    </>
   );
 }

@@ -2,12 +2,13 @@ import { Button } from "@components/ui/Button";
 import { Card } from "@components/ui/Card";
 import { Input } from "@components/ui/Input";
 import { Textarea } from "@components/ui/Textarea";
-import type { CampaignAttributeDefinition, CampaignButtonValueTarget, CampaignVariableMapping } from "@modules/campaigns/types/campaign-form.types";
+import type { CampaignAttributeDefinition, CampaignButtonValueTarget, CampaignHeaderLocation, CampaignVariableMapping } from "@modules/campaigns/types/campaign-form.types";
 import { parseCommaList, inspectTemplate } from "@shared/utils/templateRuntime";
 
 type CampaignTemplateVariablesSectionProps = {
   summary: ReturnType<typeof inspectTemplate>;
   headerVars: string[];
+  headerLocation: CampaignHeaderLocation;
   bodyVars: string[];
   otpCode: string;
   buttonsNeedingValue: CampaignButtonValueTarget[];
@@ -17,6 +18,7 @@ type CampaignTemplateVariablesSectionProps = {
   flowActionDataJson: string;
   headerMediaUploading: boolean;
   onHeaderVarsChange: (values: string[]) => void;
+  onHeaderLocationChange: (value: CampaignHeaderLocation) => void;
   onBodyVarsChange: (values: string[]) => void;
   onOtpCodeChange: (value: string) => void;
   onButtonValueByIndexChange: (values: Record<number, string>) => void;
@@ -32,6 +34,7 @@ type CampaignTemplateVariablesSectionProps = {
 export function CampaignTemplateVariablesSection({
   summary,
   headerVars,
+  headerLocation,
   bodyVars,
   otpCode,
   buttonsNeedingValue,
@@ -41,6 +44,7 @@ export function CampaignTemplateVariablesSection({
   flowActionDataJson,
   headerMediaUploading,
   onHeaderVarsChange,
+  onHeaderLocationChange,
   onBodyVarsChange,
   onOtpCodeChange,
   onButtonValueByIndexChange,
@@ -56,6 +60,12 @@ export function CampaignTemplateVariablesSection({
     <Card className="p-6">
       <div className="text-xs font-semibold uppercase tracking-wider text-ink-800/50">Parameters</div>
       <div className="mt-1 text-2xl font-black tracking-tight text-ink-900">Template variables</div>
+      {summary.headerFormat === "LOCATION" ? (
+        <HeaderLocationFields
+          headerLocation={headerLocation}
+          onHeaderLocationChange={onHeaderLocationChange}
+        />
+      ) : null}
       {summary.headerVariableCount > 0 ? (
         <HeaderVariables
           summary={summary}
@@ -97,6 +107,48 @@ export function CampaignTemplateVariablesSection({
         </div>
       ) : null}
     </Card>
+  );
+}
+
+function HeaderLocationFields({
+  headerLocation,
+  onHeaderLocationChange,
+}: Pick<CampaignTemplateVariablesSectionProps, "headerLocation" | "onHeaderLocationChange">) {
+  return (
+    <div className="mt-4 rounded-[5px] border border-ink-900/10 bg-white p-4">
+      <div className="text-[11px] font-semibold uppercase tracking-wider text-ink-800/55">Header location</div>
+      <div className="mt-1 text-xs text-ink-800/65">These values are sent in the WhatsApp location header payload and preview.</div>
+      <div className="mt-3 grid gap-3 md:grid-cols-2">
+        <Input
+          label="Latitude"
+          value={headerLocation.latitude}
+          onChange={(event) => onHeaderLocationChange({ ...headerLocation, latitude: event.target.value })}
+          placeholder="e.g. 28.6139"
+          required
+        />
+        <Input
+          label="Longitude"
+          value={headerLocation.longitude}
+          onChange={(event) => onHeaderLocationChange({ ...headerLocation, longitude: event.target.value })}
+          placeholder="e.g. 77.2090"
+          required
+        />
+        <Input
+          label="Location name"
+          value={headerLocation.name}
+          onChange={(event) => onHeaderLocationChange({ ...headerLocation, name: event.target.value })}
+          placeholder="e.g. Head Office"
+          required
+        />
+        <Input
+          label="Address"
+          value={headerLocation.address}
+          onChange={(event) => onHeaderLocationChange({ ...headerLocation, address: event.target.value })}
+          placeholder="e.g. Connaught Place, New Delhi"
+          required
+        />
+      </div>
+    </div>
   );
 }
 

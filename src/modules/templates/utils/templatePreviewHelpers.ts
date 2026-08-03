@@ -33,9 +33,11 @@ export function parseComponentsForPreview(components?: any[]) {
   const parsed = {
     headerType: "NONE" as HeaderType,
     headerText: "",
+    headerVariableValues: {} as Record<number, string>,
     mediaHandle: "",
     headerLocation: null as null | { name: string; address: string; latitude: number; longitude: number },
     bodyText: "",
+    variableValues: {} as Record<number, string>,
     footerText: "",
     ctaButtons: [] as CtaButton[],
     authConfig: null as null | {
@@ -52,6 +54,12 @@ export function parseComponentsForPreview(components?: any[]) {
       if (format === "TEXT") {
         parsed.headerType = "TEXT";
         parsed.headerText = String(comp?.text || "");
+        const indexes = extractVariableIndexes(parsed.headerText);
+        const examples = Array.isArray(comp?.example?.header_text) ? comp.example.header_text : [];
+        parsed.headerVariableValues = indexes.reduce<Record<number, string>>((acc, index, position) => {
+          acc[index] = String(examples[position] || "");
+          return acc;
+        }, {});
       } else if (format === "IMAGE" || format === "VIDEO" || format === "DOCUMENT") {
         parsed.headerType = format as HeaderType;
         parsed.mediaHandle = normalizeHandle(comp?.example?.header_handle?.[0]);
@@ -80,6 +88,12 @@ export function parseComponentsForPreview(components?: any[]) {
         parsed.authConfig.addSecurityRecommendation = comp.add_security_recommendation;
       }
       parsed.bodyText = String(comp?.text || parsed.bodyText);
+      const indexes = extractVariableIndexes(parsed.bodyText);
+      const row = Array.isArray(comp?.example?.body_text?.[0]) ? comp.example.body_text[0] : [];
+      parsed.variableValues = indexes.reduce<Record<number, string>>((acc, index, position) => {
+        acc[index] = String(row[position] || "");
+        return acc;
+      }, {});
     }
     if (comp?.type === "FOOTER") {
       parsed.footerText = String(comp?.text || "");

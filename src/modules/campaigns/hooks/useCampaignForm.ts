@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { API } from "@api/api";
 
-import type { CampaignAttributeDefinition, CampaignAttributeFilter, CampaignAudienceMode, CampaignContact, CampaignContactList, CampaignEstimate, CampaignScheduleType, CampaignType, CampaignVariableMapping, CampaignWalletBalance } from "@modules/campaigns/types/campaign-form.types";
+import type { CampaignAttributeDefinition, CampaignAttributeFilter, CampaignAudienceMode, CampaignContact, CampaignContactList, CampaignEstimate, CampaignHeaderLocation, CampaignScheduleType, CampaignType, CampaignVariableMapping, CampaignWalletBalance } from "@modules/campaigns/types/campaign-form.types";
 import { digitsOnly, parseCsvText } from "@modules/campaigns/utils/campaignFormatters";
 import { createCampaignFormActions } from "@modules/campaigns/hooks/use-campaign-form/actions";
 import { useCampaignFormEffects } from "@modules/campaigns/hooks/use-campaign-form/effects";
@@ -56,6 +56,7 @@ export function useCampaignForm(props: CampaignCreateModalProps) {
   const [attributeFilters, setAttributeFilters] = useState<CampaignAttributeFilter[]>([]);
 
   const [headerVars, setHeaderVars] = useState<string[]>([]);
+  const [headerLocation, setHeaderLocation] = useState<CampaignHeaderLocation>({ latitude: "", longitude: "", name: "", address: "" });
   const [bodyVars, setBodyVars] = useState<string[]>([]);
   const [bodyVariableMappings, setBodyVariableMappings] = useState<CampaignVariableMapping[]>([]);
   const [otpCode, setOtpCode] = useState("");
@@ -202,12 +203,21 @@ export function useCampaignForm(props: CampaignCreateModalProps) {
       ? String(headerMediaOverride || headerValues[0] || "").trim()
       : "";
     const effectiveMediaHandle = overrideHandle || parsed.mediaHandle;
+    const previewLocation = parsed.headerType === "LOCATION"
+      ? {
+          latitude: Number(headerLocation.latitude || parsed.headerLocation?.latitude || 0),
+          longitude: Number(headerLocation.longitude || parsed.headerLocation?.longitude || 0),
+          name: headerLocation.name || parsed.headerLocation?.name || "",
+          address: headerLocation.address || parsed.headerLocation?.address || "",
+        }
+      : parsed.headerLocation;
     return {
       category,
       headerType: parsed.headerType,
       headerText: parsed.headerText,
       mediaHandle: effectiveMediaHandle,
       mediaPreviewUrl: /^https?:\/\//i.test(effectiveMediaHandle) ? effectiveMediaHandle : null,
+      headerLocation: previewLocation,
       bodyText: parsed.bodyText,
       footerText: parsed.footerText,
       ctaButtons: parsed.ctaButtons,
@@ -218,14 +228,14 @@ export function useCampaignForm(props: CampaignCreateModalProps) {
       categoryRaw: t?.category,
       source: t,
     };
-  }, [selectedTemplate, type, csvPreviewData, bodyVars, headerVars, headerMediaOverride]);
+  }, [selectedTemplate, type, csvPreviewData, bodyVars, headerVars, headerMediaOverride, headerLocation]);
 
   const actions = createCampaignFormActions({
-    toast, type, selectedTemplate, summary, headerVars, bodyVars, buttonsNeedingValue, buttonValueByIndex, otpCode,
+    toast, type, selectedTemplate, summary, headerVars, headerLocation, bodyVars, buttonsNeedingValue, buttonValueByIndex, otpCode,
     csvPhoneColumn, setCsvPhoneColumn, setCsvBodyMap, setCsvHeaderMap, selectedPhones, setSelectedPhones,
     audienceMode, selectedTagList, tagMatchedContacts, setSelectedTags, selectedListId, attributeFilters, bodyVariableMappings,
     headerMediaOverride, resolvedButtonValues, flowActionDataJson, csvParsed, csvHeaderMap, csvButtonMap, buttonTtlMinutes,
-    flowTokens, csvBodyMap, setHeaderMediaUploading, setHeaderMediaOverride, setHeaderVars, setBusy, messageType,
+    flowTokens, csvBodyMap, setHeaderMediaUploading, setHeaderMediaOverride, setHeaderVars, setHeaderLocation, setBusy, messageType,
     name, templateId, scheduleType, scheduleDate, scheduleTime, scheduleWeekdays, scheduleTimezone, scheduleEndDate, scheduleMaxOccurrences, onSuccess, onClose, estimate, demoTo, csvPreviewData, csvFirstRow,
     tagMatchMode,
   });
@@ -235,12 +245,12 @@ export function useCampaignForm(props: CampaignCreateModalProps) {
     initialSelectedPhones, setType, setName, setContactQuery, setSelectedPhones, setAudienceMode, setSelectedTags, setSelectedListId, setMessageType, setTemplateId,
     setAttributeFilters, setBodyVariableMappings,
     setScheduleType, setScheduleDate, setScheduleTime, setScheduleWeekdays, setScheduleTimezone, setScheduleEndDate, setScheduleMaxOccurrences, setTagMatchMode,
-    setHeaderVars, setBodyVars, setOtpCode, setButtonValues, setButtonValueByIndex, setButtonTtlMinutes,
+    setHeaderVars, setHeaderLocation, setBodyVars, setOtpCode, setButtonValues, setButtonValueByIndex, setButtonTtlMinutes,
     setFlowTokens, setFlowActionDataJson, setCsvBusy, setCsvFileName, setCsvText, setCsvPhoneColumn, setCsvBodyMap,
     setCsvHeaderMap, setCsvButtonMap, setDemoTo, setDemoBusy, selectedTemplate, summary, buttonTtlMinutes,
     buttonsNeedingValue, csvColumns, type, audienceMode, autoMapCsvIfEmpty: actions.autoMapCsvIfEmpty, buttonValues, setEstimate,
     buildRecipientsForCurrentState: actions.buildRecipientsForCurrentState, templateId, setEstimateLoading, toast,
-    headerMediaOverride, csvText, selectedPhones, selectedTagList, csvPhoneColumn, csvBodyMap, csvHeaderMap, csvButtonMap, headerVars,
+    headerMediaOverride, headerLocation, csvText, selectedPhones, selectedTagList, csvPhoneColumn, csvBodyMap, csvHeaderMap, csvButtonMap, headerVars,
     bodyVars, resolvedButtonValues, otpCode, flowActionDataJson, flowTokens,
     attributeFilters, selectedListId,
   });
@@ -274,7 +284,7 @@ export function useCampaignForm(props: CampaignCreateModalProps) {
     tagMatchMode, setTagMatchMode,
     attributeDefinitions, attributeFilters, setAttributeFilters, bodyVariableMappings, setBodyVariableMappings,
     contactQuery, setContactQuery, filteredContacts, toggleSelectedPhone: actions.toggleSelectedPhone, toggleSelectedTag: actions.toggleSelectedTag, summary,
-    headerVars, setHeaderVars, bodyVars, setBodyVars, otpCode, setOtpCode, buttonsNeedingValue, buttonValueByIndex,
+    headerVars, setHeaderVars, headerLocation, setHeaderLocation, bodyVars, setBodyVars, otpCode, setOtpCode, buttonsNeedingValue, buttonValueByIndex,
     setButtonValueByIndex, buttonTtlMinutes, setButtonTtlMinutes, flowTokens, setFlowTokens, flowActionDataJson,
     setFlowActionDataJson, headerMediaUploading, uploadHeaderMedia: actions.uploadHeaderMedia, csvBusy, setCsvBusy,
     csvFileName, setCsvFileName, csvText, setCsvText, csvColumns, csvPhoneColumn, setCsvPhoneColumn, csvHeaderMap,
