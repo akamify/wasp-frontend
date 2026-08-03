@@ -51,7 +51,7 @@ export function FlowsSkeleton() {
 
 export function WalletSkeleton() {
   return (
-    <div className="grid gap-6 p-4 md:p-8 animate-pulse">
+    <div className="grid gap-6 p-3 animate-pulse">
       <div className="rounded-[5px] bg-white p-8 border border-slate-100 shadow-sm">
         <SkeletonBar className="h-3 w-24 rounded-[5px] mb-5" />
         <SkeletonBar className="h-12 w-56 rounded-[5px] mb-5" />

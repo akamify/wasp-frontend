@@ -2,6 +2,7 @@ export type TemplateComponent = {
   type: string;
   format?: string;
   text?: string;
+  example?: any;
   buttons?: Array<{
     type: string;
     text?: string;
@@ -58,7 +59,7 @@ export function inspectTemplate(template?: TemplateRecord) {
     voiceCallButtons: [] as Array<{ index: number; label: string }>,
     flowButtons: [] as Array<{ index: number; label: string }>,
     copyCodeButtons: [] as Array<{ index: number; label: string }>,
-    headerFormat: "NONE" as "NONE" | "TEXT" | "IMAGE" | "VIDEO" | "DOCUMENT",
+    headerFormat: "NONE" as "NONE" | "TEXT" | "IMAGE" | "VIDEO" | "DOCUMENT" | "LOCATION",
   };
 
   for (const component of template?.components || []) {
@@ -72,9 +73,11 @@ export function inspectTemplate(template?: TemplateRecord) {
         summary.headerVariableCount,
         maxPlaceholderIndex(component.text)
       );
-      } else if (format === "IMAGE" || format === "VIDEO" || format === "DOCUMENT") {
+      } else if (format === "IMAGE" || format === "VIDEO" || format === "DOCUMENT" || format === "LOCATION") {
         summary.headerFormat = format as any;
-        summary.headerVariableCount = Math.max(summary.headerVariableCount, 1);
+        if (format !== "LOCATION") {
+          summary.headerVariableCount = Math.max(summary.headerVariableCount, 1);
+        }
       }
     }
 

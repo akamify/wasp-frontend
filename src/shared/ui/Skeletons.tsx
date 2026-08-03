@@ -1,4 +1,4 @@
-export { SkeletonBar, SkeletonCircle, SessionSkeleton } from "./skeletons/primitives";
+export { SkeletonBar, SkeletonCircle, SessionSkeleton, ContentAreaSkeleton } from "./skeletons/primitives";
 export { DashboardSkeleton } from "./skeletons/dashboard";
 export {
   ContactsListSkeleton,

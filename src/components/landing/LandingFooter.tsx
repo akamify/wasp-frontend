@@ -174,7 +174,7 @@ export function LandingFooter() {
             </p>
 
             {/* Meta Business Partner */}
-            {/* <div className="mt-5 inline-flex items-center gap-3 rounded-2xl border border-slate-200 bg-white px-4 py-3 shadow-sm transition-all duration-300 hover:-translate-y-0.5 hover:border-emerald-200 hover:shadow-lg hover:shadow-emerald-100">
+            <div className="mt-5 inline-flex items-center gap-3 rounded-2xl border border-slate-200 bg-white px-4 py-3 shadow-sm transition-all duration-300 hover:-translate-y-0.5 hover:border-emerald-200 hover:shadow-lg hover:shadow-emerald-100">
               <img
                 src="/mbp.avif"
                 alt="Meta Business Partner"
@@ -188,7 +188,7 @@ export function LandingFooter() {
                   Meta Business Partner
                 </p>
               </div>
-            </div> */}
+            </div>
 
             <div className="mt-5 flex items-center gap-2">
               {socials

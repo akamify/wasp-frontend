@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState, type FormEvent } from "react";
 import { API } from "@api/api";
+import { uploadMediaAsset } from "@modules/automation-flows/automationDataApi";
 import {
   TEMPLATE_NAME_MAX_CHARS,
   TEMPLATE_NAME_MIN_CHARS,
@@ -51,10 +52,14 @@ export function useTemplateFormState({
   open,
   mode,
   initialTemplate,
+  ownerType = "workspace",
+  submissionMode = "meta",
 }: {
   open: boolean;
   mode: "create" | "edit";
   initialTemplate: { name: string; language: string; category: TemplateCategory; components: any[] } | null;
+  ownerType?: "system" | "workspace";
+  submissionMode?: "meta" | "local";
 }) {
   const [name, setName] = useState("");
   const [language, setLanguage] = useState("en_US");
@@ -226,6 +231,8 @@ export function useTemplateFormState({
     setName(String(initialTemplate.name || "")); setLanguage(String(initialTemplate.language || "en_US")); setCategory(initialTemplate.category || "utility");
     const parsed = parseComponentsForPreview(initialTemplate.components || []);
     setHeaderType(parsed.headerType); setHeaderText(parsed.headerText || ""); setMediaHandle(parsed.mediaHandle || ""); setMediaMeta(null); setMediaUploadPct(parsed.mediaHandle ? 100 : 0); setLocationName(parsed.headerLocation?.name || ""); setLocationAddress(parsed.headerLocation?.address || ""); setLocationLatitude(parsed.headerLocation ? String(parsed.headerLocation.latitude) : ""); setLocationLongitude(parsed.headerLocation ? String(parsed.headerLocation.longitude) : ""); setBodyText(parsed.bodyText || ""); setFooterText(parsed.footerText || "");
+    setHeaderVariableValues(parsed.headerVariableValues || {});
+    setVariableValues(parsed.variableValues || {});
     setCtaButtons((parsed.ctaButtons || []).map((b) => ({ ...b, ttlMinutes: (b as any).ttlMinutes || "43200", flowIcon: normalizeFlowIcon((b as any).flowIcon), flowType: "", offerCode: (b as any).offerCode || "" })));
     if (initialTemplate.category === "authentication" && parsed.authConfig) {
       setAuthOtpType(parsed.authConfig.otpType); setAuthAddSecurity(!!parsed.authConfig.addSecurityRecommendation); setAuthAddExpiration(parsed.authConfig.includeExpirationWarning !== false); setAuthExpiresMinutes(String(parsed.authConfig.expiresInMinutes || 10)); setAuthSupportedApps(parsed.authConfig.supportedApps?.length ? parsed.authConfig.supportedApps : [newAuthSupportedApp()]);
@@ -264,16 +271,41 @@ export function useTemplateFormState({
   };
   const uploadHeaderMedia = async (file: File) => {
     if (!file) return;
+    const mediaTypeMap: Record<"IMAGE" | "VIDEO" | "DOCUMENT", "image" | "video" | "document"> = {
+      IMAGE: "image",
+      VIDEO: "video",
+      DOCUMENT: "document",
+    };
+    const selectedHeaderType = ["IMAGE", "VIDEO", "DOCUMENT"].includes(headerType) ? (headerType as "IMAGE" | "VIDEO" | "DOCUMENT") : null;
+    const localUploadMode = submissionMode === "local" || ownerType === "system";
     setMediaUploadError(null); setMediaUploadPct(0); setMediaMeta(null);
     if (mediaPreviewUrl && mediaPreviewUrl.startsWith("blob:")) URL.revokeObjectURL(mediaPreviewUrl);
     setMediaPreviewUrl(URL.createObjectURL(file)); setMediaUploading(true);
     try {
-      const res = await API.templates.uploadMedia(file, (pct) => setMediaUploadPct(pct));
-      setMediaHandle(String(res?.handle || ""));
-      if (res?.file && typeof res.file === "object") setMediaMeta({ originalName: String(res.file.originalName || ""), mimeType: String(res.file.mimeType || ""), size: Number(res.file.size || 0) });
-      if (typeof res?.previewDataUrl === "string" && res.previewDataUrl.startsWith("data:")) {
+      if (localUploadMode) {
+        if (!selectedHeaderType) throw new Error("Select a media header type before uploading.");
+        const selectedMediaType = mediaTypeMap[selectedHeaderType];
+        const uploadResult =
+          ownerType === "system"
+            ? await API.admin.masterTemplateUploadMedia(file, selectedMediaType, (pct: number) => setMediaUploadPct(pct))
+            : { asset: await uploadMediaAsset(file, selectedMediaType, (pct) => setMediaUploadPct(pct)) };
+        const asset = uploadResult?.asset || uploadResult;
+        setMediaHandle(String(asset?.publicUrl || ""));
+        setMediaMeta({
+          originalName: String(asset?.originalName || file.name || ""),
+          mimeType: String(asset?.mimeType || file.type || ""),
+          size: Number(asset?.sizeBytes || file.size || 0),
+        });
         if (mediaPreviewUrl && mediaPreviewUrl.startsWith("blob:")) URL.revokeObjectURL(mediaPreviewUrl);
-        setMediaPreviewUrl(res.previewDataUrl);
+        setMediaPreviewUrl(String(asset?.publicUrl || ""));
+      } else {
+        const res = await API.templates.uploadMedia(file, (pct) => setMediaUploadPct(pct));
+        setMediaHandle(String(res?.handle || ""));
+        if (res?.file && typeof res.file === "object") setMediaMeta({ originalName: String(res.file.originalName || ""), mimeType: String(res.file.mimeType || ""), size: Number(res.file.size || 0) });
+        if (typeof res?.previewDataUrl === "string" && res.previewDataUrl.startsWith("data:")) {
+          if (mediaPreviewUrl && mediaPreviewUrl.startsWith("blob:")) URL.revokeObjectURL(mediaPreviewUrl);
+          setMediaPreviewUrl(res.previewDataUrl);
+        }
       }
       setMediaUploadPct(100);
     } catch (e: any) {
@@ -283,10 +315,48 @@ export function useTemplateFormState({
     }
   };
 
+  const buildPayload = () => {
+    if (!canCreate) return null;
+    return {
+      name: name.trim(),
+      language: language.trim(),
+      category,
+      components: buildTemplateComponents(
+        category,
+        bodyText,
+        ctaButtons,
+        headerType,
+        headerText,
+        mediaHandle,
+        headerType === "LOCATION"
+          ? {
+              name: locationName.trim(),
+              address: locationAddress.trim(),
+              latitude: Number(locationLatitude),
+              longitude: Number(locationLongitude),
+            }
+          : null,
+        footerText,
+        headerVariableValues,
+        variableValues,
+        category === "authentication"
+          ? {
+              otpType: authOtpType,
+              addSecurityRecommendation: authAddSecurity,
+              includeExpirationWarning: authAddExpiration,
+              expiresInMinutes: Number(authExpiresMinutes) || 10,
+              supportedApps: authSupportedApps,
+            }
+          : null
+      ),
+    };
+  };
+
   const submitTemplate = async (event: FormEvent, onCreate: (payload: { name: string; language: string; category: TemplateCategory; components: any[] }) => Promise<void>, onClose: () => void) => {
     event.preventDefault();
-    if (!canCreate) return;
-    await onCreate({ name: name.trim(), language: language.trim(), category, components: buildTemplateComponents(category, bodyText, ctaButtons, headerType, headerText, mediaHandle, headerType === "LOCATION" ? { name: locationName.trim(), address: locationAddress.trim(), latitude: Number(locationLatitude), longitude: Number(locationLongitude) } : null, footerText, headerVariableValues, variableValues, category === "authentication" ? { otpType: authOtpType, addSecurityRecommendation: authAddSecurity, includeExpirationWarning: authAddExpiration, expiresInMinutes: Number(authExpiresMinutes) || 10, supportedApps: authSupportedApps } : null) });
+    const payload = buildPayload();
+    if (!payload) return;
+    await onCreate(payload);
     reset();
     onClose();
   };
@@ -296,6 +366,6 @@ export function useTemplateFormState({
     refs: { mediaInputRef, headerTextRef, bodyRef },
     derived: { variableIndexes, nextVariableIndex, headerVariableIndexes, nextHeaderVariableIndex, bodyVariablesSequential, headerVariablesSequential, ctaLimit, canAddCta, ctaOptions, authRequiresAppSetup, authAppsValid, voiceCallDayOptions, buttonTypeCounts, buttonTypeLimit, validationErrors, canCreate },
     setters: { setName, setLanguage, setCategory, setBodyText, setHeaderType, setHeaderText, setHeaderVariableValues, setLocationName, setLocationAddress, setLocationLatitude, setLocationLongitude, setFooterText, setCtaButtons, setCtaError, setAuthOtpType, setAuthAddSecurity, setAuthAddExpiration, setAuthExpiresMinutes, setAuthSupportedApps, setVariableValues },
-    actions: { wouldExceedLimit, refreshFlows, insertAtSelection, wrapSelection, runNativeUndoRedo, clearHeaderMedia, uploadHeaderMedia, submitTemplate },
+    actions: { wouldExceedLimit, refreshFlows, insertAtSelection, wrapSelection, runNativeUndoRedo, clearHeaderMedia, uploadHeaderMedia, buildPayload, resetForm: reset, submitTemplate },
   };
 }

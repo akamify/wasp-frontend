@@ -148,8 +148,8 @@ export function WhatsAppManagerProfileModal({
             {/* Header */}
             <div className="flex items-center justify-between px-6 py-5 border-b border-slate-100">
               <div>
-                <h3 className="text-xl font-black tracking-tight text-slate-900">Edit Profile</h3>
-                <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mt-0.5">Manage Business Details</p>
+                <h3 className="text-xl font-black tracking-tight text-slate-900">Edit WhatsApp Business Profile</h3>
+                <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mt-0.5">Upload photo and save directly to Meta</p>
               </div>
               <button
                 onClick={onClose}
@@ -195,7 +195,7 @@ export function WhatsAppManagerProfileModal({
                          <span className="flex items-center gap-2 text-emerald-600 font-bold">
                             <CheckCircle2 size={14} /> Ready to save
                          </span>
-                      ) : "Recommended: Square image (512x512px)."}
+                      ) : "Recommended: Square image (512x512px). Upload first, then click Save Changes to apply it to your live WhatsApp profile."}
                     </p>
                   </div>
                 </div>

@@ -104,9 +104,6 @@ export default function DashboardPage() {
     { id: 5, label: "Create Campaign", done: snapshot?.campaigns?.length > 0, href: "/app/send" },
   ]), [snapshot]);
 
-  const allStepsDone = useMemo(() => steps.length > 0 && steps.every((s) => s.done), [steps]);
-  useEffect(() => { if (snapshot && allStepsDone) setStepsExpanded(false); }, [snapshot, allStepsDone]);
-
   const liveActivities = useMemo(() => {
     if (!snapshot?.campaigns) return [];
     return snapshot.campaigns.map((c: any) => {
@@ -135,14 +132,14 @@ export default function DashboardPage() {
   const contactsUp = Number(contactsGrowth.pct || 0) >= 0;
 
   return (
-    <div className="space-y-6 md:space-y-2 p-3 md:p-3 pb-4">
+    <div className="space-y-6 bg-[radial-gradient(circle_at_top_left,_rgba(16,185,129,0.12),_transparent_26%),radial-gradient(circle_at_top_right,_rgba(56,189,248,0.08),_transparent_20%),linear-gradient(180deg,_rgba(248,250,252,0.96),_rgba(255,255,255,1))] p-4 pb-10 md:p-2 xl:p-3">
       <DashboardHeader syncing={syncing} loading={loading} onSync={loadDashboard} onNewCampaign={() => navigate("/app/send")} />
       <DashboardOnboarding steps={steps} stepsExpanded={stepsExpanded} onToggle={() => setStepsExpanded((v) => !v)} />
 
-      <div className="grid gap-8 lg:grid-cols-3">
-        <div className="lg:col-span-2 space-y-8">
+      <div className="grid gap-6 xl:grid-cols-[1.7fr_0.9fr]">
+        <div className="space-y-6">
           <DashboardMetricsGrid analytics={analytics} sent={sent} delivered={delivered} read={read} contactsUp={contactsUp} contactsGrowth={contactsGrowth} monthlyUp={monthlyUp} monthly={monthly} />
-          <DashboardSummaryCards analytics={analytics} deliveryRatePct={deliveryRatePct} readRatePct={readRatePct} sent={sent} delivered={delivered} read={read} monthly={monthly} monthlyUp={monthlyUp} contactsGrowth={contactsGrowth} contactsUp={contactsUp} />
+          <DashboardSummaryCards analytics={analytics} readRatePct={readRatePct} sent={sent} read={read} contactsGrowth={contactsGrowth} contactsUp={contactsUp} />
         </div>
         <DashboardSidebar snapshot={snapshot} onView={() => setViewOpen(true)} onEdit={() => setEditOpen(true)} onRecharge={() => setRechargeOpen(true)} />
       </div>

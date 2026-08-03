@@ -68,10 +68,23 @@ export type CampaignButtonValueTarget = {
   label: string;
 };
 
+export type CampaignHeaderLocation = {
+  latitude: string;
+  longitude: string;
+  name: string;
+  address: string;
+};
+
 export type CampaignRecipient = {
   to: string;
   variables: string[];
   headerVariables: string[];
+  headerLocation?: {
+    latitude: number;
+    longitude: number;
+    name?: string;
+    address?: string;
+  };
   otpCode?: string;
   buttonValues: string[];
   buttonTtlMinutes: number[];
@@ -109,6 +122,12 @@ export type CampaignDemoPayload = {
   to: string;
   variables: string[];
   headerVariables: string[];
+  headerLocation?: {
+    latitude: number;
+    longitude: number;
+    name?: string;
+    address?: string;
+  };
   otpCode?: string;
   buttonValues: string[];
   buttonTtlMinutes: number[];

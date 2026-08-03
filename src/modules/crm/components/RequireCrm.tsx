@@ -1,7 +1,7 @@
 import { Navigate, Outlet, useLocation } from "react-router-dom";
 import { useEffect, useState } from "react";
 import { API, getToken } from "@api/api";
-import { SessionSkeleton } from "@components/ui/Skeletons";
+import { ContentAreaSkeleton } from "@components/ui/Skeletons";
 import CrmLockedPage from "@modules/crm/pages/CrmLocked";
 
 type WorkspaceCrmRes = { success: boolean; workspace?: { crmEnabled?: boolean } };
@@ -45,7 +45,7 @@ export function RequireCrm() {
     return <Navigate to="/login" replace state={{ from: location.pathname }} />;
   }
 
-  if (loading) return <SessionSkeleton />;
+  if (loading) return <ContentAreaSkeleton />;
 
   if (!crmEnabled) {
     return <CrmLockedPage />;

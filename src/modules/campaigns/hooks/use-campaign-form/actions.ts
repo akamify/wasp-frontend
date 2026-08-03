@@ -45,13 +45,28 @@ function zonedDateTimeToUtc(date: string, time: string, timezone: string) {
 
 export function createCampaignFormActions(ctx: any) {
   const {
-    toast, type, selectedTemplate, summary, headerVars, bodyVars, buttonsNeedingValue, buttonValueByIndex, otpCode, csvPhoneColumn, setCsvPhoneColumn, setCsvBodyMap, setCsvHeaderMap, setSelectedPhones, headerMediaOverride, resolvedButtonValues, flowActionDataJson, csvParsed, csvHeaderMap, csvButtonMap, buttonTtlMinutes, flowTokens, csvBodyMap, setHeaderMediaUploading, setHeaderMediaOverride, setHeaderVars, setBusy, messageType, name, templateId, scheduleType, scheduleDate, scheduleTime, scheduleWeekdays, scheduleTimezone, scheduleEndDate, scheduleMaxOccurrences, onSuccess, onClose, estimate,
+    toast, type, selectedTemplate, summary, headerVars, headerLocation, bodyVars, buttonsNeedingValue, buttonValueByIndex, otpCode, csvPhoneColumn, setCsvPhoneColumn, setCsvBodyMap, setCsvHeaderMap, setSelectedPhones, headerMediaOverride, resolvedButtonValues, flowActionDataJson, csvParsed, csvHeaderMap, csvButtonMap, buttonTtlMinutes, flowTokens, csvBodyMap, setHeaderMediaUploading, setHeaderMediaOverride, setHeaderVars, setBusy, messageType, name, templateId, scheduleType, scheduleDate, scheduleTime, scheduleWeekdays, scheduleTimezone, scheduleEndDate, scheduleMaxOccurrences, onSuccess, onClose, estimate,
     audienceMode, selectedTagList, tagMatchedContacts, selectedListId, tagMatchMode, attributeFilters, bodyVariableMappings,
   } = ctx;
+
+  const normalizedHeaderLocation = summary.headerFormat === "LOCATION"
+    ? {
+        latitude: Number(headerLocation.latitude),
+        longitude: Number(headerLocation.longitude),
+        name: String(headerLocation.name || "").trim(),
+        address: String(headerLocation.address || "").trim(),
+      }
+    : undefined;
 
   const missingBroadcastInputs = () => {
     if (type !== "broadcast" || !selectedTemplate) return [];
     const missing: string[] = [];
+    if (summary.headerFormat === "LOCATION") {
+      if (!Number.isFinite(normalizedHeaderLocation?.latitude)) missing.push("Header latitude");
+      if (!Number.isFinite(normalizedHeaderLocation?.longitude)) missing.push("Header longitude");
+      if (!String(normalizedHeaderLocation?.name || "").trim()) missing.push("Header location name");
+      if (!String(normalizedHeaderLocation?.address || "").trim()) missing.push("Header address");
+    }
     if (summary.headerVariableCount > 0) {
       const required = summary.headerFormat === "TEXT" ? summary.headerVariableCount : 1;
       for (let i = 0; i < required; i += 1) if (!String(headerVars[i] || "").trim()) missing.push(`Header {{${i + 1}}}`);
@@ -114,7 +129,7 @@ export function createCampaignFormActions(ctx: any) {
         ? (tagMatchedContacts || []).map((contact: any) => String(contact.phone || "")).filter(Boolean)
         : Object.keys(ctx.selectedPhones || {});
       const effectiveHeaderVariables = summary.headerFormat !== "TEXT" && headerMediaOverride ? [headerMediaOverride, ...headerVars.slice(1)] : headerVars;
-      return phones.map((to: string) => ({ to, variables: bodyVars, headerVariables: effectiveHeaderVariables, otpCode: String(otpCode || "").trim() || undefined, buttonValues: resolvedButtonValues, buttonTtlMinutes, flowTokens, flowActionData: (() => { try { const parsed = JSON.parse(flowActionDataJson || "{}"); return Array.isArray(parsed) ? parsed : [parsed]; } catch { return []; } })() }));
+      return phones.map((to: string) => ({ to, variables: bodyVars, headerVariables: effectiveHeaderVariables, headerLocation: normalizedHeaderLocation, otpCode: String(otpCode || "").trim() || undefined, buttonValues: resolvedButtonValues, buttonTtlMinutes, flowTokens, flowActionData: (() => { try { const parsed = JSON.parse(flowActionDataJson || "{}"); return Array.isArray(parsed) ? parsed : [parsed]; } catch { return []; } })() }));
     }
     if (!csvParsed.rows.length || !csvPhoneColumn) return [];
     const csvFlowActionData = (() => { try { const parsed = JSON.parse(flowActionDataJson || "{}"); return Array.isArray(parsed) ? parsed : [parsed]; } catch { return []; } })();
@@ -123,7 +138,7 @@ export function createCampaignFormActions(ctx: any) {
       const rowHeaderVariables = csvHeaderMap.map((col: string) => (col ? String(row[col] ?? "") : ""));
       const effectiveHeaderVariables = summary.headerFormat !== "TEXT" && headerMediaOverride ? [headerMediaOverride, ...rowHeaderVariables.slice(1)] : rowHeaderVariables;
       const rowButtonValues = (() => { const out = [...resolvedButtonValues]; buttonsNeedingValue.forEach((btn: any, mapIndex: number) => { const col = csvButtonMap[mapIndex]; if (col) out[btn.index] = String(row[col] ?? ""); }); return out; })();
-      return { to, variables: csvBodyMap.map((col: string) => (col ? String(row[col] ?? "") : "")), headerVariables: effectiveHeaderVariables, otpCode: String(otpCode || "").trim() || undefined, buttonValues: rowButtonValues, buttonTtlMinutes, flowTokens, flowActionData: csvFlowActionData };
+      return { to, variables: csvBodyMap.map((col: string) => (col ? String(row[col] ?? "") : "")), headerVariables: effectiveHeaderVariables, headerLocation: normalizedHeaderLocation, otpCode: String(otpCode || "").trim() || undefined, buttonValues: rowButtonValues, buttonTtlMinutes, flowTokens, flowActionData: csvFlowActionData };
     }).filter((recipient: CampaignRecipient | null): recipient is CampaignRecipient => Boolean(recipient));
   };
 
@@ -134,7 +149,7 @@ export function createCampaignFormActions(ctx: any) {
     const data = type === "csv" ? ctx.csvPreviewData : { variables: bodyVars, headerVariables: headerVars };
     const effectiveHeaderVariables = summary.headerFormat !== "TEXT" && headerMediaOverride ? [headerMediaOverride, ...(data.headerVariables || []).slice(1)] : data.headerVariables;
     const effectiveButtonValues = type === "csv" && ctx.csvFirstRow ? (() => { const out = [...resolvedButtonValues]; buttonsNeedingValue.forEach((btn: any, mapIndex: number) => { const col = csvButtonMap[mapIndex]; if (col) out[btn.index] = String(ctx.csvFirstRow[col] ?? ""); }); return out; })() : resolvedButtonValues;
-    const payload: CampaignDemoPayload = { templateId, to, variables: data.variables, headerVariables: effectiveHeaderVariables, otpCode: String(otpCode || "").trim() || undefined, buttonValues: effectiveButtonValues, buttonTtlMinutes, flowTokens };
+    const payload: CampaignDemoPayload = { templateId, to, variables: data.variables, headerVariables: effectiveHeaderVariables, headerLocation: normalizedHeaderLocation, otpCode: String(otpCode || "").trim() || undefined, buttonValues: effectiveButtonValues, buttonTtlMinutes, flowTokens };
     try { const parsed = JSON.parse(flowActionDataJson || "{}"); payload.flowActionData = Array.isArray(parsed) ? parsed : [parsed]; } catch { payload.flowActionData = []; }
     await API.messages.send(payload);
     toast("Demo message sent successfully", "success");
@@ -202,6 +217,7 @@ export function createCampaignFormActions(ctx: any) {
       const audienceRuntime = {
         variables: bodyVars,
         headerVariables: summary.headerFormat !== "TEXT" && headerMediaOverride ? [headerMediaOverride, ...headerVars.slice(1)] : headerVars,
+        headerLocation: normalizedHeaderLocation,
         otpCode: String(otpCode || "").trim() || undefined,
         buttonValues: resolvedButtonValues,
         buttonTtlMinutes,

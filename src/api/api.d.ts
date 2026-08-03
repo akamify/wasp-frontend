@@ -59,9 +59,16 @@ export const API: {
     channels(params?: any): Promise<any>;
     workspaces(params?: any): Promise<any>;
     masterCampaigns(params?: any): Promise<any>;
-    masterTemplates(params?: any): Promise<any>;
-    masterTemplateGet(id: string): Promise<any>;
-    masterTemplateUpdate(id: string, payload: any): Promise<any>;
+      masterTemplates(params?: any): Promise<any>;
+      masterTemplateCreate(payload: any): Promise<any>;
+      masterTemplateUploadMedia(file: any, mediaType: string, onProgress?: (pct: number) => void): Promise<any>;
+      masterTemplateDuplicate(id: string): Promise<any>;
+      masterTemplatePublish(id: string): Promise<any>;
+      masterTemplateArchive(id: string): Promise<any>;
+      masterTemplateGet(id: string): Promise<any>;
+      masterTemplateHistory(id: string): Promise<any>;
+      masterTemplateRestoreVersion(id: string, versionId: string): Promise<any>;
+      masterTemplateUpdate(id: string, payload: any): Promise<any>;
     masterTemplateDelete(id: string): Promise<any>;
     masterTemplateSyncStatus(id: string): Promise<any>;
     masterTemplateSyncMeta(payload: any): Promise<any>;
@@ -162,9 +169,37 @@ export const API: {
     billingPlanDisable(id: string): Promise<any>;
     billingPlanArchive(id: string): Promise<any>;
     billingPlanDelete(id: string): Promise<any>;
+    aiAddonPlans(): Promise<any>;
+    aiAddonPlanCreate(payload: any): Promise<any>;
+    aiAddonPlanUpdate(id: string, payload: any): Promise<any>;
+    aiAddonPlanPublish(id: string): Promise<any>;
+    aiAddonPlanDisable(id: string): Promise<any>;
+    aiAddonPlanArchive(id: string): Promise<any>;
+    aiAddonPlanDelete(id: string): Promise<any>;
+    aiAddonTopupPacks(): Promise<any>;
+    aiAddonTopupPackCreate(payload: any): Promise<any>;
+    aiAddonTopupPackUpdate(id: string, payload: any): Promise<any>;
+    aiAddonTopupPackPublish(id: string): Promise<any>;
+    aiAddonTopupPackDisable(id: string): Promise<any>;
+    aiAddonTopupPackArchive(id: string): Promise<any>;
+    aiAddonTopupPackDelete(id: string): Promise<any>;
+    aiAddonSubscriptions(params?: any): Promise<any>;
+    aiAddonFinancialDashboard(params?: any): Promise<any>;
+    aiAddonLedger(params?: any): Promise<any>;
+    aiAddonStatements(params?: any): Promise<any>;
+    aiAddonReports(params?: any): Promise<any>;
+    aiAddonReportDownload(params?: any): Promise<Blob>;
+    aiAddonWorkspaceLookup(params?: any): Promise<any>;
+    aiAddonAssignWorkspacePlan(workspaceId: string, payload: any): Promise<any>;
+    aiAddonWorkspaceFinancialAction(workspaceId: string, payload: any): Promise<any>;
+    aiAddonProviderConfig(): Promise<any>;
+    aiAddonProviderConfigUpdate(payload: any): Promise<any>;
     billingSettingsGet(): Promise<any>;
     billingSettingsUpdate(payload: any): Promise<any>;
     billingPricePreview(payload: any): Promise<any>;
+    activateWorkspacePlan(workspaceId: string, payload?: any): Promise<any>;
+    blockWorkspacePlan(workspaceId: string, payload?: any): Promise<any>;
+    deleteWorkspacePlanAssignment(workspaceId: string, payload?: any): Promise<any>;
   };
   crm: {
     workspace(): Promise<any>;
@@ -220,12 +255,24 @@ export const API: {
   };
   templates: {
     list(params?: any): Promise<any>;
+    library(params?: any): Promise<any>;
+    libraryAnalytics(params?: any): Promise<any>;
+    libraryPacks(params?: any): Promise<any>;
+    installLibraryPack(packKey: string): Promise<any>;
+    trackLibraryEvent(id: string, payload: { eventType: "preview" | "use" | "copy" | "download" }): Promise<any>;
+    favoriteLibrary(id: string): Promise<any>;
+    unfavoriteLibrary(id: string): Promise<any>;
     approved(): Promise<any>;
     create(payload: any): Promise<any>;
+    createDraft(payload: any): Promise<any>;
     get(id: string): Promise<any>;
     update(id: string, payload: any): Promise<any>;
+    updateDraft(id: string, payload: any): Promise<any>;
     remove(id: string): Promise<any>;
     submit(id: string): Promise<any>;
+    duplicate(id: string): Promise<any>;
+    history(id: string): Promise<any>;
+    restoreVersion(id: string, versionId: string): Promise<any>;
     status(id: string): Promise<any>;
     syncMeta(payload?: any): Promise<any>;
     refreshWhatsApp(): Promise<any>;
@@ -308,6 +355,7 @@ export const API: {
   wallet: {
     get(): Promise<any>;
     createRechargeOrder(payload: any): Promise<any>;
+    verifyRechargePayment(payload: any): Promise<any>;
     history(params?: any): Promise<any>;
   };
   campaigns: {
@@ -349,6 +397,8 @@ export const API: {
     list(params?: any): Promise<any>;
     get(phone: string): Promise<any>;
     read(phone: string): Promise<any>;
+    takeOver(phone: string, payload?: any): Promise<any>;
+    returnToAi(phone: string, payload?: any): Promise<any>;
   };
   contacts: {
     list(params?: any): Promise<any>;
@@ -394,6 +444,23 @@ export const API: {
     versions(flowId: string): Promise<unknown>;
   };
   aiAgents: {
+    addonStatus(): Promise<unknown>;
+    purchaseAddon(): Promise<unknown>;
+    dashboard(params?: unknown): Promise<unknown>;
+    addonTransactions(params?: unknown): Promise<unknown>;
+    billingSummary(params?: unknown): Promise<unknown>;
+    billingStatements(params?: unknown): Promise<unknown>;
+    billingStatement(periodKey: string): Promise<unknown>;
+    billingStatementDownload(periodKey: string): Promise<Blob>;
+    billingTimeline(params?: unknown): Promise<unknown>;
+    billingAnalytics(params?: unknown): Promise<unknown>;
+    billingUsageExplorer(params?: unknown): Promise<unknown>;
+    billingBudget(): Promise<unknown>;
+    billingBudgetUpdate(payload: unknown): Promise<unknown>;
+    billingReports(params?: unknown): Promise<unknown>;
+    billingReportDownload(params?: unknown): Promise<Blob>;
+    purchaseTopup(payload: unknown): Promise<unknown>;
+    adjustCredits(payload: unknown): Promise<unknown>;
     list(params?: unknown): Promise<unknown>;
     create(payload: unknown): Promise<unknown>;
     update(agentId: string, payload: unknown): Promise<unknown>;

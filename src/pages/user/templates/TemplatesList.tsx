@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { Eye, RefreshCw, Trash2, Folder, ShieldCheck, Megaphone, Package } from "lucide-react";
+import { Eye, RefreshCw, Trash2, Folder, ShieldCheck, Megaphone, Package, Copy, SendHorizonal, Wrench, CircleAlert } from "lucide-react";
 import { Badge } from "@components/ui/Badge";
 import { Button } from "@components/ui/Button";
 import { TemplatesTableSkeleton } from "@components/ui/Skeletons";
@@ -9,6 +9,7 @@ import { cn } from "@shared/utils/cn";
 import { useToast } from "@shared/providers/ToastContext";
 import { API, clearApiGetCache } from "@api/api";
 import { TemplatesListToolbar } from "@pages/user/templates/TemplatesListToolbar";
+import { summarizeRejectedReason } from "@modules/templates/utils/rejectionHelpers";
 
 type Props = {
   templates: TemplateItem[];
@@ -22,6 +23,10 @@ type Props = {
   onSyncStatus: (id: string) => void;
   onDelete: (template: TemplateItem) => void;
   onEdit: (template: TemplateItem) => void;
+  onDuplicate: (template: TemplateItem) => void;
+  onSubmitDraft: (template: TemplateItem) => void;
+  onResubmitRejected: (template: TemplateItem) => void;
+  onViewRejectedDetails: (template: TemplateItem) => void;
 };
 
 export function TemplatesList(props: Props) {
@@ -35,6 +40,11 @@ export function TemplatesList(props: Props) {
     onSelectTemplate,
     onSyncStatus,
     onDelete,
+    onEdit,
+    onDuplicate,
+    onSubmitDraft,
+    onResubmitRejected,
+    onViewRejectedDetails,
   } = props;
 
   const [search, setSearch] = useState("");
@@ -193,6 +203,11 @@ export function TemplatesList(props: Props) {
                                 {template.source ? <span className="rounded-[3px] bg-slate-100 px-1.5 py-0.5 text-slate-500">{template.source}</span> : null}
                                 {mediaLabel ? <span className="rounded-[3px] bg-slate-100 px-1.5 py-0.5 text-slate-500">{mediaLabel}</span> : null}
                               </div>
+                              {template.status === "rejected" ? (
+                                <div className="mt-2 max-w-[320px] text-[11px] font-semibold text-rose-700">
+                                  {summarizeRejectedReason(template.rejectedReason || "")}
+                                </div>
+                              ) : null}
                             </div>
                           </button>
                         </td>
@@ -205,12 +220,75 @@ export function TemplatesList(props: Props) {
                           </div>
                         </td>
                         <td className="px-2 py-3 md:px-8 md:py-5">
-                          <Badge tone={statusTone(template.status)} className="rounded-[5px] px-3 py-1 text-[10px] uppercase font-black tracking-widest">
-                            {template.status}
-                          </Badge>
+                          <div className="space-y-2">
+                            <Badge tone={statusTone(template.status)} className="rounded-[5px] px-3 py-1 text-[10px] uppercase font-black tracking-widest">
+                              {template.status}
+                            </Badge>
+                            {template.status === "rejected" ? (
+                              <div className="flex flex-wrap items-center gap-2">
+                                <button
+                                  type="button"
+                                  onClick={() => onViewRejectedDetails(template)}
+                                  className="inline-flex items-center gap-1 rounded-[5px] bg-rose-50 px-2 py-1 text-[10px] font-black uppercase tracking-wider text-rose-700 hover:bg-rose-100"
+                                >
+                                  <CircleAlert size={12} /> View Details
+                                </button>
+                              </div>
+                            ) : null}
+                          </div>
                         </td>
                         <td className="px-2 py-3 md:px-8 md:py-5 text-right">
                           <div className="flex items-center justify-end gap-2">
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => onDuplicate(template)}
+                              disabled={busyId === template._id}
+                              title="Duplicate as draft"
+                              aria-label={`Duplicate ${template.name}`}
+                              className="h-10 w-10 rounded-[5px] bg-slate-50 p-0 text-slate-600 hover:bg-slate-900 hover:text-white transition-all shadow-sm"
+                            >
+                              <Copy size={14} />
+                            </Button>
+                            {template.status === "draft" ? (
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => onSubmitDraft(template)}
+                                disabled={busyId === template._id}
+                                title="Submit draft to Meta"
+                                aria-label={`Submit draft ${template.name}`}
+                                className="h-10 w-10 rounded-[5px] bg-slate-50 p-0 text-slate-600 hover:bg-emerald-600 hover:text-white transition-all shadow-sm"
+                              >
+                                <SendHorizonal size={14} />
+                              </Button>
+                            ) : null}
+                            {template.status === "rejected" ? (
+                              <>
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() => onEdit(template)}
+                                  disabled={busyId === template._id}
+                                  title="Fix rejected template"
+                                  aria-label={`Fix ${template.name}`}
+                                  className="h-10 w-10 rounded-[5px] bg-slate-50 p-0 text-slate-600 hover:bg-amber-600 hover:text-white transition-all shadow-sm"
+                                >
+                                  <Wrench size={14} />
+                                </Button>
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() => onResubmitRejected(template)}
+                                  disabled={busyId === template._id}
+                                  title="Resubmit rejected template"
+                                  aria-label={`Resubmit ${template.name}`}
+                                  className="h-10 w-10 rounded-[5px] bg-slate-50 p-0 text-slate-600 hover:bg-emerald-600 hover:text-white transition-all shadow-sm"
+                                >
+                                  <SendHorizonal size={14} />
+                                </Button>
+                              </>
+                            ) : null}
                             <Button
                               variant="ghost"
                               size="sm"
@@ -221,17 +299,19 @@ export function TemplatesList(props: Props) {
                             >
                               <Eye size={12} />
                             </Button>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => onSyncStatus(template._id)}
-                              disabled={busyId === template._id}
-                              title="Sync status"
-                              aria-label={`Sync status for ${template.name}`}
-                              className="h-10 w-10 rounded-[5px] bg-slate-50 p-0 text-slate-600 hover:bg-slate-900 hover:text-white transition-all shadow-sm"
-                            >
-                              <RefreshCw size={14} className={busyId === template._id ? "animate-spin" : ""} />
-                            </Button>
+                            {template.status !== "draft" ? (
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => onSyncStatus(template._id)}
+                                disabled={busyId === template._id}
+                                title="Sync status"
+                                aria-label={`Sync status for ${template.name}`}
+                                className="h-10 w-10 rounded-[5px] bg-slate-50 p-0 text-slate-600 hover:bg-slate-900 hover:text-white transition-all shadow-sm"
+                              >
+                                <RefreshCw size={14} className={busyId === template._id ? "animate-spin" : ""} />
+                              </Button>
+                            ) : null}
                             <Button
                               variant="ghost"
                               size="sm"

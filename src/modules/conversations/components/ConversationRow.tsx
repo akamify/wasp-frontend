@@ -1,4 +1,5 @@
 import { cn } from "@shared/utils/cn";
+import { AI_STATES } from "@modules/conversations/constants/aiState";
 import type { Conversation } from "@modules/conversations/types/conversations.types";
 
 type Props = {
@@ -9,6 +10,7 @@ type Props = {
 
 export function ConversationRow({ item, activePhone, onSelect }: Props) {
   const isActive = activePhone === item.phone;
+  const isEmployeeHandover = item.aiState === AI_STATES.HUMAN_ACTIVE && Boolean(item.aiHandoverAt) && Boolean(item.assignedEmployeeId);
 
   return (
     <button
@@ -32,6 +34,13 @@ export function ConversationRow({ item, activePhone, onSelect }: Props) {
             <span className="block max-w-full truncate pr-2 text-sm font-black text-slate-900">
               {item.contact?.name || `+${item.phone}`}
             </span>
+            <div className="flex flex-wrap items-center gap-1.5">
+              {item.aiState === AI_STATES.HANDOVER_PENDING ? <span className="rounded-full bg-amber-100 px-2 py-0.5 text-[9px] font-black uppercase tracking-wider text-amber-700">Handover pending</span> : null}
+              {item.aiState === AI_STATES.HUMAN_ACTIVE ? <span className="rounded-full bg-sky-100 px-2 py-0.5 text-[9px] font-black uppercase tracking-wider text-sky-700">Human</span> : null}
+              {item.aiState === AI_STATES.AI_ACTIVE ? <span className="rounded-full bg-emerald-100 px-2 py-0.5 text-[9px] font-black uppercase tracking-wider text-emerald-700">AI</span> : null}
+              {item.aiState === AI_STATES.PAUSED ? <span className="rounded-full bg-slate-200 px-2 py-0.5 text-[9px] font-black uppercase tracking-wider text-slate-700">Paused</span> : null}
+              {isEmployeeHandover ? <span className="rounded-full bg-brand-100 px-2 py-0.5 text-[9px] font-black uppercase tracking-wider text-brand-700">AI handover</span> : null}
+            </div>
             <p
               className="block w-full max-w-full truncate text-xs font-medium leading-none text-slate-500"
               title={item.lastMessagePreview || "No messages yet"}

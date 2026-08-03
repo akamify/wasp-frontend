@@ -1,9 +1,10 @@
-import { Bot, BriefcaseBusiness, CreditCard, FileSearch, FileText, History, Key, LayoutDashboard, Link2, ListFilter, MessageSquare, Send, Terminal, Users, Wallet, Workflow, Zap, Layers3 } from "lucide-react";
+import { Bot, BriefcaseBusiness, CreditCard, FileSearch, FileText, History, Key, LayoutDashboard, Link2, ListFilter, MessageSquare, Send, Terminal, Users, Wallet, Workflow, Zap, Layers3, Sparkles } from "lucide-react";
 
 export const NAV_ITEMS = [
   { to: "/app", label: "Dashboard", kicker: "overview", icon: LayoutDashboard },
   { to: "/app/meta", label: "WhatsApp Setup", kicker: "credentials", icon: Key },
   { to: "/app/templates", label: "Templates", kicker: "library", icon: FileText },
+  { to: "/app/template-library", label: "Template Library", kicker: "curated", icon: Sparkles },
   { to: "/app/send", label: "Campaigns", kicker: "broadcast", icon: Send },
   { to: "/app/contacts", label: "Contacts", kicker: "audience", icon: Users },
   { to: "/app/audiences", label: "Audiences", kicker: "segments", icon: Layers3 },
@@ -28,9 +29,19 @@ export const MOBILE_TABS = [
   { to: "/app/contacts", label: "Contacts", icon: Users, end: false },
 ];
 
+export function prettifyShellTitle(value: string) {
+  const raw = String(value || "").trim();
+  if (!raw) return "Workspace";
+  if (/\s/.test(raw)) return raw;
+  return raw
+    .replace(/([a-z])([A-Z])/g, "$1 $2")
+    .replace(/[_\-]+/g, " ")
+    .trim();
+}
+
 export function getShellTitle(pathname: string, items: typeof NAV_ITEMS) {
   const active = items.find((item) => item.to === "/app" ? pathname === item.to : pathname.startsWith(item.to));
-  return active?.label || "Workspace";
+  return prettifyShellTitle(active?.label || "Workspace");
 }
 
 export function routeTransitionKey(pathname: string) {

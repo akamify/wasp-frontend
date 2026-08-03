@@ -2,8 +2,14 @@ import { useEffect, useMemo, useState } from "react";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
 import { API } from "@api/api";
 import { useAuth } from "@shared/providers/AuthContext";
-import { arrayToLines, defaultFeatures, defaultLimits, linesToArray, PAGE_ACCESS_OPTIONS, PAGE_BINDING } from "./shared";
+import { arrayToLines, defaultFeatures, defaultLimits, defaultUnlimitedLimits, linesToArray, PAGE_ACCESS_OPTIONS, PAGE_BINDING } from "./shared";
 import type { FeatureRow } from "./shared";
+
+const limitKeys = Object.keys(defaultLimits());
+
+function deriveUnlimitedFlags(raw: Record<string, any> = {}) {
+  return Object.fromEntries(limitKeys.map((key) => [key, raw?.[key] === null]));
+}
 
 const initialEditor = () => ({
   id: "",
@@ -29,12 +35,14 @@ const initialEditor = () => ({
   reviewNote: "",
   features: defaultFeatures(),
   limits: defaultLimits(),
+  unlimitedLimits: defaultUnlimitedLimits(),
   displayFeaturesText: "",
   unavailableFeaturesText: "",
   addonServicesText: "",
   featureRows: [],
   isFreePlan: false,
-  freeLimits: { maxContacts: "10", maxTemplates: "5", maxCampaignsPerMonth: "3", maxContactsExport: "10", maxAgents: "0", maxTags: "10", maxCustomAttributes: "5", maxWebhooks: "0", messageRatePerSec: "5", maxFlows: "0", maxTeams: "0", maxApiKeys: "0", maxStorageMb: "0", maxProjects: "0", maxMediaSizeMb: "0", dailyMessageLimit: "0" },
+    freeLimits: { maxContacts: "10", maxTemplates: "5", maxCampaignsPerMonth: "3", maxContactsExport: "10", maxAgents: "0", maxTags: "10", maxCustomAttributes: "5", maxWebhooks: "0", messageRatePerSec: "5", maxFlows: "0", maxApiKeys: "0", maxStorageMb: "0", maxMediaSizeMb: "0", dailyMessageLimit: "0" },
+  freeUnlimitedLimits: defaultUnlimitedLimits(),
 });
 
 function normalizeRows(item: any): FeatureRow[] {
@@ -55,6 +63,16 @@ function normalizeRows(item: any): FeatureRow[] {
 function toNumberOrZero(value: any) {
   if (value === "" || value === null || value === undefined) return 0;
   return Number(value || 0);
+}
+
+function toLimitInputValue(value: any) {
+  return value == null ? "" : String(value);
+}
+
+function serializeLimits(source: Record<string, any>, unlimited: Record<string, boolean>) {
+  return Object.fromEntries(
+    Object.entries(source || {}).map(([key, value]) => [key, unlimited?.[key] ? null : toNumberOrZero(value)])
+  );
 }
 
 export function useSubscriptionPlansState() {
@@ -121,29 +139,29 @@ export function useSubscriptionPlansState() {
       reviewNote: item?.review?.reviewNote || "",
       features,
       limits: Object.fromEntries(Object.entries(limits).map(([key, value]) => [key, value == null ? "" : String(value)])),
+      unlimitedLimits: deriveUnlimitedFlags(item?.limits || {}),
       displayFeaturesText: arrayToLines(item?.displayFeatures),
       unavailableFeaturesText: arrayToLines(item?.unavailableFeatures),
       addonServicesText: arrayToLines(item?.addonServices),
       featureRows: normalizeRows(item),
       isFreePlan: false,
       freeLimits: {
-        maxContacts: String(item?.limits?.maxContacts ?? 0),
-        maxTemplates: String(item?.limits?.maxTemplates ?? 0),
-        maxCampaignsPerMonth: String(item?.limits?.maxCampaignsPerMonth ?? 0),
-        maxContactsExport: String(item?.limits?.maxContactsExport ?? item?.limits?.maxExportsPerMonth ?? 0),
-        maxAgents: String(item?.limits?.maxAgents ?? item?.limits?.maxEmployees ?? 0),
-        maxTags: String(item?.limits?.maxTags ?? 10),
-        maxCustomAttributes: String(item?.limits?.maxCustomAttributes ?? 5),
-        maxWebhooks: String(item?.limits?.maxWebhooks ?? 0),
-        messageRatePerSec: String(item?.limits?.messageRatePerSec ?? 5),
-        maxFlows: String(item?.limits?.maxFlows ?? 0),
-        maxTeams: String(item?.limits?.maxTeams ?? 0),
-        maxApiKeys: String(item?.limits?.maxApiKeys ?? 0),
-        maxStorageMb: String(item?.limits?.maxStorageMb ?? 0),
-        maxProjects: String(item?.limits?.maxProjects ?? 0),
-        maxMediaSizeMb: String(item?.limits?.maxMediaSizeMb ?? 0),
-        dailyMessageLimit: String(item?.limits?.dailyMessageLimit ?? 0),
-      },
+        maxContacts: toLimitInputValue(item?.limits?.maxContacts),
+        maxTemplates: toLimitInputValue(item?.limits?.maxTemplates),
+        maxCampaignsPerMonth: toLimitInputValue(item?.limits?.maxCampaignsPerMonth),
+        maxContactsExport: toLimitInputValue(item?.limits?.maxContactsExport ?? item?.limits?.maxExportsPerMonth),
+        maxAgents: toLimitInputValue(item?.limits?.maxAgents ?? item?.limits?.maxEmployees),
+        maxTags: toLimitInputValue(item?.limits?.maxTags ?? 10),
+        maxCustomAttributes: toLimitInputValue(item?.limits?.maxCustomAttributes ?? 5),
+        maxWebhooks: toLimitInputValue(item?.limits?.maxWebhooks),
+        messageRatePerSec: toLimitInputValue(item?.limits?.messageRatePerSec ?? 5),
+        maxFlows: toLimitInputValue(item?.limits?.maxFlows),
+          maxApiKeys: toLimitInputValue(item?.limits?.maxApiKeys),
+          maxStorageMb: toLimitInputValue(item?.limits?.maxStorageMb),
+          maxMediaSizeMb: toLimitInputValue(item?.limits?.maxMediaSizeMb),
+          dailyMessageLimit: toLimitInputValue(item?.limits?.dailyMessageLimit),
+        },
+      freeUnlimitedLimits: deriveUnlimitedFlags(item?.limits || {}),
     });
   };
 
@@ -174,7 +192,7 @@ export function useSubscriptionPlansState() {
         cardColor: editor.cardColor || "blue",
         icon: editor.icon || "⭐",
         features: editor.features || {},
-        limits: Object.fromEntries(Object.entries(editor.limits || {}).map(([key, value]) => [key, toNumberOrZero(value)])),
+        limits: serializeLimits(editor.limits || {}, editor.unlimitedLimits || {}),
         displayFeatures: linesToArray(editor.displayFeaturesText),
         unavailableFeatures: linesToArray(editor.unavailableFeaturesText),
         featureRows: editor.featureRows || [],

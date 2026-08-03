@@ -53,9 +53,9 @@ export function BrodcasSection() {
   });
 
   return (
-    <section className="relative py-12 px-4 overflow-hidden bg-white h-screen max-h-[800px] flex items-center justify-center">
+    <section className="relative py-12 mb-20 px-4 overflow-hidden bg-white flex items-center justify-center">
       {/* Subtle Background Elements */}
-      <div className="absolute inset-0 -z-10 opacity-30">
+      <div className="absolute inset-0  -z-10 opacity-30">
         <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-emerald-100 rounded-full blur-[120px]" />
       </div>
 
@@ -63,7 +63,7 @@ export function BrodcasSection() {
         variants={container}
         initial="hidden"
         animate="show"
-        className="max-w-6xl w-full grid lg:grid-cols-2 gap-8 items-center"
+        className="max-w-6xl w-full mt-5 grid lg:grid-cols-2 gap-8 items-center"
       >
         {/* Text Content */}
         <div className="space-y-6">
@@ -113,7 +113,7 @@ export function BrodcasSection() {
         {/* Visual Showcase */}
         <motion.div
           variants={item}
-          className="relative lg:flex justify-center"
+          className="relative mt-8 lg:flex justify-center"
         >
           <div className="relative w-full max-w-[460px] rounded-3xl bg-slate-100 p-2 shadow-2xl rotate-2 hover:rotate-0 transition-transform duration-500">
             <img

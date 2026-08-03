@@ -23,7 +23,7 @@ import {
 import { useAuth } from "@shared/providers/AuthContext";
 import { authAwareHref } from "@shared/utils/authNavigation";
 
-const YOUTUBE_VIDEO_ID = "Cpvd4yOePWM";
+const YOUTUBE_VIDEO_ID = "AxDFdrW1VZI";
 
 const YOUTUBE_THUMBNAIL_SRC =
   `https://i.ytimg.com/vi/${YOUTUBE_VIDEO_ID}/maxresdefault.jpg`;

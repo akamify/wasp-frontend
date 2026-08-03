@@ -3,10 +3,12 @@ import { Button } from "@components/ui/Button";
 
 type Props = {
   mode: "create" | "edit";
+  ownerType?: "system" | "workspace";
   onClose: () => void;
 };
 
-export function TemplateFormHeader({ mode, onClose }: Props) {
+export function TemplateFormHeader({ mode, ownerType = "workspace", onClose }: Props) {
+  const isSystemTemplate = ownerType === "system";
   return (
     <div className="mb-10 flex items-center justify-between border-b border-slate-50 pb-8">
       <div className="flex items-center gap-3">
@@ -15,9 +17,9 @@ export function TemplateFormHeader({ mode, onClose }: Props) {
         </div>
         <div>
           <div className="text-xs font-semibold uppercase tracking-[0.2em] text-ink-800/55">
-            {mode === "edit" ? "Edit Template" : "Create Template"}
+            {mode === "edit" ? (isSystemTemplate ? "Edit System Template" : "Edit Template") : (isSystemTemplate ? "Create System Template" : "Create Template")}
           </div>
-          <div className="mt-1 text-2xl font-black text-ink-900">Template Builder</div>
+          <div className="mt-1 text-2xl font-black text-ink-900">{isSystemTemplate ? "System Template Builder" : "Template Builder"}</div>
         </div>
       </div>
       <Button variant="ghost" onClick={onClose} className="flex items-center gap-2 rounded-[5px] shadow-none">

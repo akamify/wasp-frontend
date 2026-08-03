@@ -5,6 +5,7 @@ import { useNavigate, useParams } from "react-router-dom";
 import { ChatHeader } from "@modules/conversations/components/ChatHeader";
 import { ConversationFeedback } from "@modules/conversations/components/ConversationFeedback";
 import { ConversationInfoDrawer } from "@modules/conversations/components/ConversationInfoDrawer";
+import { ConversationTimelineModal } from "@modules/conversations/components/ConversationTimelineModal";
 import { ConversationsSidebar } from "@modules/conversations/components/ConversationsSidebar";
 import { EditContactModal } from "@modules/conversations/components/EditContactModal";
 import { ImagePreviewModal } from "@modules/conversations/components/ImagePreviewModal";
@@ -26,6 +27,8 @@ export default function EmployeeInboxPage() {
   const [ok, setOk] = useState<string | null>(null);
   const [showProfile, setShowProfile] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
+  const [timelineOpen, setTimelineOpen] = useState(false);
+  const [conversationEvents, setConversationEvents] = useState<any[]>([]);
   const headerMenuRef = useRef<HTMLDivElement>(null);
 
   const {
@@ -68,6 +71,26 @@ export default function EmployeeInboxPage() {
     window.addEventListener("mousedown", onDown, true);
     return () => window.removeEventListener("mousedown", onDown, true);
   }, [menuOpen]);
+
+  useEffect(() => {
+    if (!urlPhone) {
+      setConversationEvents([]);
+      return;
+    }
+    let cancelled = false;
+    crmEmployeeInboxService.conversations
+      .events(urlPhone, { limit: 12 })
+      .then((res: any) => {
+        if (cancelled) return;
+        setConversationEvents(Array.isArray(res?.items) ? res.items : []);
+      })
+      .catch(() => {
+        if (!cancelled) setConversationEvents([]);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [urlPhone]);
 
   if (!urlPhone && visibleConversations.length === 0) {
     return <NoAssignedConversations loading={loadingList} onRefresh={refreshListSilently} onGoLeads={() => navigate("/employee/leads")} />;
@@ -142,11 +165,19 @@ export default function EmployeeInboxPage() {
         activeConversation={activeConversation as any}
         contactDetail={contactDetail}
         customerServiceWindowOpen={customerServiceWindowOpen}
+        events={conversationEvents}
         phone={urlPhone}
         showMobile={showProfile}
         windowRemainingMs={windowRemainingMs}
         onCloseMobile={() => setShowProfile(false)}
         onEdit={() => setError("Contact edit is not enabled for employees.")}
+        onOpenTimeline={() => setTimelineOpen(true)}
+      />
+      <ConversationTimelineModal
+        events={conversationEvents}
+        open={timelineOpen}
+        onClose={() => setTimelineOpen(false)}
+        phone={urlPhone}
       />
       <ImagePreviewModal image={selectedImage} onClose={() => setSelectedImage(null)} />
     </div>

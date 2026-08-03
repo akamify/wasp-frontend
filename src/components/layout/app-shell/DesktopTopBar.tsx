@@ -39,15 +39,15 @@ export function DesktopTopBar({
 }) {
   return (
     <header className="hidden lg:flex h-16 items-center justify-between px-8 bg-white/80 backdrop-blur-xl border-b border-slate-200 z-[130] shrink-0">
-      <div className="flex items-center gap-4">
-        <h1 className="text-lg font-black text-slate-900 tracking-tight">{getShellTitle(pathname, NAV_ITEMS as any)}</h1>
+      <div className="flex min-w-0 flex-1 items-center gap-4">
+        <h1 className="min-w-0 shrink text-lg font-black text-slate-900 tracking-tight whitespace-nowrap">{getShellTitle(pathname, NAV_ITEMS as any)}</h1>
         <div className="h-4 w-px bg-slate-200 mx-2" />
-        <button type="button" onClick={() => navigate("/workspaces")} className="flex items-center gap-2 px-3 py-1 cursor-pointer bg-slate-50 rounded-[5px] border border-slate-200/50 shadow-sm hover:bg-white transition-colors">
+        <button type="button" onClick={() => navigate("/workspaces")} className="flex min-w-0 items-center gap-2 px-3 py-1 cursor-pointer bg-slate-50 rounded-[5px] border border-slate-200/50 shadow-sm hover:bg-white transition-colors">
           <Globe size={14} className="text-slate-400" />
           <span className="max-w-48 truncate text-[10px] font-black text-slate-600 uppercase tracking-widest">{workspace?.name || "Workspace"}</span>
         </button>
       </div>
-      <div className="flex items-center gap-4">
+      <div className="ml-4 flex shrink-0 items-center gap-4">
         <WorkspaceStatusBar className="!border-none !bg-transparent !p-0 !backdrop-blur-none" />
         <div className="h-6 w-px bg-slate-200" />
         <div className="relative" ref={notifRef}>

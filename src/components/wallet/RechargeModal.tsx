@@ -56,12 +56,28 @@ export function RechargeModal({
         amount: orderRes.order.amount,
         currency: orderRes.order.currency,
         name: BRAND_NAME,
-        description: "Buy credits",
+        description: "Recharge wallet balance",
         order_id: orderRes.order.id,
-        handler: () => {
-          toast(`Successfully recharged ${formatCurrencySafe(parsedAmount)}`, "success");
-          onPaid?.();
-          onClose();
+        handler: async (response: any) => {
+          try {
+            await API.wallet.verifyRechargePayment({
+              razorpay_order_id: response?.razorpay_order_id,
+              razorpay_payment_id: response?.razorpay_payment_id,
+              razorpay_signature: response?.razorpay_signature,
+            });
+            toast(`Successfully recharged ${formatCurrencySafe(parsedAmount)}`, "success");
+            onPaid?.();
+            onClose();
+          } catch (verifyError: any) {
+            const msg =
+              verifyError?.response?.data?.providerError ||
+              verifyError?.response?.data?.details?.providerError ||
+              verifyError?.response?.data?.message ||
+              verifyError?.message ||
+              "Recharge verification failed";
+            setErr(msg);
+            toast(msg, "error");
+          }
         },
         modal: {
           ondismiss: () => {
@@ -101,10 +117,10 @@ export function RechargeModal({
             exit={{ y: 14, opacity: 0, scale: 0.98 }}
           >
             <div className="flex items-center justify-between border-b border-ink-900/10 px-5 py-4">
-              <div>
-                <div className="text-xs font-semibold text-ink-800/60">Wallet</div>
-                <div className="text-lg font-black tracking-tight">Buy Credits</div>
-              </div>
+                <div>
+                  <div className="text-xs font-semibold text-ink-800/60">Wallet</div>
+                  <div className="text-lg font-black tracking-tight">Recharge Wallet</div>
+                </div>
               <button
                 onClick={onClose}
                 className="rounded-[5px] p-2 text-ink-900/60 hover:bg-ink-900/5 hover:text-ink-900"
@@ -135,7 +151,7 @@ export function RechargeModal({
                   </Button>
                 </div>
                 <div className="mt-2 text-xs font-semibold text-ink-900/60">
-                  You pay {formatCurrencySafe(validAmount ? parsedAmount : 0)}. Credits appear after payment capture.
+                  You pay {formatCurrencySafe(validAmount ? parsedAmount : 0)}. Wallet balance updates after payment capture.
                 </div>
               </div>
 

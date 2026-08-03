@@ -80,9 +80,41 @@ export function buildApiGroupAdmin(api, unwrap) {
         api.get("/admin/master-campaigns", { params }).then(unwrap),
       masterTemplates: (params) =>
         api.get("/admin/master-templates", { params }).then(unwrap),
+      masterTemplateCreate: (payload) =>
+        api.post("/admin/master-templates", payload).then(unwrap),
+      masterTemplateUploadMedia: (file, mediaType, onProgress) => {
+        const data = new FormData();
+        data.append("file", file);
+        data.append("mediaType", mediaType);
+        return api
+          .post("/admin/master-templates/media", data, {
+            headers: { "Content-Type": "multipart/form-data" },
+            onUploadProgress: (e) => {
+              if (!onProgress) return;
+              const total = e.total || 0;
+              const loaded = e.loaded || 0;
+              onProgress(total ? Math.round((loaded / total) * 100) : 0);
+            },
+          })
+          .then(unwrap);
+      },
+      masterTemplateDuplicate: (id) =>
+        api.post(`/admin/master-templates/${encodeURIComponent(id)}/duplicate`).then(unwrap),
+      masterTemplatePublish: (id) =>
+        api.post(`/admin/master-templates/${encodeURIComponent(id)}/publish`).then(unwrap),
+      masterTemplateArchive: (id) =>
+        api.post(`/admin/master-templates/${encodeURIComponent(id)}/archive`).then(unwrap),
       masterTemplateGet: (id) =>
         api
           .get(`/admin/master-templates/${encodeURIComponent(id)}`)
+          .then(unwrap),
+      masterTemplateHistory: (id) =>
+        api
+          .get(`/admin/master-templates/${encodeURIComponent(id)}/history`)
+          .then(unwrap),
+      masterTemplateRestoreVersion: (id, versionId) =>
+        api
+          .post(`/admin/master-templates/${encodeURIComponent(id)}/restore/${encodeURIComponent(versionId)}`)
           .then(unwrap),
       masterTemplateUpdate: (id, payload) =>
         api
@@ -454,12 +486,81 @@ export function buildApiGroupAdmin(api, unwrap) {
               .delete(`/admin/billing/plans/${encodeURIComponent(id)}`)
               .then(unwrap);
           }),
+      aiAddonPlans: () => api.get("/super-admin/ai-addon/plans").then(unwrap),
+      aiAddonPlanCreate: (payload) =>
+        api.post("/super-admin/ai-addon/plans", payload || {}).then(unwrap),
+      aiAddonPlanUpdate: (id, payload) =>
+        api.put(`/super-admin/ai-addon/plans/${encodeURIComponent(id)}`, payload || {}).then(unwrap),
+      aiAddonPlanPublish: (id) =>
+        api.post(`/super-admin/ai-addon/plans/${encodeURIComponent(id)}/publish`, {}).then(unwrap),
+      aiAddonPlanDisable: (id) =>
+        api.post(`/super-admin/ai-addon/plans/${encodeURIComponent(id)}/disable`, {}).then(unwrap),
+      aiAddonPlanArchive: (id) =>
+        api.post(`/super-admin/ai-addon/plans/${encodeURIComponent(id)}/archive`, {}).then(unwrap),
+      aiAddonPlanDelete: (id) =>
+        api.delete(`/super-admin/ai-addon/plans/${encodeURIComponent(id)}`).then(unwrap),
+      aiAddonTopupPacks: () => api.get("/super-admin/ai-addon/topup-packs").then(unwrap),
+      aiAddonTopupPackCreate: (payload) =>
+        api.post("/super-admin/ai-addon/topup-packs", payload || {}).then(unwrap),
+      aiAddonTopupPackUpdate: (id, payload) =>
+        api.put(`/super-admin/ai-addon/topup-packs/${encodeURIComponent(id)}`, payload || {}).then(unwrap),
+      aiAddonTopupPackPublish: (id) =>
+        api.post(`/super-admin/ai-addon/topup-packs/${encodeURIComponent(id)}/publish`, {}).then(unwrap),
+      aiAddonTopupPackDisable: (id) =>
+        api.post(`/super-admin/ai-addon/topup-packs/${encodeURIComponent(id)}/disable`, {}).then(unwrap),
+      aiAddonTopupPackArchive: (id) =>
+        api.post(`/super-admin/ai-addon/topup-packs/${encodeURIComponent(id)}/archive`, {}).then(unwrap),
+      aiAddonTopupPackDelete: (id) =>
+        api.delete(`/super-admin/ai-addon/topup-packs/${encodeURIComponent(id)}`).then(unwrap),
+      aiAddonSubscriptions: (params) =>
+        api.get("/super-admin/ai-addon/subscriptions", { params }).then(unwrap),
+      aiAddonFinancialDashboard: (params) =>
+        api.get("/super-admin/ai-addon/financial-dashboard", { params }).then(unwrap),
+      aiAddonLedger: (params) =>
+        api.get("/super-admin/ai-addon/ledger", { params }).then(unwrap),
+      aiAddonStatements: (params) =>
+        api.get("/super-admin/ai-addon/statements", { params }).then(unwrap),
+      aiAddonReports: (params) =>
+        api.get("/super-admin/ai-addon/reports", { params }).then(unwrap),
+      aiAddonReportDownload: (params) =>
+        api.get("/super-admin/ai-addon/reports", { params: { ...(params || {}), format: "csv" }, responseType: "blob" }).then((r) => r.data),
+      aiAddonWorkspaceLookup: (params) =>
+        api.get("/super-admin/ai-addon/workspaces", { params }).then(unwrap),
+      aiAddonAssignWorkspacePlan: (workspaceId, payload) =>
+        api.post(`/super-admin/ai-addon/workspaces/${encodeURIComponent(workspaceId)}/assign-plan`, payload || {}).then(unwrap),
+      aiAddonWorkspaceFinancialAction: (workspaceId, payload) =>
+        api.post(`/super-admin/ai-addon/workspaces/${encodeURIComponent(workspaceId)}/financial-action`, payload || {}).then(unwrap),
+      aiAddonProviderConfig: () =>
+        api.get("/super-admin/ai-addon/provider-config").then(unwrap),
+      aiAddonProviderConfigUpdate: (payload) =>
+        api.put("/super-admin/ai-addon/provider-config", payload || {}).then(unwrap),
       billingSettingsGet: () => api.get("/super-admin/billing/settings").then(unwrap),
       billingSettingsUpdate: (payload) =>
         api.put("/super-admin/billing/settings", payload || {}).then(unwrap),
       billingPricePreview: (payload) =>
         api
           .post("/super-admin/billing/plans/price-preview", payload || {})
+          .then(unwrap),
+      activateWorkspacePlan: (workspaceId, payload) =>
+        api
+          .post(
+            `/super-admin/subscriptions-data/${encodeURIComponent(workspaceId)}/activate-plan`,
+            payload || {},
+          )
+          .then(unwrap),
+      blockWorkspacePlan: (workspaceId, payload) =>
+        api
+          .post(
+            `/super-admin/subscriptions-data/${encodeURIComponent(workspaceId)}/block-workspace`,
+            payload || {},
+          )
+          .then(unwrap),
+      deleteWorkspacePlanAssignment: (workspaceId, payload) =>
+        api
+          .post(
+            `/super-admin/subscriptions-data/${encodeURIComponent(workspaceId)}/delete-assignment`,
+            payload || {},
+          )
           .then(unwrap),
     },
   };

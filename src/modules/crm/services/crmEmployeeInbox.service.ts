@@ -11,6 +11,8 @@ export const crmEmployeeInboxService = {
       employeeApi.get("/crm/employee/conversations", { params }).then(unwrap),
     get: (phone: string) => employeeApi.get(`/crm/employee/conversations/${encodeURIComponent(phone)}`).then(unwrap),
     read: (phone: string) => employeeApi.post(`/crm/employee/conversations/${encodeURIComponent(phone)}/read`).then(unwrap),
+    events: (phone: string, params?: { limit?: number }) =>
+      employeeApi.get(`/crm/employee/conversations/${encodeURIComponent(phone)}/events`, { params }).then(unwrap),
   },
   messages: {
     byPhone: (phone: string) => employeeApi.get(`/crm/employee/messages/${encodeURIComponent(phone)}`).then(unwrap),

@@ -5,7 +5,7 @@ import { Textarea } from "@components/ui/Textarea";
 import { SuperAdminPlanPreviewCard } from "@pages/admin/components/SuperAdminPlanPreviewCard";
 import { useState } from "react";
 import { Info, Plus, Trash2, X } from "lucide-react";
-import { BADGE_TYPES, BILLING_CYCLES, CARD_COLORS, FEATURE_GROUPS, inr, LIMIT_GROUPS, LIMIT_HELP, PLAN_OPTIONS, PLAN_STATUSES, statusColor, TAX_MODES } from "./shared";
+import { BADGE_TYPES, BILLING_CYCLES, CARD_COLORS, FEATURE_GROUPS, inr, LIMIT_GROUPS, LIMIT_HELP, PLAN_OPTIONS, PLAN_STATUSES, statusColor, TAX_MODES, UNLIMITED_ALLOWED_LIMITS } from "./shared";
 
 function SelectField({ label, value, onChange, children, disabled }: any) {
   return <div><div className="mb-1 text-xs font-semibold uppercase text-slate-500">{label}</div><select className="w-full rounded-[5px] border border-slate-200 bg-white px-3 py-2.5 text-sm font-semibold text-slate-700" value={value} onChange={(e) => onChange(e.target.value)} disabled={disabled}>{children}</select></div>;
@@ -23,8 +23,47 @@ function TooltipLabel({ label, help }: { label: string; help?: string }) {
   return <div className="mb-1 flex items-center gap-1.5 text-xs font-semibold uppercase text-slate-500">{label}{help ? <span className="group relative inline-flex"><Info size={13} className="cursor-help text-slate-400" /><span className="pointer-events-none absolute left-5 top-1/2 z-20 hidden w-64 -translate-y-1/2 rounded-[5px] border border-slate-200 bg-slate-950 px-3 py-2 text-[11px] font-semibold normal-case leading-5 text-white shadow-xl group-hover:block">{help}</span></span> : null}</div>;
 }
 
-function LimitInput({ label, help, value, onChange, disabled }: { label: string; help?: string; value: string; onChange: (value: string) => void; disabled?: boolean }) {
-  return <div><TooltipLabel label={label} help={help} /><input className="w-full rounded-[5px] border border-slate-200 bg-white px-3 py-2.5 text-sm font-semibold text-slate-700 disabled:bg-slate-50 disabled:text-slate-400" value={value} onChange={(e) => onChange(e.target.value.replace(/[^\d]/g, ""))} disabled={disabled} inputMode="numeric" /></div>;
+function LimitInput({
+  label,
+  help,
+  value,
+  onChange,
+  disabled,
+  unlimited,
+  onToggleUnlimited,
+  allowUnlimited = true,
+}: {
+  label: string;
+  help?: string;
+  value: string;
+  onChange: (value: string) => void;
+  disabled?: boolean;
+  unlimited?: boolean;
+  onToggleUnlimited: (checked: boolean) => void;
+  allowUnlimited?: boolean;
+}) {
+  return (
+    <div className="rounded-[5px] border border-slate-200 bg-slate-50/70 p-3">
+      <TooltipLabel label={label} help={help} />
+      <input
+        className="w-full rounded-[5px] border border-slate-200 bg-white px-3 py-2.5 text-sm font-semibold text-slate-700 disabled:bg-slate-100 disabled:text-slate-400"
+        value={allowUnlimited && unlimited ? "" : value}
+        onChange={(e) => onChange(e.target.value.replace(/[^\d]/g, ""))}
+        disabled={disabled || (allowUnlimited && unlimited)}
+        inputMode="numeric"
+        placeholder={allowUnlimited && unlimited ? "Unlimited" : "0"}
+      />
+      {allowUnlimited ? (
+        <label className="mt-2 flex items-center gap-2 text-xs font-semibold text-slate-600">
+          <input type="checkbox" checked={!!unlimited} onChange={(e) => onToggleUnlimited(e.target.checked)} disabled={disabled} />
+          Unlimited
+        </label>
+      ) : null}
+      <p className="mt-1 text-[11px] font-medium text-slate-400">
+        {allowUnlimited ? "`0` blocks this capability. Unlimited saves `null`." : "`0` blocks this capability. Numeric limit required."}
+      </p>
+    </div>
+  );
 }
 
 function DisplayFeatureEditor({ title, subtitle, value, onChange, disabled, placeholder }: any) {
@@ -70,7 +109,10 @@ export function EditorView(props: any) {
   const setFeature = (key: string, value: boolean) => setEditor((s: any) => ({ ...s, features: { ...(s.features || {}), [key]: value } }));
   const setLimit = (key: string, value: string) => setEditor((s: any) => ({ ...s, limits: { ...(s.limits || {}), [key]: value.replace(/[^\d]/g, "") } }));
   const setFreeLimit = (key: string, value: string) => setEditor((s: any) => ({ ...s, freeLimits: { ...(s.freeLimits || {}), [key]: value.replace(/[^\d]/g, "") } }));
+  const setUnlimitedLimit = (key: string, value: boolean) => setEditor((s: any) => ({ ...s, unlimitedLimits: { ...(s.unlimitedLimits || {}), [key]: value } }));
+  const setFreeUnlimitedLimit = (key: string, value: boolean) => setEditor((s: any) => ({ ...s, freeUnlimitedLimits: { ...(s.freeUnlimitedLimits || {}), [key]: value } }));
   const limitSource = isFreePlan ? editor.freeLimits || {} : editor.limits || {};
+  const unlimitedSource = isFreePlan ? editor.freeUnlimitedLimits || {} : editor.unlimitedLimits || {};
   const usedPlanSlugs = new Set((Array.isArray(items) ? items : []).filter((item: any) => item?.id !== editor.id && !item?.deletedAt).map((item: any) => String(item?.slug || "").toLowerCase()).filter(Boolean));
   const selectedPlanSlug = String(editor.slug || "").toLowerCase();
   const selectPlanSlot = (slug: string) => {
@@ -122,9 +164,9 @@ export function EditorView(props: any) {
             <div className="grid grid-cols-1 gap-4 xl:grid-cols-2">{FEATURE_GROUPS.map((group) => <div key={group.title} className="rounded-[5px] border border-slate-200 p-3"><div className="mb-2 text-xs font-black uppercase tracking-wide text-slate-500">{group.title}</div><div className="grid grid-cols-1 gap-2">{group.items.map(([key, label]) => <Toggle key={key} label={label} checked={editor.features?.[key]} onChange={(value: boolean) => setFeature(key, value)} disabled={readOnly} />)}</div></div>)}</div>
           </Section> : null}
 
-          <Section title={isFreePlan ? "Free Plan Limits" : "Limits"} subtitle="Use 0 to block a capability. Higher plans can set exact numeric caps.">
-            <div className="grid grid-cols-1 gap-4 xl:grid-cols-2">{LIMIT_GROUPS.map((group) => <div key={group.title} className="rounded-[5px] border border-slate-200 p-3"><div className="mb-2 text-xs font-black uppercase tracking-wide text-slate-500">{group.title}</div><div className="grid grid-cols-1 gap-3 md:grid-cols-2">{group.items.map(([key, label]) => <LimitInput key={key} label={label} help={LIMIT_HELP[key]} value={String(limitSource?.[key] ?? "")} onChange={(value) => isFreePlan ? setFreeLimit(key, value) : setLimit(key, value)} disabled={readOnly} />)}</div></div>)}</div>
-          </Section>
+          <Section title={isFreePlan ? "Free Plan Limits" : "Limits"} subtitle="Use numeric caps for controlled plans. Turn on Unlimited to save `null` and keep backend enforcement aligned.">
+              <div className="grid grid-cols-1 gap-4 xl:grid-cols-2">{LIMIT_GROUPS.map((group) => <div key={group.title} className="rounded-[5px] border border-slate-200 p-3"><div className="mb-3 text-xs font-black uppercase tracking-wide text-slate-500">{group.title}</div><div className="grid grid-cols-1 gap-3 md:grid-cols-2">{group.items.map(([key, label]) => <LimitInput key={key} label={label} help={LIMIT_HELP[key]} value={String(limitSource?.[key] ?? "")} unlimited={Boolean(unlimitedSource?.[key])} allowUnlimited={UNLIMITED_ALLOWED_LIMITS.has(key)} onToggleUnlimited={(value) => isFreePlan ? setFreeUnlimitedLimit(key, value) : setUnlimitedLimit(key, value)} onChange={(value) => isFreePlan ? setFreeLimit(key, value) : setLimit(key, value)} disabled={readOnly} />)}</div></div>)}</div>
+            </Section>
 
           {!isFreePlan ? <Section title="Display Features" subtitle="Add each pricing-card line one by one. These are marketing display lines, separate from backend feature flags.">
             <div className="grid grid-cols-1 gap-4 md:grid-cols-2"><DisplayFeatureEditor title="Included Features" subtitle="Shown with check icon on pricing card." value={editor.displayFeaturesText} onChange={(value: string) => setEditor((s: any) => ({ ...s, displayFeaturesText: value }))} placeholder="e.g. Campaign Scheduler" disabled={readOnly} /><DisplayFeatureEditor title="Not Included" subtitle="Shown as unavailable/disabled on pricing card." value={editor.unavailableFeaturesText} onChange={(value: string) => setEditor((s: any) => ({ ...s, unavailableFeaturesText: value }))} placeholder="e.g. Number Masking" disabled={readOnly} /></div>

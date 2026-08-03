@@ -12,12 +12,13 @@ type Props = {
   filter: Filter;
   loading: boolean;
   conversations: Conversation[];
+  searchPlaceholder?: string;
   onSearchChange: (value: string) => void;
   onFilterChange: (value: Filter) => void;
   onSelect: (phone: string) => void;
 };
 
-export function ConversationsSidebar({ activePhone, search, filter, loading, conversations, onSearchChange, onFilterChange, onSelect }: Props) {
+export function ConversationsSidebar({ activePhone, search, filter, loading, conversations, searchPlaceholder = "Search conversations...", onSearchChange, onFilterChange, onSelect }: Props) {
   return (
     <div className={cn("w-full md:w-[350px] bg-white border-r border-slate-200 flex flex-col shrink-0 min-h-0", activePhone ? "hidden md:flex" : "flex")}>
       <div className="p-3 bg-slate-50/50 border-b border-slate-100 flex flex-col gap-4">
@@ -26,7 +27,7 @@ export function ConversationsSidebar({ activePhone, search, filter, loading, con
           <input
             value={search}
             onChange={(e) => onSearchChange(e.target.value)}
-            placeholder="Search conversations..."
+            placeholder={searchPlaceholder}
             className="w-full pl-10 pr-4 py-2.5 bg-white border border-slate-200 rounded-[5px] text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-brand-600/10 focus:border-brand-600 transition-all shadow-sm"
           />
         </div>

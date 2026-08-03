@@ -9,6 +9,7 @@ import SuperAdminAdminEditPage from "@pages/super-admin/pages/SuperAdminAdminEdi
 import SuperAdminProfilePage from "@pages/super-admin/pages/SuperAdminProfile";
 import SuperAdminProfileEditPage from "@pages/super-admin/pages/SuperAdminProfileEdit";
 import SuperAdminPlatformSettingsPage from "@pages/super-admin/pages/SuperAdminPlatformSettings";
+import SuperAdminAiAddonsPage from "@pages/super-admin/pages/SuperAdminAiAddons";
 import AdminUsersPage from "@pages/admin/pages/AdminUsers";
 import AdminChannelsPage from "@pages/admin/pages/AdminChannels";
 import AdminMasterCampaignsPage from "@pages/admin/pages/AdminMasterCampaigns";
@@ -41,6 +42,7 @@ export function superAdminRoutes() {
       <Route path="/super-admin/profile" element={inSuperAdmin(<SuperAdminProfilePage />)} />
       <Route path="/super-admin/profile/edit" element={inSuperAdmin(<SuperAdminProfileEditPage />)} />
       <Route path="/super-admin/platform-settings" element={inSuperAdmin(<SuperAdminPlatformSettingsPage />)} />
+      <Route path="/super-admin/ai-addons" element={inSuperAdmin(<SuperAdminAiAddonsPage />)} />
       <Route path="/super-admin/users" element={inSuperAdmin(<AdminUsersPage />)} />
       <Route path="/super-admin/workspaces" element={inSuperAdmin(<AdminChannelsPage />)} />
       <Route path="/super-admin/workspaces/:workspaceId" element={inSuperAdmin(<AdminSubscriptionsDataPage />)} />

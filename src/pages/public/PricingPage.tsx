@@ -26,12 +26,17 @@ function buildPlanAction(plan: any, token?: string | null) {
 
 function limitChips(plan: any) {
   const limits = plan?.limits || {};
+  const chip = (value: any, label: string, suffix = "") => {
+    if (value === null) return `Unlimited ${label}`;
+    if (!value) return "";
+    return `${value}${suffix} ${label}`.trim();
+  };
   return [
-    limits.messageRatePerSec ? `${limits.messageRatePerSec}/sec speed` : "",
-    limits.maxAgents ? `${limits.maxAgents} agents` : "",
-    limits.maxTags ? `${limits.maxTags} tags` : "",
-    limits.maxCustomAttributes ? `${limits.maxCustomAttributes} attributes` : "",
-    limits.maxWebhooks ? `${limits.maxWebhooks} webhooks` : "",
+    chip(limits.messageRatePerSec, "speed", "/sec"),
+    chip(limits.maxAgents, "agents"),
+    chip(limits.maxTags, "tags"),
+    chip(limits.maxCustomAttributes, "attributes"),
+    chip(limits.maxWebhooks, "webhooks"),
   ].filter(Boolean);
 }
 

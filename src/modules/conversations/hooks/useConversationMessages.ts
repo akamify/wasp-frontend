@@ -2,7 +2,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import type { NavigateFunction } from "react-router-dom";
 import { API, getToken, getWorkspaceId } from "@api/api";
 import { useInboundMessageTone } from "@modules/conversations/hooks/useInboundMessageTone";
-import type { ChatMessage } from "@modules/conversations/types/conversations.types";
+import type { ChatMessage, Conversation } from "@modules/conversations/types/conversations.types";
 
 const FINAL_MESSAGE_STATUSES = new Set(["read", "delivered", "failed", "timeout_unknown"]);
 const STATUS_RANK: Record<string, number> = {
@@ -28,6 +28,7 @@ export function useConversationMessages({ navigate, refreshListSilently, search,
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [loadingChat, setLoadingChat] = useState(false);
   const [contactDetail, setContactDetail] = useState<any | null>(null);
+  const [conversationDetail, setConversationDetail] = useState<Conversation | null>(null);
   const [realtimeConnected, setRealtimeConnected] = useState(false);
   const isInitialLoad = useRef(true);
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -128,6 +129,7 @@ export function useConversationMessages({ navigate, refreshListSilently, search,
       const nextMessages = res.messages || [];
       mergeMessages(nextMessages);
       setContactDetail(convo?.contact || null);
+      setConversationDetail(convo?.conversation || null);
       await API.conversations.read(phone);
       void hydrateOutboundStatuses(nextMessages);
     } catch {
@@ -181,6 +183,7 @@ export function useConversationMessages({ navigate, refreshListSilently, search,
       isInitialLoad.current = true;
     } else {
       setMessages([]);
+      setConversationDetail(null);
     }
   }, [urlPhone, loadChat]);
 
@@ -263,5 +266,5 @@ export function useConversationMessages({ navigate, refreshListSilently, search,
     }
   }, [messages.length, loadingChat]);
 
-  return { contactDetail, loadChat, loadingChat, messages, refreshChatSilently, scrollRef, setContactDetail };
+  return { contactDetail, conversationDetail, loadChat, loadingChat, messages, refreshChatSilently, scrollRef, setContactDetail };
 }

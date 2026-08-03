@@ -4,7 +4,19 @@ import type { Conversation } from "@modules/conversations/types/conversations.ty
 
 type Filter = "all" | "unread" | "read";
 
-export function useConversationsList(urlPhone: string, setError: (message: string) => void) {
+export type ConversationListParams = {
+  aiOnly?: boolean;
+  agentId?: string;
+  aiState?: string[];
+};
+
+type Args = {
+  urlPhone: string;
+  setError: (message: string) => void;
+  params?: ConversationListParams;
+};
+
+export function useConversationsList({ urlPhone, setError, params }: Args) {
   const [items, setItems] = useState<Conversation[]>([]);
   const [search, setSearch] = useState("");
   const [loadingList, setLoadingList] = useState(true);
@@ -23,23 +35,35 @@ export function useConversationsList(urlPhone: string, setError: (message: strin
   const loadList = useCallback(async () => {
     setLoadingList(true);
     try {
-      const data = await API.conversations.list({ limit: 120, search: search || undefined });
+      const data = await API.conversations.list({
+        limit: 120,
+        search: search || undefined,
+        aiOnly: params?.aiOnly ? "true" : undefined,
+        agentId: params?.agentId || undefined,
+        aiState: params?.aiState?.length ? params.aiState : undefined,
+      });
       setItems(data.conversations || []);
     } catch {
       setError("List load failed");
     } finally {
       setLoadingList(false);
     }
-  }, [search, setError]);
+  }, [params?.agentId, params?.aiOnly, params?.aiState, search, setError]);
 
   const refreshListSilently = useCallback(async () => {
     try {
-      const data = await API.conversations.list({ limit: 120, search: search || undefined });
+      const data = await API.conversations.list({
+        limit: 120,
+        search: search || undefined,
+        aiOnly: params?.aiOnly ? "true" : undefined,
+        agentId: params?.agentId || undefined,
+        aiState: params?.aiState?.length ? params.aiState : undefined,
+      });
       setItems(data.conversations || []);
     } catch {
       // silent refresh
     }
-  }, [search]);
+  }, [params?.agentId, params?.aiOnly, params?.aiState, search]);
 
   useEffect(() => {
     void loadList();

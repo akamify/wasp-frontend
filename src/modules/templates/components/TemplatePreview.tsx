@@ -1,15 +1,16 @@
 import { useEffect, useMemo, useState } from "react";
 import { API } from "@api/api";
 import type { CtaButton, HeaderType, TemplateCategory } from "@modules/templates/types/templates.types";
+import type { TemplatePreviewBrand } from "@modules/templates/types/templatePreviewBrand";
 import { TemplatePreviewMessage } from "./template-preview/TemplatePreviewMessage";
 import { formatBytes } from "./template-preview/helpers";
 
 type Props = {
-  category: TemplateCategory; headerType: HeaderType; headerText: string; mediaHandle: string; mediaPreviewUrl?: string | null; mediaMeta?: { originalName?: string; mimeType?: string; size?: number } | null; headerLocation?: { name: string; address: string; latitude: number; longitude: number } | null; headerVariableValues?: Record<number, string>; bodyText: string; footerText: string; ctaButtons: CtaButton[]; variableValues: Record<number, string>; authConfig?: { otpType: "ZERO_TAP" | "ONE_TAP" | "COPY_CODE"; expiresInMinutes?: number; addSecurityRecommendation?: boolean; includeExpirationWarning?: boolean } | null;
+  category: TemplateCategory; headerType: HeaderType; headerText: string; mediaHandle: string; mediaPreviewUrl?: string | null; mediaMeta?: { originalName?: string; mimeType?: string; size?: number } | null; headerLocation?: { name: string; address: string; latitude: number; longitude: number } | null; headerVariableValues?: Record<number, string>; bodyText: string; footerText: string; ctaButtons: CtaButton[]; variableValues: Record<number, string>; authConfig?: { otpType: "ZERO_TAP" | "ONE_TAP" | "COPY_CODE"; expiresInMinutes?: number; addSecurityRecommendation?: boolean; includeExpirationWarning?: boolean } | null; previewBrand?: TemplatePreviewBrand | null;
 };
 
 export function TemplatePreview(props: Props) {
-  const { category, headerType, headerText, mediaHandle, mediaPreviewUrl, mediaMeta, headerLocation, headerVariableValues, bodyText, footerText, ctaButtons, variableValues, authConfig } = props;
+  const { category, headerType, headerText, mediaHandle, mediaPreviewUrl, mediaMeta, headerLocation, headerVariableValues, bodyText, footerText, ctaButtons, variableValues, authConfig, previewBrand } = props;
   const [optionsOpen, setOptionsOpen] = useState(false);
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const [fetchedMediaUrl, setFetchedMediaUrl] = useState<string | null>(null);
@@ -49,5 +50,5 @@ export function TemplatePreview(props: Props) {
   const documentFileName = useMemo(() => { const explicit = String(mediaMeta?.originalName || "").trim(); if (explicit) return explicit; const candidate = effectiveMediaUrl || trimmedMediaHandle; if (!candidate) return "Document"; try { const parsed = new URL(candidate); const last = decodeURIComponent(parsed.pathname.split("/").filter(Boolean).pop() || ""); if (last) return last; } catch { const last = decodeURIComponent(candidate.split("?")[0].split("/").pop() || ""); if (last) return last; } return "Document"; }, [mediaMeta?.originalName, effectiveMediaUrl, trimmedMediaHandle]);
   const documentMetaLine = useMemo(() => [String(mediaMeta?.mimeType || "").trim() || (isPdfDocument ? "application/pdf" : "document"), formatBytes(mediaMeta?.size)].filter(Boolean).join(" • "), [mediaMeta?.mimeType, mediaMeta?.size, isPdfDocument]);
 
-  return <TemplatePreviewMessage wallpaperUrl={wallpaperUrl} category={category} headerType={headerType} headerText={headerText} headerVariableValues={headerVariableValues} effectiveMediaUrl={effectiveMediaUrl} mediaHandle={mediaHandle} mediaLoading={mediaLoading} documentFileName={documentFileName} documentMetaLine={documentMetaLine} isPdfDocument={isPdfDocument} headerLocation={headerLocation} authLines={authLines} bodyText={bodyText} variableValues={variableValues} footerText={footerText} authConfig={authConfig} copiedId={copiedId} copyMediaHandle={copyMediaHandle} copyToClipboard={copyToClipboard} previewButtons={previewButtons} optionsOpen={optionsOpen} setOptionsOpen={setOptionsOpen} />;
+  return <TemplatePreviewMessage wallpaperUrl={wallpaperUrl} category={category} headerType={headerType} headerText={headerText} headerVariableValues={headerVariableValues} effectiveMediaUrl={effectiveMediaUrl} mediaHandle={mediaHandle} mediaLoading={mediaLoading} documentFileName={documentFileName} documentMetaLine={documentMetaLine} isPdfDocument={isPdfDocument} headerLocation={headerLocation} authLines={authLines} bodyText={bodyText} variableValues={variableValues} footerText={footerText} authConfig={authConfig} copiedId={copiedId} copyMediaHandle={copyMediaHandle} copyToClipboard={copyToClipboard} previewButtons={previewButtons} optionsOpen={optionsOpen} setOptionsOpen={setOptionsOpen} previewBrand={previewBrand} />;
 }
