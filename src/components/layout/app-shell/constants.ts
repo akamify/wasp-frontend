@@ -1,5 +1,39 @@
 import { Bot, BriefcaseBusiness, CreditCard, FileSearch, FileText, History, Key, LayoutDashboard, Link2, ListFilter, MessageSquare, Send, Terminal, Users, Wallet, Workflow, Zap, Layers3, Sparkles } from "lucide-react";
 
+export interface DocsLinkItem {
+  path?: string;
+  route?: string;
+  url?: string;
+  href?: string;
+  label?: string;
+}
+
+export function resolveDocsUrlForPath(pathname: string, links: DocsLinkItem[] = []) {
+  if (!pathname || !Array.isArray(links) || links.length === 0) return null;
+
+  const normalizedPath = pathname.replace(/\/+$/, "") || "/";
+
+  for (const link of links) {
+    const candidatePath = (link.path || link.route || "").toString().trim();
+    if (!candidatePath) continue;
+
+    const normalizedCandidate = candidatePath.replace(/\/+$/, "") || "/";
+    if (normalizedCandidate === normalizedPath) {
+      return link.url || link.href || null;
+    }
+
+    if (normalizedCandidate === "/app" && normalizedPath.startsWith("/app")) {
+      return link.url || link.href || null;
+    }
+
+    if (normalizedCandidate !== "/app" && normalizedPath.startsWith(normalizedCandidate)) {
+      return link.url || link.href || null;
+    }
+  }
+
+  return null;
+}
+
 export const NAV_ITEMS = [
   { to: "/app", label: "Dashboard", kicker: "overview", icon: LayoutDashboard },
   { to: "/app/meta", label: "WhatsApp Setup", kicker: "credentials", icon: Key },
