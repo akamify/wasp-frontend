@@ -255,6 +255,10 @@ export function buildApiGroupSecondary(api, unwrap, API_BASE_URL) {
         api
           .post("/integrations/whatsapp/connection/refresh-metadata")
           .then(unwrap),
+      completePhoneRegistration: (payload) =>
+        api
+          .post("/integrations/whatsapp/connection/complete-registration", payload)
+          .then(unwrap),
       disconnect: () =>
         api.post("/integrations/whatsapp/disconnect").then(unwrap),
       updateProfile: (payload) =>

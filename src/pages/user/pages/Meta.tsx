@@ -56,6 +56,7 @@ export default function MetaConnectPage() {
   >([]);
   const [embeddedConnection, setEmbeddedConnection] = useState<any>(null);
   const [profileImageBroken, setProfileImageBroken] = useState(false);
+  const [registrationPin, setRegistrationPin] = useState("");
   const authCodeRef = useRef<string | null>(null);
 
   const signupDetailsRef = useRef<{
@@ -87,15 +88,44 @@ export default function MetaConnectPage() {
   }, []);
 
   const statusLabel = useMemo(() => {
+    const lifecycleState = String(
+      embeddedConnection?.lifecycleState || embeddedConnection?.onboardingStage || "",
+    );
+    const connectionStatus = String(embeddedConnection?.connectionStatus || "");
     if (metaStatus.status === "loading") return "Loading";
-    if (metaStatus.status === "active") return "Connected";
+    if (["READY", "READY_WITH_WARNINGS"].includes(lifecycleState)) return "Ready";
+    if (["METADATA_SYNCING", "TEMPLATE_SYNCING", "SYNC_WARNING"].includes(lifecycleState)) return "Syncing";
+    if (lifecycleState === "REGISTERING") return "Registering";
+    if (lifecycleState === "PIN_REQUIRED") return "PIN required";
+    if (connectionStatus === "READY") return "Ready";
+    if (connectionStatus === "SYNCING") return "Syncing";
+    if (connectionStatus === "REGISTERING") return "Registering";
+    if (connectionStatus === "REGISTERED") return "Registered";
+    if (connectionStatus === "PENDING_REGISTRATION") return "Pending registration";
+    if (connectionStatus === "FAILED") return "Failed";
+    if (metaStatus.status === "active") return "Active";
     if (metaStatus.status === "pending") return "Pending";
     return "Disconnected";
-  }, [metaStatus.status]);
+  }, [embeddedConnection?.connectionStatus, embeddedConnection?.lifecycleState, embeddedConnection?.onboardingStage, metaStatus.status]);
+  const lifecycleState = String(
+    embeddedConnection?.lifecycleState || embeddedConnection?.onboardingStage || "",
+  );
   const isConnected =
-    embeddedConnection?.connected === true ||
-    metaStatus.status === "active" ||
-    metaStatus.status === "pending";
+    embeddedConnection?.connected === true &&
+    ["READY", "READY_WITH_WARNINGS"].includes(lifecycleState);
+  const needsRegistration =
+    ["PIN_REQUIRED", "REGISTERING", "PHONE_REGISTERED", "METADATA_SYNCING", "TEMPLATE_SYNCING", "SYNC_WARNING", "FAILED"].includes(
+      lifecycleState,
+    ) || ["PENDING_REGISTRATION", "REGISTERING", "REGISTERED", "SYNCING", "FAILED"].includes(
+      String(embeddedConnection?.connectionStatus || ""),
+    ) || ["PIN_REQUIRED", "FAILED", "PENDING", "RETRYING"].includes(
+      String(embeddedConnection?.registrationStatus || ""),
+    );
+  const canCompleteRegistration =
+    embeddedBusy === false &&
+    ["PIN_REQUIRED", "FAILED", "PENDING", "RETRYING"].includes(
+      String(embeddedConnection?.registrationStatus || ""),
+    );
   const isStatusLoading = syncing || embeddedBusy;
 
   const loadStatus = useCallback(async () => {
@@ -134,12 +164,27 @@ export default function MetaConnectPage() {
         connectionRes?.connected === false;
 
       if (connectionResult.status === "fulfilled") {
-        if (connectionConfirmed || statusFromConnection === "active") {
+        const lifecycleState = String(
+          connectionRes?.lifecycleState || connectionRes?.onboardingStage || "",
+        );
+        if (
+          connectionConfirmed ||
+          (statusFromConnection === "active" &&
+            ["READY", "READY_WITH_WARNINGS"].includes(lifecycleState))
+        ) {
           setMetaStatus({
             status: "active",
             credentials: statusRes?.credentials || null,
           });
-        } else if (statusFromConnection === "pending") {
+        } else if (
+          statusFromConnection === "pending" ||
+            ["PIN_REQUIRED", "REGISTERING", "PHONE_REGISTERED", "METADATA_SYNCING", "TEMPLATE_SYNCING", "SYNC_WARNING", "FAILED"].includes(
+              lifecycleState,
+            ) ||
+            ["PENDING_REGISTRATION", "REGISTERING", "REGISTERED", "SYNCING", "FAILED"].includes(
+              String(connectionRes?.connectionStatus || ""),
+            )
+        ) {
           setMetaStatus({
             status: "pending",
             credentials: statusRes?.credentials || null,
@@ -240,6 +285,14 @@ export default function MetaConnectPage() {
             );
             signupActiveRef.current = false;
             clearMessageListener();
+            return;
+          }
+          if (result?.requiresPinSetup) {
+            clearApiGetCache();
+            toast("Meta connected. Complete phone registration to finish setup.", "warning");
+            signupActiveRef.current = false;
+            clearMessageListener();
+            await loadStatus();
             return;
           }
           await API.templates.refreshWhatsApp().catch((error: any) => {
@@ -409,6 +462,30 @@ export default function MetaConnectPage() {
     }
   }, [loadStatus, toast]);
 
+  const completePhoneRegistration = useCallback(async () => {
+    setEmbeddedBusy(true);
+    setEmbeddedError("");
+    const pinToSubmit = registrationPin;
+    setRegistrationPin("");
+    try {
+      const result = await API.meta.completePhoneRegistration({
+        pin: pinToSubmit,
+      });
+      clearApiGetCache();
+      setEmbeddedConnection(result?.connection || null);
+      toast("Phone registration completed", "success");
+      await loadStatus();
+    } catch (e: any) {
+      const message =
+        e?.response?.data?.message || "Phone registration failed";
+      setEmbeddedError(message);
+      toast(message, "error");
+      await loadStatus();
+    } finally {
+      setEmbeddedBusy(false);
+    }
+  }, [loadStatus, registrationPin, toast]);
+
   const refreshConnectionMetadata = useCallback(async () => {
     setSyncing(true);
     setEmbeddedError("");
@@ -439,22 +516,26 @@ export default function MetaConnectPage() {
   const connectionStatusMessage =
     embeddedConnection?.connectionStatus === "reauthorization_required"
       ? "Meta authorization expired or was revoked. Reconnect WhatsApp to restore live phone and profile metadata."
-      : embeddedConnection?.connectionStatus === "pending_verification"
-        ? "Phone connected, verification pending"
-        : embeddedConnection?.connectionStatus === "pending_display_name_review"
-          ? "Display name review pending"
-          : embeddedConnection?.connectionStatus === "metadata_partial"
-            ? "Metadata partially available from Meta"
-            : null;
+      : embeddedConnection?.connectionStatus === "PENDING_REGISTRATION"
+        ? "Meta account is linked, but the phone is not registered on Cloud API yet."
+        : embeddedConnection?.connectionStatus === "REGISTERING"
+          ? "Phone registration is in progress."
+          : embeddedConnection?.connectionStatus === "REGISTERED"
+            ? "Phone registration succeeded. Final sync is still running."
+            : embeddedConnection?.connectionStatus === "SYNCING"
+              ? "Phone registered. Syncing metadata and templates."
+              : embeddedConnection?.connectionStatus === "FAILED"
+                ? "Setup failed before the workspace became ready."
+                : embeddedConnection?.connectionStatus === "pending_verification"
+                  ? "Phone connected, verification pending"
+                  : embeddedConnection?.connectionStatus === "pending_display_name_review"
+                    ? "Display name review pending"
+                    : embeddedConnection?.connectionStatus === "metadata_partial"
+                      ? "Metadata partially available from Meta"
+          : null;
   const registrationWarning =
-    embeddedConnection?.connected &&
-    (["pending_verification", "metadata_partial"].includes(
-      String(embeddedConnection?.connectionStatus || ""),
-    ) ||
-      (embeddedConnection?.codeVerificationStatus &&
-        String(embeddedConnection.codeVerificationStatus).toUpperCase() !==
-          "VERIFIED"))
-      ? "Cloud API registration may still be required before sending messages"
+    needsRegistration
+      ? "Do not treat this number as connected until registration reaches READY."
       : null;
   const businessProfile = embeddedConnection?.businessProfile || {};
   const authorizationRequired =
@@ -473,54 +554,67 @@ export default function MetaConnectPage() {
         ? embeddedConnection.metadataWarnings.length
         : 0,
     );
+  const progressSteps = Array.isArray(embeddedConnection?.registrationProgress?.steps)
+    ? embeddedConnection.registrationProgress.steps
+    : [];
   const setupSteps = [
     {
+      key: "CONNECT_META",
       title: "Connect Meta",
       description: "Link your WhatsApp Business Account",
       icon: <PlugZap size={17} />,
-      state: isConnected ? "complete" : "current",
     },
     {
-      title: "Business profile",
-      description: "Review customer-facing information",
+      key: "SELECT_BUSINESS",
+      title: "Select business",
+      description: "Confirm the shared WABA for this workspace",
       icon: <Building2 size={17} />,
-      state:
-        businessProfile?.about || businessProfile?.profilePictureUrl
-          ? "complete"
-          : isConnected
-            ? "current"
-            : "locked",
     },
     {
-      title: "Phone readiness",
-      description: "Confirm number and verification status",
+      key: "VERIFY_PHONE",
+      title: "Verify phone",
+      description: "Confirm the sending number from Meta",
       icon: <Phone size={17} />,
-      state:
-        String(
-          embeddedConnection?.codeVerificationStatus || "",
-        ).toUpperCase() === "VERIFIED"
-          ? "complete"
-          : isConnected
-            ? "current"
-            : "locked",
     },
     {
-      title: "Messaging tools",
-      description: "Templates, automation and campaigns",
-      icon: <Workflow size={17} />,
-      state:
-        isConnected && warningCount === 0
-          ? "complete"
-          : isConnected
-            ? "current"
-            : "locked",
+      key: "REGISTER_PHONE",
+      title: "Register phone",
+      description: "Complete Cloud API registration with your PIN",
+      icon: <ShieldCheck size={17} />,
     },
-  ] as const;
+    {
+      key: "SYNC_METADATA",
+      title: "Sync metadata",
+      description: "Fetch profile, limits, quality and status",
+      icon: <Activity size={17} />,
+    },
+    {
+      key: "SYNC_TEMPLATES",
+      title: "Sync templates",
+      description: "Refresh approved templates for the active WABA",
+      icon: <Workflow size={17} />,
+    },
+    {
+      key: "READY",
+      title: "Ready",
+      description: "Messaging, automation and reporting are available",
+      icon: <CheckCircle2 size={17} />,
+    },
+  ].map((step) => ({
+    ...step,
+    state:
+      progressSteps.find((item: any) => item?.key === step.key)?.state ||
+      (step.key === "CONNECT_META" && !embeddedConnection
+        ? "current"
+        : "locked"),
+  }));
 
   const completedSteps = setupSteps.filter(
     (step) => step.state === "complete",
   ).length;
-  const setupProgress = Math.round((completedSteps / setupSteps.length) * 100);
+  const setupProgress =
+    Number(embeddedConnection?.registrationProgress?.percent) ||
+    Math.round((completedSteps / setupSteps.length) * 100);
 
   return (
     <div className="min-h-screen bg-[radial-gradient(circle_at_top_left,rgba(16,185,129,0.08),transparent_26%),linear-gradient(180deg,#f8fafc_0%,#f3f6fb_42%,#eef2f7_100%)] px-2 py-2 text-slate-900 sm:px-2 lg:px-2 lg:py-2">
@@ -694,7 +788,46 @@ export default function MetaConnectPage() {
                       )}
                     </Button>
 
-                    {authorizationRequired ? (
+                    {needsRegistration ? (
+                      <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+                        <input
+                          value={registrationPin}
+                          onChange={(event) =>
+                            setRegistrationPin(
+                              String(event.target.value || "")
+                                .replace(/\D/g, "")
+                                .slice(0, 6),
+                            )
+                          }
+                          inputMode="numeric"
+                          maxLength={6}
+                          type="password"
+                          placeholder="6-digit PIN"
+                          className="h-12 min-w-[170px] rounded-xl border border-white/25 bg-white/10 px-4 text-sm font-bold text-white placeholder:text-white/60 focus:border-white/60 focus:outline-none"
+                        />
+                        <Button
+                          type="button"
+                          variant="outline"
+                          className={cn(
+                            "h-12 min-w-[180px] justify-center gap-2 rounded-xl px-5 font-black",
+                            "!border-amber-300 !bg-amber-300 !text-amber-950",
+                            "transition-all duration-200 hover:-translate-y-0.5",
+                            "hover:!border-amber-200 hover:!bg-amber-200 active:translate-y-0",
+                            "disabled:pointer-events-none disabled:opacity-60",
+                            "[&_svg]:!text-amber-950",
+                          )}
+                          onClick={() => void completePhoneRegistration()}
+                          disabled={!canCompleteRegistration || registrationPin.length !== 6}
+                        >
+                          <ShieldCheck size={16} />
+                          <span>
+                            {String(embeddedConnection?.registrationStatus || "") === "FAILED"
+                              ? "Retry registration"
+                              : "Register phone"}
+                          </span>
+                        </Button>
+                      </div>
+                    ) : authorizationRequired ? (
                       <Button
                         type="button"
                         variant="outline"
