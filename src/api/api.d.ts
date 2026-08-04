@@ -337,6 +337,7 @@ export const API: {
     connection(): Promise<any>;
     refreshConnectionMetadata(): Promise<any>;
     completePhoneRegistration(payload: any): Promise<any>;
+    changePhonePin(payload: any): Promise<any>;
     disconnect(): Promise<any>;
     updateProfile(payload: any): Promise<any>;
     uploadProfilePicture(file: any): Promise<any>;

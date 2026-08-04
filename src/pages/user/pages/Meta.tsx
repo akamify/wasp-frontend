@@ -58,6 +58,8 @@ export default function MetaConnectPage() {
   const [profileImageBroken, setProfileImageBroken] = useState(false);
   const [registrationPin, setRegistrationPin] = useState("");
   const [pinModalOpen, setPinModalOpen] = useState(false);
+  const [pinEntryMode, setPinEntryMode] = useState<"new" | "existing">("new");
+  const [showPinRecoveryHelp, setShowPinRecoveryHelp] = useState(false);
   const [diagnostics, setDiagnostics] = useState<any>(null);
   const [diagnosticsLoading, setDiagnosticsLoading] = useState(false);
   const authCodeRef = useRef<string | null>(null);
@@ -129,6 +131,13 @@ export default function MetaConnectPage() {
     ["PIN_REQUIRED", "FAILED", "PENDING", "RETRYING"].includes(
       String(embeddedConnection?.registrationStatus || ""),
     );
+  const suggestedPinMode =
+    Number(embeddedConnection?.registrationRetryCount || 0) > 0 ||
+    ["FAILED", "RETRYING"].includes(
+      String(embeddedConnection?.registrationStatus || ""),
+    )
+      ? "existing"
+      : "new";
   const isStatusLoading = syncing || embeddedBusy;
 
   const loadStatus = useCallback(async () => {
@@ -246,6 +255,12 @@ export default function MetaConnectPage() {
       setPinModalOpen(false);
     }
   }, [embeddedConnection?.lifecycleState, embeddedConnection?.onboardingStage]);
+
+  useEffect(() => {
+    if (!pinModalOpen) return;
+    setPinEntryMode(suggestedPinMode);
+    setShowPinRecoveryHelp(false);
+  }, [pinModalOpen, suggestedPinMode]);
 
   const connectWhatsApp = useCallback(async () => {
     setEmbeddedBusy(true);
@@ -498,6 +513,30 @@ export default function MetaConnectPage() {
       setEmbeddedError(message);
       toast(message, "error");
       await loadStatus();
+    } finally {
+      setEmbeddedBusy(false);
+    }
+  }, [loadStatus, registrationPin, toast]);
+
+  const changePhonePin = useCallback(async () => {
+    setEmbeddedBusy(true);
+    setEmbeddedError("");
+    try {
+      const result = await API.meta.changePhonePin({
+        pin: registrationPin,
+      });
+      clearApiGetCache();
+      setEmbeddedConnection(result?.connection || null);
+      toast(
+        "PIN changed in Meta. Use the same PIN to finish registration.",
+        "success",
+      );
+      await loadStatus();
+    } catch (e: any) {
+      const message =
+        e?.response?.data?.message || "Failed to change WhatsApp PIN";
+      setEmbeddedError(message);
+      toast(message, "error");
     } finally {
       setEmbeddedBusy(false);
     }
@@ -1415,48 +1454,125 @@ export default function MetaConnectPage() {
         </div>
       </div>
       {pinModalOpen ? (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/55 px-4 backdrop-blur-sm">
-          <div className="w-full max-w-lg rounded-[24px] border border-slate-200 bg-white p-6 shadow-[0_30px_90px_-35px_rgba(15,23,42,0.45)]">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/55 px-4 py-6 backdrop-blur-sm">
+          <div className="w-full max-w-2xl max-h-[92vh] overflow-y-auto rounded-[28px] border border-slate-200 bg-white p-6 shadow-[0_30px_90px_-35px_rgba(15,23,42,0.45)] sm:p-7">
             <div className="flex items-start justify-between gap-4">
-              <div>
-                <p className="text-[11px] font-black uppercase tracking-[0.2em] text-slate-400">Registration PIN</p>
-                <h3 className="mt-2 text-2xl font-black tracking-tight text-slate-950">Finish WhatsApp phone registration</h3>
+              <div className="max-w-xl">
+                <p className="text-[11px] font-black uppercase tracking-[0.2em] text-slate-400">WhatsApp Security PIN</p>
+                <h3 className="mt-2 text-[30px] font-black tracking-tight text-slate-950">Secure and register this phone</h3>
                 <p className="mt-2 text-sm font-medium leading-6 text-slate-500">
-                  Meta requires a 6-digit registration PIN before this phone can be activated on Cloud API. Use the existing PIN if this number already had two-step verification enabled. Otherwise choose a new 6-digit PIN for this phone.
+                  Meta requires a 6-digit two-step verification PIN before this phone can be activated on Cloud API. This PIN protects the number and may be needed again if the phone is re-registered later.
                 </p>
               </div>
               <button
                 type="button"
                 onClick={() => setPinModalOpen(false)}
-                className="rounded-full border border-slate-200 px-3 py-1 text-xs font-black text-slate-500 transition hover:border-slate-300 hover:text-slate-700"
+                className="shrink-0 rounded-full border border-slate-200 px-3 py-1 text-xs font-black text-slate-500 transition hover:border-slate-300 hover:text-slate-700"
               >
                 Close
+              </button>
+            </div>
+            <div className="mt-5 grid gap-3 rounded-[22px] border border-slate-200 bg-slate-50/80 p-3 sm:grid-cols-2">
+              <button
+                type="button"
+                onClick={() => setPinEntryMode("new")}
+                className={cn(
+                  "rounded-[18px] border px-4 py-4 text-left transition",
+                  pinEntryMode === "new"
+                    ? "border-emerald-300 bg-emerald-50 shadow-sm"
+                    : "border-slate-200 bg-white hover:border-slate-300",
+                )}
+              >
+                <p className="text-xs font-black uppercase tracking-[0.18em] text-slate-400">First-time setup</p>
+                <p className="mt-2 text-base font-black text-slate-950">Set PIN</p>
+                <p className="mt-1 text-sm font-medium leading-5 text-slate-500">
+                  Choose a new 6-digit PIN for this phone and save it somewhere secure.
+                </p>
+              </button>
+              <button
+                type="button"
+                onClick={() => setPinEntryMode("existing")}
+                className={cn(
+                  "rounded-[18px] border px-4 py-4 text-left transition",
+                  pinEntryMode === "existing"
+                    ? "border-sky-300 bg-sky-50 shadow-sm"
+                    : "border-slate-200 bg-white hover:border-slate-300",
+                )}
+              >
+                <p className="text-xs font-black uppercase tracking-[0.18em] text-slate-400">Already secured</p>
+                <p className="mt-2 text-base font-black text-slate-950">Enter existing PIN</p>
+                <p className="mt-1 text-sm font-medium leading-5 text-slate-500">
+                  Use the same PIN if this number already had WhatsApp two-step verification enabled.
+                </p>
               </button>
             </div>
             <div className="mt-5 rounded-[18px] border border-amber-200 bg-amber-50 p-4 text-sm font-medium leading-6 text-amber-900">
               This step registers the phone number with WhatsApp Cloud API. Until it succeeds, the number may appear in Meta but will still remain pending for messaging.
             </div>
-            <div className="mt-5">
-              <label className="text-[11px] font-black uppercase tracking-[0.18em] text-slate-400">6-digit PIN</label>
-              <input
-                value={registrationPin}
-                onChange={(event) =>
-                  setRegistrationPin(
-                    String(event.target.value || "")
-                      .replace(/\D/g, "")
-                      .slice(0, 6),
-                  )
-                }
-                inputMode="numeric"
-                maxLength={6}
-                type="password"
-                autoFocus
-                placeholder="Enter 6-digit PIN"
-                className="mt-2 h-12 w-full rounded-xl border border-slate-200 bg-white px-4 text-sm font-bold text-slate-950 placeholder:text-slate-400 focus:border-emerald-400 focus:outline-none"
-              />
-              <p className="mt-2 text-xs font-medium text-slate-500">
-                PIN is masked, cleared after submit, and stored encrypted on the backend.
-              </p>
+            <div className="mt-5 grid gap-4 lg:grid-cols-[minmax(0,1fr)_260px]">
+              <div>
+                <label className="text-[11px] font-black uppercase tracking-[0.18em] text-slate-400">
+                  {pinEntryMode === "new" ? "Create 6-digit PIN" : "Enter 6-digit PIN"}
+                </label>
+                <input
+                  value={registrationPin}
+                  onChange={(event) =>
+                    setRegistrationPin(
+                      String(event.target.value || "")
+                        .replace(/\D/g, "")
+                        .slice(0, 6),
+                    )
+                  }
+                  inputMode="numeric"
+                  maxLength={6}
+                  type="password"
+                  autoFocus
+                  placeholder={pinEntryMode === "new" ? "Create 6-digit PIN" : "Enter existing 6-digit PIN"}
+                  className="mt-2 h-12 w-full rounded-xl border border-slate-200 bg-white px-4 text-sm font-bold text-slate-950 placeholder:text-slate-400 focus:border-emerald-400 focus:outline-none"
+                />
+                <p className="mt-2 text-xs font-medium text-slate-500">
+                  {pinEntryMode === "new"
+                    ? "Create a PIN you can remember. We mask it, clear it after submit, and store it encrypted on the backend."
+                    : "Enter the PIN already linked to this phone. We mask it, clear it after submit, and store it encrypted on the backend."}
+                </p>
+              </div>
+              <div className="rounded-[18px] border border-slate-200 bg-white p-4">
+                <p className="text-[11px] font-black uppercase tracking-[0.18em] text-slate-400">Keep it safe</p>
+                <ul className="mt-3 space-y-2 text-sm font-medium leading-5 text-slate-600">
+                  <li>Use 6 digits that the business owner can safely access later.</li>
+                  <li>Meta may ask for this PIN again during re-registration or number updates.</li>
+                  <li>We never show the existing PIN back in plain text.</li>
+                </ul>
+              </div>
+            </div>
+            <div className="mt-5 rounded-[18px] border border-slate-200 bg-slate-50/70 p-4">
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                <div>
+                  <p className="text-sm font-black text-slate-950">Forgot PIN / Change PIN</p>
+                  <p className="mt-1 text-xs font-medium leading-5 text-slate-500">
+                    We cannot reveal the old PIN. If the business forgot it, change the Meta two-step verification PIN before retrying registration.
+                  </p>
+                </div>
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="h-10 rounded-xl border-slate-200 bg-white px-4 text-xs font-black text-slate-700"
+                  onClick={() => setShowPinRecoveryHelp((current) => !current)}
+                >
+                  {showPinRecoveryHelp ? "Hide guidance" : "Show guidance"}
+                </Button>
+              </div>
+              {showPinRecoveryHelp ? (
+                <div className="mt-4 rounded-2xl border border-slate-200 bg-white p-4 text-sm font-medium leading-6 text-slate-600">
+                  <p className="font-black text-slate-950">If the customer forgot the PIN:</p>
+                  <p className="mt-2">1. Open the WhatsApp number in Meta-managed settings.</p>
+                  <p>2. Change the two-step verification PIN using Meta&apos;s documented PIN change flow.</p>
+                  <p>3. Return here and enter the new PIN to finish registration.</p>
+                  <p className="mt-3 text-xs text-slate-500">
+                    For security reasons, the existing PIN cannot be displayed back to the user.
+                  </p>
+                </div>
+              ) : null}
             </div>
             <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:justify-end">
               <Button
@@ -1468,13 +1584,28 @@ export default function MetaConnectPage() {
               >
                 Not now
               </Button>
+              {pinEntryMode === "existing" || showPinRecoveryHelp ? (
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="h-11 rounded-xl border-slate-200 bg-white px-4 font-black text-slate-700"
+                  onClick={() => void changePhonePin()}
+                  disabled={embeddedBusy || registrationPin.length !== 6}
+                >
+                  {embeddedBusy ? "Updating..." : "Change PIN in Meta"}
+                </Button>
+              ) : null}
               <Button
                 type="button"
                 className="h-11 rounded-xl px-5 font-black"
                 onClick={() => void completePhoneRegistration()}
                 disabled={!canCompleteRegistration || registrationPin.length !== 6}
               >
-                {embeddedBusy ? "Registering..." : "Register phone"}
+                {embeddedBusy
+                  ? "Registering..."
+                  : pinEntryMode === "new"
+                    ? "Set PIN and register"
+                    : "Verify PIN and register"}
               </Button>
             </div>
           </div>
