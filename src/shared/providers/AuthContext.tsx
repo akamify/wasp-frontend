@@ -182,7 +182,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const register = useCallback(async (email: string, password: string, name?: string) => {
     const res = await API.auth.register({ email, password, name });
-    if (res?.token) {
+    if (res?.token && !res?.requiresOtp) {
       setToken(res.token);
       if (res?.workspace?.id) setWorkspaceId(res.workspace.id);
       try {

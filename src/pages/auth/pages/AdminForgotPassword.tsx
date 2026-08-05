@@ -18,7 +18,7 @@ export default function AdminForgotPasswordPage() {
     setError(null);
     setMessage(null);
     try {
-      const res = await API.auth.adminForgotPassword({ email });
+      const res = await API.auth.forgotPassword({ email });
       setMessage(res?.message || "If the email is valid, a reset link has been sent.");
     } catch (err: any) {
       setError(err?.response?.data?.message || "Failed to request admin password reset");
@@ -32,7 +32,7 @@ export default function AdminForgotPasswordPage() {
       <Card className="w-full max-w-md p-6">
         <div className="text-xs font-semibold text-ink-800/60">Admin recovery</div>
         <h1 className="mt-1 text-2xl font-black tracking-tight">Forgot admin password</h1>
-        <p className="mt-2 text-sm text-ink-800/70">Enter the configured admin email. We will send a reset link.</p>
+        <p className="mt-2 text-sm text-ink-800/70">Enter your admin email. We will send a reset link if the account exists.</p>
 
         <form className="mt-6 grid gap-3" onSubmit={onSubmit}>
           {error ? <Alert>{error}</Alert> : null}

@@ -124,8 +124,8 @@ export const UNLIMITED_ALLOWED_LIMITS = new Set([
   "maxFlows",
 ]);
 
-export type FeatureRow = { label: string; type: "page" | "text"; pageAccessKey: string; targetType: "functionality" | "limit" | ""; functionalityKey: string; limitKey: string; value: string; included: boolean; sortOrder: number; unlimited: boolean };
-export const createRow = (): FeatureRow => ({ label: "", type: "text", pageAccessKey: "", targetType: "", functionalityKey: "", limitKey: "", value: "", included: true, sortOrder: 0, unlimited: false });
+export type FeatureRow = { label: string; type: "functionality" | "limit" | "text"; functionalityKey: string; limitKey: string; value: string; included: boolean; sortOrder: number; unlimited: boolean };
+export const createRow = (): FeatureRow => ({ label: "", type: "text", functionalityKey: "", limitKey: "", value: "", included: true, sortOrder: 0, unlimited: false });
 export const defaultFeatures = () => Object.fromEntries(FUNCTIONALITY_KEYS.map((key) => [key, false]));
 export const defaultLimits = () => Object.fromEntries(LIMIT_KEYS.map((key) => [key, "0"]));
 export const defaultUnlimitedLimits = () => Object.fromEntries(LIMIT_KEYS.map((key) => [key, false]));

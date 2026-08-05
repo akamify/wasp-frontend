@@ -9,7 +9,7 @@ export default function AdminSubscriptionPlansPage() {
   if (!state.isSuperAdmin) return <div className="p-4 md:p-8"><Alert variant="danger">Only super admin can access plan management.</Alert></div>;
   if (state.loading) return <div className="p-4 md:p-8"><TableSkeleton cols={10} rows={8} /></div>;
   if (state.isCreate || state.isEdit || state.isReview || state.isView) {
-    return <EditorView {...state} isFreePlan={false} />;
+    return <EditorView {...state} isFreePlan={state.isFreePlan} />;
   }
   return <ListView {...state} />;
 }

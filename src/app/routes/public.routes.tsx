@@ -4,6 +4,7 @@ import LoginPage from "@pages/auth/pages/Login";
 import RegisterPage from "@pages/auth/pages/Register";
 import ForgotPasswordPage from "@pages/auth/pages/ForgotPassword";
 import ResetPasswordPage from "@pages/auth/pages/ResetPassword";
+import AdminLoginPage from "@pages/auth/pages/AdminLogin";
 import AdminForgotPasswordPage from "@pages/auth/pages/AdminForgotPassword";
 import AdminResetPasswordPage from "@pages/auth/pages/AdminResetPassword";
 import NotFoundPage from "@pages/NotFound";
@@ -42,7 +43,7 @@ export function publicRoutes() {
       <Route path="/register" element={<RegisterPage />} />
       <Route path="/forgot-password" element={<ForgotPasswordPage />} />
       <Route path="/reset-password" element={<ResetPasswordPage />} />
-      <Route path="/admin/login" element={<LoginPage />} />
+      <Route path="/admin/login" element={<AdminLoginPage />} />
       <Route path="/admin/forgot-password" element={<AdminForgotPasswordPage />} />
       <Route path="/admin/reset-password" element={<AdminResetPasswordPage />} />
       <Route path="/employee/login" element={<EmployeeLoginPage />} />

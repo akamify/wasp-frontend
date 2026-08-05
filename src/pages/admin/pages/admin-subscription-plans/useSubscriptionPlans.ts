@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
 import { API } from "@api/api";
 import { useAuth } from "@shared/providers/AuthContext";
-import { arrayToLines, defaultFeatures, defaultLimits, defaultUnlimitedLimits, linesToArray, PAGE_ACCESS_OPTIONS, PAGE_BINDING } from "./shared";
+import { arrayToLines, defaultFeatures, defaultLimits, defaultUnlimitedLimits, FUNCTIONALITY_KEYS, LIMIT_KEYS, linesToArray } from "./shared";
 import type { FeatureRow } from "./shared";
 
 const limitKeys = Object.keys(defaultLimits());
@@ -48,9 +48,7 @@ const initialEditor = () => ({
 function normalizeRows(item: any): FeatureRow[] {
   return Array.isArray(item?.featureRows) ? item.featureRows.map((r: any) => ({
     label: r.label || "",
-    type: r.type === "text" ? "text" : "page",
-    pageAccessKey: PAGE_ACCESS_OPTIONS.includes(String(r.functionalityKey || "")) ? String(r.functionalityKey || "") : "",
-    targetType: r.type === "limit" ? "limit" : r.type === "functionality" ? "functionality" : "",
+    type: r.type === "limit" ? "limit" : r.type === "functionality" ? "functionality" : "text",
     functionalityKey: r.functionalityKey || "",
     value: r.value == null ? "" : String(r.value),
     included: r.included !== false,
@@ -73,6 +71,27 @@ function serializeLimits(source: Record<string, any>, unlimited: Record<string, 
   return Object.fromEntries(
     Object.entries(source || {}).map(([key, value]) => [key, unlimited?.[key] ? null : toNumberOrZero(value)])
   );
+}
+
+function serializeFeatureRows(rows: FeatureRow[] = []) {
+  return rows
+    .map((row, index) => {
+      const label = String(row?.label || "").trim();
+      const type = String(row?.type || "text");
+      if (!label) return null;
+      if (type === "functionality") {
+        const functionalityKey = String(row?.functionalityKey || "").trim();
+        if (!FUNCTIONALITY_KEYS.includes(functionalityKey as any)) return null;
+        return { label, type: "functionality", functionalityKey, limitKey: "", value: null, included: row?.included !== false, sortOrder: Number(row?.sortOrder ?? index) };
+      }
+      if (type === "limit") {
+        const limitKey = String(row?.limitKey || "").trim();
+        if (!LIMIT_KEYS.includes(limitKey as any)) return null;
+        return { label, type: "limit", functionalityKey: "", limitKey, value: row?.unlimited ? null : toNumberOrZero(row?.value), included: row?.included !== false, sortOrder: Number(row?.sortOrder ?? index) };
+      }
+      return { label, type: "text", functionalityKey: "", limitKey: "", value: null, included: row?.included !== false, sortOrder: Number(row?.sortOrder ?? index) };
+    })
+    .filter(Boolean);
 }
 
 export function useSubscriptionPlansState() {
@@ -110,6 +129,7 @@ export function useSubscriptionPlansState() {
     const [planRes, settingsRes] = await Promise.all([API.superAdmin.billingPlanGet(id), API.superAdmin.billingSettingsGet()]);
     const item = planRes?.data?.item || planRes?.item;
     if (!item) throw new Error("Plan not found");
+    const isFreePlan = String(item?.id || "") === "free-plan" || String(item?.slug || "").toLowerCase() === "free";
     const s = settingsRes?.data?.item || settingsRes?.item || {};
     setSettings({ defaultGstPercent: Number(s?.defaultGstPercent || 18), taxMode: s?.taxMode || "exclusive" });
     const features = { ...defaultFeatures(), ...(item.features || {}) };
@@ -144,7 +164,7 @@ export function useSubscriptionPlansState() {
       unavailableFeaturesText: arrayToLines(item?.unavailableFeatures),
       addonServicesText: arrayToLines(item?.addonServices),
       featureRows: normalizeRows(item),
-      isFreePlan: false,
+      isFreePlan,
       freeLimits: {
         maxContacts: toLimitInputValue(item?.limits?.maxContacts),
         maxTemplates: toLimitInputValue(item?.limits?.maxTemplates),
@@ -195,13 +215,17 @@ export function useSubscriptionPlansState() {
         limits: serializeLimits(editor.limits || {}, editor.unlimitedLimits || {}),
         displayFeatures: linesToArray(editor.displayFeaturesText),
         unavailableFeatures: linesToArray(editor.unavailableFeaturesText),
-        featureRows: editor.featureRows || [],
+        featureRows: serializeFeatureRows(editor.featureRows || []),
         recommended: !!editor.recommended,
         sortOrder: Number(editor.sortOrder || 1),
         reviewNote: editor.reviewNote,
       };
       if (addonServices.length) payload.addonServices = addonServices;
-      if (editor.id) await API.superAdmin.billingPlanUpdate(editor.id, payload); else await API.superAdmin.billingPlanCreate(payload);
+      if (editor.id) {
+        await API.superAdmin.billingPlanUpdate(editor.id, payload);
+      } else {
+        await API.superAdmin.billingPlanCreate(payload);
+      }
       navigate("/super-admin/subscription-plans", { replace: true });
     } catch (e: any) {
       setError(e?.userMessage || e?.response?.data?.message || e?.message || "Save failed");
@@ -214,7 +238,7 @@ export function useSubscriptionPlansState() {
   const confirmAndRunAction = async () => { if (!confirmAction) return; const payload = confirmAction; setConfirmAction(null); await triggerAction(payload.id, payload.action); };
   const summary = useMemo(() => { const m = new Map<string, number>(); items.forEach((i) => m.set(i.status, (m.get(i.status) || 0) + 1)); return Array.from(m.entries()); }, [items]);
   const uniqueFeatureRows: FeatureRow[] = useMemo(() => [], []);
-  const availableFunctionalityKeys = (currentIndex: number, pageAccessKey: string) => { const allowed = PAGE_BINDING[pageAccessKey]?.functionality || []; const used = new Set((editor.featureRows || []).map((r: FeatureRow, i: number) => (i === currentIndex || r.targetType !== "functionality" ? "" : String(r.functionalityKey || "").trim())).filter(Boolean)); return allowed.filter((k) => !used.has(k)); };
-  const availableLimitKeys = (currentIndex: number, pageAccessKey: string) => { const allowed = PAGE_BINDING[pageAccessKey]?.limits || []; const used = new Set((editor.featureRows || []).map((r: FeatureRow, i: number) => (i === currentIndex || r.targetType !== "limit" ? "" : String(r.limitKey || "").trim())).filter(Boolean)); return allowed.filter((k) => !used.has(k)); };
-  return { isSuperAdmin, navigate, isCreate, isEdit, isReview, isView, isEditorMode, items, query, setQuery, statusFilter, setStatusFilter, loading, saving, error, settings, preview, confirmAction, setConfirmAction, editor, setEditor, loadList, saveEditor, summary, uniqueFeatureRows, availableFunctionalityKeys, availableLimitKeys, confirmAndRunAction };
+  const availableFunctionalityKeys = (currentIndex: number) => { const used = new Set((editor.featureRows || []).map((r: FeatureRow, i: number) => (i === currentIndex || r.type !== "functionality" ? "" : String(r.functionalityKey || "").trim())).filter(Boolean)); return FUNCTIONALITY_KEYS.filter((k) => !used.has(k)); };
+  const availableLimitKeys = (currentIndex: number) => { const used = new Set((editor.featureRows || []).map((r: FeatureRow, i: number) => (i === currentIndex || r.type !== "limit" ? "" : String(r.limitKey || "").trim())).filter(Boolean)); return LIMIT_KEYS.filter((k) => !used.has(k)); };
+  return { isSuperAdmin, navigate, isCreate, isEdit, isReview, isView, isEditorMode, items, query, setQuery, statusFilter, setStatusFilter, loading, saving, error, settings, preview, confirmAction, setConfirmAction, editor, setEditor, loadList, saveEditor, summary, uniqueFeatureRows, availableFunctionalityKeys, availableLimitKeys, confirmAndRunAction, isFreePlan: !!editor.isFreePlan };
 }

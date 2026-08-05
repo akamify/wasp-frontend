@@ -3,6 +3,7 @@ import { Button } from "@components/ui/Button";
 import { Input } from "@components/ui/Input";
 import { Textarea } from "@components/ui/Textarea";
 import { SuperAdminPlanPreviewCard } from "@pages/admin/components/SuperAdminPlanPreviewCard";
+import { FeatureRowsBuilder } from "./FeatureRowsBuilder";
 import { useState } from "react";
 import { Info, Plus, Trash2, X } from "lucide-react";
 import { BADGE_TYPES, BILLING_CYCLES, CARD_COLORS, FEATURE_GROUPS, inr, LIMIT_GROUPS, LIMIT_HELP, PLAN_OPTIONS, PLAN_STATUSES, statusColor, TAX_MODES, UNLIMITED_ALLOWED_LIMITS } from "./shared";
@@ -160,21 +161,49 @@ export function EditorView(props: any) {
             </div>
           </Section> : null}
 
-          {!isFreePlan ? <Section title="Features" subtitle="Boolean access flags grouped by product area. Backend uses these as source of truth.">
+          <Section title={isFreePlan ? "Free Plan Features" : "Features"} subtitle="Boolean access flags grouped by product area. Backend uses these as source of truth.">
             <div className="grid grid-cols-1 gap-4 xl:grid-cols-2">{FEATURE_GROUPS.map((group) => <div key={group.title} className="rounded-[5px] border border-slate-200 p-3"><div className="mb-2 text-xs font-black uppercase tracking-wide text-slate-500">{group.title}</div><div className="grid grid-cols-1 gap-2">{group.items.map(([key, label]) => <Toggle key={key} label={label} checked={editor.features?.[key]} onChange={(value: boolean) => setFeature(key, value)} disabled={readOnly} />)}</div></div>)}</div>
-          </Section> : null}
+          </Section>
 
           <Section title={isFreePlan ? "Free Plan Limits" : "Limits"} subtitle="Use numeric caps for controlled plans. Turn on Unlimited to save `null` and keep backend enforcement aligned.">
               <div className="grid grid-cols-1 gap-4 xl:grid-cols-2">{LIMIT_GROUPS.map((group) => <div key={group.title} className="rounded-[5px] border border-slate-200 p-3"><div className="mb-3 text-xs font-black uppercase tracking-wide text-slate-500">{group.title}</div><div className="grid grid-cols-1 gap-3 md:grid-cols-2">{group.items.map(([key, label]) => <LimitInput key={key} label={label} help={LIMIT_HELP[key]} value={String(limitSource?.[key] ?? "")} unlimited={Boolean(unlimitedSource?.[key])} allowUnlimited={UNLIMITED_ALLOWED_LIMITS.has(key)} onToggleUnlimited={(value) => isFreePlan ? setFreeUnlimitedLimit(key, value) : setUnlimitedLimit(key, value)} onChange={(value) => isFreePlan ? setFreeLimit(key, value) : setLimit(key, value)} disabled={readOnly} />)}</div></div>)}</div>
             </Section>
 
-          {!isFreePlan ? <Section title="Display Features" subtitle="Add each pricing-card line one by one. These are marketing display lines, separate from backend feature flags.">
+          <Section title={isFreePlan ? "Display Features" : "Display Features"} subtitle="Add each pricing-card line one by one. These are marketing display lines, separate from backend feature flags.">
             <div className="grid grid-cols-1 gap-4 md:grid-cols-2"><DisplayFeatureEditor title="Included Features" subtitle="Shown with check icon on pricing card." value={editor.displayFeaturesText} onChange={(value: string) => setEditor((s: any) => ({ ...s, displayFeaturesText: value }))} placeholder="e.g. Campaign Scheduler" disabled={readOnly} /><DisplayFeatureEditor title="Not Included" subtitle="Shown as unavailable/disabled on pricing card." value={editor.unavailableFeaturesText} onChange={(value: string) => setEditor((s: any) => ({ ...s, unavailableFeaturesText: value }))} placeholder="e.g. Number Masking" disabled={readOnly} /></div>
-          </Section> : null}
+          </Section>
 
-          {!isFreePlan ? <Section title="Add-on Services" subtitle="Optional services that can be sold or shown separately from included plan features.">
+          <Section title="Add-on Services" subtitle="Optional services that can be sold or shown separately from included plan features.">
             <DisplayFeatureEditor title="Add-on Services" subtitle="Shown as extra purchasable/support services in preview/pricing card." value={editor.addonServicesText} onChange={(value: string) => setEditor((s: any) => ({ ...s, addonServicesText: value }))} placeholder="e.g. Turbo onboarding support" disabled={readOnly} />
-          </Section> : null}
+          </Section>
+
+          <Section title="Feature Row Mapping" subtitle="Optional structured mapping between page access, functionality flags, and limits.">
+            <FeatureRowsBuilder
+              editor={editor}
+              setEditor={setEditor}
+              readOnly={readOnly}
+              isFreePlan={isFreePlan}
+              availableFunctionalityKeys={props.availableFunctionalityKeys}
+              availableLimitKeys={props.availableLimitKeys}
+            />
+            {!readOnly ? (
+              <div className="mt-3">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() =>
+                    setEditor((s: any) => ({
+                      ...s,
+                      featureRows: [...(Array.isArray(s.featureRows) ? s.featureRows : []), { label: "", type: "text", functionalityKey: "", limitKey: "", value: "", included: true, sortOrder: Number((s.featureRows || []).length || 0), unlimited: false }],
+                    }))
+                  }
+                  disabled={readOnly}
+                >
+                  <Plus size={16} /> Add Feature Row
+                </Button>
+              </div>
+            ) : null}
+          </Section>
 
           <Section title="Review">
             <Textarea label="Review Note" value={editor.reviewNote} onChange={(e) => setEditor((s: any) => ({ ...s, reviewNote: e.target.value }))} disabled={readOnly} />
