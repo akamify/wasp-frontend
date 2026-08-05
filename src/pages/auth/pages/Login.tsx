@@ -83,8 +83,7 @@ export default function LoginPage() {
     try {
       const res = await API.auth.verifyLoginOtp({ challengeToken, otp });
       const token = String(res?.token || "");
-      if (!token) throw new Error("Missing token");
-      setToken(token);
+      if (token) setToken(token);
       if (res?.workspace?.id) setWorkspaceId(res.workspace.id);
       const target = loginTarget(res?.user?.role);
       window.location.replace(target);

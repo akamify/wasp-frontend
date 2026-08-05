@@ -41,6 +41,7 @@ const isDev = Boolean(import.meta.env.DEV);
 export const api = axios.create({
   baseURL: API_BASE_URL,
   timeout: 20000,
+  withCredentials: true,
 });
 
 export const TOKEN_KEY = "aiwizchat_token";
@@ -49,6 +50,7 @@ export const AUTH_STORAGE_EVENT = "aiwizchat:auth-storage";
 const LEGACY_TOKEN_KEYS = ["waspakamify_token"];
 const LEGACY_WORKSPACE_KEYS = ["waspakamify_workspace_id"];
 let __workspaceResolvePromise = null;
+let __refreshPromise = null;
 
 // Coalesce duplicate GET requests and add a tiny cache window to prevent
 // UI-driven bursts from hammering the backend (and triggering rate limits).
@@ -275,9 +277,36 @@ api.interceptors.request.use((config) => {
 
 api.interceptors.response.use(
   (res) => res,
-  (err) => {
+  async (err) => {
     const status = err?.response?.status;
     const backendMessage = String(err?.response?.data?.message || "").trim();
+    const requestUrl = String(err?.config?.url || "");
+    const originalRequest = err?.config || {};
+    const isRefreshRequest = /\/auth\/refresh(?:$|[?#])/.test(requestUrl);
+    const isAuthBootstrapRequest = /\/auth\/me(?:$|[?#])/.test(requestUrl);
+    const isLoginFlowRequest = /\/auth\/(login|register|forgot-password|reset-password|login\/verify-otp|register\/verify-otp)(?:$|[?#])/.test(requestUrl);
+
+    if (status === 401 && !originalRequest.__isRetryRequest && !isRefreshRequest && !isLoginFlowRequest) {
+      try {
+        if (!__refreshPromise) {
+          __refreshPromise = api.post("/auth/refresh", {}, { __skipAuthRefresh: true }).then((res) => {
+            const token = String(res?.data?.token || "");
+            if (token) setToken(token);
+            return res?.data;
+          }).finally(() => {
+            __refreshPromise = null;
+          });
+        }
+        await __refreshPromise;
+        originalRequest.__isRetryRequest = true;
+        return api.request(originalRequest);
+      } catch {
+        if (!isAuthBootstrapRequest) {
+          setToken("");
+        }
+      }
+    }
+
     const fallbackByStatus = {
       400: "Invalid request. Please check input and try again.",
       401: "Session expired. Please login again.",
@@ -295,7 +324,7 @@ api.interceptors.response.use(
       ? backendMessage || err?.message || "Request failed"
       : backendMessage || fallbackByStatus[status] || "Request failed. Please try again.";
 
-    if (status === 401 && isAuthMeRequest(err?.config)) {
+    if (status === 401 && isAuthMeRequest(err?.config) && isRefreshRequest) {
       // If the token is invalid/expired, clear it so the UI can re-auth cleanly.
       setToken("");
     }

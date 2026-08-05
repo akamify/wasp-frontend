@@ -68,8 +68,7 @@ export default function AdminLoginPage() {
         return;
       }
       const token = String(res?.token || "");
-      if (!token) throw new Error("Missing token");
-      setToken(token);
+      if (token) setToken(token);
       if (res?.workspace?.id) setWorkspaceId(res.workspace.id);
       window.location.replace("/admin");
     } catch (err: any) {

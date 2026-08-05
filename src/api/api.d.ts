@@ -24,6 +24,7 @@ export const API: {
     resetPassword(payload: any): Promise<any>;
     adminForgotPassword(payload: any): Promise<any>;
     adminResetPassword(payload: any): Promise<any>;
+    refresh(): Promise<any>;
     me(): Promise<any>;
     apiKeyStatus(): Promise<any>;
     listApiKeys(): Promise<any>;
@@ -40,6 +41,7 @@ export const API: {
     verifyEnable2fa(payload: any): Promise<any>;
     disable2fa(): Promise<any>;
     logout(): Promise<any>;
+    logoutAll(): Promise<any>;
   };
   liveDemo: {
     slots(params?: any): Promise<any>;

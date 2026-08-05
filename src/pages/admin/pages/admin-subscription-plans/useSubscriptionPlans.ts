@@ -193,6 +193,9 @@ export function useSubscriptionPlansState() {
     setSaving(true); setError("");
     try {
       const addonServices = linesToArray(editor.addonServicesText);
+      const limitsPayload = editor.isFreePlan
+        ? serializeLimits(editor.freeLimits || {}, editor.freeUnlimitedLimits || {})
+        : serializeLimits(editor.limits || {}, editor.unlimitedLimits || {});
       const payload: any = {
         slug: editor.slug || undefined,
         name: editor.name,
@@ -212,7 +215,7 @@ export function useSubscriptionPlansState() {
         cardColor: editor.cardColor || "blue",
         icon: editor.icon || "⭐",
         features: editor.features || {},
-        limits: serializeLimits(editor.limits || {}, editor.unlimitedLimits || {}),
+        limits: limitsPayload,
         displayFeatures: linesToArray(editor.displayFeaturesText),
         unavailableFeatures: linesToArray(editor.unavailableFeaturesText),
         featureRows: serializeFeatureRows(editor.featureRows || []),

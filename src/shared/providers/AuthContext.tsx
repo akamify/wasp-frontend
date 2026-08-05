@@ -42,6 +42,7 @@ type AuthContextValue = AuthState & {
   login: (email: string, password: string) => Promise<any>;
   register: (email: string, password: string, name?: string) => Promise<any>;
   logout: () => Promise<void>;
+  logoutAll: () => Promise<void>;
   refreshMe: (options?: { silent?: boolean }) => Promise<void>;
   switchWorkspace: (workspaceId: string) => Promise<void>;
 };
@@ -76,27 +77,21 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     refreshingRef.current = true;
     lastRefreshAtRef.current = now;
 
-    const token = getToken();
-    if (!token) {
-      setState((s) => ({ ...s, token: "", user: null, workspace: null, loading: false }));
-      refreshingRef.current = false;
-      return;
-    }
-
-    setState((s) => ({ ...s, token, loading: silent ? s.loading : true }));
+    const currentToken = getToken();
+    setState((s) => ({ ...s, token: currentToken, loading: silent ? s.loading : true }));
     try {
       const res = await API.auth.me();
-      if (getToken() !== token) return;
+      const token = String(res?.token || getToken() || "");
+      if (token) setToken(token);
       if (res?.workspace?.id) setWorkspaceId(res.workspace.id);
       setState((s) => ({ ...s, token, user: res.user, workspace: res.workspace || null, loading: false }));
     } catch (error: any) {
-      if (getToken() !== token) return;
       if (isConfirmedAuthFailure(error)) {
         setToken("");
         setState((s) => ({ ...s, token: "", user: null, workspace: null, loading: false }));
         return;
       }
-      setState((s) => ({ ...s, token, loading: false }));
+      setState((s) => ({ ...s, token: currentToken, loading: false }));
     } finally {
       refreshingRef.current = false;
       if (refreshQueuedRef.current) {
@@ -115,13 +110,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     const syncSession = () => {
       lastRefreshAtRef.current = 0;
-      const token = getToken();
-      if (!token) {
-        clearApiGetCache();
-        setState({ token: "", user: null, workspace: null, loading: false });
-        return;
-      }
-      setState((current) => ({ ...current, token, loading: true }));
+      clearApiGetCache();
+      setState((current) => ({ ...current, token: getToken(), loading: true }));
       void refreshMe();
     };
     const onStorage = (event: StorageEvent) => {
@@ -159,10 +149,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const login = useCallback(async (email: string, password: string) => {
     const res = await API.auth.login({ email, password });
-    if (res?.requires2fa) return res;
+    if (res?.requires2fa || res?.state === "otp_required" || res?.state === "email_verification_required") return res;
     const token = String(res?.token || "");
-    if (!token) throw new Error("Missing login token");
-    setToken(token);
+    if (token) setToken(token);
     if (res?.workspace?.id) setWorkspaceId(res.workspace.id);
     setState({ token, user: res.user, workspace: res.workspace || null, loading: false });
 
@@ -204,6 +193,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setState({ token: "", user: null, workspace: null, loading: false });
   }, []);
 
+  const logoutAll = useCallback(async () => {
+    try {
+      await API.auth.logoutAll();
+    } catch {}
+    setToken("");
+    setState({ token: "", user: null, workspace: null, loading: false });
+  }, []);
+
   const switchWorkspace = useCallback(async (workspaceId: string) => {
     const normalized = String(workspaceId || "").trim();
     if (!normalized) return;
@@ -219,10 +216,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       login,
       register,
       logout,
+      logoutAll,
       refreshMe,
       switchWorkspace,
     }),
-    [state, login, register, logout, refreshMe, switchWorkspace]
+    [state, login, register, logout, logoutAll, refreshMe, switchWorkspace]
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

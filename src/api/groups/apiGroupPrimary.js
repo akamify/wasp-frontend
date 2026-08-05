@@ -20,6 +20,7 @@ export function buildApiGroupPrimary(api, unwrap) {
         api.post("/auth/admin/forgot-password", payload).then(unwrap),
       adminResetPassword: (payload) =>
         api.post("/auth/admin/reset-password", payload).then(unwrap),
+      refresh: () => api.post("/auth/refresh", {}).then(unwrap),
       me: () => api.get("/auth/me").then(unwrap),
       apiKeyStatus: () => api.get("/auth/api-key").then(unwrap),
       listApiKeys: () => api.get("/api-keys").then(unwrap),
@@ -46,6 +47,7 @@ export function buildApiGroupPrimary(api, unwrap) {
         api.post("/auth/2fa/verify-enable", payload).then(unwrap),
       disable2fa: () => api.post("/auth/2fa/disable").then(unwrap),
       logout: () => api.post("/auth/logout").then(unwrap),
+      logoutAll: () => api.post("/auth/logout-all").then(unwrap),
     },
     liveDemo: {
       slots: (params) => api.get("/public/live-demo/slots", { params }).then(unwrap),
