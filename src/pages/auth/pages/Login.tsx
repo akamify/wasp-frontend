@@ -53,6 +53,18 @@ export default function LoginPage() {
       const target = loginTarget(res?.user?.role);
       navigate(target, { replace: true });
     } catch (err: any) {
+      const verification = err?.response?.data?.details || {};
+      if (String(verification?.code || "") === "EMAIL_NOT_VERIFIED" && verification?.challengeToken) {
+        navigate("/verify-email", {
+          replace: true,
+          state: {
+            email: String(verification.email || email || "").trim(),
+            challengeToken: String(verification.challengeToken || ""),
+            message: "We sent a fresh verification OTP to your email.",
+          },
+        });
+        return;
+      }
       const timeout = String(err?.code || "").toUpperCase() === "ECONNABORTED";
       setError(
         err?.userMessage ||

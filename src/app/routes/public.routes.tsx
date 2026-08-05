@@ -2,6 +2,7 @@ import { Route } from "react-router-dom";
 import LandingPage from "@pages/Landing";
 import LoginPage from "@pages/auth/pages/Login";
 import RegisterPage from "@pages/auth/pages/Register";
+import VerifyEmailPage from "@pages/auth/pages/VerifyEmail";
 import ForgotPasswordPage from "@pages/auth/pages/ForgotPassword";
 import ResetPasswordPage from "@pages/auth/pages/ResetPassword";
 import AdminLoginPage from "@pages/auth/pages/AdminLogin";
@@ -41,6 +42,7 @@ export function publicRoutes() {
       <Route path="/academy/:categorySlug/:articleSlug" element={<AcademyDocsPage />} />
       <Route path="/login" element={<LoginPage />} />
       <Route path="/register" element={<RegisterPage />} />
+      <Route path="/verify-email" element={<VerifyEmailPage />} />
       <Route path="/forgot-password" element={<ForgotPasswordPage />} />
       <Route path="/reset-password" element={<ResetPasswordPage />} />
       <Route path="/admin/login" element={<AdminLoginPage />} />
