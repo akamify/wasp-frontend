@@ -660,6 +660,51 @@ export interface AiDashboardResponse {
     messageCount: number;
     preview: string;
   }>;
+  liveRuntime: {
+    workspaceReady: boolean;
+    aiEnabled: boolean;
+    whatsappConnected: boolean;
+    liveReady: boolean;
+    activeAgentCount: number;
+    whatsappCapableAgentCount: number;
+    activeConnection: {
+      displayPhoneNumber?: string | null;
+      wabaName?: string | null;
+      connectedAt?: string | null;
+    } | null;
+    blockers: Array<{
+      code: string;
+      severity: string;
+      title: string;
+      message: string;
+      action?: string;
+    }>;
+    conversations: Array<{
+      id: string;
+      phone: string;
+      contactName: string;
+      aiState?: string | null;
+      aiAgentId?: string | null;
+      aiAgentName?: string | null;
+      assignedEmployeeId?: string | null;
+      hasHumanTakeover: boolean;
+      automationPausedAt?: string | null;
+      automationPauseReason?: string | null;
+      hasActiveFlowSession: boolean;
+      activeFlowSessionId?: string | null;
+      activeFlowStatus?: string | null;
+      aiHandoverAt?: string | null;
+      aiHandoverReason?: string | null;
+      aiLastReplyAt?: string | null;
+      aiLastErrorAt?: string | null;
+      aiLastErrorMessage?: string | null;
+      lastInboundAt?: string | null;
+      lastMessageAt?: string | null;
+      preview: string;
+      blockedReasons: string[];
+      recommendedAction: "release_flow_block" | "return_to_ai" | "inspect" | "none";
+    }>;
+  };
   usageSeries: Array<{
     date: string;
     creditsUsed: number;

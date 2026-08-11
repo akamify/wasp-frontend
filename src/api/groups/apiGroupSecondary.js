@@ -404,6 +404,7 @@ export function buildApiGroupSecondary(api, unwrap, API_BASE_URL) {
       read: (phone) => api.post(`/conversations/${phone}/read`).then(unwrap),
       takeOver: (phone, payload) => api.post(`/conversations/${phone}/take-over`, payload || {}).then(unwrap),
       returnToAi: (phone, payload) => api.post(`/conversations/${phone}/return-to-ai`, payload || {}).then(unwrap),
+      releaseFlowBlock: (phone, payload) => api.post(`/conversations/${phone}/release-flow-block`, payload || {}).then(unwrap),
       clear: (phone) => api.delete(`/conversations/${phone}`).then(unwrap),
     },
     contacts: {

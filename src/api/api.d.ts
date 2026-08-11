@@ -436,6 +436,7 @@ export const API: {
     read(phone: string): Promise<any>;
     takeOver(phone: string, payload?: any): Promise<any>;
     returnToAi(phone: string, payload?: any): Promise<any>;
+    releaseFlowBlock(phone: string, payload?: any): Promise<any>;
   };
   contacts: {
     list(params?: any): Promise<any>;

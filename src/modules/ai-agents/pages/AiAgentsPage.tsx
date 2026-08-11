@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import {
+  AlertTriangle,
   ArrowUpRight,
   BarChart3,
   BookOpen,
@@ -17,10 +18,12 @@ import {
   Search,
   Settings2,
   ShieldCheck,
+  ShieldX,
   SlidersHorizontal,
   Trash2,
   Wallet,
   Wrench,
+  LockOpen,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { Alert } from "@components/ui/Alert";
@@ -30,6 +33,7 @@ import { Input } from "@components/ui/Input";
 import { Modal } from "@components/ui/Modal";
 import { Select } from "@components/ui/Select";
 import { Textarea } from "@components/ui/Textarea";
+import { API } from "@api/api";
 import { useToast } from "@shared/providers/ToastContext";
 import { cn } from "@shared/utils/cn";
 import { aiAgentsApi } from "@modules/ai-agents/aiAgentsApi";
@@ -392,6 +396,7 @@ export default function AiAgentsPage() {
   }
 
   const overview = dashboard?.overview;
+  const liveRuntime = dashboard?.liveRuntime;
   const usageBreakdown = dashboard?.usageBreakdown;
   const selectedAgentName = agents.find((agent) => agent.id === analyticsAgentId)?.name || "All agents";
   const modelOptions = dashboard?.settings.availableModels?.length
@@ -420,6 +425,26 @@ export default function AiAgentsPage() {
     setAnalyticsDateFrom(toDateInputValue(new Date(now.getFullYear(), now.getMonth(), 1)));
     setAnalyticsDateTo(toDateInputValue(now));
   };
+
+  async function handleReturnConversationToAi(phone: string) {
+    try {
+      await API.conversations.returnToAi(phone, { reason: "ai_agents_dashboard_return" });
+      toast("Conversation returned to AI.", "success");
+      await loadShell();
+    } catch (requestError: any) {
+      toast(requestError?.response?.data?.message || requestError?.message || "Unable to return conversation to AI.", "error");
+    }
+  }
+
+  async function handleReleaseFlowBlock(phone: string) {
+    try {
+      await API.conversations.releaseFlowBlock(phone, { reason: "ai_agents_dashboard_flow_release" });
+      toast("Flow block released. AI can resume on the next inbound message.", "success");
+      await loadShell();
+    } catch (requestError: any) {
+      toast(requestError?.response?.data?.message || requestError?.message || "Unable to release flow block.", "error");
+    }
+  }
 
   return (
     <div className="space-y-8 bg-[radial-gradient(circle_at_top_left,_rgba(16,185,129,0.14),_transparent_28%),radial-gradient(circle_at_top_right,_rgba(37,99,235,0.12),_transparent_24%),linear-gradient(180deg,_rgba(248,250,252,0.96),_rgba(255,255,255,1))] p-4 md:p-8">
@@ -513,6 +538,113 @@ export default function AiAgentsPage() {
             </Card>
           </div>
         </div>
+      </section>
+
+      <section className="grid gap-6 xl:grid-cols-[1.05fr_0.95fr]">
+        <Card className="p-5">
+          <div className="flex flex-wrap items-start justify-between gap-4">
+            <div>
+              <div className="text-[11px] font-black uppercase tracking-[0.24em] text-slate-400">WhatsApp Live Status</div>
+              <h2 className="mt-2 text-xl font-black text-slate-900">Know exactly why live AI is replying or blocked</h2>
+              <p className="mt-2 text-sm font-medium leading-6 text-slate-500">
+                This checks workspace readiness, WhatsApp connection, active AI agents, and recent inbox blockers like human takeover or active flow sessions.
+              </p>
+            </div>
+            <div className={`rounded-full px-3 py-1 text-[11px] font-black uppercase tracking-[0.2em] ${liveRuntime?.liveReady ? "bg-emerald-50 text-emerald-700" : "bg-amber-50 text-amber-700"}`}>
+              {liveRuntime?.liveReady ? "Live Ready" : "Action Needed"}
+            </div>
+          </div>
+          <div className="mt-5 grid gap-3 md:grid-cols-2">
+            <SummaryRow label="Workspace AI" value={liveRuntime?.aiEnabled ? "Enabled" : "Disabled"} />
+            <SummaryRow label="WhatsApp" value={liveRuntime?.whatsappConnected ? "Connected" : "Not connected"} />
+            <SummaryRow label="Active Agents" value={String(liveRuntime?.activeAgentCount || 0)} />
+            <SummaryRow label="WA-capable Agents" value={String(liveRuntime?.whatsappCapableAgentCount || 0)} />
+          </div>
+          {liveRuntime?.activeConnection ? (
+            <div className="mt-4 rounded-[14px] border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-medium text-slate-600">
+              Connected number: <span className="font-black text-slate-900">{liveRuntime.activeConnection.displayPhoneNumber || "Unknown"}</span>
+              {liveRuntime.activeConnection.wabaName ? ` | WABA: ${liveRuntime.activeConnection.wabaName}` : ""}
+            </div>
+          ) : null}
+          <div className="mt-4 space-y-3">
+            {(liveRuntime?.blockers || []).length === 0 ? (
+              <div className="rounded-[14px] border border-emerald-200 bg-emerald-50 px-4 py-4 text-sm font-semibold text-emerald-800">
+                Live WhatsApp AI runtime looks eligible. If replies still do not go out, inspect the blocked conversation list below or worker logs.
+              </div>
+            ) : (
+              (liveRuntime?.blockers || []).map((blocker) => (
+                <div key={blocker.code} className={`rounded-[14px] border px-4 py-4 ${blocker.severity === "error" ? "border-rose-200 bg-rose-50" : "border-amber-200 bg-amber-50"}`}>
+                  <div className="flex items-start gap-3">
+                    {blocker.severity === "error" ? <ShieldX size={18} className="mt-0.5 text-rose-600" /> : <AlertTriangle size={18} className="mt-0.5 text-amber-600" />}
+                    <div>
+                      <div className="font-black text-slate-900">{blocker.title}</div>
+                      <div className="mt-1 text-sm font-medium text-slate-600">{blocker.message}</div>
+                      {blocker.action ? <div className="mt-2 text-xs font-black uppercase tracking-[0.18em] text-slate-500">{blocker.action}</div> : null}
+                    </div>
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
+        </Card>
+
+        <Card className="p-5">
+          <div className="flex items-start justify-between gap-4">
+            <div>
+              <div className="text-[11px] font-black uppercase tracking-[0.24em] text-slate-400">Blocked Conversations</div>
+              <h2 className="mt-2 text-xl font-black text-slate-900">Recent WhatsApp threads that may stop AI replies</h2>
+              <p className="mt-2 text-sm font-medium leading-6 text-slate-500">
+                Use the recommended action for each thread. Human takeover and flow session blocking are different problems and need different fixes.
+              </p>
+            </div>
+          </div>
+          <div className="mt-5 space-y-3">
+            {(liveRuntime?.conversations || []).length === 0 ? (
+              <EmptyState title="No recent inbox diagnostics" body="Recent WhatsApp conversations will appear here after inbound messages arrive." />
+            ) : (
+              (liveRuntime?.conversations || []).map((conversation) => (
+                <div key={conversation.id} className="rounded-[14px] border border-slate-200 px-4 py-4">
+                  <div className="flex flex-wrap items-start justify-between gap-3">
+                    <div>
+                      <div className="font-black text-slate-900">{conversation.contactName || conversation.phone}</div>
+                      <div className="mt-1 text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">
+                        {conversation.phone} | {conversation.aiState || "No AI state"} | {conversation.aiAgentName || "No agent bound"}
+                      </div>
+                    </div>
+                    <div className="text-xs font-semibold text-slate-400">{formatDateTime(conversation.lastMessageAt)}</div>
+                  </div>
+                  <div className="mt-3 flex flex-wrap gap-2">
+                    {conversation.hasHumanTakeover ? <RuntimeBadge tone="warn" label="Human takeover" /> : null}
+                    {conversation.automationPausedAt ? <RuntimeBadge tone="warn" label={`Paused: ${conversation.automationPauseReason || "automation"}`} /> : null}
+                    {conversation.hasActiveFlowSession ? <RuntimeBadge tone="warn" label="Active flow session" /> : null}
+                    {conversation.aiLastErrorMessage ? <RuntimeBadge tone="error" label="Last runtime error" /> : null}
+                    {!conversation.blockedReasons.length ? <RuntimeBadge tone="ok" label="No known blocker" /> : null}
+                  </div>
+                  {conversation.preview ? <p className="mt-3 text-sm font-medium leading-6 text-slate-500">{conversation.preview}</p> : null}
+                  {conversation.aiHandoverReason ? <div className="mt-2 text-xs font-semibold text-slate-500">Handover reason: {conversation.aiHandoverReason}</div> : null}
+                  {conversation.aiLastErrorMessage ? <div className="mt-2 text-xs font-semibold text-rose-600">Last AI error: {conversation.aiLastErrorMessage}</div> : null}
+                  <div className="mt-4 flex flex-wrap gap-2">
+                    <Button variant="outline" onClick={() => { setTab("conversations"); setConversationPhone(conversation.phone); }}>
+                      Open Inbox View
+                    </Button>
+                    {conversation.recommendedAction === "return_to_ai" ? (
+                      <Button onClick={() => void handleReturnConversationToAi(conversation.phone)}>
+                        <BrainCircuit size={16} />
+                        Return To AI
+                      </Button>
+                    ) : null}
+                    {conversation.recommendedAction === "release_flow_block" ? (
+                      <Button onClick={() => void handleReleaseFlowBlock(conversation.phone)}>
+                        <LockOpen size={16} />
+                        Release Flow Block
+                      </Button>
+                    ) : null}
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
+        </Card>
       </section>
 
       <div className="overflow-x-auto">
@@ -970,6 +1102,25 @@ export default function AiAgentsPage() {
 
       {tab === "conversations" ? (
         <div className="space-y-5">
+          <Card className="p-5">
+            <div className="flex flex-wrap items-start justify-between gap-4">
+              <div>
+                <h2 className="text-xl font-black text-slate-900">Conversation Control Guide</h2>
+                <p className="mt-1 text-sm font-medium text-slate-500">
+                  `Human active` means a person has taken over, so use `Return To AI`. `Paused` plus `flow_handover` usually means a flow session is blocking AI, so use `Release Flow Block`.
+                </p>
+              </div>
+              <div className="rounded-full bg-slate-100 px-3 py-1 text-[11px] font-black uppercase tracking-[0.18em] text-slate-600">
+                Clear unblock actions
+              </div>
+            </div>
+            <div className="mt-4 grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+              <SummaryRow label="Human Active" value="Return To AI" />
+              <SummaryRow label="Flow Block" value="Release Flow Block" />
+              <SummaryRow label="No Active Agent" value="Activate agent" />
+              <SummaryRow label="No WhatsApp Routing" value="Add whatsapp channel" />
+            </div>
+          </Card>
           <Card className="p-5">
             <div className="flex flex-wrap items-start justify-between gap-4">
               <div>
@@ -1563,6 +1714,20 @@ function SummaryRow({ label, value }: { label: string; value: string }) {
       <span className="text-xs font-black uppercase tracking-[0.18em] text-slate-400">{label}</span>
       <span className="text-sm font-black text-slate-900">{value}</span>
     </div>
+  );
+}
+
+function RuntimeBadge({ tone, label }: { tone: "ok" | "warn" | "error"; label: string }) {
+  const className =
+    tone === "ok"
+      ? "border-emerald-200 bg-emerald-50 text-emerald-700"
+      : tone === "error"
+        ? "border-rose-200 bg-rose-50 text-rose-700"
+        : "border-amber-200 bg-amber-50 text-amber-700";
+  return (
+    <span className={cn("rounded-full border px-2.5 py-1 text-[10px] font-black uppercase tracking-[0.18em]", className)}>
+      {label}
+    </span>
   );
 }
 
