@@ -76,7 +76,7 @@ const DEFAULT_AGENT: AiAgentPayload = {
   status: "draft",
   persona: "support",
   modelProvider: "gemini",
-  modelName: "gemini-1.5-flash",
+  modelName: "gemini-3.5-flash",
   systemPrompt:
     "You are a helpful WhatsApp assistant. Answer only from configured business knowledge. If unsure, ask a clarifying question or hand over to a human.",
   language: "auto",
@@ -143,7 +143,7 @@ function normalizeEditable(agent?: AiAgent | null): AiAgentPayload {
     status: agent.status,
     persona: agent.persona,
     modelProvider: "gemini",
-    modelName: agent.modelName || "gemini-1.5-flash",
+    modelName: agent.modelName || "gemini-3.5-flash",
     systemPrompt: agent.systemPrompt,
     language: agent.language,
     temperature: agent.temperature,
@@ -396,7 +396,7 @@ export default function AiAgentsPage() {
   const selectedAgentName = agents.find((agent) => agent.id === analyticsAgentId)?.name || "All agents";
   const modelOptions = dashboard?.settings.availableModels?.length
     ? dashboard.settings.availableModels
-    : [{ key: dashboard?.settings.modelDefault || "gemini-1.5-flash", label: dashboard?.settings.modelDefault || "Gemini 1.5 Flash" }];
+    : [{ key: dashboard?.settings.modelDefault || "gemini-3.5-flash", label: dashboard?.settings.modelDefault || "Gemini 3.5 Flash" }];
   const billingAlerts = budgetStatus?.status.alerts || [];
   const heroPlanName = addonStatus?.subscription?.planName || "AI Agent Add-on";
   const heroRemainingCredits = Number(addonStatus?.workspace.remainingCredits || 0);
@@ -833,7 +833,7 @@ export default function AiAgentsPage() {
                 <Input label="Runtime" value="Gemini" readOnly />
                 <Select
                   label="Gemini model"
-                  value={String(draft.modelName || dashboard?.settings.modelDefault || "gemini-1.5-flash")}
+                  value={String(draft.modelName || dashboard?.settings.modelDefault || "gemini-3.5-flash")}
                   onChange={(event) => updateDraft({ modelName: event.target.value, modelProvider: "gemini" })}
                 >
                   {modelOptions.map((model) => (
@@ -1437,7 +1437,7 @@ export default function AiAgentsPage() {
         <div className="space-y-6">
           <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
             <MetricCard label="Provider" value={dashboard?.settings.provider || "gemini"} helper="Gemini only runtime" />
-            <MetricCard label="Default Model" value={dashboard?.settings.modelDefault || "gemini-1.5-flash"} helper="workspace default" />
+            <MetricCard label="Default Model" value={dashboard?.settings.modelDefault || "gemini-3.5-flash"} helper="workspace default" />
             <MetricCard label="Billing Mode" value="Credits" helper="usage-based accounting" />
             <MetricCard label="Renewal Date" value={formatDate(dashboard?.settings.renewalDate)} helper="monthly credit reset" />
           </section>

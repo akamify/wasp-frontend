@@ -175,7 +175,7 @@ export default function AiAgentTestPage() {
             <h2 className="text-lg font-black text-slate-900">Runtime Result</h2>
             <div className="mt-4 space-y-3 text-sm">
               <Info label="Provider" value={lastMeta?.provider || "gemini"} />
-              <Info label="Model" value={lastMeta?.model || agent?.modelName || "gemini-1.5-flash"} />
+              <Info label="Model" value={lastMeta?.model || agent?.modelName || "gemini-3.5-flash"} />
               <Info label="Action" value={lastMeta?.action || "-"} />
               <Info label="Confidence" value={lastMeta ? `${Math.round(lastMeta.confidence * 100)}%` : "-"} />
               <Info label="Credits" value={lastMeta?.usage?.creditsUsed ? String(lastMeta.usage.creditsUsed) : "-"} />
