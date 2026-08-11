@@ -138,6 +138,16 @@ function listToCsv(value?: string[]) {
   return Array.isArray(value) ? value.join(", ") : "";
 }
 
+function humanizeRuntimeReason(value?: string | null) {
+  const normalized = String(value || "").trim();
+  if (!normalized) return "";
+  return normalized
+    .split(/[_:]+/)
+    .filter(Boolean)
+    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+    .join(" ");
+}
+
 function normalizeEditable(agent?: AiAgent | null): AiAgentPayload {
   if (!agent) return structuredClone(DEFAULT_AGENT);
   return {
@@ -709,10 +719,14 @@ export default function AiAgentsPage() {
                     {conversation.automationPausedAt ? <RuntimeBadge tone="warn" label={`Paused: ${conversation.automationPauseReason || "automation"}`} /> : null}
                     {conversation.hasActiveFlowSession ? <RuntimeBadge tone="warn" label="Active flow session" /> : null}
                     {conversation.aiLastErrorMessage ? <RuntimeBadge tone="error" label="Last runtime error" /> : null}
+                    {conversation.lastAiStatus === "failed" ? <RuntimeBadge tone="error" label="Last inbound failed" /> : null}
+                    {conversation.lastAiStatus === "skipped" && conversation.lastAiReason ? <RuntimeBadge tone="warn" label={`Last skip: ${humanizeRuntimeReason(conversation.lastAiReason)}`} /> : null}
                     {!conversation.blockedReasons.length ? <RuntimeBadge tone="ok" label="No known blocker" /> : null}
                   </div>
                   {conversation.preview ? <p className="mt-3 text-sm font-medium leading-6 text-slate-500">{conversation.preview}</p> : null}
                   {conversation.aiHandoverReason ? <div className="mt-2 text-xs font-semibold text-slate-500">Handover reason: {conversation.aiHandoverReason}</div> : null}
+                  {conversation.lastAiReason ? <div className="mt-2 text-xs font-semibold text-amber-700">Last AI runtime reason: {humanizeRuntimeReason(conversation.lastAiReason)}</div> : null}
+                  {conversation.lastAiError ? <div className="mt-2 text-xs font-semibold text-rose-600">Last inbound error: {conversation.lastAiError}</div> : null}
                   {conversation.aiLastErrorMessage ? <div className="mt-2 text-xs font-semibold text-rose-600">Last AI error: {conversation.aiLastErrorMessage}</div> : null}
                   <div className="mt-4 flex flex-wrap gap-2">
                     <Button variant="outline" onClick={() => { setTab("conversations"); setConversationPhone(conversation.phone); }}>

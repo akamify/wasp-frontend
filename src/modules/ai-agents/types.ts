@@ -699,6 +699,10 @@ export interface AiDashboardResponse {
       aiLastReplyAt?: string | null;
       aiLastErrorAt?: string | null;
       aiLastErrorMessage?: string | null;
+      lastAiStatus?: string | null;
+      lastAiReason?: string | null;
+      lastAiError?: string | null;
+      lastAiProcessedAt?: string | null;
       lastInboundAt?: string | null;
       lastMessageAt?: string | null;
       preview: string;
