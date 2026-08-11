@@ -283,6 +283,7 @@ export interface AiAddonSubscription {
   currency: string;
   monthlyPrice: number;
   includedCredits: number;
+  includedTokensPerCycle: number;
   totalCredits: number;
   remainingCredits: number;
   remainingTokens: number;

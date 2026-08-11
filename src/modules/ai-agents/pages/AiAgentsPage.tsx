@@ -183,6 +183,7 @@ export default function AiAgentsPage() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
+  const [isAgentModalOpen, setIsAgentModalOpen] = useState(false);
   const [search, setSearch] = useState("");
   const [status, setStatus] = useState<AiAgentStatus | "">("");
   const [selected, setSelected] = useState<AiAgent | null>(null);
@@ -277,12 +278,14 @@ export default function AiAgentsPage() {
     setSelected(null);
     setDraft(structuredClone(DEFAULT_AGENT));
     setTab("agents");
+    setIsAgentModalOpen(true);
   }
 
   function startEdit(agent: AiAgent) {
     setSelected(agent);
     setDraft(normalizeEditable(agent));
     setTab("agents");
+    setIsAgentModalOpen(true);
   }
 
   function updateDraft(patch: AiAgentPayload) {
@@ -315,6 +318,7 @@ export default function AiAgentsPage() {
         setSelected(response.agent);
         setDraft(normalizeEditable(response.agent));
       }
+      setIsAgentModalOpen(false);
       await loadShell();
     } catch (requestError: any) {
       toast(requestError?.userMessage || requestError?.response?.data?.message || requestError?.message || "Unable to save AI agent.", "error");
@@ -396,7 +400,7 @@ export default function AiAgentsPage() {
   }
 
   const overview = dashboard?.overview;
-  const liveRuntime = dashboard?.liveRuntime;
+  const liveRuntime: any = dashboard?.liveRuntime || null;
   const usageBreakdown = dashboard?.usageBreakdown;
   const selectedAgentName = agents.find((agent) => agent.id === analyticsAgentId)?.name || "All agents";
   const modelOptions = dashboard?.settings.availableModels?.length
@@ -405,6 +409,7 @@ export default function AiAgentsPage() {
   const billingAlerts = budgetStatus?.status.alerts || [];
   const heroPlanName = addonStatus?.subscription?.planName || "AI Agent Add-on";
   const heroRemainingCredits = Number(addonStatus?.workspace.remainingCredits || 0);
+  const heroRemainingTokens = Number(addonStatus?.workspace.remainingTokens || 0);
   const heroTodayReplies = Number(overview?.usage.todayReplies || 0);
   const heroKnowledgeSources = Number(overview?.knowledge.totalSources || 0);
   const setQuickRange = (preset: "today" | "7d" | "month") => {
@@ -448,6 +453,74 @@ export default function AiAgentsPage() {
 
   return (
     <div className="space-y-8 bg-[radial-gradient(circle_at_top_left,_rgba(16,185,129,0.14),_transparent_28%),radial-gradient(circle_at_top_right,_rgba(37,99,235,0.12),_transparent_24%),linear-gradient(180deg,_rgba(248,250,252,0.96),_rgba(255,255,255,1))] p-4 md:p-8">
+      <section className="space-y-4">
+        <Card className="border border-emerald-100/80 bg-[linear-gradient(135deg,_#0f172a_0%,_#12324d_55%,_#0f766e_100%)] p-6 text-white shadow-[0_30px_80px_-34px_rgba(8,18,38,0.78)]">
+          <div className="flex flex-wrap items-center justify-between gap-4">
+            <div>
+              <div className="text-[11px] font-black uppercase tracking-[0.26em] text-emerald-100">AI Agents</div>
+              <h1 className="mt-2 text-3xl font-black tracking-tight md:text-4xl">AI agent workspace</h1>
+            </div>
+            <div className="grid gap-3 sm:grid-cols-3">
+              <HeroStatCard label="Current plan" value={heroPlanName} helper="billing active" />
+              <HeroStatCard label="Available credits" value={String(heroRemainingCredits)} helper={`${heroRemainingTokens} tokens`} />
+              <HeroStatCard label="Today's replies" value={String(heroTodayReplies)} helper={`${heroKnowledgeSources} sources`} />
+            </div>
+          </div>
+        </Card>
+
+        <Card className="border border-white/80 bg-white/92 p-5 shadow-[0_24px_60px_-36px_rgba(15,23,42,0.45)] backdrop-blur">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div>
+              <div className="text-[11px] font-black uppercase tracking-[0.24em] text-slate-400">Workspace Controls</div>
+              <div className="mt-2 text-xl font-black text-slate-900">Manage agents, tokens, and usage</div>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              <Button variant="outline" onClick={() => void loadShell()} className="justify-center border-slate-200 bg-white">
+                <RefreshCw size={16} className={loading ? "animate-spin" : ""} />
+                Refresh
+              </Button>
+              <Button variant="outline" onClick={() => setTopupOpen(true)} className="justify-center border-slate-200 bg-white">
+                <CreditCard size={16} />
+                Top-up
+              </Button>
+              <Button onClick={startCreate} className="justify-center shadow-lg shadow-emerald-500/20">
+                <Plus size={17} />
+                New Agent
+              </Button>
+            </div>
+          </div>
+
+          <div className="mt-5 grid gap-4 md:grid-cols-3 xl:grid-cols-6">
+            <Card className="border border-slate-200 bg-slate-50/80 p-4 shadow-none">
+              <div className="text-[11px] font-black uppercase tracking-[0.2em] text-slate-400">Tracked Conversations</div>
+              <div className="mt-3 text-2xl font-black text-slate-900">{String(dashboard?.overview.conversationCounts.total || 0)}</div>
+            </Card>
+            <Card className="border border-slate-200 bg-slate-50/80 p-4 shadow-none">
+              <div className="text-[11px] font-black uppercase tracking-[0.2em] text-slate-400">Credits Used</div>
+              <div className="mt-3 text-2xl font-black text-slate-900">{formatCredits(usageBreakdown?.creditsUsedMonth || 0)}</div>
+            </Card>
+            <Card className="border border-slate-200 bg-slate-50/80 p-4 shadow-none">
+              <div className="text-[11px] font-black uppercase tracking-[0.2em] text-slate-400">Resolution Rate</div>
+              <div className="mt-3 text-2xl font-black text-slate-900">{formatPercent(overview?.usage.resolutionRate || 0)}</div>
+            </Card>
+            <Card className="border border-slate-200 bg-slate-50/80 p-4 shadow-none">
+              <div className="text-[11px] font-black uppercase tracking-[0.2em] text-slate-400">Included Tokens</div>
+              <div className="mt-3 text-2xl font-black text-slate-900">{Number(addonStatus?.subscription?.includedTokensPerCycle || 0)}</div>
+            </Card>
+            <Card className="border border-slate-200 bg-slate-50/80 p-4 shadow-none">
+              <div className="text-[11px] font-black uppercase tracking-[0.2em] text-slate-400">Remaining Tokens</div>
+              <div className="mt-3 text-2xl font-black text-slate-900">{Number(addonStatus?.workspace.remainingTokens || 0)}</div>
+            </Card>
+            <Card className="border border-slate-200 bg-slate-50/80 p-4 shadow-none">
+              <div className="text-[11px] font-black uppercase tracking-[0.2em] text-slate-400">Top-up Tokens</div>
+              <div className="mt-3 text-2xl font-black text-slate-900">{Number(addonStatus?.subscription?.remainingTopupTokens || 0)}</div>
+            </Card>
+          </div>
+        </Card>
+      </section>
+
+      {false && (
+        <>
       <section className="grid gap-6 xl:grid-cols-[1.18fr_0.82fr]">
         <Card className="relative overflow-hidden border border-emerald-100/80 bg-[linear-gradient(135deg,_#081226_0%,_#143352_56%,_#0f766e_100%)] p-6 text-white shadow-[0_30px_80px_-34px_rgba(8,18,38,0.78)] md:p-8">
           <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top_right,_rgba(255,255,255,0.22),_transparent_26%),radial-gradient(circle_at_bottom_left,_rgba(16,185,129,0.18),_transparent_28%)]" />
@@ -469,7 +542,7 @@ export default function AiAgentsPage() {
 
             <div className="grid gap-3 sm:grid-cols-3">
               <HeroStatCard label="Current plan" value={heroPlanName} helper="Recurring AI billing active" />
-              <HeroStatCard label="Available credits" value={String(heroRemainingCredits)} helper="Ready for live runtime" />
+              <HeroStatCard label="Available credits" value={String(heroRemainingCredits)} helper={`${heroRemainingTokens} tokens ready`} />
               <HeroStatCard label="Today’s replies" value={String(heroTodayReplies)} helper={`${heroKnowledgeSources} knowledge sources connected`} />
             </div>
           </div>
@@ -537,10 +610,27 @@ export default function AiAgentsPage() {
               <div className="mt-1 text-xs font-semibold text-slate-500">Resolution rate across AI handling</div>
             </Card>
           </div>
+          <div className="grid gap-4 sm:grid-cols-3">
+            <Card className="border border-white/80 bg-white/90 p-4 shadow-[0_18px_40px_-32px_rgba(15,23,42,0.4)] backdrop-blur">
+              <div className="text-[11px] font-black uppercase tracking-[0.2em] text-slate-400">Included Tokens</div>
+              <div className="mt-3 text-2xl font-black text-slate-900">{Number(addonStatus?.subscription?.includedTokensPerCycle || 0)}</div>
+              <div className="mt-1 text-xs font-semibold text-slate-500">monthly allocation</div>
+            </Card>
+            <Card className="border border-white/80 bg-white/90 p-4 shadow-[0_18px_40px_-32px_rgba(15,23,42,0.4)] backdrop-blur">
+              <div className="text-[11px] font-black uppercase tracking-[0.2em] text-slate-400">Remaining Tokens</div>
+              <div className="mt-3 text-2xl font-black text-slate-900">{Number(addonStatus?.workspace.remainingTokens || 0)}</div>
+              <div className="mt-1 text-xs font-semibold text-slate-500">live runtime available</div>
+            </Card>
+            <Card className="border border-white/80 bg-white/90 p-4 shadow-[0_18px_40px_-32px_rgba(15,23,42,0.4)] backdrop-blur">
+              <div className="text-[11px] font-black uppercase tracking-[0.2em] text-slate-400">Top-up Tokens</div>
+              <div className="mt-3 text-2xl font-black text-slate-900">{Number(addonStatus?.subscription?.remainingTopupTokens || 0)}</div>
+              <div className="mt-1 text-xs font-semibold text-slate-500">preserved until used</div>
+            </Card>
+          </div>
         </div>
       </section>
 
-      <section className="grid gap-6 xl:grid-cols-[1.05fr_0.95fr]">
+      <section className="grid items-start gap-6 xl:grid-cols-[1.1fr_0.9fr]">
         <Card className="p-5">
           <div className="flex flex-wrap items-start justify-between gap-4">
             <div>
@@ -572,7 +662,7 @@ export default function AiAgentsPage() {
                 Live WhatsApp AI runtime looks eligible. If replies still do not go out, inspect the blocked conversation list below or worker logs.
               </div>
             ) : (
-              (liveRuntime?.blockers || []).map((blocker) => (
+              (liveRuntime?.blockers || []).map((blocker: any) => (
                 <div key={blocker.code} className={`rounded-[14px] border px-4 py-4 ${blocker.severity === "error" ? "border-rose-200 bg-rose-50" : "border-amber-200 bg-amber-50"}`}>
                   <div className="flex items-start gap-3">
                     {blocker.severity === "error" ? <ShieldX size={18} className="mt-0.5 text-rose-600" /> : <AlertTriangle size={18} className="mt-0.5 text-amber-600" />}
@@ -591,18 +681,19 @@ export default function AiAgentsPage() {
         <Card className="p-5">
           <div className="flex items-start justify-between gap-4">
             <div>
-              <div className="text-[11px] font-black uppercase tracking-[0.24em] text-slate-400">Blocked Conversations</div>
-              <h2 className="mt-2 text-xl font-black text-slate-900">Recent WhatsApp threads that may stop AI replies</h2>
+              <div className="text-[11px] font-black uppercase tracking-[0.24em] text-slate-400">Attention Needed</div>
+              <h2 className="mt-2 text-xl font-black text-slate-900">Recent threads that may need action</h2>
               <p className="mt-2 text-sm font-medium leading-6 text-slate-500">
-                Use the recommended action for each thread. Human takeover and flow session blocking are different problems and need different fixes.
+                Compact live inbox diagnostics. Open the conversations tab when you need full control.
               </p>
             </div>
+            <Button variant="outline" onClick={() => setTab("conversations")}>Open Conversations</Button>
           </div>
           <div className="mt-5 space-y-3">
             {(liveRuntime?.conversations || []).length === 0 ? (
               <EmptyState title="No recent inbox diagnostics" body="Recent WhatsApp conversations will appear here after inbound messages arrive." />
             ) : (
-              (liveRuntime?.conversations || []).map((conversation) => (
+              (liveRuntime?.conversations || []).slice(0, 4).map((conversation: any) => (
                 <div key={conversation.id} className="rounded-[14px] border border-slate-200 px-4 py-4">
                   <div className="flex flex-wrap items-start justify-between gap-3">
                     <div>
@@ -646,6 +737,8 @@ export default function AiAgentsPage() {
           </div>
         </Card>
       </section>
+        </>
+      )}
 
       <div className="overflow-x-auto">
         <div className="inline-flex min-w-full gap-2 rounded-[18px] border border-white/80 bg-white/88 p-2 shadow-[0_20px_50px_-34px_rgba(15,23,42,0.4)] backdrop-blur">
@@ -757,7 +850,8 @@ export default function AiAgentsPage() {
         <div className="space-y-6">
           <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-6">
             <MetricCard label="Active Agents" value={String(overview?.agentCounts.active || 0)} helper={`${overview?.agentCounts.total || 0} total`} />
-            <MetricCard label="Remaining Credits" value={String(addonStatus?.workspace.remainingCredits || 0)} helper="available now" />
+            <MetricCard label="Remaining Credits" value={String(addonStatus?.workspace.remainingCredits || 0)} helper={`${Number(addonStatus?.workspace.remainingTokens || 0)} tokens`} />
+            <MetricCard label="Available Tokens" value={String(Number(addonStatus?.workspace.remainingTokens || 0))} helper="runtime budget" />
             <MetricCard label="Today's AI Replies" value={String(overview?.usage.todayReplies || 0)} helper={`${formatCredits(overview?.usage.todayCredits || 0)} credits today`} />
             <MetricCard label="Handovers" value={String(overview?.usage.handoverCount || 0)} helper={`${formatPercent(overview?.usage.resolutionRate || 0)} resolution`} />
             <MetricCard label="Knowledge Hit Rate" value={formatPercent(overview?.knowledge.knowledgeHitRate || 0)} helper={`${overview?.knowledge.knowledgeHitCount || 0} hits`} />
@@ -781,6 +875,9 @@ export default function AiAgentsPage() {
                 <div className="mt-3 text-2xl font-black text-slate-900">{addonStatus?.subscription?.planName || "AI Agent Add-on"}</div>
                 <div className="mt-4 space-y-3">
                   <SummaryRow label="Range Credits" value={formatCredits(usageBreakdown?.creditsUsedRange || 0)} />
+                  <SummaryRow label="Included Tokens" value={String(Number(addonStatus?.subscription?.includedTokensPerCycle || 0))} />
+                  <SummaryRow label="Remaining Tokens" value={String(Number(addonStatus?.workspace.remainingTokens || 0))} />
+                  <SummaryRow label="Top-up Tokens" value={String(Number(addonStatus?.subscription?.remainingTopupTokens || 0))} />
                   <SummaryRow label="Replies This Month" value={String(usageBreakdown?.repliesMonth || 0)} />
                   <SummaryRow label="Est. Cost" value={formatCurrency(usageBreakdown?.estimatedCost || 0, addonStatus?.wallet.currency)} />
                   <SummaryRow label="Renewal Date" value={formatDate(addonStatus?.workspace.renewalDate)} />
@@ -866,7 +963,7 @@ export default function AiAgentsPage() {
       ) : null}
 
       {tab === "agents" ? (
-        <div className="grid gap-6 xl:grid-cols-[360px_1fr]">
+        <div className="grid gap-6 xl:grid-cols-[380px_1fr]">
           <section className="space-y-4">
             <div className="flex gap-2 rounded-[10px] border border-slate-200 bg-white p-3 shadow-sm">
               <Input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Search agents..." icon={<Search size={16} />} />
@@ -926,82 +1023,112 @@ export default function AiAgentsPage() {
             <Card className="p-5">
               <div className="flex items-start justify-between gap-4">
                 <div>
-                  <h2 className="text-xl font-black text-slate-900">{selected ? "Edit AI Agent" : "Create AI Agent"}</h2>
-                  <p className="mt-1 text-sm font-medium text-slate-500">Use the builder below, then open Knowledge or Test from the action bar.</p>
+                  <h2 className="text-xl font-black text-slate-900">Agent Marketplace</h2>
+                  <p className="mt-1 text-sm font-medium text-slate-500">Browse existing agents first. Create or edit only when you need to change live behavior.</p>
                 </div>
+                <Button onClick={startCreate}><Plus size={16} />Create AI Agent</Button>
+              </div>
+              <div className="mt-5 grid gap-3 md:grid-cols-2">
+                <SummaryRow label="Selected Agent" value={selected?.name || "None selected"} />
+                <SummaryRow label="Default Model" value={selected?.modelName || dashboard?.settings.modelDefault || "gemini-3.5-flash"} />
+                <SummaryRow label="Status" value={selected?.status || "Draft"} />
+                <SummaryRow label="Channels" value={selected?.runtimeControls?.routing?.channels?.join(", ") || "whatsapp, test, api"} />
+              </div>
+              <div className="mt-4 flex flex-wrap gap-2">
                 {selected ? (
-                  <div className="flex flex-wrap gap-2">
+                  <>
                     <Button variant="outline" onClick={() => navigate(`/app/ai-agents/${selected.id}/test`)}>
                       <MessageCircle size={16} />
-                      Test
+                      Test Agent
                     </Button>
                     <Button variant="outline" onClick={() => navigate(`/app/ai-agents/${selected.id}/knowledge`)}>
                       <BookOpen size={16} />
-                      Knowledge
+                      Manage Knowledge
+                    </Button>
+                    <Button variant="outline" onClick={() => setIsAgentModalOpen(true)}>
+                      <Settings2 size={16} />
+                      Edit Agent
                     </Button>
                     <Button variant="ghost" className="text-rose-600 hover:bg-rose-50" onClick={() => void deleteAgent(selected)} disabled={saving}>
                       <Trash2 size={16} />
                       Delete
                     </Button>
+                  </>
+                ) : (
+                  <div className="rounded-[12px] border border-dashed border-slate-200 px-4 py-5 text-sm font-medium text-slate-500">
+                    Select an agent card from the left, then edit it in a modal. The agents tab stays focused on list management by default.
                   </div>
-                ) : null}
-              </div>
-              <div className="mt-5 grid gap-3 md:grid-cols-2">
-                <Input label="Agent name" value={String(draft.name || "")} onChange={(event) => updateDraft({ name: event.target.value })} placeholder="Support Agent" />
-                <Input label="Slug" value={String(draft.slug || "")} onChange={(event) => updateDraft({ slug: event.target.value })} placeholder="support-agent" />
-                <Select label="Status" value={String(draft.status || "draft")} onChange={(event) => updateDraft({ status: event.target.value as AiAgentStatus })}>
-                  <option value="draft">Draft</option>
-                  <option value="active">Active</option>
-                  <option value="paused">Paused</option>
-                  <option value="archived">Archived</option>
-                </Select>
-                <Select label="Persona" value={String(draft.persona || "custom")} onChange={(event) => updateDraft({ persona: event.target.value as any })}>
-                  <option value="sales">Sales</option>
-                  <option value="support">Support</option>
-                  <option value="booking">Booking</option>
-                  <option value="faq">FAQ</option>
-                  <option value="custom">Custom</option>
-                </Select>
-                <Input label="Runtime" value="Gemini" readOnly />
-                <Select
-                  label="Gemini model"
-                  value={String(draft.modelName || dashboard?.settings.modelDefault || "gemini-3.5-flash")}
-                  onChange={(event) => updateDraft({ modelName: event.target.value, modelProvider: "gemini" })}
-                >
-                  {modelOptions.map((model) => (
-                    <option key={model.key} value={model.key}>
-                      {model.label}{model.deprecated ? " (Deprecated)" : ""}
-                    </option>
-                  ))}
-                </Select>
-              </div>
-              <div className="mt-3">
-                <Textarea label="Description" value={String(draft.description || "")} onChange={(event) => updateDraft({ description: event.target.value })} />
-              </div>
-              <div className="mt-3">
-                <Textarea label="System prompt" value={String(draft.systemPrompt || "")} onChange={(event) => updateDraft({ systemPrompt: event.target.value })} />
+                )}
               </div>
             </Card>
 
-            <div className="grid gap-5 lg:grid-cols-2">
+            <Card className="p-5">
+              <div className="text-[11px] font-black uppercase tracking-[0.24em] text-slate-400">Token visibility</div>
+              <div className="mt-4 grid gap-3 md:grid-cols-2">
+                <SummaryRow label="Total Included Tokens" value={String(Number(addonStatus?.subscription?.includedTokensPerCycle || 0))} />
+                <SummaryRow label="Remaining Tokens" value={String(Number(addonStatus?.workspace.remainingTokens || 0))} />
+                <SummaryRow label="Remaining Top-up Tokens" value={String(Number(addonStatus?.subscription?.remainingTopupTokens || 0))} />
+                <SummaryRow label="Remaining Credits" value={String(Number(addonStatus?.workspace.remainingCredits || 0))} />
+              </div>
+            </Card>
+          </section>
+          <Modal open={isAgentModalOpen} onClose={() => setIsAgentModalOpen(false)} title={selected ? `Edit ${selected.name}` : "Create AI Agent"} className="max-w-6xl">
+            <section className="space-y-5">
               <Card className="p-5">
-                <h3 className="flex items-center gap-2 text-lg font-black text-slate-900"><Wrench size={18} /> Tools</h3>
-                <div className="mt-4 space-y-3">
-                  {TOOL_OPTIONS.map((tool) => {
-                    const enabled = Boolean((draft.tools || []).find((item) => item.type === tool.type)?.enabled);
-                    return (
-                      <label key={tool.type} className="flex cursor-pointer items-start gap-3 rounded-[8px] border border-slate-200 p-3">
-                        <input type="checkbox" className="mt-1 h-4 w-4 accent-brand-600" checked={enabled} onChange={(event) => toggleTool(tool.type, event.target.checked)} />
-                        <span>
-                          <span className="block text-sm font-black text-slate-900">{tool.label}</span>
-                          <span className="mt-1 block text-xs font-medium leading-5 text-slate-500">{tool.description}</span>
-                        </span>
-                      </label>
-                    );
-                  })}
+                <div className="flex items-start justify-between gap-4">
+                  <div>
+                    <h2 className="text-xl font-black text-slate-900">{selected ? "Edit AI Agent" : "Create AI Agent"}</h2>
+                    <p className="mt-1 text-sm font-medium text-slate-500">Industry-style builder modal for model, routing, guardrails, tools, and knowledge behavior.</p>
+                  </div>
+                </div>
+                <div className="mt-5 grid gap-3 md:grid-cols-2">
+                  <Input label="Agent name" value={String(draft.name || "")} onChange={(event) => updateDraft({ name: event.target.value })} placeholder="Support Agent" />
+                  <Input label="Slug" value={String(draft.slug || "")} onChange={(event) => updateDraft({ slug: event.target.value })} placeholder="support-agent" />
+                  <Select label="Status" value={String(draft.status || "draft")} onChange={(event) => updateDraft({ status: event.target.value as AiAgentStatus })}>
+                    <option value="draft">Draft</option>
+                    <option value="active">Active</option>
+                    <option value="paused">Paused</option>
+                    <option value="archived">Archived</option>
+                  </Select>
+                  <Select label="Persona" value={String(draft.persona || "custom")} onChange={(event) => updateDraft({ persona: event.target.value as any })}>
+                    <option value="sales">Sales</option>
+                    <option value="support">Support</option>
+                    <option value="booking">Booking</option>
+                    <option value="faq">FAQ</option>
+                    <option value="custom">Custom</option>
+                  </Select>
+                  <Input label="Runtime" value="Gemini" readOnly />
+                  <Select label="Gemini model" value={String(draft.modelName || dashboard?.settings.modelDefault || "gemini-3.5-flash")} onChange={(event) => updateDraft({ modelName: event.target.value, modelProvider: "gemini" })}>
+                    {modelOptions.map((model) => (
+                      <option key={model.key} value={model.key}>{model.label}{model.deprecated ? " (Deprecated)" : ""}</option>
+                    ))}
+                  </Select>
+                </div>
+                <div className="mt-3">
+                  <Textarea label="Description" value={String(draft.description || "")} onChange={(event) => updateDraft({ description: event.target.value })} />
+                </div>
+                <div className="mt-3">
+                  <Textarea label="System prompt" value={String(draft.systemPrompt || "")} onChange={(event) => updateDraft({ systemPrompt: event.target.value })} />
                 </div>
               </Card>
-
+              <div className="grid gap-5 lg:grid-cols-2">
+                <Card className="p-5">
+                  <h3 className="flex items-center gap-2 text-lg font-black text-slate-900"><Wrench size={18} /> Tools</h3>
+                  <div className="mt-4 space-y-3">
+                    {TOOL_OPTIONS.map((tool) => {
+                      const enabled = Boolean((draft.tools || []).find((item) => item.type === tool.type)?.enabled);
+                      return (
+                        <label key={tool.type} className="flex cursor-pointer items-start gap-3 rounded-[8px] border border-slate-200 p-3">
+                          <input type="checkbox" className="mt-1 h-4 w-4 accent-brand-600" checked={enabled} onChange={(event) => toggleTool(tool.type, event.target.checked)} />
+                          <span>
+                            <span className="block text-sm font-black text-slate-900">{tool.label}</span>
+                            <span className="mt-1 block text-xs font-medium leading-5 text-slate-500">{tool.description}</span>
+                          </span>
+                        </label>
+                      );
+                    })}
+                  </div>
+                </Card>
                 <Card className="p-5">
                   <h3 className="flex items-center gap-2 text-lg font-black text-slate-900"><ShieldCheck size={18} /> Guardrails</h3>
                   <div className="mt-4 space-y-3">
@@ -1012,12 +1139,11 @@ export default function AiAgentsPage() {
                     <Input label="Blocked topics" value={listToCsv(draft.guardrails?.blockedTopics)} onChange={(event) => updateDraft({ guardrails: { ...(draft.guardrails as any), blockedTopics: csvToList(event.target.value) } })} placeholder="legal advice, medical advice" />
                     <label className="flex items-center gap-3 rounded-[8px] border border-slate-200 p-3 text-sm font-bold text-slate-700">
                       <input type="checkbox" className="h-4 w-4 accent-brand-600" checked={draft.guardrails?.handoverOnLowConfidence !== false} onChange={(event) => updateDraft({ guardrails: { ...(draft.guardrails as any), handoverOnLowConfidence: event.target.checked } })} />
-                    Handover on low confidence
-                  </label>
-                </div>
+                      Handover on low confidence
+                    </label>
+                  </div>
                 </Card>
               </div>
-
               <div className="grid gap-5 lg:grid-cols-2">
                 <Card className="p-5">
                   <h3 className="flex items-center gap-2 text-lg font-black text-slate-900"><Clock3 size={18} /> Runtime Controls</h3>
@@ -1037,7 +1163,6 @@ export default function AiAgentsPage() {
                         <option value="pause">Pause AI</option>
                       </Select>
                     </div>
-
                     <label className="flex items-center gap-3 rounded-[8px] border border-slate-200 p-3 text-sm font-bold text-slate-700">
                       <input type="checkbox" className="h-4 w-4 accent-brand-600" checked={draft.runtimeControls?.escalationRules?.enabled === true} onChange={(event) => updateDraft({ runtimeControls: { ...(draft.runtimeControls as any), escalationRules: { ...(draft.runtimeControls as any)?.escalationRules, enabled: event.target.checked } } })} />
                       Escalation rules
@@ -1057,7 +1182,6 @@ export default function AiAgentsPage() {
                     </div>
                   </div>
                 </Card>
-
                 <Card className="p-5">
                   <h3 className="flex items-center gap-2 text-lg font-black text-slate-900"><Bot size={18} /> Routing, Fallbacks & Audit</h3>
                   <div className="mt-4 space-y-3">
@@ -1088,15 +1212,15 @@ export default function AiAgentsPage() {
                   ) : null}
                 </Card>
               </div>
-
               <div className="sticky bottom-4 flex justify-end gap-2 rounded-[10px] border border-slate-200 bg-white/90 p-3 shadow-xl backdrop-blur">
-              <Button variant="outline" onClick={startCreate}>Reset</Button>
-              <Button onClick={() => void saveAgent()} disabled={saving}>
-                <CheckCircle2 size={17} />
-                {saving ? "Saving..." : selected ? "Save Agent" : "Create Agent"}
-              </Button>
-            </div>
-          </section>
+                <Button variant="outline" onClick={() => setIsAgentModalOpen(false)}>Cancel</Button>
+                <Button onClick={() => void saveAgent()} disabled={saving}>
+                  <CheckCircle2 size={17} />
+                  {saving ? "Saving..." : selected ? "Save Agent" : "Create Agent"}
+                </Button>
+              </div>
+            </section>
+          </Modal>
         </div>
       ) : null}
 

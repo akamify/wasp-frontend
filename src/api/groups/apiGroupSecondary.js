@@ -522,7 +522,7 @@ export function buildApiGroupSecondary(api, unwrap, API_BASE_URL) {
       remove: (agentId) =>
         api.delete(`/ai-agents/${encodeURIComponent(agentId)}`).then(unwrap),
       testMessage: (agentId, payload) =>
-        api.post(`/ai-agents/${encodeURIComponent(agentId)}/test-message`, payload).then(unwrap),
+        api.post(`/ai-agents/${encodeURIComponent(agentId)}/test-message`, payload, { timeout: 120000 }).then(unwrap),
       conversations: (agentId) =>
         api.get(`/ai-agents/${encodeURIComponent(agentId)}/conversations`).then(unwrap),
       clearTestMemory: (agentId, payload) =>
