@@ -716,6 +716,7 @@ export default function AiAgentsPage() {
                   </div>
                   <div className="mt-3 flex flex-wrap gap-2">
                     {conversation.hasHumanTakeover ? <RuntimeBadge tone="warn" label="Human takeover" /> : null}
+                    {conversation.hasAssignedOwner && !conversation.hasHumanTakeover ? <RuntimeBadge tone="ok" label="CRM owner assigned" /> : null}
                     {conversation.automationPausedAt ? <RuntimeBadge tone="warn" label={`Paused: ${conversation.automationPauseReason || "automation"}`} /> : null}
                     {conversation.hasActiveFlowSession ? <RuntimeBadge tone="warn" label="Active flow session" /> : null}
                     {conversation.aiLastErrorMessage ? <RuntimeBadge tone="error" label="Last runtime error" /> : null}

@@ -689,6 +689,7 @@ export interface AiDashboardResponse {
       aiAgentName?: string | null;
       assignedEmployeeId?: string | null;
       hasHumanTakeover: boolean;
+      hasAssignedOwner?: boolean;
       automationPausedAt?: string | null;
       automationPauseReason?: string | null;
       hasActiveFlowSession: boolean;
