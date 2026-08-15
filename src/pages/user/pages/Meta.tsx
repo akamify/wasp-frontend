@@ -81,8 +81,12 @@ export default function MetaConnectPage() {
   const { toast } = useToast();
 
   const debug = (label: string, data: Record<string, unknown>) => {
-    void label;
-    void data;
+    if (typeof window === "undefined") return;
+    try {
+      console.info(`[meta-embedded-signup] ${label}`, data);
+    } catch {
+      // keep the signup flow resilient even if console serialization fails
+    }
   };
 
   const clearMessageListener = useCallback(() => {
@@ -306,6 +310,7 @@ export default function MetaConnectPage() {
             code: authCodeRef.current,
             waba_id: signupDetailsRef.current.waba_id,
             phone_number_id: signupDetailsRef.current.phone_number_id,
+            flow_id: currentFlowId,
           });
           if (result?.needsPhoneSelection) {
             const phones = Array.isArray(result?.phones) ? result.phones : [];
@@ -460,6 +465,10 @@ export default function MetaConnectPage() {
     } catch (e: any) {
       const backendMessage = e?.response?.data?.message || "";
       const backendDetail = e?.response?.data?.details?.message || "";
+      const restartRequired = Boolean(
+        e?.response?.data?.details?.restartRequired,
+      );
+      const existingState = e?.response?.data?.details?.existingState || null;
       const providerError = String(
         e?.response?.data?.providerError ||
           e?.response?.data?.details?.providerError ||
@@ -470,13 +479,39 @@ export default function MetaConnectPage() {
           e?.response?.data?.details?.meta?.error_subcode ||
           0,
       );
+      const usedCodeMessage =
+        restartRequired &&
+        existingState &&
+        ["PIN_REQUIRED", "FAILED", "REGISTERING", "PHONE_REGISTERED", "METADATA_SYNCING", "TEMPLATE_SYNCING", "SYNC_WARNING"].includes(
+          String(existingState?.lifecycleState || ""),
+        )
+          ? "This Meta connect code was already consumed, but an earlier signup session exists for this workspace. Continue that pending setup below instead of starting from scratch."
+          : restartRequired
+            ? "This Meta connect code was already consumed. Click Connect WhatsApp again and complete the popup once to generate a fresh code."
+            : "";
       const message = /could not be matched to the selected waba/i.test(
         backendMessage,
       )
         ? "Meta returned a phone number that does not match the selected WABA. Please reconnect WhatsApp. If this repeats, contact support."
-        : backendMessage || e?.message || "Could not exchange Meta code";
+        : usedCodeMessage || backendMessage || e?.message || "Could not exchange Meta code";
       setEmbeddedError(message);
-      setEmbeddedDebugError(String(backendDetail || ""));
+      setEmbeddedDebugError(
+        String(
+          backendDetail ||
+            providerError ||
+            (restartRequired
+              ? "Meta authorization codes are single-use. A fresh Connect WhatsApp attempt is required unless a pending signup session is already shown below."
+              : ""),
+        ),
+      );
+      debug("exchange failed", {
+        flowId: flowIdRef.current,
+        providerSubcode,
+        restartRequired,
+        existingState,
+        providerError,
+        backendMessage,
+      });
       toast(message, "error");
       signupActiveRef.current = false;
       clearMessageListener();
