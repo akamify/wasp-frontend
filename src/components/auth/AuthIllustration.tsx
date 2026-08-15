@@ -1,8 +1,6 @@
 import { motion } from "framer-motion";
 import { ShieldCheck } from "lucide-react";
 
-
-
 export function AuthIllustration() {
     return (
         <div className="hidden h-full w-full items-center justify-center lg:flex">
