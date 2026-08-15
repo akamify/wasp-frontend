@@ -42,6 +42,7 @@ import type {
   AiAddonStatusResponse,
   AiAgent,
   AiAgentPayload,
+  AiAgentSendButtonConfig,
   AiAgentStatus,
   AiBillingStatementItem,
   AiBillingSummaryResponse,
@@ -55,6 +56,7 @@ import type {
 } from "@modules/ai-agents/types";
 
 type AiTabKey = "overview" | "agents" | "conversations" | "usage" | "billing" | "settings";
+type AutomationFlowOption = { _id?: string; id?: string; name: string; status?: string };
 
 const TOOL_OPTIONS: Array<{ type: AiAgentToolType; label: string; description: string }> = [
   { type: "crm_lookup", label: "CRM lookup", description: "Read lead/contact context before answering." },
@@ -63,6 +65,7 @@ const TOOL_OPTIONS: Array<{ type: AiAgentToolType; label: string; description: s
   { type: "set_attribute", label: "Set attribute", description: "Save structured contact attributes." },
   { type: "api_request", label: "API request", description: "Call external systems later through tool config." },
   { type: "handover", label: "Human handover", description: "Transfer to inbox/CRM team when needed." },
+  { type: "send_buttons", label: "WhatsApp buttons", description: "Send approved buttons that start automation flows." },
 ];
 
 const TABS: Array<{ key: AiTabKey; label: string; icon: React.ReactNode }> = [
@@ -141,6 +144,19 @@ function csvToList(value: string) {
 
 function listToCsv(value?: string[]) {
   return Array.isArray(value) ? value.join(", ") : "";
+}
+
+function flowOptionId(flow: AutomationFlowOption) {
+  return String(flow._id || flow.id || "").trim();
+}
+
+function sendButtonsConfig(agent: AiAgentPayload) {
+  const tool = (agent.tools || []).find((item) => item.type === "send_buttons");
+  const config = tool?.config && typeof tool.config === "object" ? tool.config as { defaultBody?: string; buttons?: AiAgentSendButtonConfig[] } : {};
+  return {
+    defaultBody: String(config.defaultBody || ""),
+    buttons: Array.isArray(config.buttons) ? config.buttons : [],
+  };
 }
 
 function getReplyPolicyPreview(agent?: AiAgentPayload | AiAgent | null) {
@@ -284,6 +300,8 @@ export default function AiAgentsPage() {
   const [conversationPhone, setConversationPhone] = useState("");
   const [conversationAgentId, setConversationAgentId] = useState("");
   const [conversationAiState, setConversationAiState] = useState("");
+  const [automationFlows, setAutomationFlows] = useState<AutomationFlowOption[]>([]);
+  const [automationFlowsLoading, setAutomationFlowsLoading] = useState(false);
 
   const filteredAgents = useMemo(() => agents, [agents]);
   const usageTransactions = useMemo(() => transactions.filter((item) => item.type === "usage"), [transactions]);
@@ -361,6 +379,28 @@ export default function AiAgentsPage() {
     void loadShell();
   }, [analyticsDateFrom, analyticsDateTo, analyticsAgentId, analyticsChannel]);
 
+  useEffect(() => {
+    if (!isAgentModalOpen) return;
+    let active = true;
+    setAutomationFlowsLoading(true);
+    API.automationFlows
+      .list({ status: "active", page: 1, limit: 100 })
+      .then((rawResponse) => {
+        if (!active) return;
+        const response = rawResponse as { flows?: AutomationFlowOption[] };
+        setAutomationFlows(Array.isArray(response.flows) ? response.flows : []);
+      })
+      .catch(() => {
+        if (active) setAutomationFlows([]);
+      })
+      .finally(() => {
+        if (active) setAutomationFlowsLoading(false);
+      });
+    return () => {
+      active = false;
+    };
+  }, [isAgentModalOpen]);
+
   function startCreate() {
     setSelected(null);
     setDraft(structuredClone(DEFAULT_AGENT));
@@ -385,6 +425,43 @@ export default function AiAgentsPage() {
     if (index >= 0) tools[index] = { ...tools[index], enabled };
     else tools.push({ type, enabled, config: {} });
     updateDraft({ tools });
+  }
+
+  function updateToolConfig(type: AiAgentToolType, config: Record<string, unknown>) {
+    const tools = [...(draft.tools || [])];
+    const index = tools.findIndex((tool) => tool.type === type);
+    if (index >= 0) tools[index] = { ...tools[index], config };
+    else tools.push({ type, enabled: true, config });
+    updateDraft({ tools });
+  }
+
+  function updateSendButtonsConfig(patch: Partial<{ defaultBody: string; buttons: AiAgentSendButtonConfig[] }>) {
+    const current = sendButtonsConfig(draft);
+    updateToolConfig("send_buttons", {
+      defaultBody: patch.defaultBody ?? current.defaultBody,
+      buttons: patch.buttons ?? current.buttons,
+    });
+  }
+
+  function updateSendButton(index: number, patch: Partial<AiAgentSendButtonConfig>) {
+    const current = sendButtonsConfig(draft);
+    const buttons = current.buttons.map((button, buttonIndex) => buttonIndex === index ? { ...button, ...patch } : button);
+    updateSendButtonsConfig({ buttons });
+  }
+
+  function addSendButton() {
+    const current = sendButtonsConfig(draft);
+    updateSendButtonsConfig({
+      buttons: [
+        ...current.buttons,
+        { id: `option_${current.buttons.length + 1}`, title: `Option ${current.buttons.length + 1}`, flowId: "" },
+      ],
+    });
+  }
+
+  function removeSendButton(index: number) {
+    const current = sendButtonsConfig(draft);
+    updateSendButtonsConfig({ buttons: current.buttons.filter((_, buttonIndex) => buttonIndex !== index) });
   }
 
   async function saveAgent() {
@@ -1311,6 +1388,17 @@ export default function AiAgentsPage() {
                         </label>
                       );
                     })}
+                    {Boolean((draft.tools || []).find((item) => item.type === "send_buttons")?.enabled) ? (
+                      <SendButtonsToolConfig
+                        config={sendButtonsConfig(draft)}
+                        flows={automationFlows}
+                        flowsLoading={automationFlowsLoading}
+                        onAdd={addSendButton}
+                        onDefaultBodyChange={(defaultBody) => updateSendButtonsConfig({ defaultBody })}
+                        onRemove={removeSendButton}
+                        onUpdate={updateSendButton}
+                      />
+                    ) : null}
                   </div>
                 </Card>
                 <Card className="p-5">
@@ -1933,6 +2021,95 @@ export default function AiAgentsPage() {
         purchasingPackId={purchasingPackId}
         onPurchase={purchaseTopup}
       />
+    </div>
+  );
+}
+
+function SendButtonsToolConfig({
+  config,
+  flows,
+  flowsLoading,
+  onAdd,
+  onDefaultBodyChange,
+  onRemove,
+  onUpdate,
+}: {
+  config: { defaultBody: string; buttons: AiAgentSendButtonConfig[] };
+  flows: AutomationFlowOption[];
+  flowsLoading: boolean;
+  onAdd: () => void;
+  onDefaultBodyChange: (value: string) => void;
+  onRemove: (index: number) => void;
+  onUpdate: (index: number, patch: Partial<AiAgentSendButtonConfig>) => void;
+}) {
+  return (
+    <div className="rounded-[8px] border border-emerald-100 bg-emerald-50/60 p-3">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div>
+          <div className="text-sm font-black text-slate-900">Approved WhatsApp buttons</div>
+          <div className="mt-1 text-xs font-medium text-slate-500">The AI can select these button IDs; flows stay server-configured.</div>
+        </div>
+        <Button type="button" size="sm" variant="outline" onClick={onAdd}>
+          <Plus size={14} />
+          Add
+        </Button>
+      </div>
+      <div className="mt-3">
+        <Textarea
+          label="Default body"
+          value={config.defaultBody}
+          onChange={(event) => onDefaultBodyChange(event.target.value)}
+          placeholder="Please choose an option."
+        />
+      </div>
+      <div className="mt-3 space-y-3">
+        {config.buttons.map((button, index) => (
+          <div key={`${button.id}-${index}`} className="rounded-[8px] border border-slate-200 bg-white p-3">
+            <div className="grid gap-3 md:grid-cols-[1fr_1fr_1.4fr_auto]">
+              <Input
+                label="Button ID"
+                value={button.id}
+                onChange={(event) => onUpdate(index, { id: event.target.value })}
+                placeholder="book_demo"
+              />
+              <Input
+                label="Title"
+                maxLength={20}
+                value={button.title}
+                onChange={(event) => onUpdate(index, { title: event.target.value })}
+                placeholder="Book Demo"
+              />
+              <Select
+                label={flowsLoading ? "Flow (loading)" : "Target flow"}
+                value={button.flowId}
+                onChange={(event) => onUpdate(index, { flowId: event.target.value })}
+              >
+                <option value="">Select active flow</option>
+                {flows.map((flow) => {
+                  const id = flowOptionId(flow);
+                  return id ? <option key={id} value={id}>{flow.name || id}</option> : null;
+                })}
+              </Select>
+              <Button type="button" variant="ghost" className="mt-6 text-rose-600 hover:bg-rose-50" onClick={() => onRemove(index)}>
+                <Trash2 size={14} />
+              </Button>
+            </div>
+            <div className="mt-3">
+              <Input
+                label="Description"
+                value={button.description || ""}
+                onChange={(event) => onUpdate(index, { description: event.target.value })}
+                placeholder="Optional internal note"
+              />
+            </div>
+          </div>
+        ))}
+        {!config.buttons.length ? (
+          <div className="rounded-[8px] border border-dashed border-slate-200 bg-white px-3 py-4 text-sm font-medium text-slate-500">
+            No approved buttons configured.
+          </div>
+        ) : null}
+      </div>
     </div>
   );
 }

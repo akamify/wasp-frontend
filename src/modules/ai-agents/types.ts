@@ -4,7 +4,7 @@ export type AiAgentProvider = "gemini";
 export type AiAgentKnowledgeType = "text" | "url" | "faq" | "file";
 export type AiKnowledgeSourceType = "faq" | "text" | "url" | "pdf" | "docx" | "csv" | "txt";
 export type AiKnowledgeSourceStatus = "draft" | "indexing" | "indexed" | "failed";
-export type AiAgentToolType = "crm_lookup" | "contact_update" | "set_tag" | "set_attribute" | "api_request" | "handover";
+export type AiAgentToolType = "crm_lookup" | "contact_update" | "set_tag" | "set_attribute" | "api_request" | "handover" | "send_buttons";
 
 export interface AiAgentKnowledgeSource {
   _id?: string;
@@ -95,10 +95,22 @@ export interface AiKnowledgePayload {
   metadata?: Record<string, unknown>;
 }
 
+export interface AiAgentSendButtonConfig {
+  id: string;
+  title: string;
+  description?: string;
+  flowId: string;
+}
+
+export interface AiAgentSendButtonsConfig {
+  defaultBody?: string;
+  buttons?: AiAgentSendButtonConfig[];
+}
+
 export interface AiAgentTool {
   type: AiAgentToolType;
   enabled: boolean;
-  config?: Record<string, unknown>;
+  config?: Record<string, unknown> | AiAgentSendButtonsConfig;
 }
 
 export interface AiAgentGuardrails {
