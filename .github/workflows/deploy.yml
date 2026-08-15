@@ -21,3 +21,4 @@ jobs:
             cd /root/wasp-frontend
             chmod +x scripts/deploy.sh
             ./scripts/deploy.sh
+            
