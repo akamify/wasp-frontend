@@ -247,11 +247,11 @@ export default function MetaConnectPage() {
     const stage = String(
       embeddedConnection?.lifecycleState || embeddedConnection?.onboardingStage || "",
     );
-    if (stage === "PIN_REQUIRED") {
+    if (["PIN_REQUIRED", "FAILED"].includes(stage)) {
       setPinModalOpen(true);
       return;
     }
-    if (["READY", "READY_WITH_WARNINGS", "FAILED", "EXPIRED"].includes(stage)) {
+    if (["READY", "READY_WITH_WARNINGS", "EXPIRED"].includes(stage)) {
       setPinModalOpen(false);
     }
   }, [embeddedConnection?.lifecycleState, embeddedConnection?.onboardingStage]);
@@ -460,6 +460,16 @@ export default function MetaConnectPage() {
     } catch (e: any) {
       const backendMessage = e?.response?.data?.message || "";
       const backendDetail = e?.response?.data?.details?.message || "";
+      const providerError = String(
+        e?.response?.data?.providerError ||
+          e?.response?.data?.details?.providerError ||
+          "",
+      ).trim();
+      const providerSubcode = Number(
+        e?.response?.data?.details?.meta?.subcode ||
+          e?.response?.data?.details?.meta?.error_subcode ||
+          0,
+      );
       const message = /could not be matched to the selected waba/i.test(
         backendMessage,
       )
@@ -471,6 +481,28 @@ export default function MetaConnectPage() {
       signupActiveRef.current = false;
       clearMessageListener();
       await loadStatus();
+      if (
+        providerSubcode === 36009 ||
+        /authorization code has been used/i.test(providerError)
+      ) {
+        const resumedConnection = await API.meta.connection().catch(() => null);
+        if (resumedConnection) {
+          setEmbeddedConnection(resumedConnection);
+          const resumedStage = String(
+            resumedConnection?.lifecycleState || resumedConnection?.onboardingStage || "",
+          ).trim();
+          if (
+            ["PIN_REQUIRED", "FAILED", "REGISTERING", "PHONE_REGISTERED", "METADATA_SYNCING", "TEMPLATE_SYNCING", "SYNC_WARNING"].includes(
+              resumedStage,
+            )
+          ) {
+            setPinModalOpen(true);
+            setEmbeddedError(
+              "Previous Meta signup session already started. Continue setup with your registration PIN.",
+            );
+          }
+        }
+      }
     } finally {
       setEmbeddedBusy(false);
     }

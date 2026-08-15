@@ -128,6 +128,11 @@ const DEFAULT_AGENT: AiAgentPayload = {
       channels: ["whatsapp", "test", "api"],
     },
   },
+  metadata: {
+    managedFileSearch: {
+      enabled: true,
+    },
+  },
 };
 
 function csvToList(value: string) {
@@ -136,6 +141,32 @@ function csvToList(value: string) {
 
 function listToCsv(value?: string[]) {
   return Array.isArray(value) ? value.join(", ") : "";
+}
+
+function getReplyPolicyPreview(agent?: AiAgentPayload | AiAgent | null) {
+  const handoverOnLowConfidence = agent?.guardrails?.handoverOnLowConfidence !== false;
+  const fallbackMessage = String(agent?.guardrails?.fallbackMessage || "").trim() || DEFAULT_AGENT.guardrails?.fallbackMessage || "";
+  const afterHoursAction = String(agent?.runtimeControls?.businessHours?.afterHoursAction || "reply_and_handover");
+  const channels = Array.isArray(agent?.runtimeControls?.routing?.channels) && agent?.runtimeControls?.routing?.channels?.length
+    ? agent?.runtimeControls?.routing?.channels
+    : ["whatsapp", "test", "api"];
+
+  return {
+    language: "Auto mirror: Hinglish -> Hinglish, हिंदी -> हिंदी, English -> English",
+    shortReply: "Short message -> 1 to 2 lines only",
+    detailedReply: "Detailed business query -> concise explanation + short bullets + one useful follow-up question",
+    disclosure: "Natural assistant tone, but never claims to be human",
+    followUp: "Only one useful next question in the whole reply",
+    escalation: handoverOnLowConfidence ? "Low confidence -> handover / fallback reply" : "Low confidence handover off",
+    fallbackMessage,
+    afterHours:
+      afterHoursAction === "handover_only"
+        ? "After hours -> direct handover"
+        : afterHoursAction === "pause"
+          ? "After hours -> AI paused"
+          : "After hours -> reply, then handover if needed",
+    channels: channels.join(", "),
+  };
 }
 
 function humanizeRuntimeReason(value?: string | null) {
@@ -165,6 +196,52 @@ function normalizeEditable(agent?: AiAgent | null): AiAgentPayload {
     tools: agent.tools || [],
     guardrails: agent.guardrails || DEFAULT_AGENT.guardrails,
     runtimeControls: agent.runtimeControls || DEFAULT_AGENT.runtimeControls,
+    metadata: agent.metadata || DEFAULT_AGENT.metadata,
+  };
+}
+
+function getManagedFileSearchState(agent?: AiAgent | null) {
+  const managed = agent?.metadata?.managedFileSearch;
+  const enabled = managed?.enabled !== false;
+  const hasStore = Boolean(String(managed?.storeName || "").trim());
+  const documentCount = Math.max(0, Number(managed?.documentCount || 0));
+  const lastError = String(managed?.lastError || "").trim();
+  const rawStatus = String(managed?.status || "").trim().toLowerCase();
+  const status =
+    rawStatus ||
+    (enabled ? (hasStore ? "ready" : documentCount > 0 ? "syncing" : "idle") : "disabled");
+
+  let syncLabel = "Waiting";
+  let tone: "ok" | "warn" | "error" = "warn";
+  if (!enabled) {
+    syncLabel = "Off";
+  } else if (status === "ready") {
+    syncLabel = "Synced";
+    tone = "ok";
+  } else if (status === "degraded") {
+    syncLabel = "Degraded";
+    tone = "warn";
+  } else if (status === "failed") {
+    syncLabel = "Failed";
+    tone = "error";
+  } else if (status === "syncing" || status === "recreating") {
+    syncLabel = "Syncing";
+  } else if (status === "disabled") {
+    syncLabel = "Off";
+  }
+
+  return {
+    enabled,
+    hasStore,
+    documentCount,
+    lastError,
+    status,
+    syncLabel,
+    tone,
+    storeStatus: !enabled ? "Disabled" : hasStore ? "Ready" : "Not created",
+    syncedAt: managed?.syncedAt || null,
+    displayName: String(managed?.displayName || "").trim(),
+    embeddingModel: String(managed?.embeddingModel || "").trim(),
   };
 }
 
@@ -352,6 +429,33 @@ export default function AiAgentsPage() {
     }
   }
 
+  async function toggleManagedFileSearch(agent: AiAgent, enabled: boolean) {
+    setSaving(true);
+    try {
+      const response = await aiAgentsApi.update(agent.id, {
+        metadata: {
+          managedFileSearch: {
+            enabled,
+          },
+        },
+      });
+      setSelected(response.agent);
+      setDraft(normalizeEditable(response.agent));
+      toast(enabled ? "Managed File Search enabled." : "Managed File Search turned off.", "success");
+      await loadShell();
+    } catch (requestError: any) {
+      toast(
+        requestError?.userMessage ||
+          requestError?.response?.data?.message ||
+          requestError?.message ||
+          "Unable to update Managed File Search.",
+        "error",
+      );
+    } finally {
+      setSaving(false);
+    }
+  }
+
   async function purchaseTopup(packId: string) {
     setPurchasingPackId(packId);
     try {
@@ -422,6 +526,7 @@ export default function AiAgentsPage() {
   const heroRemainingTokens = Number(addonStatus?.workspace.remainingTokens || 0);
   const heroTodayReplies = Number(overview?.usage.todayReplies || 0);
   const heroKnowledgeSources = Number(overview?.knowledge.totalSources || 0);
+  const managedFileSearch = getManagedFileSearchState(selected);
   const setQuickRange = (preset: "today" | "7d" | "month") => {
     const now = new Date();
     if (preset === "today") {
@@ -1086,6 +1191,20 @@ export default function AiAgentsPage() {
                 <SummaryRow label="Remaining Credits" value={String(Number(addonStatus?.workspace.remainingCredits || 0))} />
               </div>
             </Card>
+
+            <Card className="p-5">
+              <ReplyPolicyCard agent={selected} />
+            </Card>
+
+            <Card className="p-5">
+              <ManagedFileSearchCard
+                agent={selected}
+                saving={saving}
+                managedState={managedFileSearch}
+                onToggle={(enabled) => (selected ? void toggleManagedFileSearch(selected, enabled) : undefined)}
+                onManageKnowledge={() => (selected ? navigate(`/app/ai-agents/${selected.id}/knowledge`) : undefined)}
+              />
+            </Card>
           </section>
           <Modal open={isAgentModalOpen} onClose={() => setIsAgentModalOpen(false)} title={selected ? `Edit ${selected.name}` : "Create AI Agent"} className="max-w-6xl">
             <section className="space-y-5">
@@ -1125,6 +1244,56 @@ export default function AiAgentsPage() {
                 <div className="mt-3">
                   <Textarea label="System prompt" value={String(draft.systemPrompt || "")} onChange={(event) => updateDraft({ systemPrompt: event.target.value })} />
                 </div>
+                <div className="mt-5">
+                  <ReplyPolicyCard agent={draft} compact />
+                </div>
+              </Card>
+              <Card className="p-5">
+                <div className="flex flex-wrap items-start justify-between gap-4">
+                  <div>
+                    <h3 className="text-lg font-black text-slate-900">Managed Gemini File Search</h3>
+                    <p className="mt-1 text-sm font-medium text-slate-500">Auto-sync your knowledge into Gemini retrieval so live replies use cleaner context with fewer prompt tokens.</p>
+                  </div>
+                  <label className="inline-flex items-center gap-3 rounded-full border border-slate-200 bg-slate-50 px-4 py-2 text-sm font-black text-slate-700">
+                    <input
+                      type="checkbox"
+                      className="h-4 w-4 accent-brand-600"
+                      checked={(draft.metadata as any)?.managedFileSearch?.enabled !== false}
+                      onChange={(event) =>
+                        updateDraft({
+                          metadata: {
+                            ...(draft.metadata || {}),
+                            managedFileSearch: {
+                              ...((draft.metadata as any)?.managedFileSearch || {}),
+                              enabled: event.target.checked,
+                            },
+                          },
+                        })
+                      }
+                    />
+                    Managed search on
+                  </label>
+                </div>
+                <div className="mt-4 grid gap-3 md:grid-cols-2">
+                  <SummaryRow label="Mode" value={(draft.metadata as any)?.managedFileSearch?.enabled !== false ? "Enabled" : "Disabled"} />
+                  <SummaryRow label="Sync Source" value="Gemini File Search store" />
+                </div>
+                {selected ? (
+                  <div className="mt-4 rounded-[16px] border border-slate-200 bg-slate-50/70 p-4">
+                    <ManagedFileSearchCard
+                      agent={selected}
+                      saving={saving}
+                      compact
+                      managedState={managedFileSearch}
+                      onToggle={(enabled) => void toggleManagedFileSearch(selected, enabled)}
+                      onManageKnowledge={() => navigate(`/app/ai-agents/${selected.id}/knowledge`)}
+                    />
+                  </div>
+                ) : (
+                  <div className="mt-4 rounded-[14px] border border-dashed border-slate-200 px-4 py-4 text-sm font-medium text-slate-500">
+                    Create the agent first, then add documents in Knowledge. Sync status, store status, and last errors will appear here automatically.
+                  </div>
+                )}
               </Card>
               <div className="grid gap-5 lg:grid-cols-2">
                 <Card className="p-5">
@@ -1844,6 +2013,163 @@ function MetricCard({ label, value, helper }: { label: string; value: string; he
       <div className="mt-4 text-3xl font-black tracking-tight text-slate-900">{value}</div>
       {helper ? <div className="mt-2 text-xs font-semibold leading-5 text-slate-500">{helper}</div> : null}
     </Card>
+  );
+}
+
+function ManagedFileSearchCard({
+  agent,
+  saving,
+  managedState,
+  onToggle,
+  onManageKnowledge,
+  compact = false,
+}: {
+  agent?: AiAgent | null;
+  saving: boolean;
+  managedState: ReturnType<typeof getManagedFileSearchState>;
+  onToggle: (enabled: boolean) => void;
+  onManageKnowledge: () => void;
+  compact?: boolean;
+}) {
+  if (!agent) {
+    return (
+      <div className="space-y-3">
+        <div>
+          <div className="text-[11px] font-black uppercase tracking-[0.24em] text-slate-400">Managed Gemini File Search</div>
+          <h3 className="mt-2 text-lg font-black text-slate-900">Select an agent to inspect retrieval sync</h3>
+        </div>
+        <div className="rounded-[14px] border border-dashed border-slate-200 px-4 py-5 text-sm font-medium text-slate-500">
+          Store status, sync state, document count, and last sync errors will appear here for the selected agent.
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-4">
+      <div className="flex flex-wrap items-start justify-between gap-4">
+        <div>
+          <div className="text-[11px] font-black uppercase tracking-[0.24em] text-slate-400">Managed Gemini File Search</div>
+          <h3 className="mt-2 text-lg font-black text-slate-900">{compact ? "Runtime sync status" : "Knowledge retrieval control"}</h3>
+          {!compact ? (
+            <p className="mt-1 text-sm font-medium text-slate-500">Keep relevant chunks inside Gemini File Search instead of pushing the full knowledge base into every prompt.</p>
+          ) : null}
+        </div>
+        <div className="flex flex-wrap items-center gap-2">
+          <RuntimeBadge tone={managedState.tone} label={managedState.syncLabel} />
+          {!compact ? (
+            <Button variant={managedState.enabled ? "outline" : "primary"} onClick={() => onToggle(!managedState.enabled)} disabled={saving}>
+              {managedState.enabled ? "Turn Off" : "Turn On"}
+            </Button>
+          ) : null}
+        </div>
+      </div>
+
+      <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+        <SummaryRow label="Mode" value={managedState.enabled ? "Enabled" : "Disabled"} />
+        <SummaryRow label="Store" value={managedState.storeStatus} />
+        <SummaryRow label="Sync" value={managedState.syncLabel} />
+        <SummaryRow label="Documents" value={String(managedState.documentCount)} />
+      </div>
+
+      <div className="grid gap-3 md:grid-cols-2">
+        <SummaryRow label="Last Sync" value={managedState.syncedAt ? formatDateTime(managedState.syncedAt) : "Not yet"} />
+        <SummaryRow label="Embedding" value={managedState.embeddingModel || "Gemini default"} />
+      </div>
+
+      {managedState.lastError ? (
+        <div className="rounded-[14px] border border-rose-200 bg-rose-50 px-4 py-4 text-sm font-medium text-rose-700">
+          Last sync error: {managedState.lastError}
+        </div>
+      ) : null}
+
+      {!compact ? (
+        <div className="flex flex-wrap gap-2">
+          <Button variant="outline" onClick={onManageKnowledge}>
+            <BookOpen size={16} />
+            Open Knowledge
+          </Button>
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
+function ReplyPolicyCard({
+  agent,
+  compact = false,
+}: {
+  agent?: AiAgentPayload | AiAgent | null;
+  compact?: boolean;
+}) {
+  if (!agent || !String(agent.name || "").trim()) {
+    return (
+      <div className="space-y-3">
+        <div>
+          <div className="text-[11px] font-black uppercase tracking-[0.24em] text-slate-400">Reply Policy</div>
+          <h3 className="mt-2 text-lg font-black text-slate-900">Select or create an agent to preview response behavior</h3>
+        </div>
+        <div className="rounded-[14px] border border-dashed border-slate-200 px-4 py-5 text-sm font-medium text-slate-500">
+          Language mirroring, short-reply policy, disclosure rules, and escalation behavior will appear here.
+        </div>
+      </div>
+    );
+  }
+
+  const preview = getReplyPolicyPreview(agent);
+  return (
+    <div className="space-y-4">
+      <div className="flex flex-wrap items-start justify-between gap-4">
+        <div>
+          <div className="text-[11px] font-black uppercase tracking-[0.24em] text-slate-400">Reply Policy</div>
+          <h3 className="mt-2 text-lg font-black text-slate-900">{compact ? "Live response behavior preview" : "Customer-visible response behavior"}</h3>
+          {!compact ? (
+            <p className="mt-1 text-sm font-medium text-slate-500">
+              This policy is enforced in runtime, so customers can understand exactly how this agent will talk before going live.
+            </p>
+          ) : null}
+        </div>
+        <div className="rounded-full bg-brand-50 px-3 py-1 text-[11px] font-black uppercase tracking-[0.2em] text-brand-700">
+          Runtime enforced
+        </div>
+      </div>
+
+      <div className="grid gap-3 md:grid-cols-2">
+        <SummaryRow label="Language" value={preview.language} />
+        <SummaryRow label="Short Reply" value={preview.shortReply} />
+        <SummaryRow label="Detailed Query" value={preview.detailedReply} />
+        <SummaryRow label="Disclosure" value={preview.disclosure} />
+        <SummaryRow label="Follow-up" value={preview.followUp} />
+        <SummaryRow label="Escalation" value={preview.escalation} />
+      </div>
+
+      <div className="grid gap-3 md:grid-cols-2">
+        <SummaryRow label="After Hours" value={preview.afterHours} />
+        <SummaryRow label="Channels" value={preview.channels} />
+      </div>
+
+      <div className="rounded-[14px] border border-slate-200 bg-slate-50/80 p-4">
+        <div className="text-[11px] font-black uppercase tracking-[0.2em] text-slate-400">Fallback Message</div>
+        <div className="mt-2 text-sm font-semibold leading-6 text-slate-700">{preview.fallbackMessage}</div>
+      </div>
+
+      <div className="grid gap-3 md:grid-cols-3">
+        <PreviewBubble label="Hinglish sample" text="Haan, hum website development aur ads support karte hain. Aap kis business ke liye pooch rahe hain?" />
+        <PreviewBubble label="हिंदी sample" text="हम वेबसाइट डेवलपमेंट और मार्केटिंग सपोर्ट देते हैं। आप किस business के लिए पूछ रहे हैं?" />
+        <PreviewBubble label="English sample" text="Yes, we help with website development and marketing. What kind of business do you run?" />
+      </div>
+    </div>
+  );
+}
+
+function PreviewBubble({ label, text }: { label: string; text: string }) {
+  return (
+    <div className="rounded-[14px] border border-slate-200 bg-white p-4 shadow-[0_18px_36px_-32px_rgba(15,23,42,0.45)]">
+      <div className="text-[10px] font-black uppercase tracking-[0.18em] text-slate-400">{label}</div>
+      <div className="mt-3 rounded-[12px] bg-emerald-50 px-3 py-3 text-sm font-semibold leading-6 text-slate-800">
+        {text}
+      </div>
+    </div>
   );
 }
 

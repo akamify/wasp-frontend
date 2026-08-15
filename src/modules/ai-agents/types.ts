@@ -28,6 +28,13 @@ export interface AiKnowledgeSource {
     totalChunks: number;
     lastIndexedAt?: string | null;
     error?: string;
+    sectionKey?: string;
+    sectionLabel?: string;
+    fileSearchStoreName?: string;
+    fileSearchDocumentName?: string;
+    fileSearchSyncStatus?: string;
+    fileSearchLastSyncedAt?: string | null;
+    fileSearchError?: string;
     question?: string;
     answer?: string;
     originalName?: string;
@@ -46,6 +53,33 @@ export interface AiKnowledgeSource {
   updatedAt: string;
 }
 
+export interface AiAgentManagedFileSearchMetadata {
+  enabled?: boolean;
+  storeName?: string | null;
+  displayName?: string | null;
+  embeddingModel?: string | null;
+  status?: string | null;
+  lastError?: string | null;
+  syncedAt?: string | null;
+  documentCount?: number;
+}
+
+export interface AiAgentMetadata {
+  managedFileSearch?: AiAgentManagedFileSearchMetadata;
+  [key: string]: unknown;
+}
+
+export interface AiCustomerMemoryProfile {
+  businessType?: string | null;
+  businessGoal?: string | null;
+  interestedServices?: string[];
+  budgetHint?: string | null;
+  timelineHint?: string | null;
+  objections?: string[];
+  preferredLanguageStyle?: string | null;
+  lastAssistantQuestion?: string | null;
+}
+
 export interface AiKnowledgePayload {
   type: AiKnowledgeSourceType;
   title?: string;
@@ -58,6 +92,7 @@ export interface AiKnowledgePayload {
   maxChunks?: number;
   crawlPages?: number;
   crawlDepth?: number;
+  metadata?: Record<string, unknown>;
 }
 
 export interface AiAgentTool {
@@ -123,6 +158,7 @@ export interface AiAgent {
   tools: AiAgentTool[];
   guardrails: AiAgentGuardrails;
   runtimeControls?: AiAgentRuntimeControls;
+  metadata?: AiAgentMetadata;
   version?: number;
   versionHistory?: Array<{
     _id?: string;
@@ -170,6 +206,10 @@ export interface AiConversation {
   status: "active" | "handover" | "closed";
   messages: AiConversationMessage[];
   lastMessageAt?: string | null;
+  metadata?: {
+    customerMemory?: AiCustomerMemoryProfile | null;
+    [key: string]: unknown;
+  };
 }
 
 export interface AiTestMessageResponse {

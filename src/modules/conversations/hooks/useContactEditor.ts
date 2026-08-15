@@ -27,7 +27,10 @@ export function useContactEditor({ contactDetail, refreshListSilently, setContac
       setDefinitions([]);
     }
     const activeKeys = new Set(activeDefinitions.map((definition: any) => definition.key));
-    const attributes = contact?.attributes && typeof contact.attributes === "object" ? contact.attributes : {};
+    const attributes =
+      contact?.attributes && typeof contact.attributes === "object"
+        ? Object.fromEntries(Object.entries(contact.attributes).filter(([key]) => String(key) !== "ai_memory_profile"))
+        : {};
     setEditForm({
       name: contact?.name || "",
       email: contact?.email || "",

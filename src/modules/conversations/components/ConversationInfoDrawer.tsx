@@ -1,6 +1,7 @@
 import { AnimatePresence, motion } from "framer-motion";
 import { createPortal } from "react-dom";
 import { Edit3, Languages, ListFilter, Mail, StickyNote, Tag, X } from "lucide-react";
+import { AiMemoryCard } from "@modules/ai-agents/components/AiMemoryCard";
 import { AI_STATES } from "@modules/conversations/constants/aiState";
 import type { Conversation } from "@modules/conversations/types/conversations.types";
 import { formatDurationShort } from "@modules/conversations/utils/timeFormat";
@@ -203,6 +204,12 @@ function ContactInfoBody({
           ) : null}
         </div>
       ) : null}
+      <AiMemoryCard
+        title="Remembered Customer Profile"
+        compact
+        memory={contactDetail?.attributes?.ai_memory_profile || null}
+        emptyLabel="AI memory will appear here after the assistant learns details from the chat."
+      />
       <ConversationTimeline events={events || []} onOpenTimeline={onOpenTimeline} />
       <ContactInfoFields contactDetail={contactDetail} />
     </div>
@@ -299,7 +306,7 @@ function ContactInfoFields({ contactDetail }: { contactDetail: any | null }) {
   const tags = Array.isArray(contactDetail?.tags) ? contactDetail.tags : [];
   const attributes =
     contactDetail?.attributes && typeof contactDetail.attributes === "object"
-      ? Object.entries(contactDetail.attributes).filter(([key]) => String(key || "").trim())
+      ? Object.entries(contactDetail.attributes).filter(([key]) => String(key || "").trim() && String(key) !== "ai_memory_profile")
       : [];
   return (
     <div className="mt-5 space-y-3">

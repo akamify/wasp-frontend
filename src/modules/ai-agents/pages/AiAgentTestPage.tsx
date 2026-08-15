@@ -6,9 +6,10 @@ import { Button } from "@components/ui/Button";
 import { Card } from "@components/ui/Card";
 import { Input } from "@components/ui/Input";
 import { Textarea } from "@components/ui/Textarea";
+import { AiMemoryCard } from "@modules/ai-agents/components/AiMemoryCard";
 import { useToast } from "@shared/providers/ToastContext";
 import { aiAgentsApi } from "@modules/ai-agents/aiAgentsApi";
-import type { AiAgent, AiConversationMessage, AiTestMessageResponse } from "@modules/ai-agents/types";
+import type { AiAgent, AiConversation, AiConversationMessage, AiTestMessageResponse } from "@modules/ai-agents/types";
 
 interface ChatItem {
   role: "user" | "assistant";
@@ -24,6 +25,7 @@ export default function AiAgentTestPage() {
   const [messages, setMessages] = useState<ChatItem[]>([]);
   const [input, setInput] = useState("");
   const [contactId, setContactId] = useState("");
+  const [conversation, setConversation] = useState<AiConversation | null>(null);
   const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
   const [error, setError] = useState("");
@@ -44,6 +46,7 @@ export default function AiAgentTestPage() {
       setAgent(found);
       const conversations = await aiAgentsApi.conversations(agentId);
       const latest = (conversations.conversations as any[] || [])[0];
+      setConversation(latest || null);
       const mapped = Array.isArray(latest?.messages)
         ? latest.messages
             .filter((message: AiConversationMessage) => ["user", "assistant"].includes(message.role))
@@ -76,6 +79,7 @@ export default function AiAgentTestPage() {
         message,
         ...(contactId.trim() ? { contactId: contactId.trim() } : {}),
       });
+      setConversation(response.conversation || null);
       setMessages((current) => [...current, { role: "assistant", text: response.reply, meta: response }]);
     } catch (requestError: any) {
       const apiMessage = requestError?.response?.data?.message || requestError?.message || "AI test failed.";
@@ -91,6 +95,7 @@ export default function AiAgentTestPage() {
     try {
       await aiAgentsApi.clearTestMemory(agentId, contactId.trim() ? { contactId: contactId.trim() } : {});
       setMessages([]);
+      setConversation(null);
       toast("Test memory cleared.", "success");
     } catch (requestError: any) {
       toast(requestError?.response?.data?.message || requestError?.message || "Unable to clear memory.", "error");
@@ -182,6 +187,11 @@ export default function AiAgentTestPage() {
               <Info label="Latency" value={lastMeta?.usage?.latencyMs ? `${lastMeta.usage.latencyMs}ms` : "-"} />
             </div>
           </Card>
+          <AiMemoryCard
+            title="Remembered Customer Profile"
+            memory={conversation?.metadata?.customerMemory || null}
+            emptyLabel="Send a few test messages and AI memory will appear here."
+          />
           <Card className="p-5">
             <h2 className="flex items-center gap-2 text-lg font-black text-slate-900"><ShieldAlert size={18} /> Guardrail</h2>
             <p className="mt-3 rounded-[8px] bg-slate-50 p-3 text-sm font-semibold leading-6 text-slate-600">
