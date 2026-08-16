@@ -4,7 +4,17 @@ export type AiAgentProvider = "gemini";
 export type AiAgentKnowledgeType = "text" | "url" | "faq" | "file";
 export type AiKnowledgeSourceType = "faq" | "text" | "url" | "pdf" | "docx" | "csv" | "txt";
 export type AiKnowledgeSourceStatus = "draft" | "indexing" | "indexed" | "failed";
-export type AiAgentToolType = "crm_lookup" | "contact_update" | "set_tag" | "set_attribute" | "api_request" | "handover" | "send_buttons";
+export type AiAgentToolType =
+  | "crm_lookup"
+  | "contact_update"
+  | "set_tag"
+  | "set_attribute"
+  | "api_request"
+  | "handover"
+  | "send_buttons"
+  | "start_flow"
+  | "send_list"
+  | "send_template";
 
 export interface AiAgentKnowledgeSource {
   _id?: string;
@@ -99,7 +109,9 @@ export interface AiAgentSendButtonConfig {
   id: string;
   title: string;
   description?: string;
-  flowId: string;
+  flowId?: string;
+  key?: string;
+  kind?: "flow" | "template" | "handover";
 }
 
 export interface AiAgentSendButtonsConfig {
@@ -107,10 +119,48 @@ export interface AiAgentSendButtonsConfig {
   buttons?: AiAgentSendButtonConfig[];
 }
 
+export interface AiAgentAssignedFlowConfig {
+  key: string;
+  flowId: string;
+  name?: string;
+  title?: string;
+  purpose?: string;
+  whenToUse?: string[];
+}
+
+export interface AiAgentStartFlowConfig {
+  flows?: AiAgentAssignedFlowConfig[];
+}
+
+export interface AiAgentSendListConfig {
+  defaultBody?: string;
+  defaultTitle?: string;
+  defaultButtonText?: string;
+}
+
+export interface AiAgentAssignedTemplateConfig {
+  key: string;
+  templateId: string;
+  name: string;
+  languageCode?: string;
+  title?: string;
+  purpose?: string;
+  allowedVariables?: string[];
+}
+
+export interface AiAgentSendTemplateConfig {
+  templates?: AiAgentAssignedTemplateConfig[];
+}
+
 export interface AiAgentTool {
   type: AiAgentToolType;
   enabled: boolean;
-  config?: Record<string, unknown> | AiAgentSendButtonsConfig;
+  config?:
+    | Record<string, unknown>
+    | AiAgentSendButtonsConfig
+    | AiAgentStartFlowConfig
+    | AiAgentSendListConfig
+    | AiAgentSendTemplateConfig;
 }
 
 export interface AiAgentGuardrails {

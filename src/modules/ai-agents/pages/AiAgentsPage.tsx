@@ -38,11 +38,16 @@ import { useToast } from "@shared/providers/ToastContext";
 import { cn } from "@shared/utils/cn";
 import { aiAgentsApi } from "@modules/ai-agents/aiAgentsApi";
 import { ConversationWorkspace } from "@modules/conversations/views/ConversationWorkspace";
+import { listApprovedTemplates } from "@modules/automation-flows/automationDataApi";
 import type {
   AiAddonStatusResponse,
   AiAgent,
+  AiAgentAssignedFlowConfig,
+  AiAgentAssignedTemplateConfig,
   AiAgentPayload,
-  AiAgentSendButtonConfig,
+  AiAgentSendListConfig,
+  AiAgentSendTemplateConfig,
+  AiAgentStartFlowConfig,
   AiAgentStatus,
   AiBillingStatementItem,
   AiBillingSummaryResponse,
@@ -54,9 +59,11 @@ import type {
   AiUsageAnalyticsResponse,
   AiUsageExplorerResponse,
 } from "@modules/ai-agents/types";
+import type { ApprovedFlowTemplate } from "@modules/automation-flows/automationDataApi";
 
 type AiTabKey = "overview" | "agents" | "conversations" | "usage" | "billing" | "settings";
 type AutomationFlowOption = { _id?: string; id?: string; name: string; status?: string };
+type ResourceLoadingState = { flows: boolean; templates: boolean };
 
 const TOOL_OPTIONS: Array<{ type: AiAgentToolType; label: string; description: string }> = [
   { type: "crm_lookup", label: "CRM lookup", description: "Read lead/contact context before answering." },
@@ -65,7 +72,10 @@ const TOOL_OPTIONS: Array<{ type: AiAgentToolType; label: string; description: s
   { type: "set_attribute", label: "Set attribute", description: "Save structured contact attributes." },
   { type: "api_request", label: "API request", description: "Call external systems later through tool config." },
   { type: "handover", label: "Human handover", description: "Transfer to inbox/CRM team when needed." },
-  { type: "send_buttons", label: "WhatsApp buttons", description: "Send approved buttons that start automation flows." },
+  { type: "start_flow", label: "Start assigned flows", description: "Let AI start only the flows assigned to this agent." },
+  { type: "send_buttons", label: "WhatsApp buttons", description: "Send approved semantic choices as real WhatsApp buttons." },
+  { type: "send_list", label: "WhatsApp lists", description: "Send approved semantic choices as real WhatsApp lists." },
+  { type: "send_template", label: "WhatsApp templates", description: "Send only assigned approved templates with safe variables." },
 ];
 
 const TABS: Array<{ key: AiTabKey; label: string; icon: React.ReactNode }> = [
@@ -150,13 +160,47 @@ function flowOptionId(flow: AutomationFlowOption) {
   return String(flow._id || flow.id || "").trim();
 }
 
-function sendButtonsConfig(agent: AiAgentPayload) {
-  const tool = (agent.tools || []).find((item) => item.type === "send_buttons");
-  const config = tool?.config && typeof tool.config === "object" ? tool.config as { defaultBody?: string; buttons?: AiAgentSendButtonConfig[] } : {};
+function semanticKey(value: string) {
+  return String(value || "")
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "_")
+    .replace(/^_+|_+$/g, "")
+    .slice(0, 80);
+}
+
+function templateOptionId(template: ApprovedFlowTemplate) {
+  return String(template.id || "").trim();
+}
+
+function toolConfig<T extends object>(agent: AiAgentPayload, type: AiAgentToolType, fallback: T): T {
+  const tool = (agent.tools || []).find((item) => item.type === type);
+  return tool?.config && typeof tool.config === "object" && !Array.isArray(tool.config)
+    ? ({ ...fallback, ...(tool.config as Record<string, unknown>) } as T)
+    : fallback;
+}
+
+function startFlowConfig(agent: AiAgentPayload): Required<AiAgentStartFlowConfig> {
+  const config = toolConfig<AiAgentStartFlowConfig>(agent, "start_flow", { flows: [] });
+  return { flows: Array.isArray(config.flows) ? config.flows : [] };
+}
+
+function sendListConfig(agent: AiAgentPayload): Required<AiAgentSendListConfig> {
+  const config = toolConfig<AiAgentSendListConfig>(agent, "send_list", {
+    defaultBody: "",
+    defaultTitle: "",
+    defaultButtonText: "",
+  });
   return {
     defaultBody: String(config.defaultBody || ""),
-    buttons: Array.isArray(config.buttons) ? config.buttons : [],
+    defaultTitle: String(config.defaultTitle || ""),
+    defaultButtonText: String(config.defaultButtonText || ""),
   };
+}
+
+function sendTemplateConfig(agent: AiAgentPayload): Required<AiAgentSendTemplateConfig> {
+  const config = toolConfig<AiAgentSendTemplateConfig>(agent, "send_template", { templates: [] });
+  return { templates: Array.isArray(config.templates) ? config.templates : [] };
 }
 
 function getReplyPolicyPreview(agent?: AiAgentPayload | AiAgent | null) {
@@ -301,7 +345,11 @@ export default function AiAgentsPage() {
   const [conversationAgentId, setConversationAgentId] = useState("");
   const [conversationAiState, setConversationAiState] = useState("");
   const [automationFlows, setAutomationFlows] = useState<AutomationFlowOption[]>([]);
-  const [automationFlowsLoading, setAutomationFlowsLoading] = useState(false);
+  const [approvedTemplates, setApprovedTemplates] = useState<ApprovedFlowTemplate[]>([]);
+  const [resourceLoading, setResourceLoading] = useState<ResourceLoadingState>({
+    flows: false,
+    templates: false,
+  });
 
   const filteredAgents = useMemo(() => agents, [agents]);
   const usageTransactions = useMemo(() => transactions.filter((item) => item.type === "usage"), [transactions]);
@@ -382,7 +430,7 @@ export default function AiAgentsPage() {
   useEffect(() => {
     if (!isAgentModalOpen) return;
     let active = true;
-    setAutomationFlowsLoading(true);
+    setResourceLoading({ flows: true, templates: true });
     API.automationFlows
       .list({ status: "active", page: 1, limit: 100 })
       .then((rawResponse) => {
@@ -394,7 +442,17 @@ export default function AiAgentsPage() {
         if (active) setAutomationFlows([]);
       })
       .finally(() => {
-        if (active) setAutomationFlowsLoading(false);
+        if (active) setResourceLoading((current) => ({ ...current, flows: false }));
+      });
+    listApprovedTemplates()
+      .then((templates) => {
+        if (active) setApprovedTemplates(templates);
+      })
+      .catch(() => {
+        if (active) setApprovedTemplates([]);
+      })
+      .finally(() => {
+        if (active) setResourceLoading((current) => ({ ...current, templates: false }));
       });
     return () => {
       active = false;
@@ -435,33 +493,94 @@ export default function AiAgentsPage() {
     updateDraft({ tools });
   }
 
-  function updateSendButtonsConfig(patch: Partial<{ defaultBody: string; buttons: AiAgentSendButtonConfig[] }>) {
-    const current = sendButtonsConfig(draft);
-    updateToolConfig("send_buttons", {
-      defaultBody: patch.defaultBody ?? current.defaultBody,
-      buttons: patch.buttons ?? current.buttons,
+  function updateStartFlowConfig(patch: Partial<AiAgentStartFlowConfig>) {
+    const current = startFlowConfig(draft);
+    updateToolConfig("start_flow", {
+      flows: patch.flows ?? current.flows,
     });
   }
 
-  function updateSendButton(index: number, patch: Partial<AiAgentSendButtonConfig>) {
-    const current = sendButtonsConfig(draft);
-    const buttons = current.buttons.map((button, buttonIndex) => buttonIndex === index ? { ...button, ...patch } : button);
-    updateSendButtonsConfig({ buttons });
-  }
-
-  function addSendButton() {
-    const current = sendButtonsConfig(draft);
-    updateSendButtonsConfig({
-      buttons: [
-        ...current.buttons,
-        { id: `option_${current.buttons.length + 1}`, title: `Option ${current.buttons.length + 1}`, flowId: "" },
+  function assignFlow(flowId: string) {
+    const flow = automationFlows.find((item) => flowOptionId(item) === flowId);
+    if (!flow) return;
+    const current = startFlowConfig(draft);
+    if (current.flows.some((item) => item.flowId === flowId)) return;
+    const title = flow.name || flowId;
+    updateStartFlowConfig({
+      flows: [
+        ...current.flows,
+        {
+          key: semanticKey(title) || `flow_${current.flows.length + 1}`,
+          flowId,
+          name: title,
+          title,
+          purpose: `Start ${title}`,
+          whenToUse: [],
+        },
       ],
     });
   }
 
-  function removeSendButton(index: number) {
-    const current = sendButtonsConfig(draft);
-    updateSendButtonsConfig({ buttons: current.buttons.filter((_, buttonIndex) => buttonIndex !== index) });
+  function updateAssignedFlow(index: number, patch: Partial<AiAgentAssignedFlowConfig>) {
+    const current = startFlowConfig(draft);
+    updateStartFlowConfig({
+      flows: current.flows.map((flow, flowIndex) => flowIndex === index ? { ...flow, ...patch } : flow),
+    });
+  }
+
+  function removeAssignedFlow(index: number) {
+    const current = startFlowConfig(draft);
+    updateStartFlowConfig({ flows: current.flows.filter((_, flowIndex) => flowIndex !== index) });
+  }
+
+  function updateSendListConfig(patch: Partial<AiAgentSendListConfig>) {
+    const current = sendListConfig(draft);
+    updateToolConfig("send_list", {
+      defaultBody: patch.defaultBody ?? current.defaultBody,
+      defaultTitle: patch.defaultTitle ?? current.defaultTitle,
+      defaultButtonText: patch.defaultButtonText ?? current.defaultButtonText,
+    });
+  }
+
+  function updateSendTemplateConfig(patch: Partial<AiAgentSendTemplateConfig>) {
+    const current = sendTemplateConfig(draft);
+    updateToolConfig("send_template", {
+      templates: patch.templates ?? current.templates,
+    });
+  }
+
+  function assignTemplate(templateId: string) {
+    const template = approvedTemplates.find((item) => templateOptionId(item) === templateId);
+    if (!template) return;
+    const current = sendTemplateConfig(draft);
+    if (current.templates.some((item) => item.templateId === templateId)) return;
+    const title = template.name || templateId;
+    updateSendTemplateConfig({
+      templates: [
+        ...current.templates,
+        {
+          key: semanticKey(title) || `template_${current.templates.length + 1}`,
+          templateId,
+          name: template.name,
+          languageCode: template.languageCode,
+          title,
+          purpose: `Send ${title}`,
+          allowedVariables: [],
+        },
+      ],
+    });
+  }
+
+  function updateAssignedTemplate(index: number, patch: Partial<AiAgentAssignedTemplateConfig>) {
+    const current = sendTemplateConfig(draft);
+    updateSendTemplateConfig({
+      templates: current.templates.map((template, templateIndex) => templateIndex === index ? { ...template, ...patch } : template),
+    });
+  }
+
+  function removeAssignedTemplate(index: number) {
+    const current = sendTemplateConfig(draft);
+    updateSendTemplateConfig({ templates: current.templates.filter((_, templateIndex) => templateIndex !== index) });
   }
 
   async function saveAgent() {
@@ -1389,14 +1508,32 @@ export default function AiAgentsPage() {
                       );
                     })}
                     {Boolean((draft.tools || []).find((item) => item.type === "send_buttons")?.enabled) ? (
-                      <SendButtonsToolConfig
-                        config={sendButtonsConfig(draft)}
+                      <SemanticChoicesInfoPanel kind="buttons" />
+                    ) : null}
+                    {Boolean((draft.tools || []).find((item) => item.type === "start_flow")?.enabled) ? (
+                      <AssignedFlowsToolConfig
+                        config={startFlowConfig(draft)}
                         flows={automationFlows}
-                        flowsLoading={automationFlowsLoading}
-                        onAdd={addSendButton}
-                        onDefaultBodyChange={(defaultBody) => updateSendButtonsConfig({ defaultBody })}
-                        onRemove={removeSendButton}
-                        onUpdate={updateSendButton}
+                        loading={resourceLoading.flows}
+                        onAssign={assignFlow}
+                        onRemove={removeAssignedFlow}
+                        onUpdate={updateAssignedFlow}
+                      />
+                    ) : null}
+                    {Boolean((draft.tools || []).find((item) => item.type === "send_list")?.enabled) ? (
+                      <SendListToolConfig
+                        config={sendListConfig(draft)}
+                        onChange={updateSendListConfig}
+                      />
+                    ) : null}
+                    {Boolean((draft.tools || []).find((item) => item.type === "send_template")?.enabled) ? (
+                      <AssignedTemplatesToolConfig
+                        config={sendTemplateConfig(draft)}
+                        templates={approvedTemplates}
+                        loading={resourceLoading.templates}
+                        onAssign={assignTemplate}
+                        onRemove={removeAssignedTemplate}
+                        onUpdate={updateAssignedTemplate}
                       />
                     ) : null}
                   </div>
@@ -2025,88 +2162,140 @@ export default function AiAgentsPage() {
   );
 }
 
-function SendButtonsToolConfig({
+function SemanticChoicesInfoPanel({ kind }: { kind: "buttons" | "lists" }) {
+  return (
+    <div className="rounded-[8px] border border-emerald-100 bg-emerald-50/60 p-3">
+      <div className="text-sm font-black text-slate-900">AI-generated WhatsApp {kind}</div>
+      <div className="mt-1 text-xs font-medium leading-5 text-slate-500">
+        The AI writes the prompt and creates the options from knowledge or assigned actions. Backend executes only assigned flow/template keys; other choices stay conversational.
+      </div>
+    </div>
+  );
+}
+
+function AssignedFlowsToolConfig({
   config,
   flows,
-  flowsLoading,
-  onAdd,
-  onDefaultBodyChange,
+  loading,
+  onAssign,
   onRemove,
   onUpdate,
 }: {
-  config: { defaultBody: string; buttons: AiAgentSendButtonConfig[] };
+  config: Required<AiAgentStartFlowConfig>;
   flows: AutomationFlowOption[];
-  flowsLoading: boolean;
-  onAdd: () => void;
-  onDefaultBodyChange: (value: string) => void;
+  loading: boolean;
+  onAssign: (flowId: string) => void;
   onRemove: (index: number) => void;
-  onUpdate: (index: number, patch: Partial<AiAgentSendButtonConfig>) => void;
+  onUpdate: (index: number, patch: Partial<AiAgentAssignedFlowConfig>) => void;
 }) {
   return (
-    <div className="rounded-[8px] border border-emerald-100 bg-emerald-50/60 p-3">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <div>
-          <div className="text-sm font-black text-slate-900">Approved WhatsApp buttons</div>
-          <div className="mt-1 text-xs font-medium text-slate-500">The AI can select these button IDs; flows stay server-configured.</div>
-        </div>
-        <Button type="button" size="sm" variant="outline" onClick={onAdd}>
-          <Plus size={14} />
-          Add
-        </Button>
-      </div>
+    <div className="rounded-[8px] border border-sky-100 bg-sky-50/60 p-3">
+      <div className="text-sm font-black text-slate-900">Assigned flows</div>
+      <div className="mt-1 text-xs font-medium text-slate-500">AI can start only these active flows by semantic key.</div>
       <div className="mt-3">
-        <Textarea
-          label="Default body"
-          value={config.defaultBody}
-          onChange={(event) => onDefaultBodyChange(event.target.value)}
-          placeholder="Please choose an option."
-        />
+        <Select label={loading ? "Add flow (loading)" : "Add flow"} value="" onChange={(event) => onAssign(event.target.value)}>
+          <option value="">Select active flow</option>
+          {flows.map((flow) => {
+            const id = flowOptionId(flow);
+            return id ? <option key={id} value={id}>{flow.name || id}</option> : null;
+          })}
+        </Select>
       </div>
       <div className="mt-3 space-y-3">
-        {config.buttons.map((button, index) => (
-          <div key={`${button.id}-${index}`} className="rounded-[8px] border border-slate-200 bg-white p-3">
-            <div className="grid gap-3 md:grid-cols-[1fr_1fr_1.4fr_auto]">
-              <Input
-                label="Button ID"
-                value={button.id}
-                onChange={(event) => onUpdate(index, { id: event.target.value })}
-                placeholder="book_demo"
-              />
-              <Input
-                label="Title"
-                maxLength={20}
-                value={button.title}
-                onChange={(event) => onUpdate(index, { title: event.target.value })}
-                placeholder="Book Demo"
-              />
-              <Select
-                label={flowsLoading ? "Flow (loading)" : "Target flow"}
-                value={button.flowId}
-                onChange={(event) => onUpdate(index, { flowId: event.target.value })}
-              >
-                <option value="">Select active flow</option>
-                {flows.map((flow) => {
-                  const id = flowOptionId(flow);
-                  return id ? <option key={id} value={id}>{flow.name || id}</option> : null;
-                })}
-              </Select>
+        {config.flows.map((flow, index) => (
+          <div key={`${flow.flowId}-${index}`} className="rounded-[8px] border border-slate-200 bg-white p-3">
+            <div className="grid gap-3 md:grid-cols-[1fr_1fr_auto]">
+              <Input label="Key" value={flow.key} onChange={(event) => onUpdate(index, { key: semanticKey(event.target.value) })} placeholder="book_demo" />
+              <Input label="Title" value={flow.title || flow.name || ""} onChange={(event) => onUpdate(index, { title: event.target.value })} placeholder="Book Demo" />
               <Button type="button" variant="ghost" className="mt-6 text-rose-600 hover:bg-rose-50" onClick={() => onRemove(index)}>
                 <Trash2 size={14} />
               </Button>
             </div>
-            <div className="mt-3">
-              <Input
-                label="Description"
-                value={button.description || ""}
-                onChange={(event) => onUpdate(index, { description: event.target.value })}
-                placeholder="Optional internal note"
-              />
+            <div className="mt-3 grid gap-3 md:grid-cols-2">
+              <Input label="Purpose" value={flow.purpose || ""} onChange={(event) => onUpdate(index, { purpose: event.target.value })} placeholder="Schedule a product demo" />
+              <Input label="When to use" value={listToCsv(flow.whenToUse)} onChange={(event) => onUpdate(index, { whenToUse: csvToList(event.target.value) })} placeholder="demo, book a call" />
             </div>
           </div>
         ))}
-        {!config.buttons.length ? (
+        {!config.flows.length ? (
           <div className="rounded-[8px] border border-dashed border-slate-200 bg-white px-3 py-4 text-sm font-medium text-slate-500">
-            No approved buttons configured.
+            No flows assigned.
+          </div>
+        ) : null}
+      </div>
+    </div>
+  );
+}
+
+function SendListToolConfig({
+  config,
+  onChange,
+}: {
+  config: Required<AiAgentSendListConfig>;
+  onChange: (patch: Partial<AiAgentSendListConfig>) => void;
+}) {
+  return (
+    <div className="rounded-[8px] border border-indigo-100 bg-indigo-50/60 p-3">
+      <div className="text-sm font-black text-slate-900">WhatsApp list defaults</div>
+      <div className="mt-1 text-xs font-medium text-slate-500">List rows are resolved from the assigned action catalog at runtime.</div>
+      <div className="mt-3 grid gap-3 md:grid-cols-2">
+        <Input label="List title" value={config.defaultTitle} onChange={(event) => onChange({ defaultTitle: event.target.value })} placeholder="Services" />
+        <Input label="Button text" maxLength={20} value={config.defaultButtonText} onChange={(event) => onChange({ defaultButtonText: event.target.value })} placeholder="View options" />
+      </div>
+      <div className="mt-3">
+        <Textarea label="Default body" value={config.defaultBody} onChange={(event) => onChange({ defaultBody: event.target.value })} placeholder="Please choose an option." />
+      </div>
+    </div>
+  );
+}
+
+function AssignedTemplatesToolConfig({
+  config,
+  templates,
+  loading,
+  onAssign,
+  onRemove,
+  onUpdate,
+}: {
+  config: Required<AiAgentSendTemplateConfig>;
+  templates: ApprovedFlowTemplate[];
+  loading: boolean;
+  onAssign: (templateId: string) => void;
+  onRemove: (index: number) => void;
+  onUpdate: (index: number, patch: Partial<AiAgentAssignedTemplateConfig>) => void;
+}) {
+  return (
+    <div className="rounded-[8px] border border-amber-100 bg-amber-50/60 p-3">
+      <div className="text-sm font-black text-slate-900">Assigned templates</div>
+      <div className="mt-1 text-xs font-medium text-slate-500">AI can select the template key; variables are resolved by backend.</div>
+      <div className="mt-3">
+        <Select label={loading ? "Add template (loading)" : "Add approved template"} value="" onChange={(event) => onAssign(event.target.value)}>
+          <option value="">Select approved template</option>
+          {templates.map((template) => {
+            const id = templateOptionId(template);
+            return id ? <option key={id} value={id}>{template.name} ({template.languageCode})</option> : null;
+          })}
+        </Select>
+      </div>
+      <div className="mt-3 space-y-3">
+        {config.templates.map((template, index) => (
+          <div key={`${template.templateId}-${index}`} className="rounded-[8px] border border-slate-200 bg-white p-3">
+            <div className="grid gap-3 md:grid-cols-[1fr_1fr_auto]">
+              <Input label="Key" value={template.key} onChange={(event) => onUpdate(index, { key: semanticKey(event.target.value) })} placeholder="appointment_reminder" />
+              <Input label="Title" value={template.title || template.name || ""} onChange={(event) => onUpdate(index, { title: event.target.value })} placeholder="Appointment reminder" />
+              <Button type="button" variant="ghost" className="mt-6 text-rose-600 hover:bg-rose-50" onClick={() => onRemove(index)}>
+                <Trash2 size={14} />
+              </Button>
+            </div>
+            <div className="mt-3 grid gap-3 md:grid-cols-2">
+              <Input label="Purpose" value={template.purpose || ""} onChange={(event) => onUpdate(index, { purpose: event.target.value })} placeholder="Send appointment reminder" />
+              <Input label="Allowed variables" value={listToCsv(template.allowedVariables)} onChange={(event) => onUpdate(index, { allowedVariables: csvToList(event.target.value) })} placeholder="name, date, time" />
+            </div>
+          </div>
+        ))}
+        {!config.templates.length ? (
+          <div className="rounded-[8px] border border-dashed border-slate-200 bg-white px-3 py-4 text-sm font-medium text-slate-500">
+            No templates assigned.
           </div>
         ) : null}
       </div>
