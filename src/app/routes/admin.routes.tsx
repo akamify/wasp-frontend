@@ -29,27 +29,81 @@ function inAdmin(page: ReactNode) {
 export function adminRoutes() {
   return (
     <Route element={<RequireAdmin />}>
-      <Route path="/admin" element={<Navigate to="/admin/dashboard" replace />} />
-      <Route path="/admin/channels" element={<Navigate to="/admin/workspaces" replace />} />
-      <Route path="/admin/dashboard" element={inAdmin(<AdminDashboardPage />)} />
+      <Route
+        path="/admin"
+        element={<Navigate to="/admin/dashboard" replace />}
+      />
+      <Route
+        path="/admin/channels"
+        element={<Navigate to="/admin/workspaces" replace />}
+      />
+      <Route
+        path="/admin/dashboard"
+        element={inAdmin(<AdminDashboardPage />)}
+      />
       <Route path="/admin/profile" element={inAdmin(<AdminProfilePage />)} />
       <Route path="/admin/users" element={inAdmin(<AdminUsersPage />)} />
-      <Route path="/admin/workspaces" element={inAdmin(<AdminChannelsPage />)} />
-      <Route path="/admin/master-campaigns" element={inAdmin(<AdminMasterCampaignsPage />)} />
-      <Route path="/admin/master-templates" element={inAdmin(<AdminMasterTemplatesPage />)} />
-      <Route path="/admin/master-contacts" element={inAdmin(<AdminMasterContactsPage />)} />
-      <Route path="/admin/analytics" element={inAdmin(<AdminAnalyticsPage />)} />
-      <Route path="/admin/notifications" element={inAdmin(<AdminNotificationsPage />)} />
-      <Route path="/admin/subscriptions-data" element={inAdmin(<AdminSubscriptionsDataPage />)} />
-      <Route path="/admin/subscriptions-data/:workspaceId" element={inAdmin(<AdminSubscriptionsDataPage />)} />
-      <Route path="/admin/transactions-logs" element={inAdmin(<AdminTransactionsLogsPage />)} />
-      <Route path="/admin/message-logs" element={inAdmin(<AdminMessageLogsPage />)} />
-      <Route path="/admin/payment-gateway" element={inAdmin(<AdminPaymentGatewayPage />)} />
-      <Route path="/admin/support-tickets" element={inAdmin(<AdminSupportTicketsPage />)} />
+      <Route
+        path="/admin/workspaces"
+        element={inAdmin(<AdminChannelsPage />)}
+      />
+      <Route
+        path="/admin/master-campaigns"
+        element={inAdmin(<AdminMasterCampaignsPage />)}
+      />
+      <Route
+        path="/admin/master-templates"
+        element={inAdmin(<AdminMasterTemplatesPage />)}
+      />
+      <Route
+        path="/admin/master-contacts"
+        element={inAdmin(<AdminMasterContactsPage />)}
+      />
+      <Route
+        path="/admin/analytics"
+        element={inAdmin(<AdminAnalyticsPage />)}
+      />
+      <Route
+        path="/admin/notifications"
+        element={inAdmin(<AdminNotificationsPage />)}
+      />
+      <Route
+        path="/admin/subscriptions-data"
+        element={inAdmin(<AdminSubscriptionsDataPage />)}
+      />
+      <Route
+        path="/admin/subscriptions-data/:workspaceId"
+        element={inAdmin(<AdminSubscriptionsDataPage />)}
+      />
+      <Route
+        path="/admin/transactions-logs"
+        element={inAdmin(<AdminTransactionsLogsPage />)}
+      />
+      <Route
+        path="/admin/message-logs"
+        element={inAdmin(<AdminMessageLogsPage />)}
+      />
+      <Route
+        path="/admin/payment-gateway"
+        element={inAdmin(<AdminPaymentGatewayPage />)}
+      />
+      <Route
+        path="/admin/support-tickets"
+        element={inAdmin(<AdminSupportTicketsPage />)}
+      />
       <Route path="/admin/pages" element={inAdmin(<AdminPagesPage />)} />
-      <Route path="/admin/career-applications" element={inAdmin(<AdminCareerApplicationsPage />)} />
-      <Route path="/admin/live-demo-enquiries" element={inAdmin(<AdminLiveDemoEnquiriesPage />)} />
-      <Route path="/admin/app-update" element={inAdmin(<AdminAppUpdatePage />)} />
+      <Route
+        path="/admin/career-applications"
+        element={inAdmin(<AdminCareerApplicationsPage />)}
+      />
+      <Route
+        path="/admin/live-demo-enquiries"
+        element={inAdmin(<AdminLiveDemoEnquiriesPage />)}
+      />
+      <Route
+        path="/admin/app-update"
+        element={inAdmin(<AdminAppUpdatePage />)}
+      />
       <Route path="/admin/docs" element={inAdmin(<AdminDocsPage />)} />
       <Route path="/admin/docs/create" element={inAdmin(<AdminDocsPage />)} />
       <Route path="/admin/docs/:id/edit" element={inAdmin(<AdminDocsPage />)} />

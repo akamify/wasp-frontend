@@ -64,6 +64,8 @@ import type { ApprovedFlowTemplate } from "@modules/automation-flows/automationD
 type AiTabKey = "overview" | "agents" | "conversations" | "usage" | "billing" | "settings";
 type AutomationFlowOption = { _id?: string; id?: string; name: string; status?: string };
 type ResourceLoadingState = { flows: boolean; templates: boolean };
+const AI_AGENTS_TAB_STORAGE_KEY = "ai-agents-active-tab";
+const AI_AGENTS_SELECTED_STORAGE_KEY = "ai-agents-selected-agent";
 
 const TOOL_OPTIONS: Array<{ type: AiAgentToolType; label: string; description: string }> = [
   { type: "crm_lookup", label: "CRM lookup", description: "Read lead/contact context before answering." },
@@ -309,7 +311,10 @@ export default function AiAgentsPage() {
   const navigate = useNavigate();
   const { toast } = useToast();
 
-  const [tab, setTab] = useState<AiTabKey>("overview");
+  const [tab, setTab] = useState<AiTabKey>(() => {
+    const stored = window.localStorage.getItem(AI_AGENTS_TAB_STORAGE_KEY);
+    return TABS.some((item) => item.key === stored) ? (stored as AiTabKey) : "overview";
+  });
   const [agents, setAgents] = useState<AiAgent[]>([]);
   const [dashboard, setDashboard] = useState<AiDashboardResponse | null>(null);
   const [addonStatus, setAddonStatus] = useState<AiAddonStatusResponse | null>(null);
@@ -334,6 +339,7 @@ export default function AiAgentsPage() {
   const [search, setSearch] = useState("");
   const [status, setStatus] = useState<AiAgentStatus | "">("");
   const [selected, setSelected] = useState<AiAgent | null>(null);
+  const [selectedAgentId, setSelectedAgentId] = useState<string>(() => window.localStorage.getItem(AI_AGENTS_SELECTED_STORAGE_KEY) || "");
   const [draft, setDraft] = useState<AiAgentPayload>(() => structuredClone(DEFAULT_AGENT));
   const [topupOpen, setTopupOpen] = useState(false);
   const [purchasingPackId, setPurchasingPackId] = useState("");
@@ -354,14 +360,23 @@ export default function AiAgentsPage() {
   const filteredAgents = useMemo(() => agents, [agents]);
   const usageTransactions = useMemo(() => transactions.filter((item) => item.type === "usage"), [transactions]);
 
+  function syncSelectedAgent(nextAgents: AiAgent[]) {
+    const targetId = selectedAgentId || selected?.id || "";
+    if (!targetId) {
+      return;
+    }
+    const refreshed = nextAgents.find((agent) => agent.id === targetId) || null;
+    setSelected(refreshed);
+    if (!refreshed) {
+      setSelectedAgentId("");
+    }
+  }
+
   async function loadAgents() {
     try {
       const response = await aiAgentsApi.list({ search: search.trim(), status, page: 1, limit: 100 });
       setAgents(response.agents || []);
-      if (selected) {
-        const refreshed = (response.agents || []).find((agent) => agent.id === selected.id) || null;
-        setSelected(refreshed);
-      }
+      syncSelectedAgent(response.agents || []);
     } catch (requestError: any) {
       setError(requestError?.userMessage || requestError?.response?.data?.message || requestError?.message || "Unable to load AI agents.");
     }
@@ -407,10 +422,7 @@ export default function AiAgentsPage() {
         nearExhaustionWarning: String(budgetResponse?.config?.nearExhaustionWarning ?? 0),
         notificationsEnabled: budgetResponse?.config?.notificationsEnabled !== false,
       });
-      if (selected) {
-        const refreshed = (agentsResponse.agents || []).find((agent) => agent.id === selected.id) || null;
-        setSelected(refreshed);
-      }
+      syncSelectedAgent(agentsResponse.agents || []);
     } catch (requestError: any) {
       setError(requestError?.userMessage || requestError?.response?.data?.message || requestError?.message || "Unable to load AI module.");
     } finally {
@@ -459,17 +471,35 @@ export default function AiAgentsPage() {
     };
   }, [isAgentModalOpen]);
 
+  useEffect(() => {
+    window.localStorage.setItem(AI_AGENTS_TAB_STORAGE_KEY, tab);
+  }, [tab]);
+
+  useEffect(() => {
+    if (selectedAgentId) {
+      window.localStorage.setItem(AI_AGENTS_SELECTED_STORAGE_KEY, selectedAgentId);
+    } else {
+      window.localStorage.removeItem(AI_AGENTS_SELECTED_STORAGE_KEY);
+    }
+  }, [selectedAgentId]);
+
   function startCreate() {
     setSelected(null);
+    setSelectedAgentId("");
     setDraft(structuredClone(DEFAULT_AGENT));
     setTab("agents");
     setIsAgentModalOpen(true);
   }
 
-  function startEdit(agent: AiAgent) {
+  function selectAgent(agent: AiAgent) {
     setSelected(agent);
+    setSelectedAgentId(agent.id);
     setDraft(normalizeEditable(agent));
     setTab("agents");
+  }
+
+  function startEdit(agent: AiAgent) {
+    selectAgent(agent);
     setIsAgentModalOpen(true);
   }
 
@@ -616,7 +646,11 @@ export default function AiAgentsPage() {
     try {
       await aiAgentsApi.remove(agent.id);
       toast("AI agent deleted.", "success");
-      if (selected?.id === agent.id) startCreate();
+      if (selected?.id === agent.id) {
+        setSelected(null);
+        setSelectedAgentId("");
+        setDraft(structuredClone(DEFAULT_AGENT));
+      }
       await loadShell();
     } catch (requestError: any) {
       toast(requestError?.userMessage || requestError?.response?.data?.message || requestError?.message || "Unable to delete AI agent.", "error");
@@ -1076,6 +1110,7 @@ export default function AiAgentsPage() {
         </div>
       </div>
 
+      {tab === "usage" || tab === "billing" ? (
       <Card className="overflow-hidden border border-white/80 bg-white/92 p-5 shadow-[0_24px_60px_-36px_rgba(15,23,42,0.45)] backdrop-blur">
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div>
@@ -1159,6 +1194,7 @@ export default function AiAgentsPage() {
           </span>
         </div>
       </Card>
+      ) : null}
 
       {error ? <Alert tone="error">{error}</Alert> : null}
 
@@ -1279,9 +1315,15 @@ export default function AiAgentsPage() {
       ) : null}
 
       {tab === "agents" ? (
-        <div className="grid gap-6 xl:grid-cols-[380px_1fr]">
-          <section className="space-y-4">
-            <div className="flex gap-2 rounded-[10px] border border-slate-200 bg-white p-3 shadow-sm">
+        <div className="space-y-5">
+          <Card className="p-5">
+            <div className="flex flex-wrap items-start justify-between gap-4">
+              <div>
+                <h2 className="text-xl font-black text-slate-900">Agents</h2>
+              </div>
+              <Button onClick={startCreate}><Plus size={16} />Create AI Agent</Button>
+            </div>
+            <div className="mt-4 flex gap-2 rounded-[10px] border border-slate-200 bg-white p-3 shadow-sm">
               <Input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Search agents..." icon={<Search size={16} />} />
               <Select value={status} onChange={(event) => setStatus(event.target.value as AiAgentStatus | "")} className="w-36">
                 <option value="">All</option>
@@ -1291,8 +1333,7 @@ export default function AiAgentsPage() {
                 <option value="archived">Archived</option>
               </Select>
             </div>
-
-            <div className="space-y-3">
+            <div className="mt-4 space-y-3">
               {loading ? [1, 2, 3].map((item) => <div key={item} className="h-32 animate-pulse rounded-[10px] bg-slate-200/70" />) : null}
               {!loading && filteredAgents.length === 0 ? (
                 <Card className="p-6 text-center">
@@ -1309,7 +1350,7 @@ export default function AiAgentsPage() {
                   <button
                     key={agent.id}
                     type="button"
-                    onClick={() => startEdit(agent)}
+                    onClick={() => selectAgent(agent)}
                     className={`w-full rounded-[10px] border bg-white p-4 text-left shadow-sm transition hover:-translate-y-0.5 hover:shadow-md ${
                       selected?.id === agent.id ? "border-brand-400 ring-4 ring-brand-50" : "border-slate-200"
                     }`}
@@ -1333,82 +1374,54 @@ export default function AiAgentsPage() {
                   </button>
                 ))}
             </div>
-          </section>
+          </Card>
 
-          <section className="space-y-5">
-            <Card className="p-5">
-              <div className="flex items-start justify-between gap-4">
-                <div>
-                  <h2 className="text-xl font-black text-slate-900">Agent Marketplace</h2>
-                  <p className="mt-1 text-sm font-medium text-slate-500">Browse existing agents first. Create or edit only when you need to change live behavior.</p>
+          <Card className="p-5">
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <h3 className="text-xl font-black text-slate-900">Selected Agent</h3>
+              </div>
+            </div>
+            {selected ? (
+              <>
+                <div className="mt-4 space-y-3">
+                  <SummaryRow label="Name" value={selected.name} />
+                  <SummaryRow label="Model" value={selected.modelName || dashboard?.settings.modelDefault || "gemini-3.5-flash"} />
+                  <SummaryRow label="Status" value={selected.status || "draft"} />
+                  <SummaryRow label="Channels" value={selected?.runtimeControls?.routing?.channels?.join(", ") || "whatsapp, test, api"} />
                 </div>
-                <Button onClick={startCreate}><Plus size={16} />Create AI Agent</Button>
+                <div className="mt-4 flex flex-wrap gap-2">
+                  <Button variant="outline" onClick={() => navigate(`/app/ai-agents/${selected.id}/test`)}>
+                    <MessageCircle size={16} />
+                    Test Agent
+                  </Button>
+                  <Button variant="outline" onClick={() => navigate(`/app/ai-agents/${selected.id}/knowledge`)}>
+                    <BookOpen size={16} />
+                    Manage Knowledge
+                  </Button>
+                  <Button variant="outline" onClick={() => startEdit(selected)}>
+                    <Settings2 size={16} />
+                    Edit Agent
+                  </Button>
+                  <Button variant="ghost" className="text-rose-600 hover:bg-rose-50" onClick={() => void deleteAgent(selected)} disabled={saving}>
+                    <Trash2 size={16} />
+                    Delete
+                  </Button>
+                </div>
+              </>
+            ) : (
+              <div className="mt-4 rounded-[12px] border border-dashed border-slate-200 px-4 py-5 text-sm font-medium text-slate-500">
+                Select an agent to manage it.
               </div>
-              <div className="mt-5 grid gap-3 md:grid-cols-2">
-                <SummaryRow label="Selected Agent" value={selected?.name || "None selected"} />
-                <SummaryRow label="Default Model" value={selected?.modelName || dashboard?.settings.modelDefault || "gemini-3.5-flash"} />
-                <SummaryRow label="Status" value={selected?.status || "Draft"} />
-                <SummaryRow label="Channels" value={selected?.runtimeControls?.routing?.channels?.join(", ") || "whatsapp, test, api"} />
-              </div>
-              <div className="mt-4 flex flex-wrap gap-2">
-                {selected ? (
-                  <>
-                    <Button variant="outline" onClick={() => navigate(`/app/ai-agents/${selected.id}/test`)}>
-                      <MessageCircle size={16} />
-                      Test Agent
-                    </Button>
-                    <Button variant="outline" onClick={() => navigate(`/app/ai-agents/${selected.id}/knowledge`)}>
-                      <BookOpen size={16} />
-                      Manage Knowledge
-                    </Button>
-                    <Button variant="outline" onClick={() => setIsAgentModalOpen(true)}>
-                      <Settings2 size={16} />
-                      Edit Agent
-                    </Button>
-                    <Button variant="ghost" className="text-rose-600 hover:bg-rose-50" onClick={() => void deleteAgent(selected)} disabled={saving}>
-                      <Trash2 size={16} />
-                      Delete
-                    </Button>
-                  </>
-                ) : (
-                  <div className="rounded-[12px] border border-dashed border-slate-200 px-4 py-5 text-sm font-medium text-slate-500">
-                    Select an agent card from the left, then edit it in a modal. The agents tab stays focused on list management by default.
-                  </div>
-                )}
-              </div>
-            </Card>
+            )}
+          </Card>
 
-            <Card className="p-5">
-              <div className="text-[11px] font-black uppercase tracking-[0.24em] text-slate-400">Token visibility</div>
-              <div className="mt-4 grid gap-3 md:grid-cols-2">
-                <SummaryRow label="Total Included Tokens" value={String(Number(addonStatus?.subscription?.includedTokensPerCycle || 0))} />
-                <SummaryRow label="Remaining Tokens" value={String(Number(addonStatus?.workspace.remainingTokens || 0))} />
-                <SummaryRow label="Remaining Top-up Tokens" value={String(Number(addonStatus?.subscription?.remainingTopupTokens || 0))} />
-                <SummaryRow label="Remaining Credits" value={String(Number(addonStatus?.workspace.remainingCredits || 0))} />
-              </div>
-            </Card>
-
-            <Card className="p-5">
-              <ReplyPolicyCard agent={selected} />
-            </Card>
-
-            <Card className="p-5">
-              <ManagedFileSearchCard
-                agent={selected}
-                saving={saving}
-                managedState={managedFileSearch}
-                onToggle={(enabled) => (selected ? void toggleManagedFileSearch(selected, enabled) : undefined)}
-                onManageKnowledge={() => (selected ? navigate(`/app/ai-agents/${selected.id}/knowledge`) : undefined)}
-              />
-            </Card>
-          </section>
           <Modal open={isAgentModalOpen} onClose={() => setIsAgentModalOpen(false)} title={selected ? `Edit ${selected.name}` : "Create AI Agent"} className="max-w-6xl">
             <section className="space-y-5">
               <Card className="p-5">
                 <div className="flex items-start justify-between gap-4">
                   <div>
                     <h2 className="text-xl font-black text-slate-900">{selected ? "Edit AI Agent" : "Create AI Agent"}</h2>
-                    <p className="mt-1 text-sm font-medium text-slate-500">Industry-style builder modal for model, routing, guardrails, tools, and knowledge behavior.</p>
                   </div>
                 </div>
                 <div className="mt-5 grid gap-3 md:grid-cols-2">
