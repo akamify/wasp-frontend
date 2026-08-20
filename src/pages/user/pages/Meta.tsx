@@ -297,6 +297,7 @@ export default function MetaConnectPage() {
         if (exchangePromise) return exchangePromise;
         if (!authCodeRef.current) return;
         if (!signupDetailsRef.current.waba_id) return;
+        if (!signupDetailsRef.current.phone_number_id) return;
 
         exchangeStartedRef.current = true;
         debug("calling exchange", {
@@ -396,6 +397,14 @@ export default function MetaConnectPage() {
           if (!wabaId) {
             setEmbeddedError(
               "Meta did not return a WABA ID. Please try again.",
+            );
+            signupActiveRef.current = false;
+            clearMessageListener();
+            return;
+          }
+          if (!phoneNumberId) {
+            setEmbeddedError(
+              "Meta finished signup but did not return a phone number ID. Restart Connect WhatsApp and make sure the phone selection step is completed inside the Meta popup.",
             );
             signupActiveRef.current = false;
             clearMessageListener();
