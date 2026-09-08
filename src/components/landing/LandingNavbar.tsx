@@ -20,16 +20,7 @@ const navLinks = [
     href: "/features",
     description: "Automation, AI workflows, analytics",
   },
-  {
-    label: "How it Works",
-    href: "#how-it-works",
-    description: "Setup your workspace in minutes",
-  },
-  {
-    label: "Dashboard Preview",
-    href: "#dashboard",
-    description: "See the platform experience",
-  },
+ 
   {
     label: "Pricing",
     href: "/pricing",
