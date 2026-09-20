@@ -37,6 +37,23 @@ function fixture({ permissions = [], capabilities = {}, responses = {}, failure 
 }
 const product = { id: 'product', sku: 'tea', name: '<script>untrusted</script>', pricePaise: 1234, stockOnHand: 5, stockReserved: 2, trackInventory: true, syncStatus: 'synced', revision: 1, syncedRevision: 1, available: true };
 
+test('new catalog setup exposes creation and safe recovery states', () => {
+  const render = (setup) => fixture({ responses: { '/catalog/setup': { setup } } }).render('CreateCatalog', { connected() {} }, 'CreateCatalog');
+  assert.match(render(null), /Create &amp; connect/);
+  assert.match(render({ name: 'Menu', catalogId: '123', state: 'created', activePhoneMatches: true }), /Catalog 123 has already been created/);
+  assert.match(render({ name: 'Menu', catalogId: '', state: 'creating', activePhoneMatches: true }), /Existing catalog ID for recovery/);
+  assert.match(render({ name: 'Menu', catalogId: '', state: 'creating', activePhoneMatches: false }), /fieldset disabled/);
+});
+
+test('product creation is disabled until the catalog product query succeeds', () => {
+  const permissions = ['commerce.products.manage', 'commerce.catalog.manage'];
+  const failed = fixture({ permissions, failure: 'Connect a catalog' }).render('ProductsPage');
+  assert.match(failed, /disabled=""[^>]*>Add product/);
+  assert.match(failed, /Open catalog setup/);
+  const ready = fixture({ permissions, responses: { '/products': { products: [], nextCursor: null } } }).render('ProductsPage');
+  assert.doesNotMatch(ready, /disabled=""[^>]*>Add product/);
+});
+
 test('branch queue displays acceptance links and bounded pickup capacity without claiming assignment', () => {
   const html = fixture({ responses: { '/outlets/branch/dispatch': { orders: [{ id: 'order', orderNumber: 'AWC-1' }], couriers: [{ _id: 'rider', name: '<rider>', distance: 1200, batchLoad: 12, batchCapacity: 30 }], eligiblePickupCouriers: 1, freeSlots: 18 } } }).render('BranchDispatch', { outletId: 'branch' });
   assert.match(html, /18 remaining slots/); assert.match(html, /12\/30/); assert.match(html, /1.2 km straight-line/); assert.match(html, /&lt;rider&gt;/); assert.match(html, /orders\/order/);

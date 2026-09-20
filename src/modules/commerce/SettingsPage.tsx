@@ -8,12 +8,14 @@ import { useCommerce, useCommerceAction, useCommerceQuery } from "./commerceCont
 import type { Catalog, Gateway, OrderSettings, PaymentSettings } from "./types";
 import { Check, date, ErrorNotice, fieldClass, Panel, QueryState, Status } from "./ui";
 import { FailedEvents } from "./PaymentsPage";
+import { CreateCatalog } from "./CreateCatalog";
 function CatalogSettings() {
   const { can } = useCommerce(), query = useCommerceQuery<{ catalog: Catalog | null }>("/catalog"), action = useCommerceAction();
   const [listing, setListing] = useState(false), [cursor, setCursor] = useState<string>(), [catalogId, setCatalogId] = useState(""), [dedicated, setDedicated] = useState(false), [disconnect, setDisconnect] = useState(false);
   const catalogs = useCommerceQuery<{ catalogs: { id: string; name: string }[]; cursor: string | null }>(listing ? "/catalogs" : null, { cursor });
   const catalog = query.data?.catalog, manage = can("commerce.catalog.manage");
   return <Panel title="WhatsApp catalog" action={<Button size="sm" variant="outline" onClick={query.reload}>Refresh status</Button>}><QueryState {...query} /><ErrorNotice message={action.error} />
+    {query.data && !catalog && manage && <CreateCatalog connected={query.reload} />}
     {catalog ? <><div className="space-y-2 text-sm"><Status value={catalog.status} /><p>Catalog {catalog.catalogId} · Phone ID {catalog.phoneNumberId}</p><p>Last checked: {date(catalog.lastCheckedAt)}</p>{catalog.activePhoneMatches === false && <ErrorNotice message="This catalog belongs to a different WhatsApp phone. Reconnect its original phone or disconnect the catalog." />}{catalog.lastError && <ErrorNotice message={catalog.lastError} />}</div>
       <Check label="Show catalog on WhatsApp" checked={catalog.catalogVisible} disabled={!manage || action.busy} onChange={(v) => action.run("/catalog/settings", { revision: catalog.revision, catalogVisible: v, cartEnabled: catalog.cartEnabled }, query.reload, "PATCH")} />
       <Check label="Allow customers to send carts" checked={catalog.cartEnabled} disabled={!manage || action.busy} onChange={(v) => action.run("/catalog/settings", { revision: catalog.revision, catalogVisible: catalog.catalogVisible, cartEnabled: v }, query.reload, "PATCH")} />

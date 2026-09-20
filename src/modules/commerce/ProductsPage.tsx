@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { Link } from "react-router-dom";
 import { Button } from "@components/ui/Button";
 import { Input } from "@components/ui/Input";
 import { Modal } from "@components/ui/Modal";
@@ -43,7 +44,8 @@ export default function ProductsPage() {
   const query = useCommerceQuery<{ products: Product[]; nextCursor: string | null }>(access.capabilities.catalog ? "/products" : null, { limit: 25, archived, cursor: cursors.at(-1) });
   const action = useCommerceAction(), manage = can("commerce.products.manage");
   if (!access.capabilities.catalog) return <DisabledFeature name="Catalog" />;
-  return <Panel title="Products" action={manage && <Button onClick={() => setEditing("new")}>Add product</Button>}>
+  return <Panel title="Products" action={manage && <Button disabled={!query.data || query.loading || !!query.error} onClick={() => setEditing("new")}>Add product</Button>}>
+    {query.error && can("commerce.catalog.manage") && <Link className="text-sm underline" to="/app/commerce/settings">Open catalog setup</Link>}
     <p className="text-sm text-slate-500">Prices and inventory are managed here. Products become sendable after Meta synchronization.</p>
     <div className="flex justify-between"><Check label="Archived products" checked={archived} onChange={(v) => { setArchived(v); setCursors([]); }} /><Button variant="ghost" size="sm" onClick={query.reload}>Refresh</Button></div>
     <ErrorNotice message={action.error} /><QueryState {...query} empty={!query.data?.products.length} />
