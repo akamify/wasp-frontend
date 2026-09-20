@@ -100,6 +100,9 @@ function buildGetKey(config) {
 
 const __rawRequest = api.request.bind(api);
 api.request = (config) => {
+  // Commerce scopes own cancellation and must never share an aborted GET or a
+  // cached response with another view/workspace.
+  if (config?.expectedWorkspaceId) return __rawRequest(config);
   const method = String(config?.method || "get").toLowerCase();
   if (method !== "get") return __rawRequest(config);
 
@@ -179,7 +182,7 @@ export function setWorkspaceId(workspaceId) {
   }
 }
 
-export function setToken(token) {
+export function setToken(token, preserveWorkspace = false) {
   const previous = localStorage.getItem(TOKEN_KEY) || "";
   const next = String(token || "");
   if (!token) {
@@ -194,7 +197,7 @@ export function setToken(token) {
   }
   localStorage.setItem(TOKEN_KEY, next);
   const workspaceId = workspaceFromToken(next);
-  if (workspaceId) setWorkspaceId(workspaceId);
+  if (workspaceId && !preserveWorkspace) setWorkspaceId(workspaceId);
   if (previous !== next) {
     __getCache.clear();
     __getInflight.clear();
@@ -248,6 +251,8 @@ async function resolveWorkspaceIdFromApi(token) {
 
 api.interceptors.request.use((config) => {
   const proceed = async () => {
+    if (config.expectedWorkspaceId && config.expectedWorkspaceId !== getWorkspaceId())
+      throw new axios.CanceledError("Workspace changed");
     const token = getToken();
     if (token) {
       config.headers = config.headers || {};
@@ -266,6 +271,8 @@ api.interceptors.request.use((config) => {
     }
 
     if (workspaceId) {
+      if (config.expectedWorkspaceId && config.expectedWorkspaceId !== workspaceId)
+        throw new axios.CanceledError("Workspace changed");
       config.headers = config.headers || {};
       config.headers["x-workspace-id"] = workspaceId;
     }
@@ -291,7 +298,9 @@ api.interceptors.response.use(
         if (!__refreshPromise) {
           __refreshPromise = api.post("/auth/refresh", {}, { __skipAuthRefresh: true }).then((res) => {
             const token = String(res?.data?.token || "");
-            if (token) setToken(token);
+            // Refresh rotates credentials; it must not switch the workspace the
+            // user selected while a Commerce request was in flight.
+            if (token) setToken(token, true);
             return res?.data;
           }).finally(() => {
             __refreshPromise = null;

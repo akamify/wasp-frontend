@@ -1,5 +1,6 @@
 import { ExternalLink, FileText, MapPin, MessageSquare, Phone, Workflow, Ban } from "lucide-react";
 import type { ReactNode } from "react";
+import { Link } from "react-router-dom";
 import type { ChatMessage } from "@modules/conversations/types/conversations.types";
 import { renderWhatsAppText } from "@modules/conversations/utils/renderWhatsAppText";
 
@@ -40,6 +41,23 @@ export function MessageContent({ ensureMediaUrl, mediaErrors, mediaLoading, medi
         setSelectedImage={setSelectedImage}
       />
     );
+  }
+
+  const commerce = message.direction === "outbound" ? message.payload?.commerce : undefined;
+  const cart = message.direction === "inbound" && message.payload?.type === "order" ? message.payload.order : undefined;
+  if (cart && Array.isArray(cart.product_items)) {
+    const items = cart.product_items.slice(0, 100).filter((item) => typeof item?.product_retailer_id === "string"
+      && Number.isSafeInteger(Number(item.quantity)) && Number(item.quantity) > 0 && Number(item.quantity) <= 10000);
+    return <div className="space-y-2 pb-1"><p className="text-xs font-bold">Customer cart</p>{items.map((item, index) => <p key={index} className="text-sm break-words">{Number(item.quantity)} × {item.product_retailer_id!.slice(0, 100)}</p>)}
+      {typeof cart.text === "string" && <p className="text-sm whitespace-pre-wrap break-words">{cart.text.slice(0, 4096)}</p>}
+      <p className="text-xs text-ink-900/60">Open Commerce → Customer orders to review current prices and payment status.</p>
+    </div>;
+  }
+  if (commerce && ["catalog", "product", "product_list", "payment_request", "order_status"].includes(commerce.kind)) {
+    return <div className="space-y-2 pb-1"><p className="text-xs font-bold">{commerce.kind === "order_status" ? "Order update" : commerce.kind === "payment_request" ? "Payment request" : commerce.kind === "catalog" ? "WhatsApp catalog" : "Catalog products"}</p>
+      <div className="whitespace-pre-wrap break-words text-sm">{renderWhatsAppText(message.text || "")}</div>
+      {commerce.orderId && /^[a-fA-F0-9]{24}$/.test(commerce.orderId) && <Link className="text-xs font-semibold underline" to={`/app/commerce/orders/${commerce.orderId}`}>View order {commerce.orderNumber}</Link>}
+    </div>;
   }
 
   return (

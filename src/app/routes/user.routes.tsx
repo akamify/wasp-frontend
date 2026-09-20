@@ -1,5 +1,6 @@
 import { Route } from "react-router-dom";
 import type { ReactNode } from "react";
+import { lazy, Suspense } from "react";
 import { RequireUser } from "@components/auth/RequireUser";
 import { AppShell } from "@components/layout/AppShell";
 import { RequireCrm } from "@modules/crm/components/RequireCrm";
@@ -39,6 +40,9 @@ import FlowsPage from "@pages/user/pages/Flows";
 import FlowsCreatePage from "@pages/user/pages/FlowsCreate";
 import WorkspacesPage from "@pages/user/pages/Workspaces";
 import EcommerceIntegrationsPage from "@modules/ecommerce/pages/EcommerceIntegrationsPage";
+const RiderPage = lazy(() => import("@modules/commerce/RiderPage"));
+const CommercePage = lazy(() => import("@modules/commerce/CommercePage"));
+const BusinessGroupsPage = lazy(() => import("@modules/business-groups/BusinessGroupsPage"));
 
 function inApp(page: ReactNode) {
   return <AppShell>{page}</AppShell>;
@@ -47,7 +51,9 @@ function inApp(page: ReactNode) {
 export function userRoutes() {
   return (
     <Route element={<RequireUser />}>
+      <Route path="/rider" element={<Suspense fallback={<p role="status">Loading Rider...</p>}><RiderPage /></Suspense>} />
       <Route path="/app" element={inApp(<DashboardPage />)} />
+      <Route path="/app/business-groups" element={inApp(<Suspense fallback={<p role="status">Loading Business Groups…</p>}><BusinessGroupsPage /></Suspense>)} />
       <Route path="/app/meta" element={inApp(<MetaConnectPage />)} />
       <Route path="/app/templates" element={inApp(<TemplatesPage />)} />
       <Route path="/app/template-library" element={inApp(<TemplateLibraryPage />)} />
@@ -66,6 +72,7 @@ export function userRoutes() {
       </Route>
       <Route path="/app/links" element={inApp(<LinksPage />)} />
       <Route path="/app/ecommerce/:platform?" element={inApp(<EcommerceIntegrationsPage />)} />
+      <Route path="/app/commerce/:section?/:recordId?" element={inApp(<Suspense fallback={<p role="status" className="p-6">Loading Commerce…</p>}><CommercePage /></Suspense>)} />
       <Route path="/app/automation" element={inApp(<AutomationFlowsPage />)} />
       <Route path="/app/automation/events" element={inApp(<AutomationEventTestPage />)} />
       <Route path="/app/automation/:flowId" element={inApp(<FlowBuilderPage />)} />

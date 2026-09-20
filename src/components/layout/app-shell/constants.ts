@@ -36,6 +36,7 @@ export function resolveDocsUrlForPath(pathname: string, links: DocsLinkItem[] = 
 
 export const NAV_ITEMS = [
   { to: "/app", label: "Dashboard", kicker: "overview", icon: LayoutDashboard },
+  { to: "/app/business-groups", label: "Business Groups", kicker: "connected panels", icon: Layers3 },
   { to: "/app/meta", label: "WhatsApp Setup", kicker: "credentials", icon: Key },
   { to: "/app/templates", label: "Templates", kicker: "library", icon: FileText },
   { to: "/app/template-library", label: "Template Library", kicker: "curated", icon: Sparkles },
@@ -44,6 +45,7 @@ export const NAV_ITEMS = [
   { to: "/app/audiences", label: "Audiences", kicker: "segments", icon: Layers3 },
   { to: "/app/attributes", label: "Attributes", kicker: "contact data", icon: ListFilter },
   { to: "/app/conversations", label: "Inbox", kicker: "chatroom", icon: MessageSquare },
+  { to: "/app/commerce", label: "Ecommerce Management", kicker: "catalog, orders & delivery", icon: CreditCard },
   { to: "/app/crm", label: "CRM", kicker: "leads", icon: BriefcaseBusiness },
   { to: "/app/flows", label: "Flows", kicker: "forms", icon: Workflow },
   { to: "/app/wallet", label: "Wallet", kicker: "credits", icon: Wallet },

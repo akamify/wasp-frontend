@@ -55,6 +55,7 @@ export function LandingNavbar() {
   const [scrolled, setScrolled] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
 
+
   const navRef = useRef<HTMLElement | null>(null);
 
   useEffect(() => {

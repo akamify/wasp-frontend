@@ -1,4 +1,7 @@
 import { Route } from "react-router-dom";
+import { lazy, Suspense } from "react";
+const DeliveryTrackingPage = lazy(() => import("@modules/commerce/DeliveryTrackingPage"));
+const FulfillmentPage = lazy(() => import("@modules/commerce/FulfillmentPage"));
 import LandingPage from "@pages/Landing";
 import LoginPage from "@pages/auth/pages/Login";
 import RegisterPage from "@pages/auth/pages/Register";
@@ -28,6 +31,8 @@ export function publicRoutes() {
   return (
     <>
       <Route path="/" element={<LandingPage />} />
+      <Route path="/delivery-tracking" element={<Suspense fallback={<p role="status">Loading delivery?</p>}><DeliveryTrackingPage /></Suspense>} />
+      <Route path="/commerce/fulfillment" element={<Suspense fallback={<p role="status">Loading order details…</p>}><FulfillmentPage /></Suspense>} />
       <Route path="/about" element={<PublicCmsPage slug="about" />} />
       <Route path="/features" element={<FeaturesPage />} />
       <Route path="/privacy-policy" element={<PrivacyPolicyPage />} />

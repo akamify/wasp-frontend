@@ -19,6 +19,11 @@ export function authenticatedHome(role?: string | null, token?: string | null) {
   return "/workspaces";
 }
 
+export function loginDestination(role?: string | null, token?: string | null, from?: string | null) {
+  if (normalizeRole(role) === "user") return from === "/rider" ? "/rider" : "/workspaces";
+  return from || authenticatedHome(role, token);
+}
+
 export function authAwareHref({
   token,
   role,

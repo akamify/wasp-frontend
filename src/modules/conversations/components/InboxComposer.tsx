@@ -1,5 +1,5 @@
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
-import { Loader2, Paperclip, Send, Smile } from "lucide-react";
+import { Loader2, Paperclip, Plus, Send, Smile } from "lucide-react";
 import { AttachmentMenu } from "@modules/conversations/components/AttachmentMenu";
 import { EmojiPopover } from "@modules/conversations/components/EmojiPopover";
 import { useEmojiDataset } from "@modules/conversations/hooks/useEmojiDataset";
@@ -13,9 +13,10 @@ type Props = {
   sendTextMessage: (payload: any) => Promise<any>;
   uploadMedia?: (file: File, onProgress?: (pct: number) => void) => Promise<any>;
   sendMediaMessage?: (payload: any) => Promise<any>;
+  onCatalog?: () => void;
 };
 
-export function InboxComposer({ to, disabled, forceDisabledReason, onSent, onError, sendTextMessage, uploadMedia, sendMediaMessage }: Props) {
+export function InboxComposer({ to, disabled, forceDisabledReason, onSent, onError, sendTextMessage, uploadMedia, sendMediaMessage, onCatalog }: Props) {
   const [sending, setSending] = useState(false);
   const [text, setText] = useState("");
   const [showEmojis, setShowEmojis] = useState(false);
@@ -173,10 +174,13 @@ export function InboxComposer({ to, disabled, forceDisabledReason, onSent, onErr
               onClick={() => setShowAttach((v) => !v)}
               disabled={isDisabled}
               title="Attach"
+              aria-label="Add attachment"
+              aria-expanded={showAttach}
             >
-              <Paperclip size={22} />
+              {onCatalog ? <Plus size={22} /> : <Paperclip size={22} />}
             </button>
-            {showAttach ? <AttachmentMenu panelRef={attachPanelRef} onPick={openFilePicker} disabled={isDisabled} /> : null}
+            {showAttach ? <AttachmentMenu panelRef={attachPanelRef} onPick={openFilePicker} disabled={isDisabled}
+              onCatalog={onCatalog ? () => { if (isDisabled) return; setShowAttach(false); onCatalog(); } : undefined} /> : null}
           </div>
 
           <button

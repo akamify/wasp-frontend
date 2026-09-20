@@ -53,6 +53,8 @@ export type ChatMessage = {
   listReply?: { id?: string | null; title?: string | null; description?: string | null };
   interactive?: any;
   payload?: {
+    order?: { product_items?: Array<{ product_retailer_id?: string; quantity?: number | string }>; text?: string };
+    commerce?: { kind: string; orderId?: string; orderNumber?: string; products?: Array<{ sku: string; name: string; pricePaise: number }> };
     template?: { name?: string };
     image?: { link: string };
     document?: { link: string; filename?: string };

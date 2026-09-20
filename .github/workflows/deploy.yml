@@ -1,12 +1,33 @@
 name: Deploy Frontend
 
 on:
+  pull_request:
+    branches: [main]
   push:
     branches:
       - main
 
 jobs:
+  verify:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v7
+        with:
+          node-version: '22.14.0'
+          cache: npm
+      - run: npm ci
+      - name: Commerce UI and workspace isolation tests
+        run: node --experimental-vm-modules --test --test-concurrency=1 tests/commerce-*.test.mjs
+      - name: Typecheck and production build
+        run: npm run build
   deploy:
+    if: github.event_name == 'push'
+    needs: verify
     runs-on: ubuntu-latest
 
     steps:
@@ -21,4 +42,3 @@ jobs:
             cd /root/wasp-frontend
             chmod +x scripts/deploy.sh
             ./scripts/deploy.sh
-            

@@ -7,8 +7,7 @@ import { Input } from "@components/ui/Input";
 import { Button } from "@components/ui/Button";
 import { Alert } from "@components/ui/Alert";
 import { BRAND_NAME } from "../../../config/brand";
-import { normalizeRole } from "@shared/utils/authRole";
-import { authenticatedHome } from "@shared/utils/authNavigation";
+import { authenticatedHome, loginDestination } from "@shared/utils/authNavigation";
 import { Eye, EyeOff } from "lucide-react";
 import { AuthIllustration } from "@components/auth/AuthIllustration";
 import { Seo } from "@shared/components/Seo";
@@ -29,12 +28,8 @@ export default function LoginPage() {
 
   const from = (location.state as any)?.from || null;
 
-  function defaultTargetByRole(role?: string | null) {
-    return authenticatedHome(role, token);
-  }
-
   function loginTarget(role?: string | null) {
-    return normalizeRole(role) === "user" ? "/workspaces" : from || defaultTargetByRole(role);
+    return loginDestination(role, token, from);
   }
 
   async function onSubmit(e: React.FormEvent) {
@@ -104,9 +99,9 @@ export default function LoginPage() {
 
   React.useEffect(() => {
     if (!loading && token && user) {
-      navigate(authenticatedHome(user.role, token), { replace: true });
+      navigate(from === "/rider" ? loginDestination(user.role, token, from) : authenticatedHome(user.role, token), { replace: true });
     }
-  }, [loading, navigate, token, user]);
+  }, [loading, navigate, token, user, from]);
 
   async function resendOtp() {
     if (!challengeToken) return;

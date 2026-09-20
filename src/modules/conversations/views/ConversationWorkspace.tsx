@@ -1,8 +1,11 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { lazy, Suspense, useEffect, useMemo, useRef, useState } from "react";
+const InboxCommerce = lazy(() => import("@modules/commerce/InboxCommerce"));
 import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import { Check, CheckCheck, Info, MessageSquare } from "lucide-react";
 import { API } from "@api/api";
+import { Modal } from "@components/ui/Modal";
+import { useWorkspaceId } from "@modules/commerce/commerceContext";
 import { AssignLeadModal } from "@modules/crm/components/AssignLeadModal";
 import { ChatHeader } from "@modules/conversations/components/ChatHeader";
 import { ConversationFeedback } from "@modules/conversations/components/ConversationFeedback";
@@ -478,6 +481,10 @@ function ComposerPanel({
   setOk: (value: string | null) => void;
   urlPhone: string;
 }) {
+  const workspaceId = useWorkspaceId();
+  const [catalogTarget, setCatalogTarget] = useState<{ workspaceId: string; to: string } | null>(null);
+  useEffect(() => { setCatalogTarget(null); }, [workspaceId, urlPhone]);
+  const catalogOpen = catalogTarget?.workspaceId === workspaceId && catalogTarget?.to === urlPhone;
   return (
     <div className="min-w-0 p-4 bg-white border-t border-slate-100 shrink-0">
       {!customerServiceWindowOpen && (
@@ -490,6 +497,10 @@ function ComposerPanel({
         </div>
       )}
       <div className="max-w-4xl mx-auto">
+        {catalogOpen && <Modal open title="WhatsApp catalog and orders" onClose={() => setCatalogTarget(null)}>
+          <Suspense fallback={<p role="status">Loading catalog…</p>}><InboxCommerce key={`${workspaceId}:${urlPhone}`} to={urlPhone}
+            disabled={!customerServiceWindowOpen} onSent={refreshChat} /></Suspense>
+        </Modal>}
         <InboxComposer
           to={urlPhone}
           disabled={!urlPhone}
@@ -503,6 +514,7 @@ function ComposerPanel({
             setTimeout(() => setOk(null), 3000);
           }}
           onError={setError}
+          onCatalog={() => { if (customerServiceWindowOpen && urlPhone && workspaceId) setCatalogTarget({ workspaceId, to: urlPhone }); }}
         />
       </div>
     </div>
