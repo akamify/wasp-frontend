@@ -38,9 +38,14 @@ function fixture({ permissions = [], capabilities = {}, responses = {}, failure 
 const product = { id: 'product', sku: 'tea', name: '<script>untrusted</script>', pricePaise: 1234, stockOnHand: 5, stockReserved: 2, trackInventory: true, syncStatus: 'synced', revision: 1, syncedRevision: 1, available: true };
 
 test('new catalog setup exposes creation and safe recovery states', () => {
-  const render = (setup) => fixture({ responses: { '/catalog/setup': { setup } } }).render('CreateCatalog', { connected() {} }, 'CreateCatalog');
+  const render = (setup, capabilities = { connectExistingCatalog: true, createCatalog: true }) =>
+    fixture({ responses: { '/catalog/setup': { setup, capabilities } } }).render('CreateCatalog', { connected() {} }, 'CreateCatalog');
   assert.match(render(null), /Create &amp; connect/);
   assert.match(render(null), /href="\/app\/meta"[^>]*>Check or authorize catalog access/);
+  const manualOnly = render(null, { connectExistingCatalog: true, createCatalog: false });
+  assert.match(manualOnly, /awaiting Meta business management approval/);
+  assert.match(manualOnly, /Find linked catalogs/);
+  assert.doesNotMatch(manualOnly, /Create &amp; connect/);
   assert.match(render({ name: 'Menu', catalogId: '123', state: 'created', activePhoneMatches: true }), /Catalog 123 has already been created/);
   assert.match(render({ name: 'Menu', catalogId: '', state: 'creating', activePhoneMatches: true }), /Existing catalog ID for recovery/);
   assert.match(render({ name: 'Menu', catalogId: '', state: 'creating', activePhoneMatches: false }), /fieldset disabled/);

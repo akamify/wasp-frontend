@@ -36,6 +36,8 @@ test('catalog authorization control is limited to connected accounts and shows c
   const missing = render({ connected: true, granted: false, busy: false });
   assert.match(missing, /Authorize catalog access/);
   assert.match(missing, /Catalog access: Authorization required/);
+  assert.match(missing, /WhatsApp accounts and Catalogs assets/);
+  assert.doesNotMatch(missing, /business management/);
   const granted = render({ connected: true, granted: true, busy: true });
   assert.match(granted, /Refresh catalog permission/);
   assert.match(granted, /Catalog access: Granted/);

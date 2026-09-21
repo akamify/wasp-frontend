@@ -9,7 +9,7 @@ export function CatalogPermissionControl({ connected, granted, busy, authorize }
   authorize: () => void;
 }) {
   if (!connected) return null;
-  return <>
+  return <div className="flex flex-col items-start gap-2">
     <Button
       type="button"
       variant="outline"
@@ -31,5 +31,10 @@ export function CatalogPermissionControl({ connected, granted, busy, authorize }
     )}>
       Catalog access: {granted ? "Granted" : "Authorization required"}
     </span>
-  </>;
+    {!granted ? (
+      <span className="max-w-sm text-xs font-semibold leading-5 text-amber-100">
+        Meta configuration must include WhatsApp accounts and Catalogs assets, plus catalog management permission.
+      </span>
+    ) : null}
+  </div>;
 }

@@ -486,6 +486,9 @@ export default function MetaConnectPage() {
     } catch (e: any) {
       const backendMessage = e?.response?.data?.message || "";
       const backendDetail = e?.response?.data?.details?.message || "";
+      const missingScopes = Array.isArray(e?.response?.data?.details?.missingScopes)
+        ? e.response.data.details.missingScopes.map((scope: unknown) => String(scope || ""))
+        : [];
       const restartRequired = Boolean(
         e?.response?.data?.details?.restartRequired,
       );
@@ -510,13 +513,15 @@ export default function MetaConnectPage() {
           : restartRequired
             ? "This Meta connect code was already consumed. Click Connect WhatsApp again and complete the popup once to generate a fresh code."
             : "";
-      const message = /could not be matched to the selected waba/i.test(
-        backendMessage,
-      )
-        ? updatingCatalogPermissions
-          ? "Select the same WhatsApp Business Account and phone number that are already connected."
-          : "Meta returned a phone number that does not match the selected WABA. Please reconnect WhatsApp. If this repeats, contact support."
-        : usedCodeMessage || backendMessage || e?.message || "Could not exchange Meta code";
+      const catalogPermissionMissing = updatingCatalogPermissions
+        && missingScopes.includes("catalog_management");
+      const message = catalogPermissionMissing
+        ? "Meta did not grant catalog access. In the same Facebook Login for Business configuration, select WhatsApp accounts and Catalogs under Assets; then select catalog_management and both WhatsApp permissions. Save and try again."
+        : /could not be matched to the selected waba/i.test(backendMessage)
+          ? updatingCatalogPermissions
+            ? "Select the same WhatsApp Business Account and phone number that are already connected."
+            : "Meta returned a phone number that does not match the selected WABA. Please reconnect WhatsApp. If this repeats, contact support."
+          : usedCodeMessage || backendMessage || e?.message || "Could not exchange Meta code";
       setEmbeddedError(message);
       setEmbeddedDebugError(
         String(
