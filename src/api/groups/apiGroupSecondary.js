@@ -249,6 +249,10 @@ export function buildApiGroupSecondary(api, unwrap, API_BASE_URL) {
         api
           .post("/integrations/whatsapp/embedded-signup/exchange", payload)
           .then(unwrap),
+      reauthorizeCatalog: (payload) =>
+        api
+          .post("/integrations/whatsapp/connection/reauthorize-catalog", payload)
+          .then(unwrap),
       connection: () =>
         api.get("/integrations/whatsapp/connection").then(unwrap),
       refreshConnectionMetadata: () =>

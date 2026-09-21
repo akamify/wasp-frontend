@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { Link } from "react-router-dom";
 import { Button } from "@components/ui/Button";
 import { Input } from "@components/ui/Input";
 import { useCommerceAction, useCommerceQuery } from "./commerceContext";
@@ -30,6 +31,7 @@ export function CreateCatalog({ connected }: { connected: () => void }) {
         <Input label="Existing catalog ID for recovery" required pattern="[0-9]{1,30}" value={recoveryCatalogId} onChange={(event) => setRecoveryCatalogId(event.target.value)} /></>}
       <Check label="Create and connect this catalog in my WhatsApp business." checked={confirmed} onChange={setConfirmed} />
       <p className="text-xs text-slate-500">Meta must grant your connection business, catalog and WhatsApp management access. If permission is denied, update your Meta authorization before retrying.</p>
+      <Link className="inline-block text-sm font-semibold text-emerald-700 underline" to="/app/meta">Check or authorize catalog access</Link>
       <Button type="submit" disabled={!confirmed || action.busy}>{action.busy ? "Connecting…" : setup ? "Continue setup" : "Create & connect"}</Button>
     </fieldset>}
     <ErrorNotice message={action.error} />

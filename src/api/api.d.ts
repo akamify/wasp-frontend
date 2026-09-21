@@ -336,6 +336,7 @@ export const API: {
     status(): Promise<any>;
     subscriptionHealth(): Promise<any>;
     embeddedSignupExchange(payload: any): Promise<any>;
+    reauthorizeCatalog(payload: any): Promise<any>;
     connection(): Promise<any>;
     refreshConnectionMetadata(): Promise<any>;
     completePhoneRegistration(payload: any): Promise<any>;

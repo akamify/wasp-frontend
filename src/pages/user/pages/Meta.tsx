@@ -35,6 +35,7 @@ import {
 import { cn } from "@shared/utils/cn";
 import { Link } from "react-router-dom";
 import { loadMetaSdk } from "@shared/utils/metaSdk";
+import { CatalogPermissionControl } from "../components/CatalogPermissionControl";
 
 type MetaStatus =
   | { status: "loading"; credentials: null }
@@ -266,7 +267,8 @@ export default function MetaConnectPage() {
     setShowPinRecoveryHelp(false);
   }, [pinModalOpen, suggestedPinMode]);
 
-  const connectWhatsApp = useCallback(async () => {
+  const connectWhatsApp = useCallback(async (mode: "connect" | "catalog" = "connect") => {
+    const updatingCatalogPermissions = mode === "catalog";
     setEmbeddedBusy(true);
     setEmbeddedError("");
     setEmbeddedDebugError("");
@@ -307,12 +309,22 @@ export default function MetaConnectPage() {
         });
 
         exchangePromise = (async () => {
-          const result = await API.meta.embeddedSignupExchange({
+          const payload = {
             code: authCodeRef.current,
             waba_id: signupDetailsRef.current.waba_id,
             phone_number_id: signupDetailsRef.current.phone_number_id,
-            flow_id: currentFlowId,
-          });
+          };
+          const result = updatingCatalogPermissions
+            ? await API.meta.reauthorizeCatalog(payload)
+            : await API.meta.embeddedSignupExchange({ ...payload, flow_id: currentFlowId });
+          if (updatingCatalogPermissions) {
+            clearApiGetCache();
+            toast("Catalog permission updated. You can continue catalog setup.", "success");
+            signupActiveRef.current = false;
+            clearMessageListener();
+            await loadStatus();
+            return;
+          }
           if (result?.needsPhoneSelection) {
             const phones = Array.isArray(result?.phones) ? result.phones : [];
             setEmbeddedPhones(phones);
@@ -501,7 +513,9 @@ export default function MetaConnectPage() {
       const message = /could not be matched to the selected waba/i.test(
         backendMessage,
       )
-        ? "Meta returned a phone number that does not match the selected WABA. Please reconnect WhatsApp. If this repeats, contact support."
+        ? updatingCatalogPermissions
+          ? "Select the same WhatsApp Business Account and phone number that are already connected."
+          : "Meta returned a phone number that does not match the selected WABA. Please reconnect WhatsApp. If this repeats, contact support."
         : usedCodeMessage || backendMessage || e?.message || "Could not exchange Meta code";
       setEmbeddedError(message);
       setEmbeddedDebugError(
@@ -975,9 +989,7 @@ export default function MetaConnectPage() {
                           ? "!border-white/80 !bg-white !text-slate-950 shadow-lg shadow-black/10 hover:!border-white hover:!bg-slate-100 [&_svg]:!text-slate-950"
                           : "!border-emerald-300 !bg-emerald-400 !text-emerald-950 shadow-lg shadow-emerald-950/20 hover:!border-emerald-200 hover:!bg-emerald-300 [&_svg]:!text-emerald-950",
                       )}
-                      onClick={
-                        isConnected ? disconnectWhatsApp : connectWhatsApp
-                      }
+                      onClick={isConnected ? disconnectWhatsApp : () => void connectWhatsApp("connect")}
                       disabled={isStatusLoading}
                       aria-busy={isStatusLoading}
                     >
@@ -998,6 +1010,13 @@ export default function MetaConnectPage() {
                         </>
                       )}
                     </Button>
+
+                    <CatalogPermissionControl
+                      connected={isConnected}
+                      granted={embeddedConnection?.catalogPermission?.granted === true}
+                      busy={isStatusLoading}
+                      authorize={() => void connectWhatsApp("catalog")}
+                    />
 
                     {needsRegistration ? (
                       <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
