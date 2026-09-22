@@ -29,7 +29,7 @@ function load(filename) {
 }
 const componentPath = path.join(root, 'pages/user/components/CatalogPermissionControl.tsx');
 const { CatalogPermissionControl } = load(componentPath);
-const render = (props) => renderToStaticMarkup(React.createElement(CatalogPermissionControl, { authorize() {}, ...props }));
+const render = (props) => renderToStaticMarkup(React.createElement(CatalogPermissionControl, { authorize() {}, catalogIds: [], ...props }));
 
 test('catalog authorization control is limited to connected accounts and shows current scope state', () => {
   assert.equal(render({ connected: false, granted: false, busy: false }), '');
@@ -37,9 +37,11 @@ test('catalog authorization control is limited to connected accounts and shows c
   assert.match(missing, /Authorize catalog access/);
   assert.match(missing, /Catalog access: Authorization required/);
   assert.match(missing, /WhatsApp accounts and Catalogs assets/);
+  assert.match(missing, /select the exact catalog checkbox/);
   assert.doesNotMatch(missing, /business management/);
-  const granted = render({ connected: true, granted: true, busy: true });
+  const granted = render({ connected: true, granted: true, catalogIds: ['4351882411734068'], busy: true });
   assert.match(granted, /Refresh catalog permission/);
   assert.match(granted, /Catalog access: Granted/);
+  assert.match(granted, /Authorized catalog IDs: 4351882411734068/);
   assert.match(granted, /disabled=""/);
 });

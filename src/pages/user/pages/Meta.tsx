@@ -1019,6 +1019,11 @@ export default function MetaConnectPage() {
                     <CatalogPermissionControl
                       connected={isConnected}
                       granted={embeddedConnection?.catalogPermission?.granted === true}
+                      catalogIds={Array.isArray(embeddedConnection?.catalogPermission?.catalogIds)
+                        ? embeddedConnection.catalogPermission.catalogIds
+                            .map((catalogId: unknown) => String(catalogId || "").trim())
+                            .filter(Boolean)
+                        : []}
                       busy={isStatusLoading}
                       authorize={() => void connectWhatsApp("catalog")}
                     />

@@ -2,9 +2,10 @@ import { ShieldCheck } from "lucide-react";
 import { Button } from "@components/ui/Button";
 import { cn } from "@shared/utils/cn";
 
-export function CatalogPermissionControl({ connected, granted, busy, authorize }: {
+export function CatalogPermissionControl({ connected, granted, catalogIds, busy, authorize }: {
   connected: boolean;
   granted: boolean;
+  catalogIds: string[];
   busy: boolean;
   authorize: () => void;
 }) {
@@ -33,7 +34,12 @@ export function CatalogPermissionControl({ connected, granted, busy, authorize }
     </span>
     {!granted ? (
       <span className="max-w-sm text-xs font-semibold leading-5 text-amber-100">
-        Meta configuration must include WhatsApp accounts and Catalogs assets, plus catalog management permission.
+        Meta configuration must include WhatsApp accounts and Catalogs assets, plus catalog management permission. In the authorization popup, select the exact catalog checkbox before continuing.
+      </span>
+    ) : null}
+    {granted && catalogIds.length ? (
+      <span className="max-w-sm text-xs font-semibold leading-5 text-emerald-100">
+        Authorized catalog IDs: {catalogIds.join(", ")}
       </span>
     ) : null}
   </div>;
