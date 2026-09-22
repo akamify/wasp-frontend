@@ -45,17 +45,19 @@ test('new catalog setup exposes creation and safe recovery states', () => {
   assert.match(render(null), /href="\/app\/meta"[^>]*>Check or authorize catalog access/);
   const manualOnly = render(null, { connectExistingCatalog: true, createCatalog: false });
   assert.match(manualOnly, /awaiting Meta business management approval/);
-  assert.match(manualOnly, /Find linked catalogs/);
+  assert.match(manualOnly, /paste its Catalog ID/);
   assert.doesNotMatch(manualOnly, /Create &amp; connect/);
   assert.match(render({ name: 'Menu', catalogId: '123', state: 'created', activePhoneMatches: true }), /Catalog 123 has already been created/);
   assert.match(render({ name: 'Menu', catalogId: '', state: 'creating', activePhoneMatches: true }), /Existing catalog ID for recovery/);
   assert.match(render({ name: 'Menu', catalogId: '', state: 'creating', activePhoneMatches: false }), /fieldset disabled/);
 });
 
-test('catalog settings explain that AIWizChat links a verified existing catalog', () => {
+test('catalog settings explain direct access and Meta-verified WABA linking', () => {
   const html = fixture({ permissions: ['commerce.catalog.view', 'commerce.catalog.manage'],
     responses: { '/catalog': { catalog: null } } }).render('SettingsPage');
-  assert.match(html, /AIWizChat will create the missing WhatsApp account link after verifying ownership/);
+  assert.match(html, /AIWizChat will ask Meta to link it to this WhatsApp account and verify the link before saving it/);
+  assert.match(html, /must belong to the same Meta Business Portfolio/);
+  assert.match(html, /Find already linked catalogs/);
 });
 
 test('catalog creation remains available with the transitional nested setup response', () => {

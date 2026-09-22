@@ -39,7 +39,7 @@ export function CreateCatalog({ connected }: { connected: () => void }) {
     <QueryState {...query} />
     {catalogSetup && !creationAvailable ? <div className="space-y-2 rounded-md border border-amber-200 bg-amber-50 p-3 text-sm text-amber-950">
       <p className="font-semibold">Create in AIWizChat is awaiting Meta business management approval.</p>
-      <p>Create an empty catalog in Meta Commerce Manager, link it to this WhatsApp account, then use <strong>Find linked catalogs</strong> below.</p>
+      <p>Create an empty catalog in Meta Commerce Manager, authorize that catalog for AIWizChat, then paste its Catalog ID in the connection form below.</p>
       {!canConnectExisting && <p>Authorize catalog access first so AIWizChat can discover and manage the catalog.</p>}
       <Link className="inline-block font-semibold text-emerald-700 underline" to="/app/meta">Check or authorize catalog access</Link>
     </div> : null}
