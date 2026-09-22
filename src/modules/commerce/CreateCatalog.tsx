@@ -7,16 +7,25 @@ import { Check, ErrorNotice, QueryState } from "./ui";
 
 type Setup = { name: string; catalogId: string; state: "ready" | "creating" | "created" | "connected"; activePhoneMatches: boolean };
 type CatalogCapabilities = { connectExistingCatalog: boolean; createCatalog: boolean };
+type CatalogSetupPayload = { setup: Setup | null; capabilities: CatalogCapabilities };
+type CatalogSetupResponse = CatalogSetupPayload | { setup: CatalogSetupPayload };
+
+function normalizeCatalogSetup(response?: CatalogSetupResponse): CatalogSetupPayload | undefined {
+  if (!response) return undefined;
+  return "capabilities" in response ? response : response.setup;
+}
+
 export function CreateCatalog({ connected }: { connected: () => void }) {
-  const query = useCommerceQuery<{ setup: Setup | null; capabilities: CatalogCapabilities }>("/catalog/setup");
+  const query = useCommerceQuery<CatalogSetupResponse>("/catalog/setup");
   const action = useCommerceAction();
   const [name, setName] = useState("");
   const [confirmed, setConfirmed] = useState(false);
   const [recoveryCatalogId, setRecoveryCatalogId] = useState("");
-  const setup = query.data?.setup;
+  const catalogSetup = normalizeCatalogSetup(query.data);
+  const setup = catalogSetup?.setup;
   const uncertain = setup?.state === "creating" && !setup.catalogId;
-  const canCreate = query.data?.capabilities?.createCatalog === true;
-  const canConnectExisting = query.data?.capabilities?.connectExistingCatalog === true;
+  const canCreate = catalogSetup?.capabilities.createCatalog === true;
+  const canConnectExisting = catalogSetup?.capabilities.connectExistingCatalog === true;
   const canContinue = !!setup && (setup.state === "creating" || !!setup.catalogId);
   const creationAvailable = canCreate || canContinue;
   return <form className="space-y-3 rounded-lg border p-4" onSubmit={(event) => {
@@ -28,13 +37,13 @@ export function CreateCatalog({ connected }: { connected: () => void }) {
     <h3 className="font-semibold">Create new catalog</h3>
     <p className="text-sm text-slate-500">Create a menu or product catalog in the Meta Business that owns your connected WhatsApp account. Then add your products here.</p>
     <QueryState {...query} />
-    {query.data && !creationAvailable ? <div className="space-y-2 rounded-md border border-amber-200 bg-amber-50 p-3 text-sm text-amber-950">
+    {catalogSetup && !creationAvailable ? <div className="space-y-2 rounded-md border border-amber-200 bg-amber-50 p-3 text-sm text-amber-950">
       <p className="font-semibold">Create in AIWizChat is awaiting Meta business management approval.</p>
       <p>Create an empty catalog in Meta Commerce Manager, link it to this WhatsApp account, then use <strong>Find linked catalogs</strong> below.</p>
       {!canConnectExisting && <p>Authorize catalog access first so AIWizChat can discover and manage the catalog.</p>}
       <Link className="inline-block font-semibold text-emerald-700 underline" to="/app/meta">Check or authorize catalog access</Link>
     </div> : null}
-    {query.data && creationAvailable && <fieldset disabled={action.busy || setup?.activePhoneMatches === false} className="space-y-3">
+    {catalogSetup && creationAvailable && <fieldset disabled={action.busy || setup?.activePhoneMatches === false} className="space-y-3">
       <Input label="Catalog name" required maxLength={150} value={setup?.name || name} disabled={!!setup} onChange={(event) => setName(event.target.value)} placeholder="Faizan Restaurant Menu" />
       {setup?.catalogId && <p className="text-sm">Catalog {setup.catalogId} has already been created. Continue to finish connecting it.</p>}
       {setup?.activePhoneMatches === false && <ErrorNotice message="Restore the WhatsApp connection used to start this setup before continuing." />}

@@ -51,6 +51,13 @@ test('new catalog setup exposes creation and safe recovery states', () => {
   assert.match(render({ name: 'Menu', catalogId: '', state: 'creating', activePhoneMatches: false }), /fieldset disabled/);
 });
 
+test('catalog creation remains available with the transitional nested setup response', () => {
+  const response = { setup: { setup: null, capabilities: { connectExistingCatalog: true, createCatalog: true } } };
+  const html = fixture({ responses: { '/catalog/setup': response } }).render('CreateCatalog', { connected() {} }, 'CreateCatalog');
+  assert.match(html, /Create &amp; connect/);
+  assert.doesNotMatch(html, /awaiting Meta business management approval/);
+});
+
 test('product creation is disabled until the catalog product query succeeds', () => {
   const permissions = ['commerce.products.manage', 'commerce.catalog.manage'];
   const failed = fixture({ permissions, failure: 'Connect a catalog' }).render('ProductsPage');
