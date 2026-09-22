@@ -36,6 +36,7 @@ function fixture({ permissions = [], capabilities = {}, responses = {}, failure 
   return { render, requested, component: (name, exported = 'default') => load(path.join(root, 'modules/commerce', /\.[jt]sx?$/.test(name) ? name : `${name}.tsx`))[exported] };
 }
 const product = { id: 'product', sku: 'tea', name: '<script>untrusted</script>', pricePaise: 1234, stockOnHand: 5, stockReserved: 2, trackInventory: true, syncStatus: 'synced', revision: 1, syncedRevision: 1, available: true };
+const connectedCatalog = { '/catalog': { catalog: { id: 'catalog', activePhoneMatches: true } } };
 
 test('new catalog setup exposes creation and safe recovery states', () => {
   const render = (setup, capabilities = { connectExistingCatalog: true, createCatalog: true }) =>
@@ -60,10 +61,12 @@ test('catalog creation remains available with the transitional nested setup resp
 
 test('product creation is disabled until the catalog product query succeeds', () => {
   const permissions = ['commerce.products.manage', 'commerce.catalog.manage'];
-  const failed = fixture({ permissions, failure: 'Connect a catalog' }).render('ProductsPage');
+  const disconnected = fixture({ permissions, responses: { '/catalog': { catalog: null } } });
+  const failed = disconnected.render('ProductsPage');
   assert.match(failed, /disabled=""[^>]*>Add product/);
   assert.match(failed, /Open catalog setup/);
-  const ready = fixture({ permissions, responses: { '/products': { products: [], nextCursor: null } } }).render('ProductsPage');
+  assert.doesNotMatch(disconnected.requested.join(','), /\/products/);
+  const ready = fixture({ permissions, responses: { ...connectedCatalog, '/products': { products: [], nextCursor: null } } }).render('ProductsPage');
   assert.doesNotMatch(ready, /disabled=""[^>]*>Add product/);
 });
 
@@ -218,17 +221,17 @@ test('catalog picker renders inside its caller and blocks sending without permis
   assert.doesNotMatch(fixture({ permissions, capabilities: { catalog: false } }).render('InboxCommerce', props), /Send catalog/);
 });
 test('products render authoritative money, available stock and escaped names; viewer has no mutations', () => {
-  const f = fixture({ responses: { '/products': { products: [product], nextCursor: null } } }), html = f.render('ProductsPage');
+  const f = fixture({ responses: { ...connectedCatalog, '/products': { products: [product], nextCursor: null } } }), html = f.render('ProductsPage');
   assert.match(html, /12\.34/); assert.match(html, /3 available \/ 2 reserved/); assert.match(html, /&lt;script&gt;/); assert.doesNotMatch(html, /<script>|Add product|>Edit<|>Archive</);
 });
 test('product manager sees controls and disabled catalog does not query products', () => {
-  const f = fixture({ permissions: ['commerce.products.manage'], responses: { '/products': { products: [product] } } });
+  const f = fixture({ permissions: ['commerce.products.manage'], responses: { ...connectedCatalog, '/products': { products: [product] } } });
   assert.match(f.render('ProductsPage'), /Add product/);
   const disabled = fixture({ capabilities: { catalog: false } }); assert.match(disabled.render('ProductsPage'), /Catalog is not enabled/); assert.equal(disabled.requested.length, 0);
 });
 test('loading, empty and backend error states have visible feedback', () => {
   assert.match(fixture({ loading: true }).render('ProductsPage'), /role="status"/);
-  assert.match(fixture({ responses: { '/products': { products: [] } } }).render('ProductsPage'), /No records to show/);
+  assert.match(fixture({ responses: { ...connectedCatalog, '/products': { products: [] } } }).render('ProductsPage'), /No records to show/);
   assert.match(fixture({ failure: 'Catalog connection changed' }).render('ProductsPage'), /role="alert"/);
 });
 test('unpaid reviewed orders expose checkout only with payment and order management permissions', () => {

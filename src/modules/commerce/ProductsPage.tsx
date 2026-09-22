@@ -4,7 +4,7 @@ import { Button } from "@components/ui/Button";
 import { Input } from "@components/ui/Input";
 import { Modal } from "@components/ui/Modal";
 import { useCommerce, useCommerceAction, useCommerceQuery } from "./commerceContext";
-import type { Product } from "./types";
+import type { Catalog, Product } from "./types";
 import { Check, DisabledFeature, ErrorNotice, fieldClass, money, Pager, Panel, QueryState, Status } from "./ui";
 function ProductForm({ product, close, saved }: { product?: Product; close: () => void; saved: () => void }) {
   const [form, setForm] = useState({ sku: product?.sku || "", name: product?.name || "", description: product?.description || "", imageUrl: product?.imageUrl || "", productUrl: product?.productUrl || "",
@@ -41,14 +41,21 @@ function ProductForm({ product, close, saved }: { product?: Product; close: () =
 export default function ProductsPage() {
   const { can, access } = useCommerce(), [cursors, setCursors] = useState<string[]>([]), [archived, setArchived] = useState(false);
   const [editing, setEditing] = useState<Product | "new" | null>(null), [confirmArchive, setConfirmArchive] = useState<Product | null>(null);
-  const query = useCommerceQuery<{ products: Product[]; nextCursor: string | null }>(access.capabilities.catalog ? "/products" : null, { limit: 25, archived, cursor: cursors.at(-1) });
+  const catalogQuery = useCommerceQuery<{ catalog: Catalog | null }>(access.capabilities.catalog ? "/catalog" : null);
+  const catalogConnected = !!catalogQuery.data?.catalog && catalogQuery.data.catalog.activePhoneMatches !== false;
+  const query = useCommerceQuery<{ products: Product[]; nextCursor: string | null }>(catalogConnected ? "/products" : null, { limit: 25, archived, cursor: cursors.at(-1) });
   const action = useCommerceAction(), manage = can("commerce.products.manage");
   if (!access.capabilities.catalog) return <DisabledFeature name="Catalog" />;
   return <Panel title="Products" action={manage && <Button disabled={!query.data || query.loading || !!query.error} onClick={() => setEditing("new")}>Add product</Button>}>
+    <QueryState {...catalogQuery} />
+    {catalogQuery.data && !catalogConnected && <div role="alert" className="rounded-md border border-rose-200 bg-rose-50 p-3 text-sm text-rose-700">
+      <p>Connect a catalog for the active WhatsApp account before managing products.</p>
+      {can("commerce.catalog.manage") && <Link className="font-semibold underline" to="/app/commerce/settings">Open catalog setup</Link>}
+    </div>}
     {query.error && can("commerce.catalog.manage") && <Link className="text-sm underline" to="/app/commerce/settings">Open catalog setup</Link>}
     <p className="text-sm text-slate-500">Prices and inventory are managed here. Products become sendable after Meta synchronization.</p>
-    <div className="flex justify-between"><Check label="Archived products" checked={archived} onChange={(v) => { setArchived(v); setCursors([]); }} /><Button variant="ghost" size="sm" onClick={query.reload}>Refresh</Button></div>
-    <ErrorNotice message={action.error} /><QueryState {...query} empty={!query.data?.products.length} />
+    {catalogConnected && <div className="flex justify-between"><Check label="Archived products" checked={archived} onChange={(v) => { setArchived(v); setCursors([]); }} /><Button variant="ghost" size="sm" onClick={query.reload}>Refresh</Button></div>}
+    <ErrorNotice message={action.error} />{catalogConnected && <QueryState {...query} empty={!query.data?.products.length} />}
     <div className="divide-y divide-slate-100">{query.data?.products.map((product) => <div key={product.id} className="flex flex-wrap items-center justify-between gap-3 py-4">
       <div className="min-w-0"><p className="font-semibold break-words">{product.name}</p><p className="text-sm text-slate-500 break-all">{product.sku} · {money(product.pricePaise)} · {product.trackInventory ? `${product.stockOnHand - product.stockReserved} available / ${product.stockReserved} reserved` : "Inventory not tracked"}</p><Status value={product.syncStatus} />{product.syncError && <p className="mt-1 text-sm text-rose-700">{product.syncError}</p>}</div>
       {manage && <div className="flex flex-wrap gap-2">{!product.archivedAt && <><Button size="sm" variant="outline" onClick={() => setEditing(product)}>Edit</Button><Button size="sm" variant="ghost" disabled={action.busy} onClick={() => setConfirmArchive(product)}>Archive</Button></>}
