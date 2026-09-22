@@ -52,6 +52,12 @@ test('new catalog setup exposes creation and safe recovery states', () => {
   assert.match(render({ name: 'Menu', catalogId: '', state: 'creating', activePhoneMatches: false }), /fieldset disabled/);
 });
 
+test('catalog settings explain that AIWizChat links a verified existing catalog', () => {
+  const html = fixture({ permissions: ['commerce.catalog.view', 'commerce.catalog.manage'],
+    responses: { '/catalog': { catalog: null } } }).render('SettingsPage');
+  assert.match(html, /AIWizChat will create the missing WhatsApp account link after verifying ownership/);
+});
+
 test('catalog creation remains available with the transitional nested setup response', () => {
   const response = { setup: { setup: null, capabilities: { connectExistingCatalog: true, createCatalog: true } } };
   const html = fixture({ responses: { '/catalog/setup': response } }).render('CreateCatalog', { connected() {} }, 'CreateCatalog');
