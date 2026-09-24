@@ -4,17 +4,13 @@ import type { AxiosRequestConfig } from "axios";
 import { api, AUTH_STORAGE_EVENT, getWorkspaceId } from "@api/api";
 import { createWorkspaceScope } from "./scope.mjs";
 import type { Access, Environment } from "./types";
+import { commerceErrorMessage } from "./errorMessage.mjs";
 export type Request = <T>(path: string, options?: AxiosRequestConfig) => Promise<T>;
 type Context = { workspaceId: string; access: Access; request: Request; environment: Environment; setEnvironment: (env: Environment) => void; can: (key: string) => boolean };
 const CommerceContext = createContext<Context | null>(null);
 export const subscribeWorkspace = (fn: () => void) => { window.addEventListener(AUTH_STORAGE_EVENT, fn); window.addEventListener("storage", fn); return () => { window.removeEventListener(AUTH_STORAGE_EVENT, fn); window.removeEventListener("storage", fn); }; };
 export const useWorkspaceId = () => useSyncExternalStore(subscribeWorkspace, getWorkspaceId, () => "");
-export const errorMessage = (error: unknown) => {
-  const e = error as { response?: { data?: { message?: string; details?: { fields?: string[] } } }; userMessage?: string; message?: string };
-  const message = e.response?.data?.message || e.userMessage || "The request could not be completed. Refresh its status before retrying.";
-  const fields = e.response?.data?.details?.fields;
-  return fields?.length ? `${message}: ${fields.join(", ")}` : message;
-};
+export const errorMessage = (error: unknown) => commerceErrorMessage(error);
 export const cancelled = (e: unknown) => e instanceof DOMException && e.name === "AbortError" || (e as { code?: string })?.code === "ERR_CANCELED";
 const defaultTransport = (options: AxiosRequestConfig) => api.request(options);
 export function CommerceProvider({ workspaceId, children, transport = defaultTransport, currentWorkspace = getWorkspaceId }: {
