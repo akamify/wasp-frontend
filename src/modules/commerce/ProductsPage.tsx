@@ -4,8 +4,9 @@ import { Button } from "@components/ui/Button";
 import { Input } from "@components/ui/Input";
 import { Modal } from "@components/ui/Modal";
 import { useCommerce, useCommerceAction, useCommerceQuery } from "./commerceContext";
-import type { Catalog, Product } from "./types";
+import type { Catalog, Collection, Product } from "./types";
 import { Check, DisabledFeature, ErrorNotice, fieldClass, money, Pager, Panel, QueryState, Status } from "./ui";
+import CollectionsPage from "./CollectionsPage";
 function ProductForm({ product, close, saved }: { product?: Product; close: () => void; saved: () => void }) {
   const [form, setForm] = useState({ sku: product?.sku || "", name: product?.name || "", description: product?.description || "", imageUrl: product?.imageUrl || "", productUrl: product?.productUrl || "",
     brand: product?.brand || "", category: product?.category || "", condition: product?.condition || "new", price: product ? (product.pricePaise / 100).toFixed(2) : "", tax: product?.taxRateBps == null ? "" : String(product.taxRateBps / 100),
@@ -24,7 +25,6 @@ function ProductForm({ product, close, saved }: { product?: Product; close: () =
       <Input label="Image URL (HTTPS)" type="url" required maxLength={2048} value={form.imageUrl} onChange={(e) => change("imageUrl", e.target.value)} />
       <Input label="Product page URL (HTTPS)" type="url" required maxLength={2048} value={form.productUrl} onChange={(e) => change("productUrl", e.target.value)} />
       <Input label="Brand (optional)" maxLength={100} value={form.brand} onChange={(e) => change("brand", e.target.value)} />
-      <Input label="Category (optional)" maxLength={100} value={form.category} onChange={(e) => change("category", e.target.value)} />
     </div><Input label="Or upload a product image (JPEG/PNG, up to 5 MiB)" type="file" accept="image/jpeg,image/png" onChange={(e) => {
       const file = e.target.files?.[0]; e.target.value = ""; setImageError(""); if (!file) return;
       if (!["image/jpeg", "image/png"].includes(file.type) || file.size > 5 * 1024 * 1024) { setImageError("Choose a JPEG or PNG image no larger than 5 MiB."); return; }
@@ -38,12 +38,14 @@ function ProductForm({ product, close, saved }: { product?: Product; close: () =
     </fieldset><ErrorNotice message={action.error} /><div className="flex justify-end gap-2"><Button type="button" variant="outline" disabled={action.busy || upload.busy} onClick={close}>Cancel</Button><Button type="submit" disabled={action.busy || upload.busy || !form.taxConfirmed}>{action.busy ? "Saving…" : upload.busy ? "Uploading…" : "Save product"}</Button></div>
   </form></Modal>;
 }
-export default function ProductsPage() {
+function ProductList() {
   const { can, access } = useCommerce(), [cursors, setCursors] = useState<string[]>([]), [archived, setArchived] = useState(false);
+  const [collectionFilter, setCollectionFilter] = useState("");
   const [editing, setEditing] = useState<Product | "new" | null>(null), [confirmArchive, setConfirmArchive] = useState<Product | null>(null);
   const catalogQuery = useCommerceQuery<{ catalog: Catalog | null }>(access.capabilities.catalog ? "/catalog" : null);
   const catalogConnected = !!catalogQuery.data?.catalog && catalogQuery.data.catalog.activePhoneMatches !== false;
-  const query = useCommerceQuery<{ products: Product[]; nextCursor: string | null }>(catalogConnected ? "/products" : null, { limit: 25, archived, cursor: cursors.at(-1) });
+  const collections = useCommerceQuery<{ collections: Collection[] }>(catalogConnected && access.capabilities.collections ? "/collections" : null, { archived: false });
+  const query = useCommerceQuery<{ products: Product[]; nextCursor: string | null }>(catalogConnected ? collectionFilter ? `/collections/${collectionFilter}/products` : "/products" : null, collectionFilter ? { limit: 100 } : { limit: 25, archived, cursor: cursors.at(-1) });
   const action = useCommerceAction(), manage = can("commerce.products.manage");
   if (!access.capabilities.catalog) return <DisabledFeature name="Catalog" />;
   return <Panel title="Products" action={manage && <Button disabled={!query.data || query.loading || !!query.error} onClick={() => setEditing("new")}>Add product</Button>}>
@@ -54,14 +56,18 @@ export default function ProductsPage() {
     </div>}
     {query.error && can("commerce.catalog.manage") && <Link className="text-sm underline" to="/app/commerce/settings">Open catalog setup</Link>}
     <p className="text-sm text-slate-500">Prices and inventory are managed here. Products become sendable after Meta synchronization.</p>
-    {catalogConnected && <div className="flex justify-between"><Check label="Archived products" checked={archived} onChange={(v) => { setArchived(v); setCursors([]); }} /><Button variant="ghost" size="sm" onClick={query.reload}>Refresh</Button></div>}
+    {catalogConnected && <div className="flex flex-wrap items-end justify-between gap-3"><div className="flex flex-wrap items-end gap-3"><Check label="Archived products" checked={archived} onChange={(v) => { setArchived(v); setCollectionFilter(""); setCursors([]); }} />{access.capabilities.collections && <label className="text-sm">Collection<select className={fieldClass} disabled={archived} value={collectionFilter} onChange={(e) => { setArchived(false); setCollectionFilter(e.target.value); setCursors([]); }}><option value="">All collections</option>{collections.data?.collections.map((collection) => <option key={collection.id} value={collection.id}>{collection.name}</option>)}</select></label>}</div><Button variant="ghost" size="sm" onClick={query.reload}>Refresh</Button></div>}
     <ErrorNotice message={action.error} />{catalogConnected && <QueryState {...query} empty={!query.data?.products.length} />}
     <div className="divide-y divide-slate-100">{query.data?.products.map((product) => <div key={product.id} className="flex flex-wrap items-center justify-between gap-3 py-4">
-      <div className="min-w-0"><p className="font-semibold break-words">{product.name}</p><p className="text-sm text-slate-500 break-all">{product.sku} · {money(product.pricePaise)} · {product.trackInventory ? `${product.stockOnHand - product.stockReserved} available / ${product.stockReserved} reserved` : "Inventory not tracked"}</p><Status value={product.syncStatus} />{product.syncError && <p className="mt-1 text-sm text-rose-700">{product.syncError}</p>}</div>
+      <div className="min-w-0"><p className="font-semibold break-words">{product.name}</p><p className="text-sm text-slate-500 break-all">{product.sku} · {money(product.pricePaise)} · {product.trackInventory ? `${product.stockOnHand - product.stockReserved} available / ${product.stockReserved} reserved` : "Inventory not tracked"}</p><div className="my-1 flex flex-wrap gap-1">{product.collections?.map((collection) => <span key={collection.id} className="rounded-full bg-slate-100 px-2 py-0.5 text-xs">{collection.name}</span>)}</div><Status value={product.syncStatus} />{product.syncError && <p className="mt-1 text-sm text-rose-700">{product.syncError}</p>}</div>
       {manage && <div className="flex flex-wrap gap-2">{!product.archivedAt && <><Button size="sm" variant="outline" onClick={() => setEditing(product)}>Edit</Button><Button size="sm" variant="ghost" disabled={action.busy} onClick={() => setConfirmArchive(product)}>Archive</Button></>}
         <Button size="sm" variant="outline" disabled={action.busy || product.syncStatus === "synced"} onClick={() => action.run(`/products/${product.id}/sync`, { revision: product.revision }, query.reload)}>Retry sync</Button></div>}
-    </div>)}</div><Pager next={query.data?.nextCursor} back={cursors.length ? () => setCursors((v) => v.slice(0, -1)) : undefined} onNext={() => setCursors((v) => [...v, query.data!.nextCursor!])} />
+    </div>)}</div>{!collectionFilter && <Pager next={query.data?.nextCursor} back={cursors.length ? () => setCursors((v) => v.slice(0, -1)) : undefined} onNext={() => setCursors((v) => [...v, query.data!.nextCursor!])} />}
     {editing && <ProductForm key={editing === "new" ? "new" : `${editing.id}:${editing.revision}`} product={editing === "new" ? undefined : editing} close={() => setEditing(null)} saved={() => { setEditing(null); query.reload(); }} />}
     {confirmArchive && <Modal open title="Archive product" onClose={() => !action.busy && setConfirmArchive(null)}><p className="mb-4">Archive {confirmArchive.name}? It will be removed from sale after synchronization.</p><ErrorNotice message={action.error} /><Button variant="danger" disabled={action.busy} onClick={() => action.run(`/products/${confirmArchive.id}/archive`, { revision: confirmArchive.revision }, () => { setConfirmArchive(null); query.reload(); })}>Archive product</Button></Modal>}
   </Panel>;
+}
+export default function ProductsPage() {
+  const { access } = useCommerce(), [tab, setTab] = useState<"products" | "collections">("products");
+  return <div className="space-y-4"><nav aria-label="Catalog content" className="flex gap-2 border-b"><button className={`px-4 py-2 font-semibold ${tab === "products" ? "border-b-2 border-brand-600 text-brand-700" : "text-slate-500"}`} onClick={() => setTab("products")}>Products</button>{access.capabilities.collections && <button className={`px-4 py-2 font-semibold ${tab === "collections" ? "border-b-2 border-brand-600 text-brand-700" : "text-slate-500"}`} onClick={() => setTab("collections")}>Collections</button>}</nav>{tab === "products" ? <ProductList /> : <CollectionsPage />}</div>;
 }

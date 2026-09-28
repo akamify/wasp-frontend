@@ -1,7 +1,7 @@
 import { lazy, Suspense, useEffect, useMemo, useRef, useState } from "react";
 const InboxCommerce = lazy(() => import("@modules/commerce/InboxCommerce"));
 import { motion } from "framer-motion";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { Check, CheckCheck, Info, MessageSquare } from "lucide-react";
 import { API } from "@api/api";
 import { Modal } from "@components/ui/Modal";
@@ -56,6 +56,8 @@ export function ConversationWorkspace({
   searchPlaceholder,
 }: Props) {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const commerceCollectionIds = (searchParams.get("commerceCollections") || "").split(",").filter((id) => /^[a-fA-F0-9]{24}$/.test(id)).slice(0, 10);
   const [error, setError] = useState<string | null>(null);
   const [ok, setOk] = useState<string | null>(null);
   const [showProfile, setShowProfile] = useState(false);
@@ -320,6 +322,7 @@ export function ConversationWorkspace({
               statusMark={statusMark}
             />
             <ComposerPanel
+              preselectedCollectionIds={commerceCollectionIds}
               customerServiceWindowOpen={customerServiceWindowOpen}
               refreshChat={() => void refreshChatSilently(activePhone)}
               setError={setError}
@@ -469,12 +472,14 @@ function getMessageInteractive(message: ChatMessage) {
 }
 
 function ComposerPanel({
+  preselectedCollectionIds,
   customerServiceWindowOpen,
   refreshChat,
   setError,
   setOk,
   urlPhone,
 }: {
+  preselectedCollectionIds: string[];
   customerServiceWindowOpen: boolean;
   refreshChat: () => void;
   setError: (value: string) => void;
@@ -484,6 +489,8 @@ function ComposerPanel({
   const workspaceId = useWorkspaceId();
   const [catalogTarget, setCatalogTarget] = useState<{ workspaceId: string; to: string } | null>(null);
   useEffect(() => { setCatalogTarget(null); }, [workspaceId, urlPhone]);
+  const preloadKey = preselectedCollectionIds.join(",");
+  useEffect(() => { if (preloadKey && customerServiceWindowOpen && workspaceId && urlPhone) setCatalogTarget({ workspaceId, to: urlPhone }); }, [preloadKey, customerServiceWindowOpen, workspaceId, urlPhone]);
   const catalogOpen = catalogTarget?.workspaceId === workspaceId && catalogTarget?.to === urlPhone;
   return (
     <div className="min-w-0 p-4 bg-white border-t border-slate-100 shrink-0">
@@ -499,7 +506,7 @@ function ComposerPanel({
       <div className="max-w-4xl mx-auto">
         {catalogOpen && <Modal open title="WhatsApp catalog and orders" onClose={() => setCatalogTarget(null)}>
           <Suspense fallback={<p role="status">Loading catalog…</p>}><InboxCommerce key={`${workspaceId}:${urlPhone}`} to={urlPhone}
-            disabled={!customerServiceWindowOpen} onSent={refreshChat} /></Suspense>
+            disabled={!customerServiceWindowOpen} preselectedCollectionIds={preselectedCollectionIds} onSent={refreshChat} /></Suspense>
         </Modal>}
         <InboxComposer
           to={urlPhone}

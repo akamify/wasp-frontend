@@ -1,9 +1,11 @@
 export type Environment = "test" | "live";
 export type Page<T> = { items: T[]; nextCursor: string | null };
-export type Access = { workspaceId: string; permissions: string[]; capabilities: Record<"catalog" | "orders" | "payments" | "checkout" | "gateway" | "oauth" | "native", boolean> & { delivery?: boolean } };
+export type Access = { workspaceId: string; permissions: string[]; capabilities: Record<"catalog" | "orders" | "payments" | "checkout" | "gateway" | "oauth" | "native", boolean> & { delivery?: boolean; collections?: boolean } };
 export type Product = { id: string; sku: string; name: string; description: string; imageUrl: string; productUrl: string; brand: string; category: string;
   condition: "new" | "refurbished" | "used"; pricePaise: number; taxRateBps: number | null; taxConfirmed: boolean; available: boolean;
-  trackInventory: boolean; stockOnHand: number; stockReserved: number; archivedAt: string | null; revision: number; syncedRevision: number; syncStatus: string; syncError: string };
+  trackInventory: boolean; stockOnHand: number; stockReserved: number; archivedAt: string | null; revision: number; syncedRevision: number; syncStatus: string; syncError: string; metaReviewStatus: string; collections?: { id: string; name: string }[] };
+export type Collection = { id: string; name: string; position: number; archivedAt: string | null; revision: number;
+  totalProducts: number; eligibleProducts: number; pendingProducts: number; unavailableProducts: number };
 export type Catalog = { id: string; catalogId: string; wabaId: string; phoneNumberId: string; revision: number; status: string;
   catalogVisible: boolean; cartEnabled: boolean; activePhoneMatches?: boolean; lastError: string; lastCheckedAt: string | null };
 export type Gateway = { id: string; environment: Environment; authType: "api_keys" | "oauth"; status: string; active: boolean; revision: number;
